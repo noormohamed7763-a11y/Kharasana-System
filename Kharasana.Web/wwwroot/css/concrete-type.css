@@ -1,0 +1,11 @@
+/* concrete-type.css — emptied: conflicting :root tokens and overrides
+   superseded by variables.css + components.css + forms.css */
+
+/* صورة معاينة نوع الخرسانة — مقاس ثابت ومتناسق في جميع صفحات التعديل/العرض */
+.concrete-preview-img {
+    width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    background: var(--surface-alt);
+}

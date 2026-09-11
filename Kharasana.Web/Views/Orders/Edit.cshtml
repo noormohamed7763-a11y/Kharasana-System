@@ -1,0 +1,418 @@
+﻿@model Kharasana.Web.ViewModels.Orders.EditOrderViewModel
+@using Kharasana.Domain.Enums
+
+@{
+    ViewData["Title"] = "تعديل الطلب";
+
+    var statusArabic = ViewBag.Status != null ? ((OrderStatus)ViewBag.Status) switch
+    {
+        OrderStatus.New => "جديد",
+        OrderStatus.Pending => "قيد الانتظار",
+        OrderStatus.Approved => "معتمد",
+        OrderStatus.Rejected => "مرفوض",
+        OrderStatus.Cancelled => "ملغي",
+        OrderStatus.OnTheWay => "في الطريق",
+        OrderStatus.Delivered => "تم التسليم",
+        OrderStatus.Closed => "مغلق",
+        _ => "غير معروف"
+    } : "غير معروف";
+
+    var statusCssClass = ViewBag.Status != null ? ((OrderStatus)ViewBag.Status) switch
+    {
+        OrderStatus.New => "status-new",
+        OrderStatus.Pending => "status-pending",
+        OrderStatus.Approved => "status-approved",
+        OrderStatus.Rejected => "status-rejected",
+        OrderStatus.Cancelled => "status-cancelled",
+        OrderStatus.OnTheWay => "status-ontheway",
+        OrderStatus.Delivered => "status-delivered",
+        OrderStatus.Closed => "status-closed",
+        _ => "status-default"
+    } : "status-default";
+
+    var unitPriceValue = ViewBag.UnitPrice?.ToString() ?? "0";
+}
+
+<div class="dashboard-page">
+
+    <!-- ============================================================
+    PAGE HEADER - رأس الصفحة
+    ============================================================ -->
+    <div class="dashboard-header">
+        <div class="dashboard-title">
+            <h1>
+                <i class="bi bi-pencil-square text-primary"></i>
+                تعديل الطلب
+                <span class="text-muted fs-5 fw-normal">- @ViewBag.OrderNumber</span>
+            </h1>
+            <p>
+                تعديل بيانات الطلب (يسمح فقط في حالة <strong>جديد</strong> أو <strong>قيد الانتظار</strong>)
+            </p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right"></i> العودة إلى القائمة
+            </a>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    INFO ALERT - رسالة توضيحية
+    ============================================================ -->
+    <div class="alert alert-info alert-dismissible fade show shadow-sm border-0 mb-3" role="alert">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-info-circle-fill fs-5"></i>
+            <span>يمكن تعديل الطلب فقط إذا كان في حالة <strong>جديد</strong> أو <strong>قيد الانتظار</strong></span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- ============================================================
+    ORDER INFO - معلومات الطلب (للقراءة فقط)
+    ============================================================ -->
+    <div class="card mb-3 shadow-sm border-info">
+        <div class="card-header bg-info bg-opacity-10">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-info-circle text-info"></i>
+                معلومات الطلب (للقراءة فقط)
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <span class="text-muted">رقم الطلب</span>
+                    <p class="fw-bold">@ViewBag.OrderNumber</p>
+                </div>
+                <div class="col-md-4">
+                    <span class="text-muted">العميل</span>
+                    <p class="fw-bold">@ViewBag.ClientName</p>
+                </div>
+                <div class="col-md-4">
+                    <span class="text-muted">الحالة</span>
+                    <p class="fw-bold">
+                        <span class="status-badge @statusCssClass">
+                            @statusArabic
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    FORM - نموذج التعديل
+    ============================================================ -->
+    <div class="form-card">
+        <form method="post" id="editOrderForm" asp-action="Edit" asp-route-id="@ViewBag.OrderId">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" asp-for="OrderId" />
+
+            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+            <!-- ============================================================
+            1. CONCRETE TYPE - نوع الخرسانة
+            ============================================================ -->
+            <div class="form-section-title">
+                <i class="bi bi-box-seam"></i>
+                <span>نوع الخرسانة</span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label asp-for="ConcreteTypeId" class="form-label fw-bold">
+                        <i class="bi bi-box-seam"></i> نوع الخرسانة
+                        <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="ConcreteTypeId" class="form-select form-select-lg" asp-items="ViewBag.ConcreteTypes">
+                        <option value="">-- اختر نوع الخرسانة --</option>
+                    </select>
+                    <span asp-validation-for="ConcreteTypeId" class="text-danger"></span>
+                    <small class="text-muted">تغيير نوع الخرسانة سيؤثر على السعر الإجمالي</small>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            2. QUANTITY & DATE - الكمية والتاريخ
+            ============================================================ -->
+            <div class="form-section-title mt-3">
+                <i class="bi bi-rulers"></i>
+                <span>الكمية والتاريخ</span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Quantity" class="form-label fw-bold">
+                        <i class="bi bi-rulers"></i> الكمية (م³)
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="Quantity" class="form-control form-control-lg" type="number" step="0.01" min="0.1" placeholder="مثال: 25" />
+                    <span asp-validation-for="Quantity" class="text-danger"></span>
+                    <small class="text-muted">الكمية بالمتر المكعب</small>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="PouringDate" class="form-label fw-bold">
+                        <i class="bi bi-calendar-event"></i> تاريخ الصب
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="PouringDate" class="form-control form-control-lg" type="date" />
+                    <span asp-validation-for="PouringDate" class="text-danger"></span>
+                    <small class="text-muted">تاريخ صب الخرسانة</small>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            3. TRANSPORT & PUMP - النقل والمضخة
+            ============================================================ -->
+            <div class="form-section-title mt-3">
+                <i class="bi bi-truck"></i>
+                <span>معلومات النقل</span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="TransportMethod" class="form-label fw-bold">
+                        <i class="bi bi-truck"></i> طريقة النقل
+                        <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="TransportMethod" class="form-select form-select-lg">
+                        <option value="">-- اختر طريقة النقل --</option>
+                        <option value="@((int)TransportMethod.FactoryTransport)">نقل من المصنع</option>
+                        <option value="@((int)TransportMethod.ClientOwnTransport)">نقل العميل</option>
+                    </select>
+                    <span asp-validation-for="TransportMethod" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch mt-3 pt-2">
+                        <input asp-for="NeedPump" class="form-check-input" type="checkbox" role="switch" id="needPumpSwitch" />
+                        <label asp-for="NeedPump" class="form-check-label fw-bold" for="needPumpSwitch">
+                            <i class="bi bi-water"></i> بحاجة مضخة
+                        </label>
+                        <small class="text-muted d-block">اختر إذا كان الطلب يحتاج إلى مضخة</small>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="FloorNumber" class="form-label fw-bold">
+                        <i class="bi bi-building"></i> رقم الطابق
+                    </label>
+                    <input asp-for="FloorNumber" class="form-control form-control-lg" type="number" min="0" placeholder="اختياري" />
+                    <span asp-validation-for="FloorNumber" class="text-danger"></span>
+                    <small class="text-muted">حقل اختياري</small>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            4. PROJECT INFO - معلومات المشروع
+            ============================================================ -->
+            <div class="form-section-title mt-3">
+                <i class="bi bi-building"></i>
+                <span>معلومات المشروع</span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ProjectName" class="form-label fw-bold">
+                        <i class="bi bi-tag"></i> اسم المشروع
+                    </label>
+                    <input asp-for="ProjectName" class="form-control form-control-lg" placeholder="اسم المشروع (اختياري)" />
+                    <span asp-validation-for="ProjectName" class="text-danger"></span>
+                    <small class="text-muted">حقل اختياري</small>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ProjectOwnerName" class="form-label fw-bold">
+                        <i class="bi bi-person-badge"></i> اسم مالك المشروع
+                    </label>
+                    <input asp-for="ProjectOwnerName" class="form-control form-control-lg" placeholder="اسم المالك (اختياري)" />
+                    <span asp-validation-for="ProjectOwnerName" class="text-danger"></span>
+                    <small class="text-muted">حقل اختياري</small>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="SiteArea" class="form-label fw-bold">
+                        <i class="bi bi-geo-alt"></i> المنطقة
+                    </label>
+                    <input asp-for="SiteArea" class="form-control form-control-lg" placeholder="المنطقة (اختياري)" />
+                    <span asp-validation-for="SiteArea" class="text-danger"></span>
+                    <small class="text-muted">حقل اختياري</small>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="SiteDescription" class="form-label fw-bold">
+                        <i class="bi bi-file-text"></i> وصف الموقع
+                    </label>
+                    <input asp-for="SiteDescription" class="form-control form-control-lg" placeholder="وصف الموقع (اختياري)" />
+                    <span asp-validation-for="SiteDescription" class="text-danger"></span>
+                    <small class="text-muted">حقل اختياري</small>
+                </div>
+
+                <!-- نوع البلاطة -->
+                <div class="col-md-12 mb-3">
+                    <label asp-for="SlabType" class="form-label fw-bold">
+                        <i class="bi bi-grid"></i> نوع البلاطة
+                        <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="SlabType" class="form-select form-select-lg">
+                        <option value="">-- اختر نوع البلاطة --</option>
+                        <option value="@((int)SlabType.Foundation)">أساسات</option>
+                        <option value="@((int)SlabType.Columns)">أعمدة</option>
+                        <option value="@((int)SlabType.Beams)">كمرات</option>
+                        <option value="@((int)SlabType.Roof)">سقف</option>
+                        <option value="@((int)SlabType.Other)">أخرى</option>
+                    </select>
+                    <span asp-validation-for="SlabType" class="text-danger"></span>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            5. NOTES - ملاحظات
+            ============================================================ -->
+            <div class="form-section-title mt-3">
+                <i class="bi bi-chat-left-text"></i>
+                <span>ملاحظات إضافية</span>
+            </div>
+
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <label asp-for="Notes" class="form-label fw-bold">
+                        <i class="bi bi-pencil"></i> ملاحظات
+                    </label>
+                    <textarea asp-for="Notes" rows="4" class="form-control form-control-lg" placeholder="أي ملاحظات إضافية حول الطلب..."></textarea>
+                    <span asp-validation-for="Notes" class="text-danger"></span>
+                    <small class="text-muted">حقل اختياري</small>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            6. PRICE PREVIEW - معاينة السعر (للقراءة فقط)
+            ============================================================ -->
+            <div class="form-section-title mt-3">
+                <i class="bi bi-currency-dollar"></i>
+                <span>معاينة السعر</span>
+            </div>
+
+            <div class="row bg-light p-3 rounded-3">
+                <div class="col-md-4 mb-2">
+                    <label class="form-label fw-bold text-muted">سعر المتر (ر.ي)</label>
+                    <input type="text" class="form-control form-control-lg bg-white" id="unitPricePreview" value="@(ViewBag.UnitPrice?.ToString("N0") ?? "-")" readonly />
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label fw-bold text-muted">الكمية (م³)</label>
+                    <input type="text" class="form-control form-control-lg bg-white" id="quantityPreview" value="@Model.Quantity" readonly />
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label fw-bold text-primary">الإجمالي (ر.ي)</label>
+                    <input type="text" class="form-control form-control-lg bg-white text-primary fw-bold" id="totalPricePreview" readonly />
+                </div>
+            </div>
+            <small class="text-muted mt-2 d-block">يتم تحديث الإجمالي تلقائياً عند تغيير الكمية</small>
+
+            <!-- ============================================================
+            7. SUBMIT - أزرار الإرسال
+            ============================================================ -->
+            <div class="d-flex flex-wrap gap-3 mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn">
+                    <i class="bi bi-save"></i> حفظ التغييرات
+                </button>
+                <a asp-action="Details" asp-route-id="@ViewBag.OrderId" class="btn btn-outline-secondary btn-lg px-5">
+                    <i class="bi bi-x-circle"></i> إلغاء
+                </a>
+                @if (ViewBag.ShowDeleteButton == true && User.IsInRole("Admin"))
+                {
+                    <form asp-action="Delete" method="post" class="d-inline" data-ajax-delete="true">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@ViewBag.OrderId" />
+                        <button type="submit" class="btn btn-outline-danger btn-lg">
+                            <i class="bi bi-trash"></i> حذف
+                        </button>
+                    </form>
+                }
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+<!-- تم نقل تنسيقات هذه الصفحة إلى wwwroot/css/orders.css (ملف مركزي موحّد) -->
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/orders.js" asp-append-version="true"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const quantityInput = document.getElementById('@Html.IdFor(m => m.Quantity)');
+            const totalPricePreview = document.getElementById('totalPricePreview');
+
+            var unitPriceValue = '@unitPriceValue';
+            const unitPrice = parseFloat(unitPriceValue) || 0;
+
+            function updateTotalPrice() {
+                const quantity = parseFloat(quantityInput?.value) || 0;
+                const total = unitPrice * quantity;
+                if (totalPricePreview) {
+                    totalPricePreview.value = total > 0 ? total.toLocaleString() + ' ر.ي' : '-';
+                }
+            }
+
+            if (quantityInput) {
+                quantityInput.addEventListener('input', updateTotalPrice);
+                quantityInput.addEventListener('change', updateTotalPrice);
+                updateTotalPrice();
+            }
+
+            const form = document.getElementById('editOrderForm');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (form && submitBtn) {
+                form.addEventListener('submit', function () {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = `
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        جاري الحفظ...
+                    `;
+                });
+            }
+
+            const cancelBtn = document.querySelector('a[asp-action="Details"]');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function (e) {
+                    if (!confirm('هل أنت متأكد من إلغاء التعديلات؟ سيتم فقدان التغييرات غير المحفوظة.')) {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            if (quantityInput) {
+                quantityInput.addEventListener('blur', function () {
+                    const value = parseFloat(this.value);
+                    if (isNaN(value) || value <= 0) {
+                        this.classList.add('is-invalid');
+                        const feedback = this.nextElementSibling;
+                        if (feedback && feedback.classList.contains('text-danger')) {
+                            feedback.textContent = 'الكمية يجب أن تكون أكبر من صفر';
+                        }
+                    } else {
+                        this.classList.remove('is-invalid');
+                    }
+                });
+            }
+
+            const needPumpSwitch = document.getElementById('needPumpSwitch');
+            if (needPumpSwitch) {
+                console.log('NeedPump status:', needPumpSwitch.checked);
+
+                needPumpSwitch.addEventListener('change', function () {
+                    console.log('NeedPump changed to:', this.checked);
+                });
+            }
+
+            console.log('✅ Edit page loaded successfully');
+        });
+    </script>
+}

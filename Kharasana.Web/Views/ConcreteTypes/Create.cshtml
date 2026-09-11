@@ -1,0 +1,232 @@
+@model Kharasana.Web.ViewModels.ConcreteTypes.CreateConcreteTypeViewModel
+
+@{
+    ViewData["Title"] = "إضافة نوع خرسانة";
+}
+
+<div class="container-fluid py-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div>
+
+            <nav aria-label="breadcrumb">
+
+                <ol class="breadcrumb mb-2">
+
+                    <li class="breadcrumb-item">
+                        <a asp-controller="Home" asp-action="Index">
+                            الرئيسية
+                        </a>
+                    </li>
+
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">
+                            أنواع الخرسانة
+                        </a>
+                    </li>
+
+                    <li class="breadcrumb-item active">
+                        إضافة نوع
+                    </li>
+
+                </ol>
+
+            </nav>
+
+            <h2 class="fw-bold mb-1">
+
+                <i class="bi bi-box-seam text-warning"></i>
+
+                إضافة نوع خرسانة
+
+            </h2>
+
+            <p class="text-muted mb-0">
+
+                إنشاء نوع خرسانة جديد وإضافته إلى المصنع.
+
+            </p>
+
+        </div>
+
+        <a asp-action="Index"
+           class="btn btn-outline-secondary">
+
+            <i class="bi bi-arrow-right"></i>
+
+            رجوع
+
+        </a>
+
+    </div>
+
+    <div class="row g-3">
+
+        <!-- Preview -->
+        <div class="col-lg-4">
+
+            <div class="card erp-preview-card">
+
+                <div class="card-body text-center">
+
+                    <div class="preview-image mb-3">
+
+                        <img id="previewImage"
+                             src="~/images/default-concrete.png"
+                             asp-append-version="true"
+                             class="concrete-preview-img rounded"
+                             alt="Concrete Preview" />
+
+                    </div>
+
+                    <h4 id="previewName">
+
+                        لم يتم اختيار نوع
+
+                    </h4>
+
+                    <p id="previewUsage"
+                       class="text-muted">
+
+                        اختر نوع الخرسانة
+
+                    </p>
+
+                    <hr />
+
+                    <div class="row text-center">
+
+                        <div class="col-6">
+
+                            <small class="text-muted">
+
+                                المقاومة
+
+                            </small>
+
+                            <h5 id="previewStrength">
+
+                                -
+
+                            </h5>
+
+                        </div>
+
+                        <div class="col-6">
+
+                            <small class="text-muted">
+
+                                السعر
+
+                            </small>
+
+                            <h5 id="previewPrice">
+
+                                0 ر.ي
+
+                            </h5>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Tips -->
+
+            <div class="card mt-4">
+
+                <div class="card-body">
+
+                    <h6 class="fw-bold">
+
+                        <i class="bi bi-lightbulb"></i>
+
+                        نصائح
+
+                    </h6>
+
+                    <ul class="small text-muted mb-0">
+
+                        <li>اختر نوعاً قياسياً متى أمكن.</li>
+
+                        <li>استخدم النوع المخصص للحالات الخاصة.</li>
+
+                        <li>أدخل السعر لكل متر مكعب.</li>
+
+                        <li>يمكن إضافة صورة توضيحية.</li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Form -->
+
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body p-4">
+
+                    <form asp-action="Create"
+                          method="post"
+                          enctype="multipart/form-data"
+                          id="createConcreteTypeForm">
+
+                        @Html.AntiForgeryToken()
+
+                        <partial name="_CreateForm"
+                                 model="Model" />
+
+                        <hr class="my-4" />
+
+                        <div class="d-flex justify-content-between">
+
+                            <a asp-action="Index"
+                               class="btn btn-light">
+
+                                <i class="bi bi-x-circle"></i>
+
+                                إلغاء
+
+                            </a>
+
+                            <button type="submit"
+                                    class="btn btn-primary btn-lg px-5">
+
+                                <i class="bi bi-check-circle"></i>
+
+                                حفظ نوع الخرسانة
+
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script src="~/js/concrete-type.js"
+            asp-append-version="true"></script>
+
+}

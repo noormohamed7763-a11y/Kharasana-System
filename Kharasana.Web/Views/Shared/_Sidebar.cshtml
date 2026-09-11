@@ -1,0 +1,39 @@
+﻿@{
+    var role = Context.Session.GetString("Role") ?? "";
+}
+
+@if (role == "Admin")
+{
+    @await Html.PartialAsync("_SidebarAdmin")
+}
+else if (role == "FactoryEmployee")
+{
+    @await Html.PartialAsync("_SidebarFactoryEmployee")
+}
+else
+{
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon">
+                <img src="~/images/kharasana-icon.png" alt="خرسانة" />
+            </div>
+            <div class="sidebar-header-text">
+                <h4>خرسانة</h4>
+                <small>نظام إدارة المصانع</small>
+            </div>
+        </div>
+        <div class="p-4 text-center text-muted">
+            <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
+            <small>لا توجد صلاحية أو قائمة مخصصة لهذا الدور (@role)</small>
+        </div>
+        <div class="sidebar-logout">
+            <form asp-controller="Account" asp-action="Logout" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-logout">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>تسجيل خروج</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+}

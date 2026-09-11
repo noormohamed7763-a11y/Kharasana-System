@@ -1,0 +1,224 @@
+/* ==========================================================
+   KHARASANA — SIDEBAR V7 (Micro-Compact)
+========================================================== */
+
+.sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    background: var(--sidebar-bg);
+    border-left: 1px solid var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    z-index: var(--z-sidebar);
+    transition: width var(--transition);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    padding: var(--space-5);
+    border-bottom: 1px solid var(--sidebar-border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+    .sidebar-header .logo-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        flex-shrink: 0;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 2px 10px rgba(232, 93, 34, 0.30);
+        transition: box-shadow var(--transition), transform var(--transition);
+    }
+
+    .sidebar-header .logo-icon:hover {
+        box-shadow: 0 4px 16px rgba(232, 93, 34, 0.45);
+        transform: scale(1.05);
+    }
+
+    .sidebar-header .logo-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+.sidebar-header-text {
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.sidebar-header h4 {
+    color: var(--sidebar-text-active);
+    font-weight: 800;
+    font-size: var(--text-lg);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.sidebar-header small {
+    color: var(--sidebar-text);
+    font-size: var(--text-xs);
+    display: block;
+    margin-top: 2px;
+}
+
+.sidebar-menu {
+    padding: var(--space-4) var(--space-2);
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+    .sidebar-menu li {
+        margin-bottom: var(--space-2);
+        list-style: none;
+        padding: 0 var(--space-2);
+    }
+
+    .sidebar-menu a {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--item-padding-y) var(--space-3);
+        border-radius: var(--radius-sm);
+        color: var(--sidebar-text);
+        font-weight: 600;
+        font-size: var(--text-base);
+        white-space: nowrap;
+        text-decoration: none;
+        transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition);
+        border: 1px solid transparent;
+    }
+
+        .sidebar-menu a:hover {
+            background: var(--sidebar-bg-hover);
+            color: var(--sidebar-text-active);
+            transform: translateX(-2px);
+        }
+
+        .sidebar-menu a:focus-visible {
+            outline: 3px solid rgba(255, 255, 255, 0.35);
+            outline-offset: 2px;
+        }
+
+        .sidebar-menu a.active {
+            background: var(--sidebar-bg-active);
+            color: var(--sidebar-text-active);
+            border-color: transparent;
+            font-weight: 700;
+            box-shadow: 0 6px 14px rgba(232, 93, 34, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+    .sidebar-menu i {
+        font-size: 1.3rem;
+        width: 26px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+.sidebar-logout {
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--sidebar-border);
+    flex-shrink: 0;
+}
+
+/* زر تسجيل الخروج — يعمل مع <a> و <button> بجميع الأشكال */
+.sidebar-logout a,
+.sidebar-logout .sidebar-logout-btn,
+.sidebar-logout .btn-logout {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--item-padding-y) var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--danger);
+    font-weight: 700;
+    font-size: var(--text-base);
+    text-decoration: none;
+    transition: background-color var(--transition), color var(--transition);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+}
+
+    .sidebar-logout a:hover,
+    .sidebar-logout .sidebar-logout-btn:hover,
+    .sidebar-logout .btn-logout:hover {
+        background: var(--danger-soft);
+    }
+
+    .sidebar-logout a:focus-visible,
+    .sidebar-logout .sidebar-logout-btn:focus-visible,
+    .sidebar-logout .btn-logout:focus-visible {
+        outline: 3px solid rgba(185, 28, 28, 0.4);
+        outline-offset: 2px;
+    }
+
+    .sidebar-logout i {
+        font-size: var(--icon-font-md);
+    }
+
+/* الحالة المطيوية — Mobile فقط.
+   على سطح المكتب الـ Sidebar ثابت وموسّع دائماً (260px)،
+   والحالة المطيوية تُمنع بالكامل (لا تُطبَّق إلا داخل نطاق الموبايل). */
+@media (max-width: 992px) {
+    .wrapper.sidebar-collapsed .sidebar-logout a,
+    .wrapper.sidebar-collapsed .sidebar-logout .sidebar-logout-btn,
+    .wrapper.sidebar-collapsed .sidebar-logout .btn-logout {
+        justify-content: center;
+        padding: var(--space-3) 0;
+    }
+
+    .wrapper.sidebar-collapsed .sidebar-logout span {
+        display: none;
+    }
+
+    .wrapper.sidebar-collapsed .sidebar {
+        width: var(--sidebar-width-collapsed);
+    }
+
+    .wrapper.sidebar-collapsed .sidebar-header {
+        justify-content: center;
+        padding: var(--space-4) 0;
+    }
+
+    .wrapper.sidebar-collapsed .sidebar-header-text,
+    .wrapper.sidebar-collapsed .sidebar-menu span,
+    .wrapper.sidebar-collapsed .sidebar-logout span {
+        display: none;
+    }
+
+    .wrapper.sidebar-collapsed .sidebar-menu a,
+    .wrapper.sidebar-collapsed .sidebar-logout a {
+        justify-content: center;
+        padding: var(--space-3) 0;
+    }
+
+    /* في الوضع المطوي لا نزيح العنصر أفقياً عند التحويم لإبقائه متمركزاً */
+    .wrapper.sidebar-collapsed .sidebar-menu a:hover {
+        transform: none;
+    }
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(100%);
+        transition: transform var(--transition);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .wrapper.sidebar-mobile-open .sidebar {
+        transform: translateX(0);
+    }
+}

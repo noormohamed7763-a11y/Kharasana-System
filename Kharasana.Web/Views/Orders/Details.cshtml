@@ -1,0 +1,631 @@
+﻿@model Kharasana.Web.ViewModels.Orders.OrderDto
+@using Kharasana.Domain.Enums
+@using Kharasana.Web.Models.Components
+@using Kharasana.Web.ViewModels.Shared
+
+@{
+    ViewData["Title"] = $"تفاصيل الطلب - {Model.OrderNumber}";
+
+    var progressPercentage = Model.Status switch
+    {
+        OrderStatus.New => 10,
+        OrderStatus.Pending => 25,
+        OrderStatus.Approved => 50,
+        OrderStatus.Rejected => 30,
+        OrderStatus.Cancelled => 20,
+        OrderStatus.OnTheWay => 65,
+        OrderStatus.Delivered => 85,
+        OrderStatus.Closed => 100,
+        _ => 10
+    };
+
+    var progressColor = Model.Status switch
+    {
+        OrderStatus.New => "bg-info",
+        OrderStatus.Pending => "bg-warning",
+        OrderStatus.Approved => "bg-primary",
+        OrderStatus.Rejected => "bg-danger",
+        OrderStatus.Cancelled => "bg-secondary",
+        OrderStatus.OnTheWay => "bg-warning",
+        OrderStatus.Delivered => "bg-success",
+        OrderStatus.Closed => "bg-secondary",
+        _ => "bg-info"
+    };
+
+    var statusArabic = Model.Status switch
+    {
+        OrderStatus.New => "جديد",
+        OrderStatus.Pending => "بانتظار موافقة المصنع",
+        OrderStatus.Approved => "معتمد من المصنع",
+        OrderStatus.Rejected => "مرفوض من المصنع",
+        OrderStatus.Cancelled => "ملغي",
+        OrderStatus.OnTheWay => "في الطريق",
+        OrderStatus.Delivered => "تم التسليم",
+        OrderStatus.Closed => "مغلق",
+        _ => "غير معروف"
+    };
+
+    var statusCssClass = Model.Status switch
+    {
+        OrderStatus.New => "status-new",
+        OrderStatus.Pending => "status-pending",
+        OrderStatus.Approved => "status-approved",
+        OrderStatus.Rejected => "status-rejected",
+        OrderStatus.Cancelled => "status-cancelled",
+        OrderStatus.OnTheWay => "status-ontheway",
+        OrderStatus.Delivered => "status-delivered",
+        OrderStatus.Closed => "status-closed",
+        _ => "status-default"
+    };
+
+    var availableDrivers = ViewBag.AvailableDrivers as List<LookupDto> ?? new List<LookupDto>();
+    var factoryId = ViewBag.FactoryId ?? 0;
+
+    var transportName = Model.TransportMethod switch
+    {
+        TransportMethod.FactoryTransport => "نقل بواسطة المصنع",
+        TransportMethod.ClientOwnTransport => "نقل ذاتي (العميل)",
+        _ => "غير محدد"
+    };
+
+    var slabName = Model.SlabType switch
+    {
+        0 => "أساسات",
+        1 => "أعمدة",
+        2 => "كمرات",
+        3 => "سقف",
+        4 => "أخرى",
+        _ => "غير محدد"
+    };
+}
+
+<div class="dashboard-page">
+
+    <!-- ============================================================
+    HEADER - رأس الصفحة
+    ============================================================ -->
+    <div class="dashboard-header">
+        <div class="dashboard-title">
+            <h1>
+                <i class="bi bi-clipboard-check text-primary"></i>
+                تفاصيل الطلب
+                <span class="order-number-chip order-number-chip--lg" title="@Model.OrderNumber">
+                                <span class="order-number-seq">#@Model.OrderNumberSeq</span>
+                                <span class="order-number-date">@Model.OrderNumberDate</span>
+                            </span>
+            </h1>
+            <p>إدارة ومتابعة الطلب من البداية إلى النهاية</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right"></i> العودة إلى القائمة
+            </a>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    STATUS BADGE - حالة الطلب
+    ============================================================ -->
+    <div class="mb-3">
+        <span class="status-badge @statusCssClass fs-6 p-3">
+            @statusArabic
+        </span>
+        <span class="text-muted ms-3">
+            <i class="bi bi-clock"></i>
+            آخر تحديث: @(Model.UpdatedAt?.ToString("yyyy-MM-dd HH:mm") ?? Model.CreatedAt.ToString("yyyy-MM-dd HH:mm"))
+        </span>
+    </div>
+
+    <!-- ============================================================
+    PROGRESS BAR - شريط التقدم
+    ============================================================ -->
+    <div class="erp-section-card">
+        <div class="erp-section-title">
+            <i class="bi bi-graph-up-arrow"></i>
+            تقدم الطلب
+        </div>
+        <div class="erp-section-content">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="fw-bold">تقدم الطلب</span>
+                <span class="fw-bold">@progressPercentage%</span>
+            </div>
+            <div class="progress" style="height: 12px;">
+                <div class="progress-bar @progressColor progress-bar-striped progress-bar-animated"
+                     role="progressbar"
+                     style="width: @progressPercentage%;"
+                     aria-valuenow="@progressPercentage"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    MAIN INFO - معلومات العميل والمشروع
+    ============================================================ -->
+    <div class="row g-3 mb-3">
+
+        <!-- CLIENT INFO -->
+        <div class="col-md-6">
+            <div class="erp-section-card h-100">
+                <div class="erp-section-title">
+                    <i class="bi bi-person-circle text-primary"></i>
+                    معلومات العميل
+                </div>
+                <div class="erp-section-content">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">الاسم</dt>
+                        <dd class="col-sm-8 fw-bold">@(Model.ClientName ?? "غير معروف")</dd>
+
+                        <dt class="col-sm-4 text-muted">رقم الهاتف</dt>
+                        <dd class="col-sm-8" dir="ltr">@(Model.ClientPhone ?? "-")</dd>
+
+                        <dt class="col-sm-4 text-muted">عدد الطلبات</dt>
+                        <dd class="col-sm-8">@(Model.ClientOrdersCount ?? 0)</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROJECT INFO -->
+        <div class="col-md-6">
+            <div class="erp-section-card h-100">
+                <div class="erp-section-title">
+                    <i class="bi bi-building text-success"></i>
+                    معلومات المشروع
+                </div>
+                <div class="erp-section-content">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">اسم المشروع</dt>
+                        <dd class="col-sm-8 fw-bold">@(Model.ProjectName ?? "-")</dd>
+
+                        <dt class="col-sm-4 text-muted">مالك المشروع</dt>
+                        <dd class="col-sm-8">@(Model.ProjectOwnerName ?? "-")</dd>
+
+                        <dt class="col-sm-4 text-muted">المنطقة</dt>
+                        <dd class="col-sm-8">@(Model.SiteArea ?? "-")</dd>
+
+                        <dt class="col-sm-4 text-muted">الوصف</dt>
+                        <dd class="col-sm-8">@(Model.SiteDescription ?? "-")</dd>
+
+                        <dt class="col-sm-4 text-muted">نوع البلاطة</dt>
+                        <dd class="col-sm-8">@slabName</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    CONCRETE & TRANSPORT - الخرسانة والنقل
+    ============================================================ -->
+    <div class="row g-3 mb-3">
+
+        <!-- CONCRETE INFO -->
+        <div class="col-md-6">
+            <div class="erp-section-card h-100">
+                <div class="erp-section-title">
+                    <i class="bi bi-box-seam text-warning"></i>
+                    الخرسانة
+                </div>
+                <div class="erp-section-content">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">النوع</dt>
+                        <dd class="col-sm-8 fw-bold">@Model.ConcreteTypeName</dd>
+
+                        <dt class="col-sm-4 text-muted">المقاومة</dt>
+                        <dd class="col-sm-8">@Model.ConcreteStrength MPa</dd>
+
+                        <dt class="col-sm-4 text-muted">الكمية</dt>
+                        <dd class="col-sm-8">@Model.Quantity م³</dd>
+
+                        <dt class="col-sm-4 text-muted">سعر المتر</dt>
+                        <dd class="col-sm-8">@(Model.UnitPrice?.ToString("N0") ?? "-") ر.ي</dd>
+
+                        <dt class="col-sm-4 text-muted">الإجمالي</dt>
+                        <dd class="col-sm-8 fw-bold text-primary">@(Model.TotalPrice?.ToString("N0") ?? "-") ر.ي</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRANSPORT INFO -->
+        <div class="col-md-6">
+            <div class="erp-section-card h-100">
+                <div class="erp-section-title">
+                    <i class="bi bi-truck text-info"></i>
+                    النقل
+                </div>
+                <div class="erp-section-content">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">طريقة النقل</dt>
+                        <dd class="col-sm-8">@transportName</dd>
+
+                        <dt class="col-sm-4 text-muted">بحاجة مضخة</dt>
+                        <dd class="col-sm-8">@(Model.NeedPump ? "نعم" : "لا")</dd>
+
+                        <dt class="col-sm-4 text-muted">رقم الطابق</dt>
+                        <dd class="col-sm-8">@(Model.FloorNumber?.ToString() ?? "-")</dd>
+
+                        <dt class="col-sm-4 text-muted">تاريخ الصب</dt>
+                        <dd class="col-sm-8">
+                            <i class="bi bi-calendar3 text-muted me-1"></i>@Model.PouringDateDisplay
+                            @if (Model.IsPouringDateToday)
+                            {
+                                <span class="badge bg-info ms-1">اليوم</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    PRICING - التسعير
+    ============================================================ -->
+    @if ((ViewBag.UserRole == "FactoryEmployee" && factoryId == Model.FactoryId) || ViewBag.UserRole == "Admin")
+    {
+        if (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending)
+        {
+            <div class="erp-section-card border-primary">
+                <div class="erp-section-title text-primary">
+                    <i class="bi bi-currency-dollar"></i>
+                    التسعير
+                </div>
+                <div class="erp-section-content">
+                    <div class="row align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" for="unitPriceInput">سعر المتر (ر.ي)</label>
+                            <input type="number"
+                                   id="unitPriceInput"
+                                   class="form-control form-control-lg"
+                                   value="@(Model.UnitPrice ?? 0)"
+                                   step="0.01"
+                                   min="0.01"
+                                   oninput="calculateTotal()" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" for="quantityDisplay">الكمية (م³)</label>
+                            <input type="text"
+                                   id="quantityDisplay"
+                                   class="form-control form-control-lg"
+                                   value="@Model.Quantity"
+                                   readonly />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" for="totalPriceDisplay">الإجمالي (ر.ي)</label>
+                            <input type="text"
+                                   id="totalPriceDisplay"
+                                   class="form-control form-control-lg text-primary fw-bold"
+                                   value="@(Model.UnitPrice.HasValue ? (Model.UnitPrice.Value * Model.Quantity).ToString("N0") : "0")"
+                                   readonly />
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary btn-lg" id="savePriceBtn" data-order-id="@Model.OrderId">
+                            <i class="bi bi-save"></i> حفظ السعر
+                        </button>
+                        <span id="priceMessage" class="ms-3"></span>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <!-- For non-staff (clients), show price summary only -->
+        <div class="erp-section-card">
+            <div class="erp-section-title">
+                <i class="bi bi-currency-dollar text-primary"></i>
+                التسعير
+            </div>
+            <div class="erp-section-content">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label text-muted">سعر المتر</label>
+                        <div class="fw-bold">@(Model.UnitPrice?.ToString("N0") ?? "-") ر.ي</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted">الكمية</label>
+                        <div class="fw-bold">@Model.Quantity م³</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted">الإجمالي</label>
+                        <div class="fw-bold text-primary">@(Model.TotalPrice?.ToString("N0") ?? "-") ر.ي</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- ============================================================
+    ACTIONS - الإجراءات (مرتبة هرمياً)
+    ============================================================ -->
+    <div class="erp-section-card border-2 border-warning">
+        <div class="erp-section-title text-warning">
+            <i class="bi bi-gear"></i>
+            الإجراءات
+        </div>
+        <div class="erp-section-content">
+            <div id="actionMessage" class="alert d-none"></div>
+            <div class="action-buttons-container">
+
+                <!-- Primary Action - الإجراء الرئيسي -->
+                @if ((ViewBag.UserRole == "FactoryEmployee" && factoryId == Model.FactoryId) || ViewBag.UserRole == "Admin")
+                {
+                    if (Model.Status == OrderStatus.Pending && Model.UnitPrice > 0)
+                    {
+                        <button class="btn btn-success btn-lg action-primary" data-action="approve" data-order-id="@Model.OrderId">
+                            <i class="bi bi-check-circle"></i> قبول الطلب
+                        </button>
+                        <small class="text-muted d-block mb-3">قبول الطلب من قبل المصنع بعد المراجعة</small>
+                    }
+                }
+
+                <!-- Secondary Actions - الإجراءات الثانوية (مجمعة) -->
+                <div class="action-secondary-group">
+                    @if (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending)
+                    {
+                        <button class="btn btn-outline-danger" data-action="reject" data-order-id="@Model.OrderId">
+                            <i class="bi bi-x-circle"></i> رفض الطلب
+                        </button>
+                    }
+
+                    @if (Model.Status != OrderStatus.Rejected && Model.Status != OrderStatus.Cancelled && Model.Status != OrderStatus.Delivered && Model.Status != OrderStatus.Closed)
+                    {
+                        <button class="btn btn-outline-warning" data-action="cancel" data-order-id="@Model.OrderId">
+                            <i class="bi bi-ban"></i> إلغاء الطلب
+                        </button>
+                    }
+
+                    @if (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending)
+                    {
+                        <a asp-action="Edit" asp-route-id="@Model.OrderId" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil"></i> تعديل
+                        </a>
+                    }
+
+                    @if (ViewBag.UserRole == "Admin")
+                    {
+                        <form asp-action="Delete" method="post" class="d-inline" data-ajax-delete="true">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.OrderId" />
+                            <button type="submit" class="btn btn-outline-danger">
+                                <i class="bi bi-trash"></i> حذف
+                            </button>
+                        </form>
+                    }
+                </div>
+
+                <!-- Delivery Actions - إجراءات التوصيل (مجموعة منفصلة) -->
+                @if (((ViewBag.UserRole == "FactoryEmployee" && factoryId == Model.FactoryId) || ViewBag.UserRole == "Admin") ||
+                                Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered)
+                {
+                    <div class="action-delivery-group">
+                        @if (((ViewBag.UserRole == "FactoryEmployee" && factoryId == Model.FactoryId) || ViewBag.UserRole == "Admin") && Model.Status == OrderStatus.Approved && Model.DriverId == null && Model.TransportMethod == TransportMethod.FactoryTransport)
+                        {
+                            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#assignDriverModal">
+                                <i class="bi bi-truck"></i> تعيين سائق
+                            </button>
+                        }
+
+                        @if (Model.Status == OrderStatus.Approved && Model.DriverId != null)
+                        {
+                            <button class="btn btn-primary" data-action="start-delivery" data-order-id="@Model.OrderId">
+                                <i class="bi bi-play-circle"></i> بدء التوصيل
+                            </button>
+                        }
+
+                        @if (Model.Status == OrderStatus.OnTheWay)
+                        {
+                            <button class="btn btn-success" data-action="deliver" data-order-id="@Model.OrderId">
+                                <i class="bi bi-check2-circle"></i> تم التسليم
+                            </button>
+                        }
+
+                        @if (Model.Status == OrderStatus.Delivered)
+                        {
+                            <button class="btn btn-secondary" data-action="close" data-order-id="@Model.OrderId">
+                                <i class="bi bi-lock"></i> إغلاق الطلب
+                            </button>
+                        }
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    TIMELINE - دورة حياة الطلب
+    ============================================================ -->
+    <div class="erp-section-card">
+        <div class="erp-section-title">
+            <i class="bi bi-clock-history"></i>
+            دورة حياة الطلب
+        </div>
+        <div class="erp-section-content">
+            <ul class="timeline">
+
+                <li class="completed">
+                    <span class="timeline-icon">✓</span>
+                    <div class="timeline-content">
+                        <div class="timeline-title">تم إنشاء الطلب</div>
+                        <div class="timeline-date">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+                    </div>
+                </li>
+
+                <li class="@(Model.UnitPrice > 0 ? "completed" : "")">
+                    <span class="timeline-icon">@(Model.UnitPrice > 0 ? "✓" : "○")</span>
+                    <div class="timeline-content">
+                        <div class="timeline-title">تم تحديد السعر</div>
+                        <div class="timeline-date">
+                            @(Model.UnitPrice > 0 ? $"{Model.UnitPrice:N0} ر.ي / م³" : "في انتظار التسعير")
+                        </div>
+                    </div>
+                </li>
+
+                <li class="@(Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "completed" : "")">
+                    <span class="timeline-icon">@(Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "✓" : "○")</span>
+                    <div class="timeline-content">
+                        <div class="timeline-title">موافقة المصنع</div>
+                        <div class="timeline-date">
+                            @(Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "تمت الموافقة" : "في انتظار موافقة المصنع")
+                        </div>
+                    </div>
+                </li>
+
+                <li class="@(Model.DriverId != null ? "completed" : "")">
+                    <span class="timeline-icon">@(Model.DriverId != null ? "✓" : "○")</span>
+                    <div class="timeline-content">
+                        <div class="timeline-title">تم تعيين السائق</div>
+                        <div class="timeline-date">
+                            @(Model.DriverId != null ? Model.DriverName : "غير معين")
+                        </div>
+                    </div>
+                </li>
+
+                <li class="@(Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "completed" : "")">
+                    <span class="timeline-icon">@(Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "✓" : "○")</span>
+                    <div class="timeline-content">
+                        <div class="timeline-title">في الطريق</div>
+                        <div class="timeline-date">
+                            @(Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "تم" : "في انتظار البدء")
+                        </div>
+                    </div>
+                </li>
+
+                <li class="@(Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "completed" : "")">
+                    <span class="timeline-icon">@(Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "✓" : "○")</span>
+                    <div class="timeline-content">
+                        <div class="timeline-title">تم التسليم</div>
+                        <div class="timeline-date">
+                            @(Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? Model.DeliveredAt?.ToString("yyyy-MM-dd HH:mm") ?? "تم" : "في انتظار التسليم")
+                        </div>
+                    </div>
+                </li>
+
+                <li class="@(Model.Status == OrderStatus.Closed ? "completed" : "")">
+                    <span class="timeline-icon">@(Model.Status == OrderStatus.Closed ? "✓" : "○")</span>
+                    <div class="timeline-content">
+                        <div class="timeline-title">تم إغلاق الطلب</div>
+                        <div class="timeline-date">
+                            @(Model.Status == OrderStatus.Closed ? Model.ClosedAt?.ToString("yyyy-MM-dd HH:mm") ?? "تم" : "في انتظار الإغلاق")
+                        </div>
+                    </div>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    NOTES - الملاحظات
+    ============================================================ -->
+    @if (!string.IsNullOrWhiteSpace(Model.Notes))
+    {
+        <div class="erp-section-card">
+            <div class="erp-section-title">
+                <i class="bi bi-chat-left-text"></i>
+                الملاحظات
+            </div>
+            <div class="erp-section-content">
+                <p class="mb-0">@Model.Notes</p>
+            </div>
+        </div>
+    }
+
+    <!-- ============================================================
+    MODAL - تعيين سائق
+    ============================================================ -->
+    <div class="modal fade" id="assignDriverModal" tabindex="-1" aria-labelledby="assignDriverModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title fw-bold" id="assignDriverModalLabel">
+                        <i class="bi bi-truck"></i> تعيين سائق للطلب
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form data-ajax-assign="true" action="/Orders/AssignDriver/@Model.OrderId" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.OrderId" />
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" for="driverSelect">
+                                اختر السائق <span class="text-danger">*</span>
+                            </label>
+                            <select id="driverSelect" name="DriverId" class="form-select form-select-lg" required>
+                                <option value="">-- اختر سائق --</option>
+                                @if (availableDrivers.Any())
+                                {
+                                    foreach (var driver in availableDrivers)
+                                    {
+                                        <option value="@driver.Id">@driver.Name</option>
+                                    }
+                                }
+                                else
+                                {
+                                    <option value="" disabled>لا يوجد سائقون متاحون في المصنع</option>
+                                }
+                            </select>
+                            <small class="text-muted">يعرض فقط السائقين المتاحين في مصنعك</small>
+                            @if (factoryId != null && (int)factoryId > 0)
+                            {
+                                <br />
+                                <small class="text-muted">رقم المصنع: @factoryId</small>
+                            }
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" for="truckPlateInput">رقم لوحة الشاحنة</label>
+                            <input id="truckPlateInput" name="TruckPlate" class="form-control form-control-lg" placeholder="اختياري - مثال: س ص ص 1234" />
+                            <small class="text-muted">حقل اختياري - يمكن تركه فارغاً</small>
+                        </div>
+                        <div id="assignMessage" class="alert d-none"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle"></i> تعيين
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ============================================================
+SCRIPTS
+============================================================ -->
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/orders.js" asp-append-version="true"></script>
+
+    <script>
+        function calculateTotal() {
+            const unitPrice = parseFloat(document.getElementById('unitPriceInput')?.value) || 0;
+            const quantity = Number('@Model.Quantity') || 0;
+            const total = unitPrice * quantity;
+
+            const totalDisplay = document.getElementById('totalPriceDisplay');
+            if (totalDisplay) {
+                totalDisplay.value = total.toLocaleString();
+            }
+        }
+
+        document.getElementById('unitPriceInput')?.addEventListener('input', calculateTotal);
+        document.addEventListener('DOMContentLoaded', calculateTotal);
+
+        console.log('✅ Details page loaded successfully');
+
+        const availableDriversCount = Number('@availableDrivers.Count') || 0;
+        const currentFactoryId = '@factoryId';
+
+        console.log(`📋 Available drivers: ${availableDriversCount}`);
+        console.log(`🏭 Factory ID: ${currentFactoryId}`);
+    </script>
+}

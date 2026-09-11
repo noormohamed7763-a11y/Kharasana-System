@@ -1,0 +1,100 @@
+﻿@model Kharasana.Web.ViewModels.Drivers.DriverListItemViewModel
+@using Kharasana.Web.Models.Components
+@using Kharasana.Domain.Enums
+
+@{
+    ViewData["Title"] = "ملف السائق";
+
+    var statusText = Model.DriverStatus switch
+    {
+        DriverStatus.Available => "متاح",
+        DriverStatus.Busy => "مشغول",
+        DriverStatus.Offline => "غير متصل",
+        _ => "غير محدد"
+    };
+
+    var statusCss = Model.DriverStatus switch
+    {
+        DriverStatus.Available => "status-success",
+        DriverStatus.Busy => "status-warning",
+        DriverStatus.Offline => "status-secondary",
+        _ => "status-secondary"
+    };
+}
+
+<div class="dashboard-page">
+
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-person-badge",
+            Title = Model.FullName,
+            Description = "ملف السائق"
+        })
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="form-card">
+                <div class="card-header d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> بيانات السائق</h5>
+                    <a asp-action="Edit" asp-route-id="@Model.UserId" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-pencil"></i> تعديل
+                    </a>
+                </div>
+
+                <dl class="row mb-0">
+                    <dt class="col-sm-4"><i class="bi bi-person"></i> الاسم الكامل</dt>
+                    <dd class="col-sm-8">@Model.FullName</dd>
+
+                    <dt class="col-sm-4"><i class="bi bi-telephone"></i> رقم الهاتف</dt>
+                    <dd class="col-sm-8">@(Model.Phone ?? "-")</dd>
+
+                    <!-- ❌ تم حذف WhatsApp نهائياً -->
+
+                    <dt class="col-sm-4"><i class="bi bi-card-text"></i> رقم رخصة القيادة</dt>
+                    <dd class="col-sm-8">
+                        @if (string.IsNullOrWhiteSpace(Model.LicenseNumber))
+                        {
+                            <span class="badge bg-light text-muted">لا توجد رخصة</span>
+                        }
+                        else
+                        {
+                            @Model.LicenseNumber
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4"><i class="bi bi-buildings"></i> رقم المصنع</dt>
+                    <dd class="col-sm-8">@(Model.FactoryId?.ToString() ?? "-")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="form-card mb-3">
+                <h6 class="text-muted mb-3"><i class="bi bi-truck"></i> حالة السائق</h6>
+                @await Html.PartialAsync(
+                "~/Views/Shared/Components/_StatusBadge.cshtml",
+                                new StatusBadgeViewModel { Text = statusText, CssClass = statusCss })
+            </div>
+
+            <div class="form-card">
+                <h6 class="text-muted mb-3"><i class="bi bi-shield-check"></i> حالة الحساب</h6>
+                @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_StatusBadge.cshtml",
+                                new StatusBadgeViewModel
+                                {
+                                    Text = Model.IsActive ? "مُفعّل" : "معطّل",
+                                    CssClass = Model.IsActive ? "status-success" : "status-secondary"
+                                })
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-right"></i> العودة إلى القائمة
+        </a>
+    </div>
+
+</div>

@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="Kharasana.Web/Kharasana.Web.csproj" Id="97012542-3277-4cef-b653-dcfe4d6b59b7" />
+  <Project Path="Kharasana.API/Kharasana.API.csproj" />
+  <Project Path="Kharasana.Application/Kharasana.Application.csproj" />
+  <Project Path="Kharasana.Domain/Kharasana.Domain.csproj" />
+  <Project Path="Kharasana.Infrastructure/Kharasana.Infrastructure.csproj" />
+  <Project Path="Kharasana.Tests/Kharasana.Tests.csproj" />
+</Solution>

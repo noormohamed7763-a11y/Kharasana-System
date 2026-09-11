@@ -1,0 +1,253 @@
+@model Kharasana.Web.ViewModels.ConcreteTypes.UpdateConcreteTypeViewModel
+
+<div class="row g-3">
+
+    <div asp-validation-summary="All"
+         class="alert alert-danger"></div>
+
+    <!-- المعلومات الأساسية -->
+    <div class="col-12">
+
+        <div class="form-section-title">
+
+            <i class="bi bi-pencil-square"></i>
+
+            <span>المعلومات الأساسية</span>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6">
+
+        <label asp-for="Name"
+               class="form-label fw-bold"></label>
+
+        <input asp-for="Name"
+               class="form-control"
+               id="editName" />
+
+        <span asp-validation-for="Name"
+              class="text-danger"></span>
+
+    </div>
+
+    <div class="col-md-6">
+
+        <label asp-for="Strength"
+               class="form-label fw-bold"></label>
+
+        <div class="input-group">
+
+            <input asp-for="Strength"
+                   class="form-control"
+                   id="editStrength" />
+
+            <span class="input-group-text">
+                MPa
+            </span>
+
+        </div>
+
+        <span asp-validation-for="Strength"
+              class="text-danger"></span>
+
+    </div>
+
+    <!-- السعر -->
+
+    <div class="col-12 mt-3">
+
+        <div class="form-section-title">
+
+            <i class="bi bi-cash-stack"></i>
+
+            <span>بيانات السعر</span>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6">
+
+        <label asp-for="UnitPrice"
+               class="form-label fw-bold"></label>
+
+        <div class="input-group">
+
+            <input asp-for="UnitPrice"
+                   class="form-control"
+                   id="editPrice" />
+
+            <span class="input-group-text">
+
+                ر.ي
+
+            </span>
+
+        </div>
+
+        <span asp-validation-for="UnitPrice"
+              class="text-danger"></span>
+
+        <small class="text-muted">
+
+            السعر لكل متر مكعب
+
+        </small>
+
+    </div>
+
+    <div class="col-md-6 d-flex align-items-end">
+
+        <div class="card bg-light border-0 w-100">
+
+            <div class="card-body text-center">
+
+                <small class="text-muted">
+
+                    السعر في المعاينة
+
+                </small>
+
+                <h4 id="editPreviewPrice"
+                    class="text-primary mb-0">
+
+                    @Model.UnitPrice.ToString("N0") ر.ي
+
+                </h4>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- الصورة والوصف -->
+
+    <div class="col-12 mt-3">
+
+        <div class="form-section-title">
+
+            <i class="bi bi-image"></i>
+
+            <span>الصورة والوصف</span>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-12">
+
+        <label asp-for="ImageUrl"
+               class="form-label fw-bold"></label>
+
+        <input asp-for="ImageUrl"
+               class="form-control"
+               id="editImageUrl"
+               placeholder="https://example.com/image.jpg" />
+
+    </div>
+
+    <div class="col-md-12">
+
+        <div class="text-center">
+
+            <img id="editPreviewImage"
+                 src="~/images/default-concrete.png"
+                 asp-append-version="true"
+                 data-record-image="@Model.ImageUrl"
+                 class="concrete-preview-img rounded shadow-sm mb-3" />
+
+        </div>
+
+    </div>
+
+    <div class="col-12">
+
+        <label asp-for="Description"
+               class="form-label fw-bold"></label>
+
+        <textarea asp-for="Description"
+                  rows="5"
+                  class="form-control"
+                  maxlength="500"></textarea>
+
+        <small class="text-muted">
+
+            الحد الأقصى 500 حرف.
+
+        </small>
+
+    </div>
+
+    <!-- الحالة -->
+
+    <div class="col-12 mt-3">
+
+        <div class="form-section-title">
+
+            <i class="bi bi-toggle-on"></i>
+
+            <span>الحالة</span>
+
+        </div>
+
+    </div>
+
+    <div class="col-12">
+
+        <div class="form-check form-switch fs-5">
+
+            <input asp-for="IsActive"
+                   class="form-check-input" />
+
+            <label asp-for="IsActive"
+                   class="form-check-label fw-bold">
+
+                نوع الخرسانة نشط
+
+            </label>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    document.addEventListener("DOMContentLoaded",()=>{
+
+        const price=document.getElementById("editPrice");
+        const preview=document.getElementById("editPreviewPrice");
+
+        price?.addEventListener("input",()=>{
+
+            const value=parseFloat(price.value);
+
+            preview.textContent=isNaN(value)
+                ?"0 ر.ي"
+                :value.toLocaleString()+" ر.ي";
+
+        });
+
+        const img=document.getElementById("editImageUrl");
+        const previewImg=document.getElementById("editPreviewImage");
+
+        // مصادر الصورة: الافتراضية المُرقّمة نسخةً من الوسم + صورة السجل إن وُجدت
+        const defaultImage=previewImg?.src;
+        const recordImage=previewImg?.getAttribute("data-record-image");
+        if(recordImage) previewImg.src=recordImage;
+
+        img?.addEventListener("input",()=>{
+
+            previewImg.src=img.value.trim()!==""?
+                img.value:
+                defaultImage;
+
+        });
+
+    });
+
+</script>

@@ -1,0 +1,311 @@
+﻿/* ==========================================================
+   ORDERS MODULE (Kharasana ERP)
+   يجمّع هذا الملف كل التنسيقات الخاصة بوحدة الطلبات التي كانت
+   مبعثرة داخل 4 كتل <style> منفصلة (Index/Create/Edit/Details)،
+   ويستخدم Design Tokens من variables.css بدل قيم Hex ثابتة.
+   لا يعيد تعريف أي كلاس عام (erp-table / erp-toolbar / form-card /
+   status-badge) — تلك الكلاسات مصدرها الوحيد tables.css / components.css / forms.css.
+========================================================== */
+
+/* ----------------------------------------------------------
+   1. عناوين أقسام النموذج (Create / Edit)
+---------------------------------------------------------- */
+.form-section-title i {
+    font-size: 1.2rem;
+}
+
+.form-label i {
+    color: var(--primary-text);
+    margin-left: 4px;
+}
+
+/* ----------------------------------------------------------
+   2. مفتاح "يوجد مضخة خرسانية" (Form Switch)
+---------------------------------------------------------- */
+.form-switch .form-check-input {
+    width: 48px;
+    height: 24px;
+    cursor: pointer;
+    border-radius: var(--radius-pill);
+    border: 2px solid var(--border-main);
+    background-color: var(--surface-low);
+    transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+
+    .form-switch .form-check-input:checked {
+        background-color: var(--primary);
+        border-color: var(--primary);
+    }
+
+    .form-switch .form-check-input:focus {
+        box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+.form-switch .form-check-label {
+    font-size: var(--text-base);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+    .form-switch .form-check-label i {
+        color: var(--primary-text);
+        margin-left: 4px;
+    }
+
+/* ----------------------------------------------------------
+   3. بطاقات اختيار وسيلة النقل (Transport Options)
+---------------------------------------------------------- */
+.transport-option {
+    transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition), color var(--transition);
+    cursor: pointer;
+    background: var(--surface);
+    border-color: var(--border-main) !important;
+}
+
+    .transport-option:hover {
+        border-color: var(--primary) !important;
+        background: var(--primary-soft);
+    }
+
+    .transport-option:has(.form-check-input:checked) {
+        border-color: var(--primary) !important;
+        background: var(--primary-soft);
+        box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .transport-option .form-check-input {
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        cursor: pointer;
+        border-color: var(--border-main);
+    }
+
+        .transport-option .form-check-input:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+    .transport-option .form-check-label {
+        cursor: pointer;
+        font-size: var(--text-base);
+    }
+
+        .transport-option .form-check-label i {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+/* ----------------------------------------------------------
+   4. حقل رقم الطابق (يظهر فقط لبعض أنواع المواقع)
+---------------------------------------------------------- */
+#floorNumberContainer {
+    transition: opacity var(--transition);
+}
+
+    #floorNumberContainer input:disabled {
+        background-color: var(--surface-low);
+        cursor: not-allowed;
+    }
+
+/* ----------------------------------------------------------
+   5. الخط الزمني لحالة الطلب (Order Details)
+---------------------------------------------------------- */
+.timeline {
+    list-style: none;
+    padding: 0;
+    position: relative;
+}
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 20px;
+        width: 2px;
+        background: var(--border-main);
+    }
+
+    .timeline li {
+        position: relative;
+        padding-right: 45px;
+        padding-bottom: 25px;
+    }
+
+        .timeline li:last-child {
+            padding-bottom: 0;
+        }
+
+.timeline-icon {
+    position: absolute;
+    right: 8px;
+    top: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-full);
+    background: var(--surface-low);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+    color: var(--text-muted);
+    z-index: 1;
+    border: 2px solid var(--border-main);
+}
+
+.timeline li.completed .timeline-icon {
+    background: var(--success);
+    color: #fff;
+    border-color: var(--success);
+}
+
+.timeline-content {
+    padding-right: 10px;
+}
+
+.timeline-title {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.timeline-date {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+/* ----------------------------------------------------------
+   6. استجابة الشاشات الصغيرة
+---------------------------------------------------------- */
+@media (max-width: 768px) {
+    .form-card {
+        padding: 15px;
+    }
+
+    .btn-lg {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
+
+    .form-control-lg,
+    .form-select-lg {
+        font-size: 0.95rem;
+        padding: 8px 12px;
+    }
+
+    .transport-option {
+        margin-bottom: 10px;
+    }
+
+    .timeline::before {
+        right: 12px;
+    }
+
+    .timeline li {
+        padding-right: 35px;
+    }
+
+    .timeline-icon {
+        width: 20px;
+        height: 20px;
+        right: 2px;
+        font-size: 10px;
+    }
+}
+
+/* ==========================================================
+   7. Action Buttons Hierarchy (Order Details)
+========================================================== */
+.action-buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.action-primary {
+    width: 100%;
+    max-width: 300px;
+}
+
+.action-secondary-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.action-delivery-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    border-top: 1px solid var(--border-soft);
+    padding-top: var(--space-4);
+    align-items: center;
+}
+
+/* ==========================================================
+   9. Order Number Chip - شارة رقم الطلب
+========================================================== */
+.order-number-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    direction: ltr; /* الأرقام تُقرأ من اليسار لليمين */
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    background: var(--surface-low, #f8f9fa);
+    border: 1px solid var(--border-main, #dee2e6);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    transition: background-color var(--transition), border-color var(--transition);
+}
+
+/* عند التمرير (يُستخدم داخل روابط تفاصيل الطلب) */
+a.order-number-chip:hover {
+    background: var(--primary-soft, #e8f0fe);
+    border-color: var(--primary, #4361ee);
+    color: inherit;
+    text-decoration: none;
+}
+
+.order-number-seq {
+    font-weight: 700;
+    color: var(--primary, #4361ee);
+}
+
+.order-number-date {
+    color: var(--text-muted, #6c757d);
+    font-size: 0.75rem;
+}
+
+/* الحجم الأكبر (صفحة التفاصيل) */
+.order-number-chip--lg {
+    padding: 6px 14px;
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+/* ==========================================================
+   10. Responsive - Action Buttons
+========================================================== */
+@media (max-width: 576px) {
+    .action-primary {
+        max-width: 100%;
+    }
+
+    .action-secondary-group,
+    .action-delivery-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+        .action-secondary-group .btn,
+        .action-delivery-group .btn {
+            width: 100%;
+            justify-content: center;
+        }
+}

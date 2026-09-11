@@ -1,0 +1,16 @@
+﻿@model Kharasana.Web.Models.Components.Search.SearchBoxViewModel
+
+<div class="search-box position-relative @Model.CssClass">
+    <span class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted">
+        <i class="bi bi-search"></i>
+    </span>
+
+    <!-- name="search" لربط الحقل بنموذج البحث، value يُقرأ من Model.Value -->
+    <input type="text"
+           id="@Model.InputId"
+           name="search"
+           class="form-control ps-5"
+           placeholder="@Model.Placeholder"
+           value="@Model.Value"
+           oninput="@(string.IsNullOrEmpty(Model.OnInputScript) ? null : Model.OnInputScript)" />
+</div>

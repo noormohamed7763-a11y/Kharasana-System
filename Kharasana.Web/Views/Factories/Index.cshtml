@@ -1,0 +1,177 @@
+﻿@model IEnumerable<Kharasana.Web.Models.Factories.FactoryListItemViewModel>
+@using Kharasana.Web.Models.Components
+
+@{
+    ViewData["Title"] = "إدارة المصانع";
+
+    var totalFactories = Model?.Count() ?? 0;
+    var activeFactories = Model?.Count(f => f.IsActive) ?? 0;
+    var inactiveFactories = totalFactories - activeFactories;
+}
+
+<div class="dashboard-page">
+
+    <!-- 1. ترويسة الصفحة الاحترافية -->
+    <partial name="Components/_PageHeader"
+             model='new PageHeaderViewModel
+             {
+                 Title = "إدارة المصانع",
+                 Description = "شاشة التحكم المركزية لعرض، تتبع، وإدارة جميع المصانع المسجلة في النظام.",
+                 ActionText = "إضافة مصنع جديد",
+                 ActionController = "Factories",
+                 ActionMethod = "Create"
+             }' />
+
+    <!-- 2. بطاقات الملخصات الإحصائية (KPI Cards) -->
+    <div class="summary-cards-grid mb-3">
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_SummaryCard.cshtml",
+        new SummaryCardViewModel
+        {
+            Title = "إجمالي المصانع",
+            Value = totalFactories.ToString(),
+            Icon = "bi-buildings",
+            IconClass = "kpi-icon-primary",
+            LinkUrl = Url.Action("Index", "Factories")
+        })
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_SummaryCard.cshtml",
+        new SummaryCardViewModel
+        {
+            Title = "المصانع النشطة",
+            Value = activeFactories.ToString(),
+            Icon = "bi-building-check",
+            IconClass = "kpi-icon-success",
+            LinkUrl = Url.Action("Index", "Factories")
+        })
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_SummaryCard.cshtml",
+        new SummaryCardViewModel
+        {
+            Title = "المصانع المتوقفة",
+            Value = inactiveFactories.ToString(),
+            Icon = "bi-building-dash",
+            IconClass = "kpi-icon-danger",
+            LinkUrl = Url.Action("Index", "Factories")
+        })
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_SummaryCard.cshtml",
+        new SummaryCardViewModel
+        {
+            Title = "معدل التشغيل",
+            Value = totalFactories > 0 ? $"{(activeFactories * 100) / totalFactories}%" : "0%",
+            Icon = "bi-activity",
+            IconClass = "kpi-icon-info",
+            LinkUrl = Url.Action("Index", "Factories")
+        })
+    </div>
+
+    <!-- 3. شريط التحكم والبحث الموحد -->
+    <div class="erp-toolbar d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3 p-3 bg-white rounded-3 shadow-sm border">
+        <div class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap">
+
+            <!-- أ. صندوق البحث -->
+            <div style="min-width: 260px; flex-grow: 1; max-width: 400px;">
+                @{
+                    var searchModel = new Kharasana.Web.Models.Components.Search.SearchBoxViewModel
+                    {
+                        InputId = "factorySearchInput",
+                        Placeholder = "ابحث بالاسم، المالك، أو المنطقة..."
+                    };
+                }
+                <partial name="Components/_SearchBox" model="searchModel" />
+            </div>
+
+            <!-- ب. قائمة الفلترة -->
+            <div>
+                @{
+                    var filterModel = new Kharasana.Web.Models.Components.FilterDropdownViewModel
+                    {
+                        Id = "factoryStatusFilter",
+                        OnChangeFunction = "filterByStatus(this.value)",
+                        Options = new List<Kharasana.Web.Models.Components.FilterOptionViewModel>
+                                {
+                                new() { Text = "جميع الحالات", Value = "all" },
+                                new() { Text = "النشطة فقط", Value = "active" },
+                                new() { Text = "المتوقفة فقط", Value = "inactive" }
+                                }
+                    };
+                }
+                <partial name="Components/_FilterDropdown" model="filterModel" />
+            </div>
+
+        </div>
+
+        <!-- ج. شريط الأدوات -->
+        <div>
+            @{
+                var toolbarModel = new Kharasana.Web.Models.Components.ToolbarViewModel
+                {
+                    ShowAddButton = false,
+                    ShowExport = true,
+                    ExportActionScript = "alert('جاري تصدير التقرير...')"
+                };
+            }
+            <partial name="Components/_Toolbar" model="toolbarModel" />
+        </div>
+    </div>
+
+    <!-- 4. جدول العرض الأساسي -->
+    <partial name="_FactoryTable" model="Model" />
+
+</div>
+
+<!-- 5. Modal إنشاء حساب المصنع -->
+<div class="modal fade" id="createAccountModal" tabindex="-1" aria-labelledby="createAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createAccountModalLabel">إنشاء حساب جديد للمصنع</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createAccountForm">
+                    <input type="hidden" id="modalFactoryId" name="FactoryId" />
+
+                    <div class="mb-3">
+                        <label for="modalFullName" class="form-label">الاسم الكامل</label>
+                        <input type="text" class="form-control" id="modalFullName" name="FullName" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modalEmail" class="form-label">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" id="modalEmail" name="Email" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modalPhone" class="form-label">رقم الهاتف</label>
+                        <input type="text" class="form-control" id="modalPhone" name="Phone" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modalPassword" class="form-label">كلمة المرور</label>
+                        <input type="password" class="form-control" id="modalPassword" name="Password" required minlength="6" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modalConfirmPassword" class="form-label">تأكيد كلمة المرور</label>
+                        <input type="password" class="form-control" id="modalConfirmPassword" name="ConfirmPassword" required minlength="6" />
+                    </div>
+
+                    <input type="hidden" name="Role" value="1" />
+
+                    <div id="modalErrorMessage" class="alert alert-danger d-none mb-3"></div>
+
+                    <div class="modal-footer px-0 pb-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-success" id="saveAccountBtn">حفظ الحساب</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/factories.js" asp-append-version="true"></script>
+}

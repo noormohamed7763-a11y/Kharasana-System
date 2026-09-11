@@ -1,0 +1,382 @@
+﻿/* ==========================================================
+   KHARASANA ERP – Split-Screen Login (Final Factory Edition)
+   القسم الأيمن: نموذج الدخول | القسم الأيسر: الشعار والمميزات
+   ========================================================== */
+
+:root {
+    --primary: #EA580C;
+    --primary-hover: #C2410C;
+    --bg-dark: #0F1419;
+    --surface-dark: #1A1F27;
+    --surface-light: #FFFFFF;
+    --text-dark: #F1F5F9;
+    --text-light: #1E293B;
+    --muted-dark: #94A3B8;
+    --muted-light: #64748B;
+    --border-dark: #2D333B;
+    --border-light: #E2E8F0;
+    --radius: 12px;
+    --shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Cairo", sans-serif;
+    background-color: #0A0D12;
+    background-image: radial-gradient(ellipse at 20% 50%, rgba(255, 109, 0, 0.05) 0%, transparent 50%), radial-gradient(ellipse at 80% 50%, rgba(0, 0, 0, 0.8) 0%, transparent 50%);
+    color: var(--text-dark);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-wrapper {
+    width: 100%;
+    min-height: 100vh;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-card {
+    width: 1000px;
+    max-width: 100%;
+    min-height: 560px;
+    max-height: 90vh;
+    background: var(--surface-light);
+    border-radius: var(--radius);
+    display: flex;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* =========================================
+   القسم الأيسر: الهوية المؤسسية (داكن)
+   ========================================= */
+.brand-panel {
+    width: 50%;
+    background-image: url('/images/concrete-bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 35px 30px;
+    position: relative;
+    overflow-y: auto;
+}
+
+.brand-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, rgba(15, 20, 25, 0.10) 0%, rgba(15, 20, 25, 0.18) 55%, rgba(21, 25, 32, 0.25) 100%);
+    z-index: 0;
+}
+
+.brand-content {
+    position: relative;
+    z-index: 1;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+}
+
+.brand-logo {
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.brand-logo-img {
+    height: 100px;
+    width: auto;
+    max-width: 100px;
+    object-fit: contain;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.30);
+}
+
+.brand-name {
+    font-size: 26px;
+    font-weight: 800;
+    color: #FFFFFF;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.brand-description {
+    font-size: 13px;
+    color: var(--muted-dark);
+    margin-bottom: 20px;
+    font-weight: 500;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.brand-divider {
+    width: 45px;
+    height: 3px;
+    background: var(--primary);
+    margin: 0 auto 20px;
+    border-radius: 2px;
+}
+
+.features-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: right;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(15, 20, 25, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 16px rgba(0, 0, 0, 0.22);
+    transition: all 0.2s ease;
+}
+
+    .feature-item:hover {
+        background: rgba(21, 26, 32, 0.55);
+        border-color: rgba(255, 109, 0, 0.30);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 20px rgba(0, 0, 0, 0.28);
+    }
+
+.feature-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 109, 0, 0.16);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+    .feature-icon i {
+        font-size: 16px;
+        color: var(--primary);
+    }
+
+.feature-text h5 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #F8FAFC;
+    margin: 0 0 2px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.feature-text span {
+    font-size: 11px;
+    color: #CBD5E1;
+    line-height: 1.4;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* =========================================
+   القسم الأيمن: نموذج الدخول (فاتح)
+   ========================================= */
+.login-panel {
+    width: 50%;
+    background: var(--surface-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 35px 40px;
+    overflow-y: auto;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 380px;
+}
+
+.login-header {
+    margin-bottom: 24px;
+}
+
+    .login-header h2 {
+        font-size: 26px;
+        font-weight: 800;
+        color: #0F172A;
+        margin-bottom: 6px;
+    }
+
+    .login-header p {
+        font-size: 13px;
+        color: var(--muted-light);
+        font-weight: 500;
+    }
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-label {
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: #334155;
+}
+
+.input-group {
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.input-group-text {
+    background: #F1F5F9;
+    border: 1px solid var(--border-light);
+    border-left: none;
+    color: var(--muted-light);
+    width: 44px;
+    justify-content: center;
+    font-size: 15px;
+}
+
+.form-control {
+    height: 44px;
+    background: #F8FAFC;
+    border: 1px solid var(--border-light);
+    color: var(--text-light);
+    font-size: 13px;
+    box-shadow: none !important;
+    transition: all 0.2s ease;
+}
+
+    .form-control:focus {
+        background: #FFFFFF;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(255, 109, 0, 0.08) !important;
+    }
+
+.input-group:focus-within .input-group-text {
+    background: #FFFFFF;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.password-toggle {
+    height: 44px;
+    width: 44px;
+    background: #F8FAFC;
+    border: 1px solid var(--border-light);
+    border-right: none;
+    color: var(--muted-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+    .password-toggle:hover {
+        background: #FFFFFF;
+        color: var(--primary);
+    }
+
+.input-group:focus-within .password-toggle {
+    background: #FFFFFF;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.form-check {
+    margin: 16px 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-check-input {
+    width: 16px;
+    height: 16px;
+    margin-top: 0;
+    cursor: pointer;
+    accent-color: var(--primary);
+    border: 2px solid #CBD5E1;
+}
+
+.form-check-label {
+    font-size: 12px;
+    color: var(--muted-light);
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    font-weight: 500;
+}
+
+.btn-login {
+    height: 46px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--primary);
+    color: #FFFFFF;
+    font-size: 15px;
+    font-weight: 700;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(255, 109, 0, 0.25);
+}
+
+    .btn-login:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(255, 109, 0, 0.35);
+        color: #fff;
+    }
+
+.text-danger {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: #DC2626;
+    font-weight: 500;
+}
+
+.alert-danger {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+    font-size: 12px;
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    margin-bottom: 16px;
+}
+
+/* =========================================
+   التجاوب مع الشاشات
+   ========================================= */
+@media (max-width: 992px) {
+    .login-card {
+        flex-direction: column;
+        min-height: auto;
+        max-height: none;
+    }
+
+    .brand-panel,
+    .login-panel {
+        width: 100%;
+        padding: 25px 20px;
+    }
+
+    .brand-panel {
+        order: -1;
+    }
+}

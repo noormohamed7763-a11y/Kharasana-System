@@ -1,0 +1,124 @@
+/* ==========================================================
+   TABLES LIBRARY (Kharasana ERP)
+   ========================================================== */
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.erp-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: right;
+    white-space: nowrap;
+}
+
+    .erp-table thead th {
+        background: var(--surface-alt);
+        color: var(--text-muted);
+        font-weight: 700;
+        font-size: var(--text-xs);
+        padding: 16px 24px;
+        border-bottom: 2px solid var(--border-main);
+    }
+
+    .erp-table tbody td {
+        padding: 16px 24px;
+        font-size: var(--text-base);
+        color: var(--text-main);
+        border-bottom: 1px solid var(--border-soft);
+        vertical-align: middle;
+    }
+
+    .erp-table tbody tr {
+        transition: background var(--transition);
+    }
+
+        .erp-table tbody tr:hover {
+            background: var(--surface-alt);
+        }
+
+.table-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: var(--text-sm);
+    border: 1px solid var(--border-soft);
+}
+
+/* Modifier: sticky header for long/tall tables (e.g. Orders list) */
+.erp-table--sticky-head thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Modifier: sticky first and last columns for wide tables (e.g. Orders list) */
+.erp-table--sticky-cols th:first-child,
+.erp-table--sticky-cols td:first-child {
+    position: sticky;
+    right: 0;
+    background: var(--surface);
+    z-index: 2;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+}
+.erp-table--sticky-cols thead th:first-child {
+    background: var(--surface-alt);
+    z-index: 11;
+}
+
+.erp-table--sticky-cols th:last-child,
+.erp-table--sticky-cols td:last-child {
+    position: sticky;
+    left: 0;
+    background: var(--surface);
+    z-index: 2;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+.erp-table--sticky-cols thead th:last-child {
+    background: var(--surface-alt);
+    z-index: 11;
+}
+
+/* ==========================================================
+   PAGINATION — single source of truth for every list page
+   (previously redefined 3 times: components.css default Bootstrap
+   colors, Orders inline <style>, Users inline <style> with --bs-gray-*)
+   ========================================================== */
+.pagination {
+    gap: 4px;
+}
+
+    .pagination .page-link {
+        color: var(--primary-text);
+        border-radius: var(--radius-sm);
+        padding: 8px 14px;
+        font-weight: 500;
+        border-color: var(--border-main);
+    }
+
+        .pagination .page-link:hover {
+            background: var(--primary-soft);
+            border-color: var(--primary);
+            color: var(--primary-dark);
+        }
+
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        color: var(--text-muted);
+        background: transparent;
+        border-color: var(--border-soft);
+    }

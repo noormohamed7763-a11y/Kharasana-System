@@ -1,0 +1,398 @@
+﻿@model Kharasana.Web.ViewModels.Orders.OrdersIndexViewModel
+@using Kharasana.Web.Models.Components
+@using Kharasana.Web.Models.Components.Search
+@using Kharasana.Domain.Enums
+@using Kharasana.Web.Helpers
+
+@{
+    ViewData["Title"] = "إدارة الطلبات";
+    var totalOrders = Model.PagedOrders?.TotalCount ?? 0;
+
+    var completedCount = Model.ClosedCount;
+    var cancelledCount = Model.CancelledCount + Model.RejectedCount;
+}
+
+<div class="dashboard-page">
+
+    <!-- PAGE HEADER -->
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-box-seam",
+            Title = "إدارة الطلبات",
+            Description = "إدارة ومتابعة جميع طلبات الخرسانة داخل النظام.",
+            ActionText = "طلب جديد",
+            ActionController = "Orders",
+            ActionMethod = "Create"
+        })
+
+    <!-- SUMMARY CARDS (قابلة للنقر → قائمة الطلبات مفيتَرة بالحالة) -->
+    <div class="summary-cards-grid mb-3">
+            @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "إجمالي الطلبات",
+                            Value = totalOrders.ToString(),
+                            Icon = "bi-box-seam",
+                            IconClass = "kpi-icon-primary",
+                            LinkUrl = Url.Action("Index", "Orders")
+                        })
+            @await Html.PartialAsync(
+                        "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "قيد الانتظار",
+                            Value = Model.PendingCount.ToString(),
+                            Icon = "bi-hourglass-split",
+                            IconClass = "kpi-icon-warning",
+                            LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Pending })
+                        })
+            @await Html.PartialAsync(
+                        "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "مكتملة",
+                            Value = completedCount.ToString(),
+                            Icon = "bi-check-circle",
+                            IconClass = "kpi-icon-success",
+                            LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Closed })
+                        })
+            @await Html.PartialAsync(
+                        "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "ملغاة/مرفوضة",
+                            Value = cancelledCount.ToString(),
+                            Icon = "bi-x-circle",
+                            IconClass = "kpi-icon-danger",
+                            LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Cancelled })
+                        })
+    </div>
+
+    <!-- FILTERS & TOOLBAR -->
+    <div class="erp-toolbar d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3 p-3 bg-white rounded-3 shadow-sm border">
+        <div class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap">
+            <!-- فلتر الحالة -->
+            <div style="min-width: 160px;">
+                <select class="form-select form-select-sm" id="statusFilter" onchange="applyFilters()">
+                    <option value="">جميع الحالات</option>
+                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                    {
+                        var statusText = status.GetArabicName();
+                        var statusValue = (int)status;
+
+                        var isSelected = false;
+                        if (Model.StatusFilter != null)
+                        {
+                            try
+                            {
+                                var filterInt = Convert.ToInt32(Model.StatusFilter);
+                                isSelected = filterInt == statusValue;
+                            }
+                            catch
+                            {
+                                isSelected = false;
+                            }
+                        }
+
+                        if (isSelected)
+                        {
+                            <option value="@statusValue" selected="selected">@statusText</option>
+                        }
+                        else
+                        {
+                            <option value="@statusValue">@statusText</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- فلتر المصنع (للمدير فقط) -->
+            @if (ViewBag.ShowFactoryFilter == true)
+            {
+                <div style="min-width: 160px;">
+                    <select class="form-select form-select-sm" id="factoryFilter" onchange="applyFilters()">
+                        <option value="">جميع المصانع</option>
+                        @if (ViewBag.Factories != null)
+                        {
+                            foreach (var factory in ViewBag.Factories)
+                            {
+                                var isSelected = Model.FactoryIdFilter.HasValue && Model.FactoryIdFilter.Value.ToString() == factory.Value;
+                                if (isSelected)
+                                {
+                                    <option value="@factory.Value" selected="selected">@factory.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@factory.Value">@factory.Text</option>
+                                }
+                            }
+                        }
+                    </select>
+                </div>
+            }
+        </div>
+
+        <div>
+            @await Html.PartialAsync(
+            "~/Views/Shared/Components/_Toolbar.cshtml",
+                        new ToolbarViewModel
+                        {
+                            ShowAddButton = true,
+                            AddButtonText = "طلب جديد",
+                            AddButtonAction = "Create",
+                            AddButtonController = "Orders",
+                            ShowExport = true,
+                            ExportActionScript = "exportOrders()"
+                        })
+        </div>
+    </div>
+
+    <!-- SEARCH -->
+    <form method="get" asp-action="Index" class="mb-3" id="searchForm">
+        <div class="row align-items-center g-2">
+            <div class="col-lg-5">
+                @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_SearchBox.cshtml",
+                                new SearchBoxViewModel
+                                {
+                                    InputId = "search",
+                                    Placeholder = "ابحث باسم العميل أو رقم الطلب أو رقم الهاتف",
+                                    Value = Model.Search ?? string.Empty
+                                })
+            </div>
+            <div class="col-lg-2">
+                <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                <input type="hidden" name="status" id="statusInput" value="@((int?)Model.StatusFilter)" />
+                <input type="hidden" name="factoryId" id="factoryInput" value="@Model.FactoryIdFilter" />
+            </div>
+            <div class="col-lg-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> بحث
+                </button>
+            </div>
+            <div class="col-lg-3">
+                <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-counterclockwise"></i> إعادة تعيين
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- ORDERS TABLE -->
+    @if (Model.PagedOrders == null || !Model.PagedOrders.Items.Any())
+    {
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_EmptyState.cshtml",
+        new EmptyStateViewModel
+        {
+            ImageUrl = "/images/empty-orders.png",
+            Title = "لا توجد طلبات لعرضها",
+            Message = "قم بإنشاء طلب جديد للبدء",
+            ShowActionButton = true,
+            ActionController = "Orders",
+            ActionAction = "Create",
+            ActionText = "إنشاء طلب جديد"
+        })
+    }
+    else
+    {
+        <div class="form-card">
+            <div class="table-responsive">
+                <table class="erp-table erp-table--sticky-head" id="ordersTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>رقم الطلب</th>
+                            <th>العميل</th>
+                            <th>نوع الخرسانة</th>
+                            <th>الكمية</th>
+                            <th>السعر</th>
+                            <th>الحالة</th>
+                            <th>السائق</th>
+                            <th>تاريخ الصب</th>
+                            <th class="text-center">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var index = 1;
+                        }
+
+                        @foreach (var order in Model.PagedOrders.Items)
+                        {
+                            var statusClass = order.Status.GetCssClass();
+                            var statusText = order.Status.GetArabicName();
+
+                            <tr id="order-@order.OrderId">
+                                <td class="text-muted fw-bold">@(index++)</td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@order.OrderId"
+                                       class="order-number-chip" title="@order.OrderNumber">
+                                        <span class="order-number-seq">#@order.OrderNumberSeq</span>
+                                        <span class="order-number-date">@order.OrderNumberDate</span>
+                                    </a>
+                                </td>
+                                <td>@order.ClientName</td>
+                                <td>@order.ConcreteTypeName</td>
+                                <td>@order.Quantity م³</td>
+                                <td>@(order.TotalPrice?.ToString("N0") ?? "-") ر.ي</td>
+                                <td>
+                                    <span class="status-badge @statusClass">
+                                        @statusText
+                                    </span>
+                                </td>
+                                <td class="driver-name">
+                                    @(string.IsNullOrWhiteSpace(order.DriverName) ? "-" : order.DriverName)
+                                </td>
+                                <td>
+                                    <i class="bi bi-calendar3 text-muted me-1"></i>@order.PouringDateDisplay
+                                    @if (order.IsPouringDateToday)
+                                    {
+                                        <span class="badge bg-info ms-1">اليوم</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @* إجراءات سريعة - مشغلة من orders.js عبر data-action *@
+                                    @if (order.Status == OrderStatus.Pending &&
+                                         (User.IsInRole("Admin") || User.IsInRole("FactoryEmployee")))
+                                    {
+                                        <button type="button" class="btn btn-light border text-success"
+                                                data-action="approve" data-order-id="@order.OrderId"
+                                                title="اعتماد الطلب" data-bs-toggle="tooltip">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                    }
+                                    @if (order.Status is OrderStatus.New or OrderStatus.Pending)
+                                    {
+                                        <button type="button" class="btn btn-light border text-warning"
+                                                data-action="cancel" data-order-id="@order.OrderId"
+                                                title="إلغاء الطلب" data-bs-toggle="tooltip">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    }
+                                    @await Html.PartialAsync(
+                                    "~/Views/Shared/Components/_ActionButtons.cshtml",
+                                                        new ActionButtonsViewModel
+                                                        {
+                                                            Id = order.OrderId,
+                                                            ControllerName = "Orders",
+                                                            ShowDetails = true,
+                                                            ShowEdit = order.Status == OrderStatus.New || order.Status == OrderStatus.Pending,
+                                                            ShowDelete = User.IsInRole("Admin") && (order.Status == OrderStatus.New || order.Status == OrderStatus.Pending)
+                                                        })
+                        </td>
+                    </tr>
+                                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- PAGINATION -->
+    @if (Model.PagedOrders != null && Model.PagedOrders.TotalCount > 0)
+    {
+        var pageCount = (int)Math.Ceiling(Model.PagedOrders.TotalCount / (double)Model.PageSize);
+        var currentPage = Model.PageNumber;
+
+        <nav class="mt-4" aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                @if (currentPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-pageNumber="@(currentPage - 1)"
+                           asp-route-pageSize="@Model.PageSize"
+                           asp-route-search="@Model.Search"
+                           asp-route-status="@((int?)Model.StatusFilter)"
+                           asp-route-factoryId="@Model.FactoryIdFilter">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                }
+
+                @{
+                    int startPage = Math.Max(1, currentPage - 2);
+                    int endPage = Math.Min(pageCount, currentPage + 2);
+
+                    if (startPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index"
+                               asp-route-pageNumber="1"
+                               asp-route-pageSize="@Model.PageSize"
+                               asp-route-search="@Model.Search"
+                               asp-route-status="@((int?)Model.StatusFilter)"
+                               asp-route-factoryId="@Model.FactoryIdFilter">1</a>
+                        </li>
+                        if (startPage > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                    }
+
+                    for (int p = startPage; p <= endPage; p++)
+                    {
+                        <li class="page-item @(p == currentPage ? "active" : "")">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-pageNumber="@p"
+                               asp-route-pageSize="@Model.PageSize"
+                               asp-route-search="@Model.Search"
+                               asp-route-status="@((int?)Model.StatusFilter)"
+                               asp-route-factoryId="@Model.FactoryIdFilter">@p</a>
+                        </li>
+                    }
+
+                    if (endPage < pageCount)
+                    {
+                        if (endPage < pageCount - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index"
+                               asp-route-pageNumber="@pageCount"
+                               asp-route-pageSize="@Model.PageSize"
+                               asp-route-search="@Model.Search"
+                               asp-route-status="@((int?)Model.StatusFilter)"
+                               asp-route-factoryId="@Model.FactoryIdFilter">@pageCount</a>
+                        </li>
+                    }
+                }
+
+                @if (currentPage < pageCount)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-pageNumber="@(currentPage + 1)"
+                           asp-route-pageSize="@Model.PageSize"
+                           asp-route-search="@Model.Search"
+                           asp-route-status="@((int?)Model.StatusFilter)"
+                           asp-route-factoryId="@Model.FactoryIdFilter">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+        <div class="text-center text-muted mt-2 small">
+            عرض @(((currentPage - 1) * Model.PageSize) + 1) - @(Math.Min(currentPage * Model.PageSize, Model.PagedOrders.TotalCount))
+            من إجمالي @Model.PagedOrders.TotalCount طلب
+            @if (!string.IsNullOrWhiteSpace(Model.Search))
+            {
+                <span> - نتائج البحث: "@Model.Search"</span>
+            }
+        </div>
+    }
+
+</div>
+
+<!-- تم نقل تنسيقات هذه الصفحة إلى wwwroot/css/orders.css (ملف مركزي موحّد) -->
+@section Scripts {
+    <script src="~/js/orders.js" asp-append-version="true"></script>
+}

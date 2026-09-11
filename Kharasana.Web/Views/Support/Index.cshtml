@@ -1,0 +1,300 @@
+@using Kharasana.Web.Models.Components
+@{
+    ViewData["Title"] = "الدعم والمساعدة";
+
+    // ===== روابط التواصل مع الدعم =====
+    // رسالة واتساب جاهزة (مُشفَّرة تلقائياً لتُناسب رابط wa.me)
+    var whatsappMessage = System.Net.WebUtility.UrlEncode("مرحباً محمد، أتواصل معك بخصوص نظام Kharasana ERP");
+    var whatsappUrl = $"https://wa.me/967776398980?text={whatsappMessage}";
+    var phoneUrl = "tel:+967776398980";
+}
+
+<div class="dashboard-page">
+
+    <!-- S0. Page Header Component -->
+    <partial name="Components/_PageHeader"
+             model='new PageHeaderViewModel
+             {
+                 Title = "الدعم والمساعدة",
+                 Description = "كل ما تحتاجه لاستخدام النظام وإدارة عمليات المصنع بسهولة",
+                 Icon = "bi-headset"
+             }' />
+
+    <!-- S1. Hero صغير ومركّز (لا يأخذ مساحة رأسية كبيرة) -->
+    <div class="erp-section-card support-hero mb-4">
+        <i class="bi bi-headset-fill"></i>
+        <h5>كيف يمكننا مساعدتك؟</h5>
+        <p>استعرض دليل الاستخدام والأسئلة الشائعة، أو تواصل مع الدعم عند الحاجة.</p>
+    </div>
+
+    <!-- S2. دليل الاستخدام السريع -->
+    <div class="mb-4">
+        <div class="mb-3">
+            <h5 class="erp-section-title"><i class="bi bi-book"></i>دليل الاستخدام السريع</h5>
+        </div>
+        <div class="row g-3">
+
+            <!-- إدارة الطلبات -->
+            <div class="col-lg-4 col-md-6">
+                <a asp-controller="Orders" asp-action="Index" class="guide-card">
+                    <div class="guide-card-top">
+                        <div class="guide-card-icon kpi-icon-primary"><i class="bi bi-clipboard-check"></i></div>
+                        <i class="bi bi-arrow-left guide-card-arrow"></i>
+                    </div>
+                    <div class="guide-card-title">إدارة الطلبات</div>
+                    <p class="guide-card-desc">متابعة الطلبات، فلتـرتها حسب الحالة، والبحث برقم الطلب أو اسم العميل.</p>
+                </a>
+            </div>
+
+            <!-- إنشاء طلب جديد -->
+            <div class="col-lg-4 col-md-6">
+                <a asp-controller="Orders" asp-action="Create" class="guide-card">
+                    <div class="guide-card-top">
+                        <div class="guide-card-icon kpi-icon-success"><i class="bi bi-plus-circle"></i></div>
+                        <i class="bi bi-arrow-left guide-card-arrow"></i>
+                    </div>
+                    <div class="guide-card-title">إنشاء طلب جديد</div>
+                    <p class="guide-card-desc">إضافة طلب خرسانة جديد مع تحديد نوع الخرسانة والكمية والعميل.</p>
+                </a>
+            </div>
+
+            <!-- العملاء -->
+            <div class="col-lg-4 col-md-6">
+                <a asp-controller="Clients" asp-action="Index" class="guide-card">
+                    <div class="guide-card-top">
+                        <div class="guide-card-icon kpi-icon-info"><i class="bi bi-people-fill"></i></div>
+                        <i class="bi bi-arrow-left guide-card-arrow"></i>
+                    </div>
+                    <div class="guide-card-title">العملاء</div>
+                    <p class="guide-card-desc">عرض بيانات العملاء المرتبطة بعمليات المصنع والبحث عنهم.</p>
+                </a>
+            </div>
+
+            <!-- السائقون -->
+            <div class="col-lg-4 col-md-6">
+                <a asp-controller="Drivers" asp-action="Index" class="guide-card">
+                    <div class="guide-card-top">
+                        <div class="guide-card-icon kpi-icon-warning"><i class="bi bi-truck"></i></div>
+                        <i class="bi bi-arrow-left guide-card-arrow"></i>
+                    </div>
+                    <div class="guide-card-title">السائقون</div>
+                    <p class="guide-card-desc">متابعة السائقين المتاحين وحالتهم التشغيلية في المصنع.</p>
+                </a>
+            </div>
+
+            <!-- أنواع الخرسانة -->
+            <div class="col-lg-4 col-md-6">
+                <a asp-controller="ConcreteTypes" asp-action="Index" class="guide-card">
+                    <div class="guide-card-top">
+                        <div class="guide-card-icon kpi-icon-purple"><i class="bi bi-box-seam"></i></div>
+                        <i class="bi bi-arrow-left guide-card-arrow"></i>
+                    </div>
+                    <div class="guide-card-title">أنواع الخرسانة</div>
+                    <p class="guide-card-desc">إدارة أنواع الخرسانة المتاحة والأسعار المرتبطة بها.</p>
+                </a>
+            </div>
+
+            <!-- إعدادات المصنع -->
+            <div class="col-lg-4 col-md-6">
+                <a asp-controller="Settings" asp-action="Index" class="guide-card">
+                    <div class="guide-card-top">
+                        <div class="guide-card-icon kpi-icon-neutral"><i class="bi bi-gear"></i></div>
+                        <i class="bi bi-arrow-left guide-card-arrow"></i>
+                    </div>
+                    <div class="guide-card-title">إعدادات المصنع</div>
+                    <p class="guide-card-desc">عرض بيانات المصنع وإدارة شعاره.</p>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- S3. الأسئلة الشائعة -->
+    <div class="mb-4">
+        <div class="mb-3">
+            <h5 class="erp-section-title"><i class="bi bi-question-circle"></i>الأسئلة الشائعة</h5>
+        </div>
+        <div class="support-faq">
+            <div class="accordion" id="supportFaqAccordion">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="false" aria-controls="faq1">
+                            كيف أضيف طلباً جديداً؟
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#supportFaqAccordion">
+                        <div class="accordion-body">
+                            يمكنك إنشاء طلب جديد من شريط الإجراءات السريعة في لوحة التحكم عبر زر <strong>"إنشاء طلب جديد"</strong>، أو من صفحة الطلبات. اختر نوع الخرسانة والعميل وأكمل البيانات المطلوبة ثم احفظ.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false" aria-controls="faq2">
+                            كيف أتابع حالة الطلب؟
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#supportFaqAccordion">
+                        <div class="accordion-body">
+                            من صفحة <strong>الطلبات</strong> استخدم فلاتر الحالة (جديد، قيد الانتظار، معتمد، في الطريق، مسلّم...) أو ابحث برقم الطلب أو اسم العميل. وتُعرض حالة كل طلب داخل تفاصيله.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false" aria-controls="faq3">
+                            كيف أعدّل بيانات طلب؟
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#supportFaqAccordion">
+                        <div class="accordion-body">
+                            افتح تفاصيل الطلب واضغط زر <strong>"تعديل"</strong>. لكن يُسمح بالتعديل فقط عندما يكون الطلب في حالة <strong>"جديد"</strong> أو <strong>"قيد الانتظار"</strong>؛ بعد اعتماده أو تغيير حالته يُمنع التعديل لحماية البيانات.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" aria-expanded="false" aria-controls="faq4">
+                            كيف أعيّن سائقاً للطلب؟
+                        </button>
+                    </h2>
+                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#supportFaqAccordion">
+                        <div class="accordion-body">
+                            من تفاصيل الطلب، اختر السائق المتاح من القائمة المنسدلة واضغط <strong>"تعيين سائق"</strong>. تُعرض في القائمة فقط السائقون المتاحون والجاهزون للعمل في مصنعك.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" aria-expanded="false" aria-controls="faq5">
+                            كيف أبدأ التوصيل وأُعلِم بتمام التسليم؟
+                        </button>
+                    </h2>
+                    <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#supportFaqAccordion">
+                        <div class="accordion-body">
+                            <ol class="mb-0">
+                                <li>بعد تعيين السائق، اضغط <strong>"بدء التوصيل"</strong> من تفاصيل الطلب لتتحول حالته إلى "في الطريق".</li>
+                                <li>عند وصول الشاحنة إلى الموقع، اضغط <strong>"تم التسليم"</strong> لتصبح حالة الطلب "مسلّم".</li>
+                                <li>يمكنك بعدها إغلاق الطلب لإنهائه نهائياً.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6" aria-expanded="false" aria-controls="faq6">
+                            لماذا لا يمكنني تعديل طلب بعد اعتماده؟
+                        </button>
+                    </h2>
+                    <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#supportFaqAccordion">
+                        <div class="accordion-body">
+                            بمجرد اعتماد الطلب أو تغيير حالته من "جديد" أو "قيد الانتظار"، يُقفل التعديل لحماية سجل الطلب من الأخطاء. إذا احتجت لتغيير ضروري في طلب معتمد، تواصل مع الدعم.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7" aria-expanded="false" aria-controls="faq7">
+                            ماذا أفعل إذا لم أجد طلباً في القائمة؟
+                        </button>
+                    </h2>
+                    <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#supportFaqAccordion">
+                        <div class="accordion-body">
+                            تأكد أولاً من إزالة أي فلتر حالة نشط، وجرّب البحث برقم الطلب أو اسم العميل. تذكّر أن صفحة الطلبات قد تعرض طلبات اليوم فقط أو حسب الفلتر المحدد؛ امسح الفلاتر للعثور على كل الطلبات.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8" aria-expanded="false" aria-controls="faq8">
+                            ماذا أفعل إذا واجهت مشكلة في النظام؟
+                        </button>
+                    </h2>
+                    <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#supportFaqAccordion">
+                        <div class="accordion-body">
+                            جرّب تحديث الصفحة أو تسجيل الخروج والدخول مجدداً. إذا استمرت المشكلة، تواصل مع مطوّر النظام عبر الزر أدناه في قسم <strong>"الإبلاغ عن مشكلة"</strong> واذكر رقم الطلب أو الخطوة التي سبقت المشكلة لتسريع الحل.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- S4. الإبلاغ عن مشكلة -->
+    <div class="erp-section-card mb-4">
+        <div class="d-flex flex-column flex-md-row align-items-md-center gap-3 justify-content-between">
+            <div class="d-flex align-items-start gap-3">
+                <div class="kpi-icon kpi-icon-danger flex-shrink-0"><i class="bi bi-life-preserver"></i></div>
+                <div>
+                    <h6 class="fw-bold mb-1">الإبلاغ عن مشكلة</h6>
+                    <p class="text-muted mb-0" style="font-size: var(--text-sm); line-height: 1.7;">
+                        واجهت خطأ أو خللاً في النظام؟ تواصل مباشرة مع الدعم عبر واتساب وسيتم الرد عليك في أقرب وقت.
+                    </p>
+                </div>
+            </div>
+            <a href="@whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-whatsapp">
+                <i class="bi bi-whatsapp"></i>
+                تواصل عبر واتساب
+            </a>
+        </div>
+    </div>
+
+    <!-- S5. معلومات النظام -->
+    <div class="erp-section-card mb-4">
+        <div class="mb-3">
+            <h5 class="erp-section-title"><i class="bi bi-info-circle"></i>معلومات النظام</h5>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="system-info-box">
+                    <span class="system-info-label">اسم النظام</span>
+                    <h6 class="system-info-value">Kharasana ERP</h6>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="system-info-box">
+                    <span class="system-info-label">نوع النظام</span>
+                    <h6 class="system-info-value">نظام إدارة وتشغيل مصانع الخرسانة</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- S6. المطور -->
+    <div class="erp-section-card developer-card">
+        <div class="d-flex flex-column flex-md-row align-items-md-center gap-3 justify-content-between">
+            <div class="d-flex align-items-start gap-3">
+                <div class="kpi-icon kpi-icon-purple flex-shrink-0"><i class="bi bi-code-slash"></i></div>
+                <div>
+                    <h6 class="fw-bold mb-1">محمد عبدالفتاح المخلافي</h6>
+                    <small class="text-muted d-block mb-2">مطوّر ومبرمج نظام Kharasana ERP</small>
+                    <p class="mb-0 text-muted" style="font-size: var(--text-sm); line-height: 1.8;">
+                        تم تصميم وتطوير نظام Kharasana ERP بهدف تقديم نظام إداري وتشغيلي حديث يساعد
+                        مصانع الخرسانة على تنظيم الطلبات والعملاء والسائقين ومتابعة العمليات اليومية
+                        بكفاءة وسهولة، مع التركيز على سهولة الاستخدام ووضوح المعلومات ضمن واجهة عربية حديثة ومتكاملة.
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2 flex-shrink-0">
+                <a href="@phoneUrl" class="btn btn-outline-primary">
+                    <i class="bi bi-telephone"></i>
+                    776398980
+                </a>
+                <a href="@whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-whatsapp">
+                    <i class="bi bi-whatsapp"></i>
+                    تواصل عبر واتساب
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>

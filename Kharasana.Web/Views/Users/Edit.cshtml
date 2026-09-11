@@ -1,0 +1,159 @@
+﻿@model Kharasana.Web.Models.Users.UpdateUserViewModel
+@using Kharasana.Domain.Enums
+@using Kharasana.Web.Models.Components
+
+@{
+    ViewData["Title"] = "تعديل المستخدم";
+}
+
+<div class="dashboard-page">
+
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-pencil",
+            Title = "تعديل المستخدم",
+            Description = "تحديث بيانات المستخدم ودوره وحالته."
+        })
+
+    <div class="form-card">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+            {
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    يرجى تصحيح الأخطاء أدناه.
+                </div>
+            }
+
+            <div class="row g-3">
+                <!-- الاسم الكامل -->
+                <div class="col-md-6">
+                    <label asp-for="FullName" class="form-label">
+                        <span class="text-danger">*</span> @Html.DisplayNameFor(m => m.FullName)
+                    </label>
+                    <input asp-for="FullName" class="form-control" placeholder="أدخل الاسم الكامل" />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+                <!-- البريد الإلكتروني -->
+                <div class="col-md-6">
+                    <label asp-for="Email" class="form-label">@Html.DisplayNameFor(m => m.Email)</label>
+                    <input asp-for="Email" class="form-control" placeholder="example@domain.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <!-- رقم الهاتف -->
+                <div class="col-md-4">
+                    <label asp-for="Phone" class="form-label">@Html.DisplayNameFor(m => m.Phone)</label>
+                    <input asp-for="Phone" class="form-control" placeholder="777123456" />
+                    <span asp-validation-for="Phone" class="text-danger small"></span>
+                    <small class="text-muted">مثال: 777123456 (9 أرقام تبدأ بـ 7)</small>
+                </div>
+
+                <!-- رقم الواتساب -->
+                <div class="col-md-4">
+                    <label asp-for="WhatsApp" class="form-label">@Html.DisplayNameFor(m => m.WhatsApp)</label>
+                    <input asp-for="WhatsApp" class="form-control" placeholder="777123456" />
+                    <span asp-validation-for="WhatsApp" class="text-danger small"></span>
+                    <small class="text-muted">مثال: 777123456 (9 أرقام تبدأ بـ 7)</small>
+                </div>
+
+                <!-- الدور -->
+                <div class="col-md-4">
+                    <label asp-for="Role" class="form-label">
+                        <span class="text-danger">*</span> @Html.DisplayNameFor(m => m.Role)
+                    </label>
+                    <select asp-for="Role" class="form-select" asp-items="Html.GetEnumSelectList<UserRole>()">
+                        <option value="">-- اختر الدور --</option>
+                    </select>
+                    <span asp-validation-for="Role" class="text-danger small"></span>
+                </div>
+
+                <!-- رقم الرخصة (يظهر فقط للسائق) -->
+                <div class="col-md-6" id="licenseNumberGroup" style="display: none;">
+                    <label asp-for="LicenseNumber" class="form-label">@Html.DisplayNameFor(m => m.LicenseNumber)</label>
+                    <input asp-for="LicenseNumber" class="form-control" placeholder="رقم الرخصة" />
+                    <span asp-validation-for="LicenseNumber" class="text-danger small"></span>
+                </div>
+
+                <!-- حالة السائق (يظهر فقط للسائق) -->
+                <div class="col-md-6" id="driverStatusGroup" style="display: none;">
+                    <label asp-for="DriverStatus" class="form-label">@Html.DisplayNameFor(m => m.DriverStatus)</label>
+                    <select asp-for="DriverStatus" class="form-select" asp-items="Html.GetEnumSelectList<DriverStatus>()">
+                        <option value="">-- اختر الحالة --</option>
+                    </select>
+                    <span asp-validation-for="DriverStatus" class="text-danger small"></span>
+                </div>
+
+                <!-- المصنع (يظهر فقط للسائق وموظف المصنع) -->
+                <div class="col-md-6" id="factoryGroup" style="display: none;">
+                    <label asp-for="FactoryId" class="form-label">
+                        <span class="text-danger" id="factoryRequired" style="display: none;">*</span>
+                        @Html.DisplayNameFor(m => m.FactoryId)
+                    </label>
+                    <input asp-for="FactoryId" class="form-control" type="number" placeholder="أدخل معرف المصنع" />
+                    <span asp-validation-for="FactoryId" class="text-danger small"></span>
+                    <small class="text-muted" id="factoryNote" style="display: none;">مطلوب للسائق وموظف المصنع.</small>
+                </div>
+
+                <!-- الحالة (نشط/موقوف) -->
+                <div class="col-md-6">
+                    <label asp-for="IsActive" class="form-label">@Html.DisplayNameFor(m => m.IsActive)</label>
+                    <select asp-for="IsActive" class="form-select">
+                        <option value="true">نشط</option>
+                        <option value="false">موقوف</option>
+                    </select>
+                    <span asp-validation-for="IsActive" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- أزرار التحكم -->
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i>
+                    تحديث
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right"></i>
+                    العودة
+                </a>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function () {
+            function toggleFields(role) {
+                var isDriver = role === '@UserRole.Driver.ToString()';
+                var isEmployee = role === '@UserRole.FactoryEmployee.ToString()';
+
+                $('#licenseNumberGroup').toggle(isDriver);
+                $('#driverStatusGroup').toggle(isDriver);
+                $('#factoryGroup').toggle(isDriver || isEmployee);
+
+                if (isDriver || isEmployee) {
+                    $('#factoryRequired').show();
+                    $('#factoryNote').show();
+                } else {
+                    $('#factoryRequired').hide();
+                    $('#factoryNote').hide();
+                }
+            }
+
+            $('#Role').change(function () {
+                toggleFields($(this).val());
+            });
+
+            toggleFields($('#Role').val());
+        });
+    </script>
+}

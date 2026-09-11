@@ -1,0 +1,49 @@
+@*
+    ============================================================
+    UNIFIED ALERTS — الجزء الموحّد لعرض رسائل TempData.
+    متضمن داخل _Layout في بداية كل صفحة، فيقرأ الرسائل التالية:
+      - Success (أو SuccessMessage القديمة)
+      - Error   (أو ErrorMessage القديمة)
+      - Info    / Warning
+    تستخدم الـ Controllers الثوابت من BaseController:
+      TempData[TempDataSuccess] / TempData[TempDataError] / ...
+    ============================================================
+*@
+@{
+    var success = TempData["Success"]?.ToString() ?? TempData["SuccessMessage"]?.ToString();
+    var error = TempData["Error"]?.ToString() ?? TempData["ErrorMessage"]?.ToString();
+    var info = TempData["Info"]?.ToString();
+    var warning = TempData["Warning"]?.ToString();
+}
+
+@if (!string.IsNullOrEmpty(success))
+{
+    <div class="alert alert-success app-alert show" role="alert">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        @success
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger app-alert show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        @error
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(warning))
+{
+    <div class="alert alert-warning app-alert show" role="alert">
+        <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+        @warning
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(info))
+{
+    <div class="alert alert-info app-alert show" role="alert">
+        <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+        @info
+    </div>
+}

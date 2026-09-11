@@ -1,0 +1,28 @@
+@model Kharasana.Web.Models.Components.SummaryCardViewModel
+
+@{
+    var hasLink = !string.IsNullOrWhiteSpace(Model.LinkUrl);
+    var tag = hasLink ? "a" : "div";
+}
+
+<@tag class="kpi-card@(hasLink ? " kpi-card--link" : "")"
+      href="@(hasLink ? Model.LinkUrl : null)"
+      aria-label="@(hasLink ? Model.Title : null)">
+
+    <div class="kpi-header">
+
+        <div class="kpi-title">
+            @Model.Title
+        </div>
+
+        <div class="kpi-icon @Model.IconClass">
+            <i class="bi @Model.Icon"></i>
+        </div>
+
+    </div>
+
+    <div class="kpi-value" data-count="@Model.Value">
+        @Model.Value
+    </div>
+
+</@tag>

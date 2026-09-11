@@ -1,0 +1,139 @@
+@model IEnumerable<Kharasana.Web.Models.Factories.FactoryListItemViewModel>
+@using Kharasana.Web.Models.Components
+
+<div class="erp-section-card bg-white p-4 rounded-3 shadow-sm border">
+    <div class="table-responsive">
+        <table class="table erp-table erp-table--sticky-cols align-middle mb-0 table-hover" id="factoriesTable">
+            <thead class="table-light">
+                <tr>
+                    <th class="py-3">#</th>
+                    <th class="py-3">الشعار</th>
+                    <th class="py-3">اسم المصنع</th>
+                    <th class="py-3">المالك</th>
+                    <th class="py-3">الهاتف</th>
+                    <th class="py-3">المنطقة</th>
+                    <th class="py-3">حساب المصنع</th>
+                    <th class="py-3">الحالة</th>
+                    <th class="text-center py-3" style="width:170px;">الإجراءات</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @if (Model != null && Model.Any())
+                {
+                    var index = 1;
+
+                    foreach (var item in Model)
+                    {
+                        <tr data-status="@(item.IsActive ? "active" : "inactive")">
+
+                            <td class="text-muted fw-bold">
+                                @(index++)
+                            </td>
+
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.Logo))
+                                {
+                                    <img src="@item.Logo"
+                                         alt="شعار @item.FactoryName"
+                                         loading="lazy"
+                                         data-name="@item.FactoryName"
+                                         style="width:40px; height:40px; object-fit:cover; border-radius:50%; border:2px solid #e9ecef; background:#f8f9fa;"
+                                         onerror="handleLogoError(this);" />
+                                }
+                                else
+                                {
+                                    <div class="factory-avatar bg-light border rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold"
+                                         style="width:40px;height:40px;font-size:14px;"
+                                         aria-label="شعار @item.FactoryName">
+                                        @(string.IsNullOrWhiteSpace(item.FactoryName)
+                                                                    ? "--"
+                                                                    : item.FactoryName[..Math.Min(2, item.FactoryName.Length)])
+                                    </div>
+                                }
+                            </td>
+
+                            <td class="fw-bold text-dark">
+                                @item.FactoryName
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(item.OwnerName) ? "-" : item.OwnerName)
+                            </td>
+
+                            <td dir="ltr" class="text-end">
+                                @(string.IsNullOrWhiteSpace(item.Phone) ? "-" : item.Phone)
+                            </td>
+
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    @(string.IsNullOrWhiteSpace(item.Area) ? "-" : item.Area)
+                                </span>
+                            </td>
+
+                            <td>
+                                @if (item.HasAccount)
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        يوجد حساب
+                                    </span>
+                                }
+                                else
+                                {
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-primary"
+                                            onclick="openCreateAccountModal(@item.FactoryId,'@item.FactoryName')">
+                                        <i class="bi bi-person-plus"></i>
+                                        إنشاء حساب
+                                    </button>
+                                }
+                            </td>
+
+                            <td>
+                                <partial name="Components/_StatusBadge"
+                                         model='new StatusBadgeViewModel
+                                         {
+                                             Text = item.IsActive ? "نشط" : "متوقف",
+                                             CssClass = item.IsActive ? "status-success" : "status-danger"
+                                         }' />
+                    </td>
+
+                            <td class="text-center">
+                                <partial name="Components/_ActionButtons"
+                                         model='new ActionButtonsViewModel
+                                 {
+                                     Id = item.FactoryId,
+                                     ControllerName = "Factories",
+                                     ShowDelete = true
+                                 }' />
+                    </td>
+
+                </tr>
+                                }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="9" class="p-0 border-0">
+
+                            <partial name="Components/_EmptyState"
+                                     model='new EmptyStateViewModel
+                                     {
+                                         Title = "لا توجد مصانع مسجلة حالياً",
+                                         Message = "قم بإضافة أول مصنع لبدء إدارة عمليات النظام.",
+                                         ShowActionButton = true,
+                                         ActionText = "إضافة مصنع جديد",
+                                         ActionController = "Factories",
+                                         ActionAction = "Create"
+                                     }' />
+
+                    </td>
+                </tr>
+                                }
+
+            </tbody>
+        </table>
+    </div>
+</div>

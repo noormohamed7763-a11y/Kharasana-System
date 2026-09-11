@@ -1,0 +1,40 @@
+﻿/* ==========================================================
+   UTILITIES & HELPERS (Kharasana ERP)
+   ========================================================== */
+
+/* Bootstrap already ships .w-100 / .h-100 / .d-flex / .mt-4 / .mb-4 / .fw-bold
+   with identical values, so they are intentionally NOT redefined here to avoid
+   silent cascade conflicts. Only classes that either have a unique name or
+   deliberately re-map Bootstrap's default color/spacing to Kharasana's own
+   design tokens live in this file. */
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.align-center {
+    align-items: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-2 {
+    gap: var(--space-2);
+}
+
+.gap-3 {
+    gap: var(--space-3);
+}
+
+/* Re-map Bootstrap's default text-muted/text-primary colors to the design tokens
+   so every ".text-muted"/".text-primary" usage across the app (Bootstrap-native
+   pages included) stays visually consistent with the orange brand palette. */
+.text-muted {
+    color: var(--text-muted);
+}
+
+.text-primary {
+    color: var(--primary-text);
+}

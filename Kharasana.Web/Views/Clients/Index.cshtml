@@ -1,0 +1,144 @@
+@model Kharasana.Web.ViewModels.Clients.ClientsIndexViewModel
+@using Kharasana.Web.Models.Components
+@using Kharasana.Web.Models.Components.Search
+
+@{
+    ViewData["Title"] = "إدارة العملاء";
+
+    var totalClients = Model.PagedClients?.TotalCount ?? 0;
+    var totalOrders = Model.PagedClients?.Items?.Sum(c => c.OrdersCount) ?? 0;
+    var totalQuantity = Model.PagedClients?.Items?.Sum(c => c.TotalQuantity) ?? 0;
+    var activeClients = Model.PagedClients?.Items?.Count(c => c.OrdersCount > 0) ?? 0;
+}
+
+<div class="dashboard-page">
+
+    <!-- رأس الصفحة -->
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-people-fill",
+            Title = "إدارة العملاء",
+            Description = "عرض العملاء الذين لديهم تعاملات فعلية مع المصنع، مستخرجين من سجل الطلبات."
+        })
+
+    <!-- بطاقات الإحصائيات -->
+    <div class="summary-cards-grid mb-3">
+            @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "إجمالي العملاء",
+                            Value = totalClients.ToString(),
+                            Icon = "bi-people",
+                            IconClass = "kpi-icon-primary"
+                        })
+            @await Html.PartialAsync(
+                        "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "عملاء لديهم طلبات",
+                            Value = activeClients.ToString(),
+                            Icon = "bi-person-check",
+                            IconClass = "kpi-icon-success"
+                        })
+            @await Html.PartialAsync(
+                        "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "إجمالي الطلبات (هذه الصفحة)",
+                            Value = totalOrders.ToString(),
+                            Icon = "bi-box-seam",
+                            IconClass = "kpi-icon-info"
+                        })
+            @await Html.PartialAsync(
+                        "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "إجمالي الكمية (م³)",
+                            Value = totalQuantity.ToString("N0"),
+                            Icon = "bi-truck",
+                            IconClass = "kpi-icon-warning"
+                        })
+    </div>
+
+    <!-- شريط الأدوات -->
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_Toolbar.cshtml",
+        new ToolbarViewModel
+        {
+            ShowAddButton = true,
+            AddButtonText = "إضافة عميل",
+            AddButtonAction = "Create",
+            AddButtonController = "Clients",
+            ShowExport = false
+        })
+
+    <!-- نموذج البحث -->
+    <form method="get" asp-action="Index" class="mb-3">
+        <div class="row align-items-center">
+            <div class="col-lg-5">
+                @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_SearchBox.cshtml",
+                                new SearchBoxViewModel
+                                {
+                                    InputId = "search",
+                                    Placeholder = "ابحث بالاسم أو رقم الهاتف",
+                                    Value = Model.Search ?? string.Empty
+                                })
+            </div>
+            <div class="col-lg-2">
+                <input type="hidden" name="pageSize" value="@Model.PageSize" />
+            </div>
+            <div class="col-lg-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> بحث
+                </button>
+            </div>
+            <div class="col-lg-3">
+                <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-counterclockwise"></i> إعادة تعيين
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- جدول العملاء -->
+    @if (Model.PagedClients == null || !Model.PagedClients.Items.Any())
+    {
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_EmptyState.cshtml",
+        new EmptyStateViewModel
+        {
+            ImageUrl = "/images/empty-clients.png",
+            Title = "لا يوجد عملاء لعرضهم حاليًا."
+        })
+    }
+    else
+    {
+        <partial name="_ClientTable" model="Model.PagedClients.Items" />
+    }
+
+    <!-- الترقيم -->
+    @if (Model.PagedClients != null && Model.PagedClients.TotalCount > 0)
+    {
+        var pageCount = (int)Math.Ceiling(Model.PagedClients.TotalCount / (double)Model.PageSize);
+
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                @for (int p = 1; p <= pageCount; p++)
+                {
+                    <li class="page-item @(p == Model.PageNumber ? "active" : "")">
+                        <a class="page-link"
+                           asp-action="Index"
+                           asp-route-pageNumber="@p"
+                           asp-route-pageSize="@Model.PageSize"
+                           asp-route-search="@Model.Search">@p</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+
+</div>

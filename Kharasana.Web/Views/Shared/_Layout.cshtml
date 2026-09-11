@@ -1,0 +1,84 @@
+﻿@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    var tokens = Antiforgery.GetAndStoreTokens(Context);
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] | Kharasana</title>
+
+    <script type="importmap"></script>
+
+    <!-- CSRF token for AJAX -->
+    <meta name="csrf-token" content="@tokens.RequestToken" />
+
+    <!-- Global Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap & Icons (RTL لتناسق التطبيق العربي) -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Kharasana Design System Stylesheets (Strict Order) -->
+    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sidebar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/support.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/utilities.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <!-- NOTE: login.css is intentionally NOT loaded here.
+         Login.cshtml sets Layout = null and loads login.css in its own <head>.
+         Loading it globally previously polluted every page's body/.form-control/.form-label. -->
+    <!-- ASP.NET Core CSS Isolation -->
+    <link rel="stylesheet" href="~/Kharasana.Web.styles.css" asp-append-version="true" />
+</head>
+
+<body>
+    <a class="skip-link" href="#main-content">تجاوز إلى المحتوى</a>
+
+    <div class="wrapper">
+
+        <!-- Sidebar -->
+        @await Html.PartialAsync("_Sidebar")
+
+        <!-- Main Content -->
+        <div class="main-content" id="main-content">
+
+            <!-- Navbar -->
+            @await Html.PartialAsync("_Navbar")
+
+            <!-- Page Content -->
+            <div class="content-body">
+
+                <!-- رسائل النجاح/الخطأ الموحّدة من TempData -->
+                @await Html.PartialAsync("Components/_Alerts")
+
+                @RenderBody()
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- JavaScript -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/sidebar-toggle.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+﻿@model Kharasana.Web.Models.Components.QuickActionButtonViewModel
+
+<a asp-controller="@Model.Controller"
+   asp-action="@Model.Action"
+   class="quick-action-btn @Model.CssClass text-decoration-none">
+
+    <div class="quick-action-icon">
+        <i class="bi @Model.Icon"></i>
+    </div>
+
+    <div class="quick-action-content">
+        <h6>@Model.Text</h6>
+        <small>@Model.Description</small>
+    </div>
+
+</a>

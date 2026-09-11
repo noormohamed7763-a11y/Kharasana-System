@@ -1,0 +1,143 @@
+@model Kharasana.Web.ViewModels.Drivers.DriversIndexViewModel
+@using Kharasana.Web.Models.Components
+@using Kharasana.Web.Models.Components.Search
+@using Kharasana.Domain.Enums
+
+@{
+    ViewData["Title"] = "إدارة السائقين";
+
+    var totalDrivers = Model.PagedDrivers?.TotalCount ?? 0;
+    var availableCount = Model.PagedDrivers?.Items?.Count(d => d.DriverStatus == DriverStatus.Available) ?? 0;
+    var busyCount = Model.PagedDrivers?.Items?.Count(d => d.DriverStatus == DriverStatus.Busy) ?? 0;
+    var offlineCount = Model.PagedDrivers?.Items?.Count(d => d.DriverStatus == DriverStatus.Offline) ?? 0;
+}
+
+<div class="dashboard-page">
+
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-truck",
+            Title = "إدارة السائقين",
+            Description = "عرض وإدارة سائقي المصنع، حالتهم، وبيانات رخصهم."
+        })
+
+    <div class="summary-cards-grid mb-3">
+            @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "إجمالي السائقين",
+                            Value = totalDrivers.ToString(),
+                            Icon = "bi-people",
+                            IconClass = "kpi-icon-primary",
+                            LinkUrl = Url.Action("Index", "Drivers")
+                        })
+            @await Html.PartialAsync(
+                        "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "متاحون",
+                            Value = availableCount.ToString(),
+                            Icon = "bi-person-check",
+                            IconClass = "kpi-icon-success",
+                            LinkUrl = Url.Action("Index", "Drivers")
+                        })
+            @await Html.PartialAsync(
+                        "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "مشغولون",
+                            Value = busyCount.ToString(),
+                            Icon = "bi-truck",
+                            IconClass = "kpi-icon-warning",
+                            LinkUrl = Url.Action("Index", "Drivers")
+                        })
+            @await Html.PartialAsync(
+                        "~/Views/Shared/Components/_SummaryCard.cshtml",
+                        new SummaryCardViewModel
+                        {
+                            Title = "غير متصلين",
+                            Value = offlineCount.ToString(),
+                            Icon = "bi-power",
+                            IconClass = "kpi-icon-neutral",
+                            LinkUrl = Url.Action("Index", "Drivers")
+                        })
+    </div>
+
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_Toolbar.cshtml",
+        new ToolbarViewModel
+        {
+            ShowAddButton = true,
+            AddButtonText = "إضافة سائق",
+            AddButtonAction = "Create",
+            AddButtonController = "Drivers",
+            ShowExport = false
+        })
+
+    <form method="get" asp-action="Index" class="mb-3">
+        <div class="row align-items-center">
+            <div class="col-lg-5">
+                @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_SearchBox.cshtml",
+                                new SearchBoxViewModel
+                                {
+                                    InputId = "search",
+                                    Placeholder = "ابحث بالاسم أو رقم الهاتف",
+                                    Value = Model.Search ?? string.Empty
+                                })
+            </div>
+            <div class="col-lg-2">
+                <input type="hidden" name="pageSize" value="@Model.PageSize" />
+            </div>
+            <div class="col-lg-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> بحث
+                </button>
+            </div>
+            <div class="col-lg-3">
+                <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-counterclockwise"></i> إعادة تعيين
+                </a>
+            </div>
+        </div>
+    </form>
+
+    @if (Model.PagedDrivers == null || !Model.PagedDrivers.Items.Any())
+    {
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_EmptyState.cshtml",
+        new EmptyStateViewModel
+        {
+            ImageUrl = "/images/empty-drivers.png",
+            Title = "لا يوجد سائقون لعرضهم حاليًا."
+        })
+    }
+    else
+    {
+        <partial name="_DriverTable" model="Model.PagedDrivers.Items" />
+    }
+
+    @if (Model.PagedDrivers != null && Model.PagedDrivers.TotalCount > 0)
+    {
+        var pageCount = (int)Math.Ceiling(Model.PagedDrivers.TotalCount / (double)Model.PageSize);
+
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                @for (int p = 1; p <= pageCount; p++)
+                {
+                    <li class="page-item @(p == Model.PageNumber ? "active" : "")">
+                        <a class="page-link"
+                           asp-action="Index"
+                           asp-route-pageNumber="@p"
+                           asp-route-pageSize="@Model.PageSize"
+                           asp-route-search="@Model.Search">@p</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+
+</div>

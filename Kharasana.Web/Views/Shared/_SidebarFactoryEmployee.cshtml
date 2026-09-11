@@ -1,0 +1,74 @@
+﻿@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    Func<string, string> isActive = (controller) =>
+        string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+}
+
+<aside class="sidebar">
+
+    <div class="sidebar-header">
+        <div class="logo-icon">
+            <img src="~/images/kharasana-icon.png" alt="خرسانة" />
+        </div>
+        <div class="sidebar-header-text">
+            <h4>خرسانة</h4>
+            <small>نظام إدارة المصانع</small>
+        </div>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li>
+            <a asp-controller="Dashboard" asp-action="Index" class="@isActive("Dashboard")">
+                <i class="bi bi-speedometer2"></i>
+                <span>لوحة التحكم</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Orders" asp-action="Index" class="@isActive("Orders")">
+                <i class="bi bi-clipboard-check"></i>
+                <span>الطلبات</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Clients" asp-action="Index" class="@isActive("Clients")">
+                <i class="bi bi-people-fill"></i>
+                <span>العملاء</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Drivers" asp-action="Index" class="@isActive("Drivers")">
+                <i class="bi bi-truck"></i>
+                <span>السائقون</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="ConcreteTypes" asp-action="Index" class="@isActive("ConcreteTypes")">
+                <i class="bi bi-box-seam"></i>
+                <span>أنواع الخرسانة</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Settings" asp-action="Index" class="@isActive("Settings")">
+                <i class="bi bi-gear"></i>
+                <span>إعدادات المصنع</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Support" asp-action="Index" class="@isActive("Support")">
+                <i class="bi bi-headset"></i>
+                <span>الدعم والمساعدة</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-logout">
+        <form asp-controller="Account" asp-action="Logout" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn-logout">
+                <i class="bi bi-box-arrow-left"></i>
+                <span>تسجيل خروج</span>
+            </button>
+        </form>
+    </div>
+
+</aside>

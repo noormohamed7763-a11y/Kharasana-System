@@ -1,0 +1,146 @@
+@model List<Kharasana.Web.Models.Factories.FactoryListItemViewModel>
+@using Kharasana.Web.Models.Components
+
+@{
+    ViewData["Title"] = "أرشيف المصانع المحذوفة";
+}
+
+<div class="dashboard-page">
+
+    <partial name="Components/_PageHeader"
+             model='new PageHeaderViewModel
+             {
+                 Title = "أرشيف المصانع",
+                 Description = "إدارة المصانع المؤرشفة وإمكانية استعادتها للنظام."
+             }' />
+
+    <a asp-action="Index" class="btn btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-right me-1"></i>
+        العودة إلى قائمة المصانع
+    </a>
+
+    <div class="erp-section-card bg-white shadow-sm rounded-3 border p-4">
+
+        @if (Model == null || !Model.Any())
+        {
+            <partial name="Components/_EmptyState"
+                     model='new EmptyStateViewModel
+                     {
+                         Icon = "bi-folder2-open",
+                         Title = "لا توجد مصانع مؤرشفة حالياً",
+                         Message = "المصانع المحذوفة من النظام ستظهر هنا لإمكانية استعادتها."
+                     }' />
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="table erp-table erp-table--sticky-cols align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:80px;">الشعار</th>
+                            <th>اسم المصنع</th>
+                            <th>المالك</th>
+                            <th>رقم الهاتف</th>
+                            <th>المنطقة</th>
+                            <th class="text-center" style="width:170px;">
+                                الإجراءات
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>
+
+                                    @if (!string.IsNullOrWhiteSpace(item.Logo))
+                                    {
+                                        <img src="@item.Logo"
+                                             alt="شعار @item.FactoryName"
+                                             data-name="@item.FactoryName"
+                                             class="rounded-circle border"
+                                             style="width:45px;height:45px;object-fit:cover;"
+                                             onerror="handleLogoError(this);" />
+                                    }
+                                    else
+                                    {
+                                        <div class="factory-avatar bg-light border rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold"
+                                             style="width:45px;height:45px;font-size:15px;"
+                                             aria-label="شعار @item.FactoryName">
+                                            @(string.IsNullOrWhiteSpace(item.FactoryName)
+                                                                        ? "--"
+                                                                        : item.FactoryName[..Math.Min(2, item.FactoryName.Length)])
+                                        </div>
+                                    }
+
+                                </td>
+
+                                <td class="fw-semibold">
+                                    @item.FactoryName
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(item.OwnerName)
+                                                                ? "-"
+                                                                : item.OwnerName)
+                                </td>
+
+                                <td dir="ltr">
+                                    @(string.IsNullOrWhiteSpace(item.Phone)
+                                                                ? "-"
+                                                                : item.Phone)
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(item.Area)
+                                                                ? "-"
+                                                                : item.Area)
+                                </td>
+
+                                <td class="text-center">
+
+                                    <form asp-action="Restore"
+                                          method="post"
+                                          class="d-inline">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@item.FactoryId" />
+
+                                        <button type="submit"
+                                                class="btn btn-success btn-sm">
+
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+
+                                            استعادة
+
+                                        </button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/js/factories.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,82 @@
+﻿@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    Func<string, string> isActiveCtrl = (controller) =>
+        string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+}
+
+<aside class="sidebar">
+
+    <div class="sidebar-header">
+        <div class="logo-icon">
+            <img src="~/images/kharasana-icon.png" alt="خرسانة" />
+        </div>
+        <div class="sidebar-header-text">
+            <h4>خرسانة</h4>
+            <small>نظام إدارة المصانع</small>
+        </div>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li>
+            <a asp-controller="Dashboard" asp-action="Index" class="@isActiveCtrl("Dashboard")">
+                <i class="bi bi-speedometer2"></i>
+                <span>لوحة التحكم</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Factories" asp-action="Index" class="@(currentController.Equals("Factories", StringComparison.OrdinalIgnoreCase) && !currentAction.Equals("Archived", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+                <i class="bi bi-buildings"></i>
+                <span>المصانع</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Factories" asp-action="Archived" class="@(currentController.Equals("Factories", StringComparison.OrdinalIgnoreCase) && currentAction.Equals("Archived", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+                <i class="bi bi-archive"></i>
+                <span>أرشيف المصانع</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="ConcreteTypes" asp-action="Index" class="@isActiveCtrl("ConcreteTypes")">
+                <i class="bi bi-box-seam"></i>
+                <span>أنواع الخرسانة</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Drivers" asp-action="Index" class="@isActiveCtrl("Drivers")">
+                <i class="bi bi-truck"></i>
+                <span>السائقون</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Users" asp-action="Index" class="@isActiveCtrl("Users")">
+                <i class="bi bi-people"></i>
+                <span>المستخدمون</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Reports" asp-action="Index" class="@isActiveCtrl("Reports")">
+                <i class="bi bi-bar-chart-line"></i>
+                <span>التقارير</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Settings" asp-action="Index" class="@isActiveCtrl("Settings")">
+                <i class="bi bi-gear"></i>
+                <span>الإعدادات</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-logout">
+        <form asp-controller="Account" asp-action="Logout" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="sidebar-logout-btn">
+                <i class="bi bi-box-arrow-left"></i>
+                <span>تسجيل خروج</span>
+            </button>
+        </form>
+    </div>
+
+</aside>

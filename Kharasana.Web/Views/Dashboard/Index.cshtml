@@ -1,0 +1,27 @@
+﻿@model Kharasana.Web.Models.Dashboard.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+@if ((string?)ViewBag.UserRole == "Admin")
+{
+    <partial name="_AdminDashboard" model="Model" />
+}
+else if ((string?)ViewBag.UserRole == "FactoryEmployee")
+{
+    <partial name="_FactoryDashboard" model="Model" />
+}
+else
+{
+    <div class="alert alert-danger mt-4 text-center">
+        <i class="bi bi-shield-lock-fill me-2"></i>
+        غير مصرح لك بالوصول إلى لوحة التحكم هذه.
+    </div>
+}
+
+@section Scripts {
+    @if ((string?)ViewBag.UserRole == "Admin" || (string?)ViewBag.UserRole == "FactoryEmployee")
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="~/js/dashboard.js" asp-append-version="true"></script>
+    }
+}

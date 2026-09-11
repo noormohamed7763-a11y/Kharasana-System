@@ -1,0 +1,205 @@
+@model Kharasana.Web.ViewModels.Reports.ReportsViewModel
+@using Kharasana.Web.Models.Components
+
+@{
+    ViewData["Title"] = "التقارير";
+
+    // بيانات الرسوم البيانية من الـ ViewModel — كلها قيم حقيقية من قاعدة البيانات
+    var statusJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.OrdersByStatus.Select(s => new { label = s.StatusName, count = s.Count }));
+
+    var concreteJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.OrdersByConcreteType.Select(c => new { label = c.ConcreteTypeName, count = c.Count, quantity = c.TotalQuantity }));
+
+    string StatusSuffix(int status) => status switch
+    {
+        0 => "new",
+        1 => "pending",
+        2 => "approved",
+        3 => "rejected",
+        4 => "cancelled",
+        5 => "ontheway",
+        6 => "delivered",
+        7 => "closed",
+        _ => "new"
+    };
+
+    string StatusPercent(int count) =>
+        Model.TotalOrders > 0 ? (count * 100d / Model.TotalOrders).ToString("0.#") : "0";
+}
+
+<div class="dashboard-page">
+
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-bar-chart-line",
+            Title = "التقارير",
+            Description = "تقارير الطلبات المصنّفة حسب الحالة ونوع الخرسانة."
+        })
+
+    @if (Model.HasData)
+    {
+        <!-- T1. Summary Cards (KPIs) — بطاقات قابلة للنقر عبر _SummaryCard -->
+        <div class="summary-cards-grid mb-4">
+            @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+            new SummaryCardViewModel
+            {
+                Title = "إجمالي الطلبات",
+                Value = Model.TotalOrders.ToString(),
+                Icon = "bi-receipt",
+                IconClass = "kpi-icon-purple",
+                LinkUrl = Url.Action("Index", "Orders")
+            })
+            @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+            new SummaryCardViewModel
+            {
+                Title = "طلبات جديدة",
+                Value = (Model.NewOrders?.Count ?? 0).ToString(),
+                Icon = "bi-plus-circle",
+                IconClass = "kpi-icon-primary",
+                LinkUrl = Url.Action("Index", "Orders", new { status = 0 })
+            })
+            @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+            new SummaryCardViewModel
+            {
+                Title = "طلبات معتمدة",
+                Value = (Model.ApprovedOrders?.Count ?? 0).ToString(),
+                Icon = "bi-check2-circle",
+                IconClass = "kpi-icon-success",
+                LinkUrl = Url.Action("Index", "Orders", new { status = 2 })
+            })
+            @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+            new SummaryCardViewModel
+            {
+                Title = "قيد النقل",
+                Value = (Model.OnTheWayOrders?.Count ?? 0).ToString(),
+                Icon = "bi-truck",
+                IconClass = "kpi-icon-info",
+                LinkUrl = Url.Action("Index", "Orders", new { status = 5 })
+            })
+            @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+            new SummaryCardViewModel
+            {
+                Title = "تم التسليم",
+                Value = (Model.DeliveredOrders?.Count ?? 0).ToString(),
+                Icon = "bi-check2-all",
+                IconClass = "kpi-icon-success",
+                LinkUrl = Url.Action("Index", "Orders", new { status = 6 })
+            })
+        </div>
+
+        <!-- T2. Reports Charts -->
+        <div class="row g-4 mb-4">
+            <div class="col-xl-5 col-lg-12">
+                <div class="erp-section-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="erp-section-title"><i class="bi bi-pie-chart-fill"></i>الطلبات حسب الحالة</h5>
+                    </div>
+                    <div class="chart-container d-flex align-items-center justify-content-center">
+                        <canvas id="reportsStatusChart" role="img" aria-label="رسم بياني دائري لتوزيع الطلبات حسب الحالة" data-chart-values='@Html.Raw(statusJson)'></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-7 col-lg-12">
+                <div class="erp-section-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="erp-section-title"><i class="bi bi-graph-up"></i>الطلبات حسب نوع الخرسانة</h5>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="reportsConcreteTypeChart" role="img" aria-label="رسم بياني أعمدة للطلبات حسب نوع الخرسانة" data-chart-values='@Html.Raw(concreteJson)'></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- T3. Reports Detail Tables -->
+        <div class="row g-4">
+            <div class="col-xl-6 col-lg-12">
+                <div class="erp-section-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="erp-section-title"><i class="bi bi-list-check"></i>تفاصيل حسب حالة الطلب</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table erp-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>الحالة</th>
+                                    <th class="text-center">عدد الطلبات</th>
+                                    <th class="text-center">النسبة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.OrdersByStatus)
+                                {
+                                    var badgeModel = new StatusBadgeViewModel { Text = item.StatusName, CssClass = $"status-{StatusSuffix(item.Status)}" };
+                                    <tr>
+                                        <td>
+                                            <partial name="Components/_StatusBadge" model="badgeModel" />
+                                        </td>
+                                        <td class="text-center fw-bold text-dark">@item.Count</td>
+                                        <td class="text-center text-muted">@StatusPercent(item.Count)%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-6 col-lg-12">
+                <div class="erp-section-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="erp-section-title"><i class="bi bi-box-seam"></i>تفاصيل حسب نوع الخرسانة</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table erp-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>نوع الخرسانة</th>
+                                    <th class="text-center">عدد الطلبات</th>
+                                    <th class="text-center">الكمية الإجمالية (م³)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.OrdersByConcreteType)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold text-dark">@item.ConcreteTypeName</td>
+                                        <td class="text-center fw-bold">@item.Count</td>
+                                        <td class="text-center text-muted">@item.TotalQuantity.ToString("0.##")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_EmptyState.cshtml",
+            new EmptyStateViewModel
+            {
+                Icon = "bi-bar-chart-line",
+                Title = "لا توجد بيانات لعرضها بعد",
+                Message = "لم يتم تسجيل أي طلبات في النظام حتى الآن. ستظهر التقارير هنا فور إضافة أول طلب.",
+                ShowActionButton = false
+            })
+    }
+
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="~/js/reports.js" asp-append-version="true"></script>
+}

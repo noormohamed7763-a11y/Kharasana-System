@@ -1,0 +1,121 @@
+@model Kharasana.Web.Models.Factories.FactoryDetailsViewModel
+@using Kharasana.Web.Models.Components
+
+@{
+    ViewData["Title"] = "تفاصيل المصنع";
+}
+
+<div class="dashboard-page">
+
+    <!-- 1. الترويسة -->
+    <partial name="Components/_PageHeader"
+             model='new PageHeaderViewModel
+             {
+                 Title = "تفاصيل المصنع",
+                 Description = $"عرض تفاصيل ومعلومات المصنع: {Model.FactoryName}"
+             }' />
+
+    <!-- 2. بطاقة المحتوى الرئيسية -->
+    <div class="erp-section-card bg-white p-4 rounded-3 shadow-sm border mt-4">
+
+        <!-- رأس البطاقة: الشعار، الاسم، الحالة -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 pb-3 border-bottom gap-3">
+            <div class="d-flex align-items-center gap-3">
+                @if (!string.IsNullOrWhiteSpace(Model.Logo))
+                {
+                    <img src="@Model.Logo"
+                         alt="@Model.FactoryName"
+                         data-name="@Model.FactoryName"
+                         style="width:65px; height:65px; object-fit:cover; border-radius:50%; border:2px solid #dee2e6; background:#f8f9fa;"
+                         onerror="handleLogoError(this);" />
+                }
+                else
+                {
+                    <div class="factory-avatar bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4 shadow-sm"
+                         style="width: 65px; height: 65px;">
+                        @(string.IsNullOrWhiteSpace(Model.FactoryName) ? "--" : Model.FactoryName[..Math.Min(2, Model.FactoryName.Length)])
+                    </div>
+                }
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">@Model.FactoryName</h3>
+                    <span class="text-muted"><i class="bi bi-geo-alt me-1 text-danger"></i> @(string.IsNullOrEmpty(Model.Area) ? "المنطقة غير محددة" : Model.Area)</span>
+                </div>
+            </div>
+            <div>
+                <partial name="Components/_StatusBadge"
+                         model='new StatusBadgeViewModel
+                         {
+                             Text = Model.IsActive ? "نشط" : "متوقف",
+                             CssClass = Model.IsActive ? "status-success" : "status-danger"
+                         }' />
+            </div>
+        </div>
+
+        <!-- شبكة البيانات التفصيلية -->
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1">اسم المالك</span>
+                    <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrEmpty(Model.OwnerName) ? "-" : Model.OwnerName)</h6>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1">رقم الهاتف</span>
+                    <h6 class="fw-bold mb-0 text-dark" dir="ltr">@(string.IsNullOrEmpty(Model.Phone) ? "-" : Model.Phone)</h6>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1">رقم الواتساب</span>
+                    <h6 class="fw-bold mb-0 text-dark" dir="ltr">@(string.IsNullOrEmpty(Model.WhatsApp) ? "-" : Model.WhatsApp)</h6>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1">البريد الإلكتروني</span>
+                    <h6 class="fw-bold mb-0 text-dark" dir="ltr">@(string.IsNullOrEmpty(Model.Email) ? "-" : Model.Email)</h6>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1">العنوان التفصيلي</span>
+                    <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrEmpty(Model.Address) ? "-" : Model.Address)</h6>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1">خط العرض (Latitude)</span>
+                    <h6 class="fw-bold mb-0 text-dark" dir="ltr">@(Model.Latitude?.ToString() ?? "-")</h6>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1">خط الطول (Longitude)</span>
+                    <h6 class="fw-bold mb-0 text-dark" dir="ltr">@(Model.Longitude?.ToString() ?? "-")</h6>
+                </div>
+            </div>
+        </div>
+
+        <!-- أزرار الإجراءات السفلية -->
+        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <a asp-action="Index" class="btn btn-outline-secondary px-4">
+                <i class="bi bi-arrow-right me-1"></i> العودة للقائمة
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.FactoryId" class="btn btn-primary px-4">
+                <i class="bi bi-pencil me-1"></i> تعديل البيانات
+            </a>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/factories.js" asp-append-version="true"></script>
+}

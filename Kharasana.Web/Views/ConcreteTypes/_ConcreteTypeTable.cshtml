@@ -1,0 +1,204 @@
+@model IEnumerable<Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeListItemViewModel>
+@using Kharasana.Web.Models.Components
+@{
+    var factoryInactive = (string?)ViewBag.UserRole == "FactoryEmployee" && ViewBag.FactoryIsActive == false;
+}
+
+<div class="form-card">
+    <div class="table-responsive">
+        <table class="erp-table erp-table--sticky-cols align-middle mb-0">
+
+            <thead>
+
+                <tr>
+
+                    <th style="width:70px">#</th>
+
+                    <th>النوع</th>
+
+                    <th>المقاومة</th>
+
+                    <th>السعر</th>
+
+                    <th>الحالة</th>
+
+                    <th class="text-center" style="width:180px">
+                        الإجراءات
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @if (Model.Any())
+                {
+                    var index = 1;
+
+                    foreach (var item in Model)
+                    {
+
+                        <tr>
+
+                            <td>
+
+                                <span class="fw-bold text-secondary">
+                                    @index
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <div class="concrete-name">
+
+                                    <div class="concrete-icon">
+                                        <i class="bi bi-box-seam"></i>
+                                    </div>
+
+                                    <div>
+
+                                        <div class="concrete-title">
+                                            @item.Name
+                                        </div>
+
+                                        <div class="concrete-subtitle">
+                                            <i class="bi bi-building"></i>
+                                            @item.FactoryName
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+                            <td>
+
+                                <span class="badge rounded-pill bg-primary fs-6 px-3 py-2">
+                                    @item.Strength MPa
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <div class="price-value">
+
+                                    @item.UnitPrice.ToString("N0")
+
+                                </div>
+
+                                <small class="text-muted">
+                                    ريال / م³
+                                </small>
+
+                            </td>
+
+                            <td>
+
+                                @if (item.IsActive)
+                                {
+                                    <span class="status-active">
+
+                                        <i class="bi bi-check-circle-fill"></i>
+
+                                        نشط
+
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="status-inactive">
+
+                                        <i class="bi bi-x-circle-fill"></i>
+
+                                        متوقف
+
+                                    </span>
+                                }
+
+                            </td>
+
+                            <td class="text-center">
+
+                                <a asp-action="Details"
+                                   asp-route-id="@item.ConcreteTypeId"
+                                   class="btn btn-light action-btn"
+                                   title="التفاصيل">
+
+                                    <i class="bi bi-eye"></i>
+
+                                </a>
+
+                                @if (!factoryInactive)
+                                {
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.ConcreteTypeId"
+                                       class="btn btn-warning text-white action-btn"
+                                       title="تعديل">
+
+                                        <i class="bi bi-pencil"></i>
+
+                                    </a>
+
+                                    <form asp-action="Delete"
+                                      asp-route-id="@item.ConcreteTypeId"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('هل أنت متأكد من حذف نوع الخرسانة؟');">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <button type="submit"
+                                            class="btn btn-danger action-btn"
+                                            title="حذف">
+
+                                        <i class="bi bi-trash"></i>
+
+                                    </button>
+
+                                    </form>
+                                }
+
+                            </td>
+
+                        </tr>
+
+                        index++;
+                    }
+                }
+                else
+                {
+
+                    <tr>
+
+                        <td colspan="6">
+
+                            @await Html.PartialAsync(
+                            "~/Views/Shared/Components/_EmptyState.cshtml",
+                            new EmptyStateViewModel
+                            {
+                                ImageUrl = "/images/empty-concrete.png",
+                                Title = "لا توجد أنواع خرسانة",
+                                Message = "قم بإضافة أول نوع خرسانة ليظهر هنا.",
+                                ShowActionButton = true,
+                                ActionController = "ConcreteTypes",
+                                ActionAction = "Create",
+                                ActionText = "إضافة نوع خرسانة"
+                            })
+
+                        </td>
+
+                    </tr>
+
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>

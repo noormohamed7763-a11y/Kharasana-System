@@ -1,0 +1,57 @@
+@{
+    var userName = ViewBag.UserName as string ?? "مستخدم";
+    var userRole = ViewBag.UserRole as string ?? "";
+    var initial = userName.Length > 0 ? userName.Substring(0, 1).ToUpper() : "م";
+
+    // شعار المصنع (يُخزَّن في الجلسة عند تسجيل الدخول ويتحدَّث عند رفع/حذف الشعار)
+    var factoryLogo = Context.Session.GetString("FactoryLogo");
+    var hasFactoryLogo = !string.IsNullOrWhiteSpace(factoryLogo);
+}
+
+<nav class="navbar-top">
+
+    <button class="navbar-toggle-btn" id="sidebarToggle" type="button" aria-label="طي القائمة الجانبية">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <div class="navbar-search d-none d-md-flex">
+        <i class="bi bi-search"></i>
+        <input type="text" class="form-control" placeholder="البحث في النظام..." aria-label="بحث">
+    </div>
+
+    <div class="navbar-user">
+
+        <!-- ✅ أيقونة الرسائل -->
+        <div class="navbar-icon-placeholder" aria-hidden="true">
+            <i class="bi bi-chat-dots"></i>
+        </div>
+
+        <!-- ✅ أيقونة الإشعارات -->
+        <div class="navbar-icon-placeholder" aria-hidden="true">
+            <i class="bi bi-bell"></i>
+        </div>
+
+        <div class="navbar-user-info">
+            <div class="navbar-user-name">@userName</div>
+            @if (!string.IsNullOrEmpty(userRole))
+            {
+                <span class="navbar-user-role">@userRole</span>
+            }
+        </div>
+
+        <div class="navbar-avatar">
+            @* الحرف يبقى خلف الصورة كبديل تلقائي لو فشل تحميل الشعار *@
+            <span class="navbar-avatar-letter">@initial</span>
+            @if (hasFactoryLogo)
+            {
+                <img src="@factoryLogo"
+                     class="navbar-avatar-img"
+                     alt="شعار المصنع"
+                     loading="lazy"
+                     onerror="this.remove();" />
+            }
+        </div>
+
+    </div>
+
+</nav>

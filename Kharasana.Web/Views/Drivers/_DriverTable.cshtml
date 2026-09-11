@@ -1,0 +1,120 @@
+@using Kharasana.Web.ViewModels.Drivers
+@using Kharasana.Web.Models.Components
+@using Kharasana.Domain.Enums
+@model IEnumerable<DriverListItemViewModel>
+
+<div class="form-card">
+    <div class="table-responsive">
+        <table class="erp-table erp-table--sticky-cols">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>الاسم</th>
+                    <th>الهاتف</th>
+                    <th>رقم الرخصة</th>
+                    <th>الحالة</th>
+                    <th>الحساب</th>
+                    <th class="text-center">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var index = 1;
+                }
+                @foreach (var driver in Model)
+                {
+                    var statusText = driver.DriverStatus switch
+                    {
+                        DriverStatus.Available => "متاح",
+                        DriverStatus.Busy => "مشغول",
+                        DriverStatus.Offline => "غير متصل",
+                        _ => "-"
+                    };
+                    var statusCss = driver.DriverStatus switch
+                    {
+                        DriverStatus.Available => "status-success",
+                        DriverStatus.Busy => "status-warning",
+                        DriverStatus.Offline => "status-secondary",
+                        _ => "status-secondary"
+                    };
+
+                    <tr>
+                        <td class="text-muted fw-bold">@(index++)</td>
+                        <td><strong class="text-primary">@driver.FullName</strong></td>
+                        <td>@(driver.Phone ?? "-")</td>
+                        <td>
+                            @if (string.IsNullOrWhiteSpace(driver.LicenseNumber))
+                            {
+                                <span class="badge bg-light text-muted">لا توجد رخصة</span>
+                            }
+                            else
+                            {
+                                @driver.LicenseNumber
+                            }
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_StatusBadge.cshtml",
+                                                        new StatusBadgeViewModel { Text = statusText, CssClass = statusCss })
+                            <button class="btn btn-sm btn-link dropdown-toggle p-0 ms-1"
+                                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            </button>
+                            <ul class="dropdown-menu">
+                                @foreach (var status in Enum.GetValues<DriverStatus>())
+                                    {
+                                        <li>
+                                            <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()  <!-- ✅ إضافة رمز الحماية -->
+                                                <input type="hidden" name="id" value="@driver.UserId" />
+                                                <input type="hidden" name="driverStatus" value="@((int)status)" />
+                                                <button type="submit" class="dropdown-item">
+                                                    @(status switch
+                                                    {
+                                                        DriverStatus.Available => "متاح",
+                                                        DriverStatus.Busy => "مشغول",
+                                                        DriverStatus.Offline => "غير متصل",
+                                                        _ => status.ToString()
+                                                    })
+                                                </button>
+                                            </form>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge @(driver.IsActive ? "bg-success" : "bg-secondary")">
+                                @(driver.IsActive ? "مُفعّل" : "معطّل")
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            @await Html.PartialAsync(
+                            "~/Views/Shared/Components/_ActionButtons.cshtml",
+                                                new ActionButtonsViewModel
+                                                {
+                                                    Id = driver.UserId,
+                                                    ShowDetails = true,
+                                                    ShowEdit = true,
+                                                    ShowDelete = true
+                                                })
+
+                            @* إيقاف/تفعيل حساب السائق *@
+                            <form asp-action="ToggleActive" method="post" class="d-inline"
+                                  onsubmit="return confirm('@(driver.IsActive ? "هل تريد إيقاف هذا السائق؟" : "هل تريد تفعيل هذا السائق؟")')">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@driver.UserId" />
+                                <button type="submit"
+                                        class="btn btn-light border @(driver.IsActive ? "text-danger" : "text-success")"
+                                        title="@(driver.IsActive ? "إيقاف السائق" : "تفعيل السائق")"
+                                        data-bs-toggle="tooltip">
+                                    <i class="bi @(driver.IsActive ? "bi-stop-circle" : "bi-play-circle")"></i>
+                                </button>
+                            </form>
+                        </td>
+                </tr>
+                                }
+            </tbody>
+        </table>
+    </div>
+</div>

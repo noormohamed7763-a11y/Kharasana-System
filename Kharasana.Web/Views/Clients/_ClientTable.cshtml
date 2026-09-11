@@ -1,0 +1,100 @@
+@using Kharasana.Web.ViewModels.Clients
+@using Kharasana.Web.Models.Components
+
+@model IEnumerable<ClientListItemViewModel>
+
+<div class="form-card">
+    <div class="table-responsive">
+        <table class="erp-table erp-table--sticky-cols">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>الاسم</th>
+                    <th>الهاتف</th>
+                    <th>عدد الطلبات</th>
+                    <th>إجمالي الكمية (م³)</th>
+                    <th>آخر طلب</th>
+                    <th class="text-center">الإجراءات</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @{
+                    var index = 1;
+                }
+
+                @foreach (var client in Model)
+                {
+                    <tr>
+                        <!-- رقم تسلسلي -->
+                        <td class="text-muted fw-bold">
+                            @(index++)
+                        </td>
+
+                        <!-- اسم العميل -->
+                        <td>
+                            <strong class="text-primary">
+                                @client.FullName
+                            </strong>
+                        </td>
+
+                        <!-- الهاتف -->
+                        <td>
+                            @(string.IsNullOrWhiteSpace(client.Phone)
+                                                    ? "-"
+                                                    : client.Phone)
+                        </td>
+
+                        <!-- عدد الطلبات -->
+                        <td>
+                            @await Html.PartialAsync(
+                            "~/Views/Shared/Components/_StatusBadge.cshtml",
+                                                new StatusBadgeViewModel
+                                                {
+                                                    Text = client.OrdersCount.ToString(),
+                                                    CssClass = "status-info"
+                                                })
+                    </td>
+
+                    <!-- إجمالي الكمية -->
+                    <td>
+                        @client.TotalQuantity.ToString("N2")
+                    </td>
+
+                    <!-- آخر طلب -->
+                    <td>
+                        @(client.LastOrderDate.HasValue
+                                                ? client.LastOrderDate.Value.ToString("yyyy-MM-dd")
+                                                : "-")
+                        </td>
+
+                        <!-- الإجراءات -->
+                        <td class="text-center">
+                            @await Html.PartialAsync(
+                            "~/Views/Shared/Components/_ActionButtons.cshtml",
+                                                new ActionButtonsViewModel
+                                                {
+                                                    Id = client.UserId,
+
+                                                    // مهم جدًا:
+                                                    // تحديد Controller العملاء صراحةً
+                                                    ControllerName = "Clients",
+
+                                                    // التفاصيل
+                                                    ShowDetails = true,
+                                                    DetailsAction = "Details",
+
+                                                    // التعديل
+                                                    ShowEdit = true,
+                                                    EditAction = "Edit",
+
+                                                    // الحذف غير مطلوب
+                                                    ShowDelete = false
+                                                })
+                    </td>
+                </tr>
+                                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,27 @@
+﻿@model Kharasana.Web.Models.Components.FilterDropdownViewModel
+
+<div class="@Model.CssClass">
+
+    <select id="@Model.Id"
+            class="form-select form-select-sm shadow-none"
+            onchange="@Model.OnChangeFunction">
+
+        @foreach (var option in Model.Options)
+        {
+            if (option.Value == Model.SelectedValue)
+            {
+                <option value="@option.Value" selected>
+                    @option.Text
+                </option>
+            }
+            else
+            {
+                <option value="@option.Value">
+                    @option.Text
+                </option>
+            }
+        }
+
+    </select>
+
+</div>

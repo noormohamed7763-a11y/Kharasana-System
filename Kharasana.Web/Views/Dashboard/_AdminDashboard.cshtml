@@ -1,0 +1,209 @@
+@model Kharasana.Web.Models.Dashboard.DashboardViewModel
+@using Kharasana.Web.Models.Components
+
+@{
+    ViewData["Title"] = "لوحة التحكم";
+
+    // ===== بيانات رسوم لوحة الأدمن (كلها قيم حقيقية من الـ ViewModel — بدون أي تعديل Backend) =====
+    // 1) رسم "نظرة عامة على النظام" (Bar Chart): مكونات النظام الخمسة المتاحة
+    var systemOverviewJson = System.Text.Json.JsonSerializer.Serialize(new[]
+    {
+        new { label = "المصانع", count = Model.TotalFactories },
+        new { label = "العملاء", count = Model.TotalClients },
+        new { label = "موظفو المصانع", count = Model.TotalEmployees },
+        new { label = "السائقون", count = Model.TotalDrivers },
+        new { label = "الطلبات", count = Model.TotalOrders }
+    });
+
+    // 2) رسم "حالة النظام" (Doughnut): توزيع المستخدمين حسب الدور — أفضل توزيع منطقي متاح فعلياً
+    var systemStatusJson = System.Text.Json.JsonSerializer.Serialize(new[]
+    {
+        new { label = "العملاء", count = Model.TotalClients },
+        new { label = "موظفو المصانع", count = Model.TotalEmployees },
+        new { label = "السائقون", count = Model.TotalDrivers }
+    });
+}
+
+<div class="dashboard-page">
+
+    <!-- T1. Hero Banner Component -->
+    <div class="hero-banner">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>👋 @Kharasana.Web.Helpers.GreetingHelper.Greeting() يا @ViewBag.UserName</h1>
+                <p>هنا نظرة شاملة على أداء جميع الفروع والمصانع</p>
+                <span class="hero-quote">"معاً نبني مستقبلاً أكثر قوة"</span>
+            </div>
+            <div class="hero-meta">
+                <div class="hero-date">
+                    <i class="bi bi-calendar-event"></i>
+                    <div class="date-text">
+                        <span>@DateTime.Now.ToString("dddd، d MMMM yyyy")</span>
+                        <small>@DateTime.Now.ToString("hh:mm tt")</small>
+                    </div>
+                </div>
+                <div class="hero-status">
+                    <i class="bi bi-check-circle-fill"></i>
+                    جميع الأنظمة تعمل بشكل طبيعي
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- T2. Summary Cards Component (KPIs) — بطاقات قابلة للنقر عبر _SummaryCard -->
+    <div class="summary-cards-grid mb-4">
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_SummaryCard.cshtml",
+        new SummaryCardViewModel
+        {
+            Title = "المصانع",
+            Value = Model.TotalFactories.ToString(),
+            Icon = "bi-buildings",
+            IconClass = "kpi-icon-primary",
+            LinkUrl = Url.Action("Index", "Factories")
+        })
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_SummaryCard.cshtml",
+        new SummaryCardViewModel
+        {
+            Title = "إجمالي الطلبات",
+            Value = Model.TotalOrders.ToString(),
+            Icon = "bi-receipt",
+            IconClass = "kpi-icon-purple",
+            LinkUrl = Url.Action("Index", "Orders")
+        })
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_SummaryCard.cshtml",
+        new SummaryCardViewModel
+        {
+            Title = "إجمالي العملاء",
+            Value = Model.TotalClients.ToString(),
+            Icon = "bi-people-fill",
+            IconClass = "kpi-icon-success",
+            LinkUrl = Url.Action("Index", "Clients")
+        })
+        @await Html.PartialAsync(
+        "~/Views/Shared/Components/_SummaryCard.cshtml",
+        new SummaryCardViewModel
+        {
+            Title = "إجمالي السائقين",
+            Value = Model.TotalDrivers.ToString(),
+            Icon = "bi-truck",
+            IconClass = "kpi-icon-info",
+            LinkUrl = Url.Action("Index", "Drivers")
+        })
+    </div>
+
+    <!-- T3. Charts Section -->
+    <!-- T3.1 رسم "نظرة عامة على النظام" (Bar Chart): المصانع + العملاء + موظفو المصانع + السائقون + الطلبات -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-8 col-lg-12">
+            <div class="erp-section-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="erp-section-title"><i class="bi bi-graph-up"></i>نظرة عامة على النظام</h5>
+                </div>
+                <div class="chart-container">
+                    <canvas id="systemOverviewChart" role="img" aria-label="رسم بياني أعمدة لنظرة عامة على النظام: المصانع والعملاء وموظفو المصانع والسائقون والطلبات" data-chart-values='@Html.Raw(systemOverviewJson)'></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- T3.2 رسم "حالة النظام" (Doughnut): توزيع المستخدمين حسب الدور -->
+        <div class="col-xl-4 col-lg-12">
+            <div class="erp-section-card">
+                <div class="mb-3">
+                    <h5 class="erp-section-title"><i class="bi bi-pie-chart-fill"></i>حالة النظام</h5>
+                </div>
+                <div class="chart-container d-flex align-items-center justify-content-center">
+                    <canvas id="systemStatusChart" role="img" aria-label="رسم بياني دائري لحالة النظام: توزيع المستخدمين حسب الدور" data-chart-values='@Html.Raw(systemStatusJson)'></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- T4. Recent Orders & Activity Timeline -->
+    <div class="row g-4">
+        <div class="col-xl-8 col-lg-12">
+            <div class="erp-section-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="erp-section-title"><i class="bi bi-receipt"></i>أحدث الطلبات</h5>
+                    <a asp-controller="Orders" asp-action="Index" class="btn-erp-outline">عرض الكل <i class="bi bi-arrow-left ms-1"></i></a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table erp-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>رقم الطلب</th>
+                                <th>العميل</th>
+                                <th>الحالة</th>
+                                <th>التاريخ</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentOrders != null && Model.RecentOrders.Any())
+                            {
+                                int idx = 1;
+                                @foreach (var order in Model.RecentOrders)
+                                {
+                                    var badgeModel = new StatusBadgeViewModel { Text = order.StatusDisplay, CssClass = $"status-{order.StatusCssClass}" };
+                                    <tr>
+                                        <td class="text-muted fw-bold">@idx</td>
+                                        <td class="fw-bold text-dark">@order.OrderNumber</td>
+                                        <td>@order.ClientName</td>
+                                        <td>
+                                            <partial name="Components/_StatusBadge" model="badgeModel" />
+                                        </td>
+                                        <td class="text-muted">@order.OrderDate.ToString("yyyy/MM/dd")</td>
+                                        <td>
+                                            <a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id"
+                                               class="btn btn-sm btn-light text-muted rounded-circle"
+                                               title="عرض تفاصيل الطلب"
+                                               aria-label="عرض تفاصيل الطلب @order.OrderNumber">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-controller="Orders" asp-action="Edit" asp-route-id="@order.Id"
+                                               class="btn btn-sm btn-light text-muted rounded-circle"
+                                               title="تعديل الطلب"
+                                               aria-label="تعديل الطلب @order.OrderNumber">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    idx++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                                        لا توجد طلبات مسجلة في النظام بعد
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-12">
+            <div class="erp-section-card">
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <h5 class="erp-section-title"><i class="bi bi-clock-history"></i>آخر الأنشطة</h5>
+                </div>
+                <div class="activity-timeline">
+                    <!-- لا يوجد مصدر نشاطات حقيقي في النظام حالياً — نعرض حالة فارغة صادقة بدلاً من بيانات مخترعة -->
+                    <div class="chart-empty-state">
+                        <i class="bi bi-clock-history"></i>
+                        <span>لا توجد نشاطات حديثة مسجلة بعد</span>
+                        <small class="text-muted">ستظهر هنا آخر العمليات المهمة في النظام (طلبات، عملاء، مصانع، سائقون) عند تسجيلها.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

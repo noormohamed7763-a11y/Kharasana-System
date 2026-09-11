@@ -1,0 +1,143 @@
+:root {
+    /* ============================================================
+       1. INDUSTRIAL DESIGN TOKENS
+       نظام ألوان صناعي هادئ: برتقالي كعلامة Brand/CTA، أزرق للمعلومات،
+       خضر/أحمر/برتقالي للـ status، وسحب ألوان الخلفية إلى الفاتح الواضح.
+    ============================================================ */
+    --color-slate-900: #1E293B;
+    --color-slate-800: #334155;
+    --color-slate-700: #475569;
+    --color-slate-200: #CBD5E1;
+    --color-slate-100: #E2E8F0;
+    --color-slate-50: #F8FAFC;
+
+    --brand-cta: #e85d22;
+    --brand-cta-dark: #c24b17;
+    --brand-cta-soft: rgba(232, 93, 34, 0.12);
+    --brand-cta-glow: rgba(232, 93, 34, 0.2);
+
+    --color-info: #1D4ED8;
+    --color-info-soft: rgba(29, 78, 216, 0.12);
+    --color-success: #15803D;
+    --color-success-soft: rgba(21, 128, 61, 0.12);
+    --color-warning: #B45309;
+    --color-warning-soft: rgba(180, 83, 9, 0.12);
+    --color-danger: #B91C1C;
+    --color-danger-soft: rgba(185, 28, 28, 0.12);
+
+    --color-background: #F8FAFC;
+    --color-surface: #FFFFFF;
+    --color-surface-alt: #F8FAFC;
+    --color-surface-low: #F1F5F9;
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #475569;
+    --color-text-muted: #64748B;
+    --color-border: #CBD5E1;
+    --color-border-soft: #E2E8F0;
+
+    --sidebar-bg: #1a233a;
+    --sidebar-bg-hover: rgba(255, 255, 255, 0.05);
+    --sidebar-bg-active: var(--brand-cta);
+    --sidebar-text: #8e9bb0;
+    --sidebar-text-active: #ffffff;
+    --sidebar-border: #232d47;
+
+    /* Backward-compatible aliases to keep older CSS working safely. */
+    --primary: var(--brand-cta);
+    --primary-dark: var(--brand-cta-dark);
+    --primary-light: var(--brand-cta-soft);
+    --primary-soft: var(--brand-cta-glow);
+    --primary-glow: var(--brand-cta-glow);
+    --primary-text: var(--brand-cta);
+    --secondary: var(--color-slate-800);
+    --secondary-light: var(--color-text-secondary);
+    --tertiary: var(--color-info);
+    --tertiary-soft: var(--color-info-soft);
+    --tertiary-text: var(--color-info);
+    --neutral: var(--color-text-muted);
+
+    --background: var(--color-background);
+    --surface: var(--color-surface);
+    --surface-alt: var(--color-surface-alt);
+    --surface-low: var(--color-surface-low);
+    --text-main: var(--color-text-primary);
+    --text-muted: var(--color-text-secondary);
+    --border-main: var(--color-border);
+    --border-soft: var(--color-border-soft);
+
+    --success: var(--color-success);
+    --success-soft: var(--color-success-soft);
+    --success-text: var(--color-success);
+    --warning: var(--color-warning);
+    --warning-soft: var(--color-warning-soft);
+    --warning-text: var(--color-warning);
+    --danger: var(--color-danger);
+    --danger-soft: var(--color-danger-soft);
+    --danger-text: var(--color-danger);
+    --info: var(--color-info);
+    --info-soft: var(--color-info-soft);
+    --info-text: var(--color-info);
+
+    --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.08);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+    --radius-pill: 9999px;
+    --radius-full: 50%;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --card-padding: 20px;
+    --section-gap: 24px;
+    --page-padding: 22px;
+    --chart-height: 220px;
+    --icon-size-lg: 42px;
+    --icon-size-md: 38px;
+    --logo-size: 42px;
+    --avatar-size: 40px;
+    --item-padding-y: 10px;
+
+    --font-main: "Cairo", "Noto Sans Arabic", "Segoe UI", sans-serif;
+    /* أوزان خط Cairo: 400 عادي، 500 متوسط، 600 شبه عريض، 700 عريض، 800 عريض إضافي */
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    /* فرض Cairo على مكوّنات Bootstrap (أزرار/نماذج/جداول) بدلاً من الخط الافتراضي */
+    --bs-body-font-family: var(--font-main);
+    --text-xs: 0.75rem;
+    --text-sm: 0.85rem;
+    --text-base: 1rem;
+    --text-lg: 1.05rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.8rem;
+    --display-lg: 2rem;
+    --heading-1: var(--text-3xl);
+    --heading-2: var(--text-2xl);
+    --heading-3: var(--text-xl);
+    --body-text: var(--text-base);
+    --caption-text: var(--text-sm);
+    --icon-font-md: 1.25rem;
+    --icon-font-lg: 1.4rem;
+
+    --sidebar-width: 260px;
+    --sidebar-width-collapsed: 76px;
+    --navbar-height: 68px;
+    --z-sidebar: 1000;
+    --z-navbar: 900;
+    --z-dropdown: 1100;
+    --z-modal: 1200;
+    --transition: 0.16s ease;
+    --transition-slow: 0.2s ease;
+}

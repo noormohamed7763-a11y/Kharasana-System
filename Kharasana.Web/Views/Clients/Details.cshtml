@@ -1,0 +1,119 @@
+﻿@model Kharasana.Web.ViewModels.Clients.ClientDetailsViewModel
+@using Kharasana.Web.Models.Components
+
+@{
+    ViewData["Title"] = $"تفاصيل العميل - {Model.FullName}";
+}
+
+<div class="dashboard-page">
+
+    <!-- PAGE HEADER -->
+    <div class="dashboard-header">
+        <div class="dashboard-title">
+            <h1>
+                <i class="bi bi-person-circle text-primary"></i>
+                تفاصيل العميل
+                <span class="text-muted fs-5 fw-normal">- @Model.FullName</span>
+            </h1>
+            <p>معلومات العميل وملخص تعاملاته مع المصنع</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right"></i> العودة إلى القائمة
+            </a>
+        </div>
+    </div>
+
+    <!-- CLIENT INFO CARDS -->
+    <div class="row g-3">
+
+        <!-- معلومات العميل الأساسية -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-primary bg-opacity-10">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-person text-primary"></i>
+                        معلومات العميل
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">الاسم</dt>
+                        <dd class="col-sm-8 fw-bold">@Model.FullName</dd>
+
+                        <dt class="col-sm-4 text-muted">رقم الهاتف</dt>
+                        <dd class="col-sm-8" dir="ltr">@(Model.Phone ?? "-")</dd>
+
+                        <dt class="col-sm-4 text-muted">البريد الإلكتروني</dt>
+                        <dd class="col-sm-8">@(Model.Email ?? "-")</dd>
+
+                        <dt class="col-sm-4 text-muted">واتساب</dt>
+                        <dd class="col-sm-8" dir="ltr">@(Model.WhatsApp ?? "-")</dd>
+
+                        <dt class="col-sm-4 text-muted">الحالة</dt>
+                        <dd class="col-sm-8">
+                            @await Html.PartialAsync(
+                            "~/Views/Shared/Components/_StatusBadge.cshtml",
+                                                        new StatusBadgeViewModel
+                                                        {
+                                                            Text = Model.IsActive ? "نشط" : "موقوف",
+                                                            CssClass = Model.IsActive ? "status-success" : "status-danger"
+                                                        })
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">معرف العميل</dt>
+                        <dd class="col-sm-8">#@Model.UserId</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- ملخص التعامل مع المصنع -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-success bg-opacity-10">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-clipboard-data text-success"></i>
+                        ملخص التعامل مع المصنع
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">عدد الطلبات</dt>
+                        <dd class="col-sm-8">
+                            @await Html.PartialAsync(
+                                                        "~/Views/Shared/Components/_StatusBadge.cshtml",
+                                                        new StatusBadgeViewModel
+                                                        {
+                                                            Text = Model.OrdersCount.ToString(),
+                                                            CssClass = "status-info"
+                                                        })
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">إجمالي الكمية</dt>
+                        <dd class="col-sm-8 fw-bold">@Model.TotalQuantity.ToString("N2") م³</dd>
+
+                        <dt class="col-sm-4 text-muted">آخر طلب</dt>
+                        <dd class="col-sm-8">
+                            @(Model.LastOrderDate.HasValue
+                                                        ? Model.LastOrderDate.Value.ToString("yyyy-MM-dd HH:mm")
+                                                        : "لا يوجد طلبات سابقة")
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="mt-4">
+        <a asp-action="Edit" asp-route-id="@Model.UserId" class="btn btn-primary btn-lg">
+            <i class="bi bi-pencil"></i> تعديل بيانات العميل
+        </a>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-lg ms-2">
+            <i class="bi bi-arrow-right"></i> العودة إلى القائمة
+        </a>
+    </div>
+
+</div>

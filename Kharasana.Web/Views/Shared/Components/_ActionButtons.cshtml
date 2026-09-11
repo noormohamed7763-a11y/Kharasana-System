@@ -1,0 +1,88 @@
+﻿@model Kharasana.Web.Models.Components.ActionButtonsViewModel
+
+@if (Model.ShowDetails)
+{
+    if (!string.IsNullOrEmpty(Model.ControllerName))
+    {
+        <a asp-controller="@Model.ControllerName"
+           asp-action="@Model.DetailsAction"
+           asp-route-id="@Model.Id"
+           class="btn btn-light border text-info"
+           title="@Model.DetailsTooltip"
+           data-bs-toggle="tooltip">
+            <i class="bi bi-eye"></i>
+        </a>
+    }
+    else
+    {
+        <a asp-action="@Model.DetailsAction"
+           asp-route-id="@Model.Id"
+           class="btn btn-light border text-info"
+           title="@Model.DetailsTooltip"
+           data-bs-toggle="tooltip">
+            <i class="bi bi-eye"></i>
+        </a>
+    }
+}
+
+@if (Model.ShowEdit)
+{
+    if (!string.IsNullOrEmpty(Model.ControllerName))
+    {
+        <a asp-controller="@Model.ControllerName"
+           asp-action="@Model.EditAction"
+           asp-route-id="@Model.Id"
+           class="btn btn-light border text-primary"
+           title="@Model.EditTooltip"
+           data-bs-toggle="tooltip">
+            <i class="bi bi-pencil"></i>
+        </a>
+    }
+    else
+    {
+        <a asp-action="@Model.EditAction"
+           asp-route-id="@Model.Id"
+           class="btn btn-light border text-primary"
+           title="@Model.EditTooltip"
+           data-bs-toggle="tooltip">
+            <i class="bi bi-pencil"></i>
+        </a>
+    }
+}
+
+@if (Model.ShowDelete)
+{
+    if (!string.IsNullOrEmpty(Model.ControllerName))
+    {
+        <form method="post"
+              asp-controller="@Model.ControllerName"
+              asp-action="@Model.DeleteAction"
+              asp-route-id="@Model.Id"
+              class="d-inline"
+              onsubmit="return confirm('هل أنت متأكد من الحذف؟');">
+            @Html.AntiForgeryToken()
+            <button type="submit"
+                    class="btn btn-light border text-danger"
+                    title="@Model.DeleteTooltip"
+                    data-bs-toggle="tooltip">
+                <i class="bi bi-trash"></i>
+            </button>
+        </form>
+    }
+    else
+    {
+        <form method="post"
+              asp-action="@Model.DeleteAction"
+              asp-route-id="@Model.Id"
+              class="d-inline"
+              onsubmit="return confirm('هل أنت متأكد من الحذف؟');">
+            @Html.AntiForgeryToken()
+            <button type="submit"
+                    class="btn btn-light border text-danger"
+                    title="@Model.DeleteTooltip"
+                    data-bs-toggle="tooltip">
+                <i class="bi bi-trash"></i>
+            </button>
+        </form>
+    }
+}

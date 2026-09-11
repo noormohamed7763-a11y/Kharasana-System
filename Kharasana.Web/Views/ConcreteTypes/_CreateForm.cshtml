@@ -1,0 +1,274 @@
+﻿@model Kharasana.Web.ViewModels.ConcreteTypes.CreateConcreteTypeViewModel
+
+<div class="row g-3">
+
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+    <!-- المعلومات الأساسية -->
+    <div class="col-12">
+        <div class="form-section-title">
+            <i class="bi bi-box-seam"></i>
+            <span>المعلومات الأساسية</span>
+        </div>
+    </div>
+
+    @if ((string?)ViewBag.UserRole == "Admin")
+    {
+        <div class="col-md-6">
+            <label asp-for="FactoryId" class="form-label"></label>
+
+            <select asp-for="FactoryId"
+                    asp-items="Model.Factories"
+                    class="form-select">
+                <option value="">اختر المصنع</option>
+            </select>
+
+            <span asp-validation-for="FactoryId" class="text-danger"></span>
+        </div>
+    }
+
+    <!-- النوع القياسي -->
+    <div id="standardConcreteSection">
+
+        <div class="col-md-6">
+
+            <label asp-for="SelectedConcreteCode"
+                   class="form-label fw-bold"></label>
+
+            <select asp-for="SelectedConcreteCode"
+                    class="form-select"
+                    id="concreteTypeSelect">
+
+                <option value="">-- اختر نوع الخرسانة --</option>
+
+                @foreach (var item in ViewBag.ConcreteCatalog)
+                {
+                    <option value="@item.Code"
+                            data-strength="@item.Strength"
+                            data-usage="@item.Usage"
+                            selected="@(Model.SelectedConcreteCode == item.Code ? "selected" : null)">
+
+                        @item.Code - @item.Usage
+
+                    </option>
+                }
+
+            </select>
+
+            <span asp-validation-for="SelectedConcreteCode"
+                  class="text-danger"></span>
+
+        </div>
+
+        <div class="col-md-6 d-flex align-items-end">
+
+            <button type="button"
+                    id="btnCustomType"
+                    class="btn btn-outline-primary w-100">
+
+                <i class="bi bi-plus-circle"></i>
+
+                إنشاء نوع خرسانة مخصص
+
+            </button>
+
+        </div>
+
+        <div class="col-12 mt-3">
+
+            <div class="card shadow-sm border-info">
+
+                <div class="card-body">
+
+                    <h6 class="fw-bold mb-3">
+
+                        <i class="bi bi-info-circle"></i>
+
+                        معلومات النوع
+
+                    </h6>
+
+                    <div class="row">
+
+                        <div class="col-md-6">
+
+                            <strong>الاستخدام</strong>
+
+                            <div id="usageText"
+                                 class="text-muted mt-1">
+
+                                اختر نوع الخرسانة لعرض الاستخدام
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <strong>المقاومة</strong>
+
+                            <div id="strengthText"
+                                 class="text-muted mt-1">
+
+                                -
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- النوع المخصص -->
+    <div id="customConcreteSection" style="display:none;">
+
+        <div class="col-md-6">
+
+            <label asp-for="CustomName"
+                   class="form-label fw-bold"></label>
+
+            <input asp-for="CustomName"
+                   class="form-control"
+                   placeholder="مثال: خرسانة مقاومة للأملاح" />
+
+            <span asp-validation-for="CustomName"
+                  class="text-danger"></span>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <label asp-for="CustomStrength"
+                   class="form-label fw-bold"></label>
+
+            <div class="input-group">
+
+                <input asp-for="CustomStrength"
+                       class="form-control"
+                       placeholder="35" />
+
+                <span class="input-group-text">
+                    MPa
+                </span>
+
+            </div>
+
+            <span asp-validation-for="CustomStrength"
+                  class="text-danger"></span>
+
+        </div>
+
+        <div class="col-12 mt-3">
+
+            <button type="button"
+                    id="btnStandardType"
+                    class="btn btn-outline-secondary">
+
+                <i class="bi bi-arrow-right"></i>
+
+                الرجوع إلى الأنواع القياسية
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- الحقول المخفية -->
+    <input asp-for="Name" type="hidden" />
+    <input asp-for="Strength" type="hidden" />
+    <input asp-for="IsCustomType"
+           type="hidden"
+           id="IsCustomType" />
+
+    <!-- بيانات السعر -->
+    <div class="col-12 mt-3">
+
+        <div class="form-section-title">
+
+            <i class="bi bi-cash-stack"></i>
+
+            <span>بيانات السعر</span>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6">
+
+        <label asp-for="UnitPrice"
+               class="form-label"></label>
+
+        <div class="input-group">
+
+            <input asp-for="UnitPrice"
+                   class="form-control"
+                   placeholder="35000" />
+
+            <span class="input-group-text">
+                ر.ي
+            </span>
+
+        </div>
+
+        <span asp-validation-for="UnitPrice"
+              class="text-danger"></span>
+
+        <small class="text-muted">
+
+            السعر لكل متر مكعب
+
+        </small>
+
+    </div>
+
+    <!-- الصورة -->
+    <div class="col-12 mt-3">
+
+        <div class="form-section-title">
+
+            <i class="bi bi-image"></i>
+
+            <span>الصورة والوصف</span>
+
+        </div>
+
+    </div>
+
+    <div class="col-12">
+
+        <label asp-for="ImageUrl"
+               class="form-label"></label>
+
+        <input asp-for="ImageUrl"
+               class="form-control"
+               placeholder="https://example.com/image.jpg" />
+
+        <span asp-validation-for="ImageUrl"
+              class="text-danger"></span>
+
+    </div>
+
+    <div class="col-12">
+
+        <label asp-for="Description"
+               class="form-label"></label>
+
+        <textarea asp-for="Description"
+                  rows="4"
+                  class="form-control"
+                  placeholder="أدخل وصفاً مختصراً لنوع الخرسانة..."></textarea>
+
+        <span asp-validation-for="Description"
+              class="text-danger"></span>
+
+    </div>
+
+</div>

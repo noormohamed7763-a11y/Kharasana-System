@@ -1,0 +1,51 @@
+﻿@model Kharasana.Web.Models.Components.ToolbarViewModel
+
+<div class="erp-toolbar d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3 p-3 bg-white rounded-3 shadow-sm border">
+
+    <!-- الجهة اليمنى: الحاوية لاستيعاب البحث والفلترة -->
+    <div class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap">
+        <!-- يتم الحقن الخارجي هنا -->
+    </div>
+
+    <!-- الجهة اليسرى: الأزرار العامة -->
+    <div class="d-flex align-items-center gap-2">
+        @if (Model.ShowExport)
+        {
+            @if (!string.IsNullOrWhiteSpace(Model.ExportActionScript))
+            {
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm px-3 py-2"
+                        onclick="@Model.ExportActionScript"
+                        title="تصدير البيانات">
+                    <i class="bi bi-download me-1"></i>
+                    تصدير
+                </button>
+            }
+            else
+            {
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm px-3 py-2"
+                        title="تصدير البيانات">
+                    <i class="bi bi-download me-1"></i>
+                    تصدير
+                </button>
+            }
+        }
+
+        @if (Model.ShowAddButton)
+        {
+            @if (!string.IsNullOrEmpty(Model.AddButtonController))
+            {
+                <a asp-controller="@Model.AddButtonController" asp-action="@Model.AddButtonAction" class="btn btn-primary btn-sm px-3 py-2">
+                    <i class="bi bi-plus-circle me-1"></i> @Model.AddButtonText
+                </a>
+            }
+            else
+            {
+                <a asp-action="@Model.AddButtonAction" class="btn btn-primary btn-sm px-3 py-2">
+                    <i class="bi bi-plus-circle me-1"></i> @Model.AddButtonText
+                </a>
+            }
+        }
+    </div>
+</div>

@@ -1,0 +1,609 @@
+/* ==========================================================
+   DASHBOARD STYLES (Kharasana ERP - Micro-Compact V7)
+========================================================== */
+
+.dashboard-page {
+    /* No top padding: يتولى .content-body المسافة العلوية،
+       والتباعد بين الأقسام يُدار بالـ margins (mb-*) داخل الصفحات
+       لتجنب التباعد المزدوج (gap + margin) الذي كان يُنشئ فراغات كبيرة.
+
+       لا نضيف padding أفقي إضافي هنا — .content-body (layout.css) يوفر
+       الـ gutter الجانبي (22px). إضافة padding من هذا العنصر كان يضيّق
+       الحاوية الفعلية بـ 44px إضافية ويضغط المحتوى على اللابتوب —
+       وهذا أحد أسباب الازدحام التي أزلناها.
+
+       ملاحظة: أزلنا max-width و margin:auto من .content-body (layout.css) —
+       المحتوى يأخذ العرض الكامل المتاح بعد خصم الـ Sidebar الثابت (260px)
+       دون حاوية مضغوطة أو "صفحة داخل صفحة".
+       هذا العنصر يأخذ عرض الأب كاملاً (100%) لتعمل CSS Grid (summary-cards-grid)
+       على المساحة الحقيقية المتاحة بعد خصم الـ Sidebar + padding. */
+    padding: 0 0 var(--space-4);
+    background-color: var(--background);
+    min-height: calc(100vh - var(--navbar-height));
+    font-family: var(--font-main);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* إزالة الفراغ السفلي للعنصر الأخير في أي صفحة dashboard-page */
+.dashboard-page > :last-child {
+    margin-bottom: 0;
+}
+
+/* ==========================================================
+   HERO BANNER (Pro Max Version)
+========================================================== */
+.hero-banner {
+    position: relative;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6) var(--space-8);
+    overflow: hidden;
+    color: #fff;
+    box-shadow: var(--shadow-md);
+    margin-bottom: var(--space-4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* تراكب زخرفي محلي (بدون صور خارجية): توهّج بنقشة هندسية بدل صورة Unsplash */
+.hero-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 60% 80% at 85% 20%, rgba(168, 85, 247, 0.22), transparent 60%),
+        radial-gradient(ellipse 50% 70% at 12% 85%, rgba(56, 189, 248, 0.16), transparent 60%),
+        linear-gradient(transparent 9px, rgba(255,255,255,0.05) 9px 10px, transparent 10px 18px),
+        linear-gradient(90deg, transparent 9px, rgba(255,255,255,0.05) 9px 10px, transparent 10px 18px);
+    background-size: auto, auto, 28px 28px, 28px 28px;
+    opacity: 1;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+/* التوازن بين النص وكتلة المعلومات: النص يأخذ المساحة المتاحة
+   بحد أدنى مضمون حتى لا تضغطه hero-meta عند الشاشات المتوسطة،
+   وhero-meta لا ينكمش ليحافظ على تنسيقه الأصلي. */
+.hero-text {
+    flex: 1 1 55%;
+    min-width: min(100%, 440px);
+}
+
+.hero-meta {
+    flex: 0 0 auto;
+}
+
+.hero-text h1 {
+    font-size: var(--heading-1);
+    font-weight: 800;
+    margin-bottom: var(--space-2);
+    line-height: 1.3;
+}
+
+.hero-text p {
+    font-size: var(--text-lg);
+    color: var(--color-slate-200);
+    margin-bottom: var(--space-3);
+    max-width: 55ch;
+}
+
+.hero-quote {
+    display: inline-block;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--brand-cta);
+    font-weight: 600;
+    color: var(--color-slate-100);
+    font-size: var(--text-sm);
+}
+
+.hero-meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: flex-end;
+}
+
+.hero-date {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    background: rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.hero-date i {
+    font-size: 1.5rem;
+    color: var(--color-slate-200);
+}
+
+.date-text {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+
+.date-text span {
+    font-weight: 700;
+    font-size: var(--text-sm);
+}
+
+.date-text small {
+    color: var(--color-slate-300);
+}
+
+.hero-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: rgba(21, 128, 61, 0.2);
+    color: #4ade80;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    font-size: var(--text-sm);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+/* ==========================================================
+   KPI CARDS
+========================================================== */
+.kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-md);
+    padding: var(--card-padding);
+    gap: var(--space-4);
+    height: 100%;
+    transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+    .kpi-card:hover {
+        box-shadow: var(--shadow-md);
+        border-color: var(--primary);
+        transform: translateY(-3px);
+    }
+
+/* نسخة قابلة للنقر — تنشأ من مكوّن _SummaryCard عند تمرير LinkUrl */
+/* يحافظ على flex column من .kpi-card الأساسي، وينتقل تخطيط البطاقة وهيكلها دون تغيير */
+a.kpi-card--link {
+    text-decoration: none;
+    color: inherit;
+}
+
+    a.kpi-card--link:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+    }
+
+.kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.kpi-title {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.kpi-icon {
+    width: var(--icon-size-lg);
+    height: var(--icon-size-lg);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--icon-font-lg);
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.kpi-icon-primary {
+    background: var(--primary-soft);
+    color: var(--primary-text);
+}
+
+.kpi-icon-purple {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+}
+
+.kpi-icon-info {
+    background: var(--tertiary-soft);
+    color: var(--tertiary-text);
+}
+
+.kpi-icon-success {
+    background: var(--success-soft);
+    color: var(--success-text);
+}
+
+.kpi-icon-warning {
+    background: var(--warning-soft);
+    color: var(--warning-text);
+}
+
+.kpi-icon-danger {
+    background: var(--danger-soft);
+    color: var(--danger-text);
+}
+
+.kpi-icon-neutral {
+    background: var(--surface-low);
+    color: var(--secondary);
+}
+
+.kpi-value {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1;
+    margin-bottom: var(--space-2);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+}
+
+.kpi-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-sm);
+    font-weight: 700;
+}
+
+.trend-up {
+    color: var(--success);
+}
+.trend-down {
+    color: var(--danger);
+}
+.trend-neutral {
+    color: var(--text-muted);
+}
+
+/* ==========================================================
+   SECTION & CHART LAYOUT
+   (.erp-section-card / .erp-section-title live in components.css)
+========================================================== */
+.erp-section-card {
+    height: 100%;
+}
+
+/* داخل أعمدة الشبكة (row): المسافة يتحكم بها الـ g-* على الصف،
+   فلا نضيف margin-bottom سفلي يوسّع الصف بفراغ زائد. */
+.row > .erp-section-card {
+    margin-bottom: 0;
+}
+
+.chart-container {
+    height: var(--chart-height);
+    position: relative;
+}
+
+/* .erp-table (base + thead/tbody) lives only in tables.css.
+   .status-badge + color variants live only in components.css. */
+
+.btn-erp-outline {
+    padding: 5px var(--space-4);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-pill);
+    color: var(--text-main);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition);
+}
+
+    .btn-erp-outline:hover {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+    }
+
+/* ==========================================================
+   QUICK ACTIONS
+========================================================== */
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 10px var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--surface-alt);
+    border: 1px solid var(--border-soft);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: var(--text-sm);
+    color: var(--text-main);
+    transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition), color var(--transition);
+}
+
+    .quick-action-btn i {
+        font-size: var(--icon-font-md);
+    }
+
+    .quick-action-btn:hover {
+        box-shadow: var(--shadow-sm);
+        background: var(--surface);
+        border-color: var(--border-main);
+    }
+
+.quick-action-primary {
+    color: var(--primary-text);
+    border-color: var(--primary-soft);
+}
+
+    .quick-action-primary:hover {
+        background: var(--primary-glow);
+    }
+
+.quick-action-success {
+    color: var(--success-text);
+    border-color: var(--success-soft);
+}
+
+    .quick-action-success:hover {
+        background: var(--success-soft);
+    }
+
+.quick-action-warning {
+    color: var(--warning-text);
+    border-color: var(--warning-soft);
+}
+
+    .quick-action-warning:hover {
+        background: var(--warning-soft);
+    }
+
+.quick-action-neutral {
+    color: var(--secondary);
+    border-color: var(--border-main);
+}
+
+    .quick-action-neutral:hover {
+        background: var(--surface-low);
+    }
+
+.chart-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: 100%;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+    .chart-empty-state i {
+        font-size: 2.5rem;
+        opacity: .25;
+    }
+/* ==========================================================
+   ACTIVITY TIMELINE
+========================================================== */
+.activity-timeline {
+    position: relative;
+    padding-top: var(--space-2);
+}
+
+.timeline-item {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    position: relative;
+}
+
+.timeline-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 35px;
+    bottom: -15px;
+    right: 76px; /* Positioned exactly under the center of the marker in RTL */
+    width: 2px;
+    background: var(--border-soft);
+    z-index: 1;
+}
+
+.timeline-time {
+    width: 55px;
+    flex-shrink: 0;
+    text-align: left;
+    padding-top: 8px;
+}
+
+.timeline-time span {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.timeline-marker {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    z-index: 2;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+}
+
+.bg-primary-soft { background: rgba(232, 93, 34, 0.15) !important; }
+.bg-warning-soft { background: rgba(180, 83, 9, 0.15) !important; }
+.bg-success-soft { background: rgba(21, 128, 61, 0.15) !important; }
+.bg-info-soft { background: rgba(29, 78, 216, 0.15) !important; }
+
+.timeline-content {
+    flex-grow: 1;
+    padding-top: 4px;
+    padding-bottom: var(--space-2);
+}
+
+.timeline-content p {
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+/* ==========================================================
+   RESPONSIVE REFINEMENTS (Dashboard only)
+   ========================================================== */
+
+/* مسافة رأسية مريحة بين صفوف الداشبورد عندما لا تحمل mb-* صريحة */
+.dashboard-page > .row {
+    margin-bottom: var(--space-5);
+}
+
+.dashboard-page > .row:last-child {
+    margin-bottom: 0;
+}
+
+.kpi-body {
+    margin-top: auto;
+}
+
+/* Banner على الشاشات المتوسطة (<992): رصّ العمود عمودياً ومدّد الـ meta
+   أفقياً حتى لا يتزاحم النص مع الكتلتين (التاريخ + الحالة). */
+@media (max-width: 991.98px) {
+    .hero-banner {
+        padding: var(--space-5) var(--space-6);
+    }
+
+    .hero-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hero-text {
+        min-width: 0;
+    }
+
+    .hero-meta {
+        align-items: flex-start;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}
+
+/* الشاشات الضيقة جداً (<576): البانر يتنفس أكثر */
+@media (max-width: 575.98px) {
+    .hero-banner {
+        padding: var(--space-4);
+    }
+
+    .hero-quote {
+        display: block;
+        margin-top: var(--space-2);
+    }
+
+    .hero-meta {
+        flex-direction: column;
+    }
+
+    .hero-date,
+    .hero-status {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ==========================================================
+   OPERATIONAL PROGRESS CARD (Factory Dashboard)
+========================================================== */
+.progress-overview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    height: 100%;
+}
+
+.progress-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-alt);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+}
+
+.progress-metric-label {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-weight: 700;
+}
+
+.progress-metric-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.progress-metric-success {
+    color: var(--success);
+}
+
+.progress-metric-info {
+    color: var(--info);
+}
+
+.progress-track {
+    margin-top: auto;
+    padding-top: var(--space-1);
+}
+
+.progress-percent {
+    font-weight: 800;
+    color: var(--primary);
+    font-size: var(--text-lg);
+    font-variant-numeric: tabular-nums;
+}
+
+.progress-caption {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.progress {
+    background: var(--surface-low);
+    border-radius: var(--radius-pill);
+    height: 12px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: var(--primary);
+    border-radius: var(--radius-pill);
+}

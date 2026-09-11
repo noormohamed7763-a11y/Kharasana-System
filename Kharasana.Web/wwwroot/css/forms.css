@@ -1,0 +1,99 @@
+﻿/* ==========================================================
+   FORMS LIBRARY (Kharasana ERP)
+   ========================================================== */
+
+/* .dashboard-page لها تعريف واحد فقط في dashboard.css (max-width + margin مضمّنان هناك) */
+
+.form-card {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-main);
+    box-shadow: var(--shadow-sm);
+    padding: var(--card-padding);
+}
+
+.form-group {
+    margin-bottom: var(--space-4);
+}
+
+.form-label {
+    font-weight: 700;
+    font-size: var(--text-sm);
+    color: var(--text-main);
+    margin-bottom: var(--space-1);
+    display: block;
+}
+
+.form-control,
+.form-select {
+    height: 44px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-size: var(--text-base);
+    padding: 0 var(--space-3);
+    transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition), color var(--transition);
+    width: 100%;
+}
+
+/* حقول النصوص المتعددة الأسطر: لا يُقيَّد ارتفاعها بقاعدة الـ 44px،
+   بل تنمو حسب rows وتسمح للمستخدم بتغيير الحجم عند الحاجة */
+textarea.form-control {
+    height: auto;
+    min-height: 100px;
+    padding: var(--space-2) var(--space-3);
+    line-height: 1.6;
+    resize: vertical;
+}
+
+    .form-control:focus,
+    .form-select:focus {
+        background: var(--surface);
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-soft);
+        outline: none;
+    }
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.form-check-input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.form-check-label {
+    font-size: var(--text-base);
+    color: var(--text-main);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.validation-message,
+span.text-danger {
+    font-size: var(--text-xs);
+    color: var(--danger-text);
+    margin-top: 4px;
+    display: block;
+    font-weight: 500;
+}
+
+/* عناوين الأقسام داخل النماذج (Enterprise ERP Standard) */
+.form-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary-text);
+    border-bottom: 2px solid var(--primary-soft);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}

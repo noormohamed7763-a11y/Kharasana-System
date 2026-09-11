@@ -1,0 +1,244 @@
+﻿@model Kharasana.Web.Models.Dashboard.DashboardViewModel
+@using Kharasana.Web.Models.Components
+@using Kharasana.Domain.Enums
+
+@{
+    // ===== بيانات رسم "حالة الطلبات النشطة" — قيم حقيقية من الـ ViewModel (بدون أي Backend) =====
+    // تغطي الحالات الأربع النشطة التي يحسبها الـ API فعلياً: جديدة / قيد التنفيذ / جاهزة للتسليم / قيد النقل
+    var factoryOrdersJson = System.Text.Json.JsonSerializer.Serialize(new[]
+    {
+        new { label = "جديدة", count = Model.TodayOrdersCount },
+        new { label = "قيد التنفيذ", count = Model.InProgressOrdersCount },
+        new { label = "جاهزة للتسليم", count = Model.ReadyOrdersCount },
+        new { label = "قيد النقل", count = Model.OnTheWayOrders }
+    });
+
+    // ===== حسابات بطاقة "تقدم تشغيل اليوم" — كلها من حقول حقيقية =====
+    // حجم العمل النشط (طلبات لم تُسلم بعد) + المنجز اليوم = إجمالي عبء عمل اليوم
+    var activeOrdersCount = Model.TodayOrdersCount + Model.InProgressOrdersCount + Model.ReadyOrdersCount + Model.OnTheWayOrders;
+    var totalLoadToday = activeOrdersCount + Model.DeliveredToday;
+    var progressPercent = totalLoadToday > 0 ? (int)Math.Round((double)Model.DeliveredToday / totalLoadToday * 100) : 0;
+}
+
+<div class="dashboard-page">
+
+    <!-- T1. Page Header Component -->
+    <partial name="Components/_PageHeader" model='new PageHeaderViewModel { Title = "لوحة تشغيل المصنع", Description = $"{Kharasana.Web.Helpers.GreetingHelper.Greeting()}، {ViewBag.UserName} — متابعة العمليات وإدارة الطلبات اليومية" }' />
+
+    <!-- T2. Operational Summary Cards Component (قابلة للنقر → قوائم العمل) -->
+    <div class="summary-cards-grid mb-4">
+        <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "طلبات اليوم", Value = Model.TodayOrdersCount.ToString(), Icon = "bi-calendar-check", IconClass = "kpi-icon-primary", LinkUrl = Url.Action("Index", "Orders") }' />
+        <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "قيد التنفيذ", Value = Model.InProgressOrdersCount.ToString(), Icon = "bi-hourglass-split", IconClass = "kpi-icon-warning", LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Pending }) }' />
+        <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "جاهزة للتسليم", Value = Model.ReadyOrdersCount.ToString(), Icon = "bi-check2-all", IconClass = "kpi-icon-success", LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Approved }) }' />
+        <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "السائقون المتاحون", Value = Model.AvailableDrivers.ToString(), Icon = "bi-truck", IconClass = "kpi-icon-info", LinkUrl = Url.Action("Index", "Drivers") }' />
+    </div>
+
+    <!-- T2.5. Order Status Chart + Operational Progress -->
+    <div class="row g-4 mb-4">
+        <!-- حالة الطلبات النشطة (Doughnut) -->
+        <div class="col-xl-7 col-lg-12">
+            <div class="erp-section-card">
+                <div class="mb-3">
+                    <h5 class="erp-section-title"><i class="bi bi-pie-chart-fill"></i>حالة الطلبات النشطة</h5>
+                </div>
+                <div class="chart-container d-flex align-items-center justify-content-center">
+                    <canvas id="factoryOrdersChart"
+                            role="img"
+                            aria-label="رسم بياني دائري لتوزيع الطلبات النشطة: جديدة وقيد التنفيذ وجاهزة للتسليم وقيد النقل"
+                            data-chart-values='@Html.Raw(factoryOrdersJson)'></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- تقدم تشغيل اليوم -->
+        <div class="col-xl-5 col-lg-12">
+            <div class="erp-section-card">
+                <div class="mb-3">
+                    <h5 class="erp-section-title"><i class="bi bi-graph-up-arrow"></i>تقدم تشغيل اليوم</h5>
+                </div>
+                <div class="progress-overview">
+                    <div class="progress-metric">
+                        <span class="progress-metric-label">طلبات قيد المعالجة</span>
+                        <strong class="progress-metric-value">@activeOrdersCount</strong>
+                    </div>
+                    <div class="progress-metric">
+                        <span class="progress-metric-label">تم التسليم اليوم</span>
+                        <strong class="progress-metric-value progress-metric-success">@Model.DeliveredToday</strong>
+                    </div>
+                    <div class="progress-metric">
+                        <span class="progress-metric-label">السائقون المتاحون</span>
+                        <strong class="progress-metric-value progress-metric-info">@Model.AvailableDrivers</strong>
+                    </div>
+                    <div class="progress-track">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="progress-percent">@progressPercent%</span>
+                            <span class="progress-caption">@Model.DeliveredToday من @totalLoadToday</span>
+                        </div>
+                        <div class="progress" role="progressbar" aria-valuenow="@progressPercent" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar" style="width: @progressPercent%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- T3. Operational Quick Actions -->
+    <div class="erp-section-card mb-3">
+        <div class="mb-3">
+            <h5 class="erp-section-title">
+                <i class="bi bi-lightning-charge"></i>
+                الإجراءات السريعة للتشغيل
+            </h5>
+        </div>
+
+        <div class="summary-cards-grid">
+
+            <partial name="Components/_QuickActionButton"
+                     model='new QuickActionButtonViewModel
+                     {
+                         Text = "إنشاء طلب جديد",
+                         Description = "إضافة طلب خرسانة جديد",
+                         Icon = "bi-plus-circle",
+                         CssClass = "quick-action-primary",
+                         Controller = "Orders",
+                         Action = "Create"
+                     }' />
+
+            <partial name="Components/_QuickActionButton"
+                     model='new QuickActionButtonViewModel
+                     {
+                         Text = "إنشاء طلب هاتفي",
+                         Description = "استقبال طلب عبر الاتصال",
+                         Icon = "bi-telephone-plus",
+                         CssClass = "quick-action-success",
+                         Controller = "Orders",
+                         Action = "Create"
+                     }' />
+
+            <partial name="Components/_QuickActionButton"
+                     model='new QuickActionButtonViewModel
+                     {
+                         Text = "تعيين سائق",
+                         Description = "ربط الشاحنات بالطلبات",
+                         Icon = "bi-truck",
+                         CssClass = "quick-action-warning",
+                         Controller = "Orders",
+                         Action = "Index"
+                     }' />
+
+            <partial name="Components/_QuickActionButton"
+                     model='new QuickActionButtonViewModel
+                     {
+                         Text = "تحديث الحالة",
+                         Description = "متابعة مسار وتطور الطلب",
+                         Icon = "bi-arrow-repeat",
+                         CssClass = "quick-action-neutral",
+                         Controller = "Orders",
+                         Action = "Index"
+                     }' />
+
+        </div>
+    </div>
+
+    <!-- T4. Today's Operational Orders Table -->
+    <div class="erp-section-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="erp-section-title">
+                <i class="bi bi-clipboard-check"></i>
+                أحدث طلبات المصنع
+            </h5>
+
+            <a asp-controller="Orders"
+               asp-action="Index"
+               class="btn-erp-outline">
+                إدارة كافة الطلبات
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table erp-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>رقم الطلب</th>
+                        <th>العميل</th>
+                        <th>الحالة</th>
+                        <th>السائق المسند</th>
+                        <th>تاريخ الإنشاء</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.RecentOrders != null && Model.RecentOrders.Any())
+                    {
+                        @foreach (var order in Model.RecentOrders)
+                        {
+                            <tr>
+
+                                <td class="fw-bold">
+                                    <a asp-controller="Orders"
+                                       asp-action="Details"
+                                       asp-route-id="@order.Id"
+                                       class="order-number-chip"
+                                       title="@order.OrderNumber">
+                                        <span class="order-number-seq">#@order.OrderNumberSeq</span>
+                                        <span class="order-number-date">@order.OrderNumberDate</span>
+                                    </a>
+                                </td>
+
+                                <td>
+                                    @order.ClientName
+                                </td>
+
+                                <td>
+                                    <partial name="Components/_StatusBadge"
+                                             model='new StatusBadgeViewModel
+                                             {
+                                                 Text = order.StatusDisplay,
+                                                 CssClass = $"status-{order.StatusCssClass}"
+                                             }' />
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrEmpty(order.DriverName)
+                                                                ? "غير مسند"
+                                                                : order.DriverName)
+                                </td>
+
+                                <td class="text-muted small">
+                                    @order.OrderDate.ToString("yyyy-MM-dd HH:mm")
+                                </td>
+
+                                <td>
+                                    <a asp-controller="Orders"
+                                       asp-action="Details"
+                                       asp-route-id="@order.Id"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                        عرض
+                                    </a>
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                                لا توجد طلبات مسجلة لهذا المصنع بعد
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+</div>

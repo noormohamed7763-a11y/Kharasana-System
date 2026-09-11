@@ -1,0 +1,28 @@
+# Visual Studio
+.vs/
+
+# Build
+bin/
+obj/
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# User files
+*.user
+*.suo
+
+# Secrets — env configs may contain real DB passwords & JWT keys.
+# Production/Staging must be deploy-time-only, never committed.
+appsettings.Production*.json
+appsettings.Staging*.json
+
+# Publish profiles — .pubxml.user stores machine-specific WebDeploy credentials
+# (plaintext/encrypted password + destination connection strings). Never commit.
+*.pubxml.user
+
+# Logs
+*.log

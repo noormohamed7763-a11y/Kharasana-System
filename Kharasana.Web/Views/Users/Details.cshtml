@@ -1,0 +1,233 @@
+﻿@model Kharasana.Web.ViewModels.Users.UserDetailsViewModel
+@using Kharasana.Web.Models.Components
+
+@{
+    ViewData["Title"] = "تفاصيل المستخدم";
+
+    var roleCss = Model.Role switch
+    {
+        "Admin" => "status-danger",
+        "FactoryEmployee" => "status-primary",
+        "Driver" => "status-warning",
+        "Client" => "status-success",
+        _ => "status-secondary"
+    };
+
+    var driverStatusCss = Model.DriverStatus switch
+    {
+        "Available" => "status-success",
+        "Busy" => "status-warning",
+        "Offline" => "status-secondary",
+        _ => "status-secondary"
+    };
+}
+
+<div class="dashboard-page">
+
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-person-circle",
+            Title = "تفاصيل المستخدم",
+            Description = Model.FullName
+        })
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="erp-section-card">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="erp-section-title">
+                        <i class="bi bi-info-circle"></i>
+                        البيانات الأساسية
+                    </h5>
+
+                    <a asp-action="Edit"
+                       asp-route-id="@Model.UserId"
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-pencil"></i>
+                        تعديل
+                    </a>
+                </div>
+
+                <!-- الاسم والدور -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="detail-label">الاسم الكامل</div>
+                        <div class="detail-value">@Model.FullName</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="detail-label">الدور</div>
+
+                        <div class="detail-value">
+                            @await Html.PartialAsync(
+                                                        "~/Views/Shared/Components/_StatusBadge.cshtml",
+                                                        new StatusBadgeViewModel
+                                                        {
+                                                            Text = Model.RoleName ?? "-",
+                                                            CssClass = roleCss
+                                                        })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-divider"></div>
+
+                <!-- البريد الإلكتروني والهاتف -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="detail-label">البريد الإلكتروني</div>
+
+                        <div class="detail-value">
+                            @(string.IsNullOrWhiteSpace(Model.Email)
+                                                        ? "-"
+                                                        : Model.Email)
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="detail-label">رقم الهاتف</div>
+
+                        <div class="detail-value" dir="ltr">
+                            @(string.IsNullOrWhiteSpace(Model.Phone)
+                                                        ? "-"
+                                                        : Model.Phone)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-divider"></div>
+
+                <!-- الواتساب والحالة -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="detail-label">رقم الواتساب</div>
+
+                        <div class="detail-value" dir="ltr">
+                            @(string.IsNullOrWhiteSpace(Model.WhatsApp)
+                                                        ? "-"
+                                                        : Model.WhatsApp)
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="detail-label">الحالة</div>
+
+                        <div class="detail-value">
+                            @await Html.PartialAsync(
+                            "~/Views/Shared/Components/_StatusBadge.cshtml",
+                                                        new StatusBadgeViewModel
+                                                        {
+                                                            Text = Model.IsActive ? "نشط" : "موقوف",
+                                                            CssClass = Model.IsActive
+                                                        ? "status-success"
+                                                        : "status-danger"
+                                                        })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- معلومات السائق -->
+                @if (Model.Role == "Driver" &&
+                                !string.IsNullOrWhiteSpace(Model.DriverStatus))
+                {
+                    <div class="detail-divider"></div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="detail-label">حالة السائق</div>
+
+                            <div class="detail-value">
+                                @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_StatusBadge.cshtml",
+                                                        new StatusBadgeViewModel
+                                                        {
+                                                            Text = Model.DriverStatusName ?? "-",
+                                                            CssClass = driverStatusCss
+                                                        })
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="detail-label">رقم الرخصة</div>
+
+                        <div class="detail-value">
+                            @(string.IsNullOrWhiteSpace(Model.LicenseNumber)
+                                                        ? "-"
+                                                        : Model.LicenseNumber)
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- المصنع -->
+                @if (Model.FactoryId.HasValue)
+                {
+                    <div class="detail-divider"></div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="detail-label">المصنع</div>
+
+                            <div class="detail-value">
+                                @(string.IsNullOrWhiteSpace(Model.FactoryName)
+                                                            ? Model.FactoryId.Value.ToString()
+                                                            : Model.FactoryName)
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="detail-divider"></div>
+
+                <!-- معرف المستخدم وتاريخ الإنشاء -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="detail-label">معرف المستخدم</div>
+
+                        <div class="detail-value">
+                            #@Model.UserId
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="detail-label">تاريخ الإنشاء</div>
+
+                        <div class="detail-value">
+                            @(Model.CreatedAt.HasValue ? Model.CreatedAt.Value.ToString("yyyy-MM-dd HH:mm") : "-")
+                        </div>
+                    </div>
+                </div>
+
+                <!-- آخر تحديث -->
+                @if (Model.UpdatedAt.HasValue)
+                {
+                    <div class="detail-divider"></div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="detail-label">آخر تحديث</div>
+
+                            <div class="detail-value">
+                                @Model.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm")
+                            </div>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+
+    <!-- العودة إلى القائمة -->
+    <div class="d-flex gap-2 mt-3">
+        <a asp-action="Index"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-right"></i>
+            العودة إلى القائمة
+        </a>
+    </div>
+
+</div>
