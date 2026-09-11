@@ -26,3 +26,6 @@ appsettings.Staging*.json
 
 # Logs
 *.log
+
+# Test results
+TestResults/
