@@ -108,7 +108,7 @@ dotnet user-secrets set "Jwt:Key" "<مفتاح-سري-طويل-لا-يقل-عن-
 dotnet run
 ```
 
-الخدمة تبدأ على `http://localhost:5000`، ووثائق OpenAPI على `http://localhost:5000/openapi`.
+الخدمة تبدأ على `http://localhost:5000`، وواجهة Swagger على `http://localhost:5000/swagger/index.html`.
 
 ### 2) تشغيل الواجهة
 
