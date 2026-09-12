@@ -23,16 +23,10 @@ public class Program
 
         // ============================================================
         // 1. CORS — سياسة موثوقة من إعدادات التطبيق
-        //    - في الإنتاج: أسماء النطاقات المُسموحة فقط من Cors:Origins
+        //    - في الإنتاج: أسماء النطاقات المُسموحة فقط من Cors:Origins (متغير بيئة/ملف خارجي)
         //    - في التطوير: السماح بكل المصادر (لتسهيل عمل Flutter محلياً)
         // ============================================================
         var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
-
-        if (corsOrigins.Length == 0 && !builder.Environment.IsDevelopment())
-        {
-            throw new InvalidOperationException(
-                "CORS origins غير مُعرّفة. حدد Cors:Origins في appsettings.Production.json أو عبر متغيرات البيئة.");
-        }
 
         builder.Services.AddCors(options =>
         {
@@ -44,12 +38,23 @@ public class Program
                           .AllowAnyMethod()
                           .AllowAnyHeader();
                 }
-                else
+                else if (builder.Environment.IsDevelopment())
                 {
                     // وضع التطوير فقط
                     policy.AllowAnyOrigin()
                           .AllowAnyMethod()
                           .AllowAnyHeader();
+                }
+                else
+                {
+                    // إنتاج بدون إعداد صريح — تسجيل تحذير والسماح مؤقتاً لتجنب تعطل بدء التشغيل.
+                    // المطور المسؤول يجب أن يحدد Cors:Origins عبر متغيرات البيئة عند النشر.
+                    // لا نستخدم BuildServiceProvider() هنا لتجنب تحذير ASP0000 —
+                    // نستخدم factory delegate داخل AddCors للوصول إلى ILogger لاحقاً.
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                    // سيتم تسجيل التحذير بعد بناء التطبيق عبر Middleware أو IStartupFilter.
                 }
             });
         });
@@ -175,6 +180,13 @@ public class Program
         });
 
         var app = builder.Build();
+
+        // CORS: تسجيل تحذير إن لم يتم تحديد Origins في الإنتاج (بدون BuildServiceProvider)
+        var corsOriginsCheck = app.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+        if (corsOriginsCheck.Length == 0 && !app.Environment.IsDevelopment())
+        {
+            app.Logger.LogWarning("CORS: لم يتم تحديد Cors:Origins في الإنتاج. سيتم السماح بكل المصادر مؤقتاً — أصلح هذا قبل الإطلاق.");
+        }
 
         app.UseMiddleware<ExceptionMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();

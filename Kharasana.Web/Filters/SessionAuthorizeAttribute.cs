@@ -77,7 +77,7 @@ public class SessionAuthorizeAttribute : ActionFilterAttribute
             // ✅ استخدم Expiration بدلاً من Exp (وهو الطريقة الصحيحة في الإصدارات الجديدة)
             var exp = jwt.Payload.Expiration;
 
-            if (exp is null)
+            if (!exp.HasValue)
                 return true;
 
             var expiration = DateTimeOffset.FromUnixTimeSeconds(exp.Value).UtcDateTime;
