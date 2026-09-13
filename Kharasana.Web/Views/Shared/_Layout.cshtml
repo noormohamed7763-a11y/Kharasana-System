@@ -10,8 +10,6 @@
 
     <title>@ViewData["Title"] | Kharasana</title>
 
-    <script type="importmap"></script>
-
     <!-- CSRF token for AJAX -->
     <meta name="csrf-token" content="@tokens.RequestToken" />
 
@@ -64,8 +62,8 @@
                 <!-- رسائل النجاح/الخطأ الموحّدة من TempData -->
                 @await Html.PartialAsync("Components/_Alerts")
 
-                <!-- Toast Container for AJAX notifications (orders.js showMessage) -->
-                <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;"></div>
+                <!-- Toast Container for AJAX notifications — aria-live يُعلّم القراء الصوتيّين بالتحديثات الفورية -->
+                <div id="toastContainer" class="toast-container position-fixed" style="inset-block-end:1rem; inset-inline-end:1rem; z-index:1080;" aria-live="polite" role="status" aria-atomic="true"></div>
 
                 @RenderBody()
 

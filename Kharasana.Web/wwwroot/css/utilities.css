@@ -38,3 +38,36 @@
 .text-primary {
     color: var(--primary-text);
 }
+
+/* ==========================================================
+   FOCUS STYLES — أنماط تركيز موحّدة للوصولية
+   تعوض عن :focus-visible في المتصفحات القديمة
+========================================================== */
+
+/* إزالة الظل الافتراضي ثم إعادة إضافته بالكيبورد فقط */
+:focus {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 3px solid rgba(0, 123, 255, 0.6);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* حماية للمتصفحات التي لا تدعم :focus-visible */
+@supports not selector(:focus-visible) {
+    :focus {
+        outline: 3px solid rgba(0, 123, 255, 0.6);
+        outline-offset: 2px;
+    }
+}
+
+/* إخفاء التأثير عند النقر بالماوس فقط (لا يُظهر الأزرار) */
+a:focus:not(:focus-visible),
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+    outline: none;
+}

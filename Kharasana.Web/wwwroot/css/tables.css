@@ -122,3 +122,22 @@
         background: transparent;
         border-color: var(--border-soft);
     }
+
+/* ==========================================================
+   TABLE CELL OVERFLOW — منع كسر أعمدة جداول Bootstrap
+   الجداول الرئيسية (.erp-table) تستخدم overflow:scroll + sticky بالفعل.
+========================================================== */
+.table td,
+.table th {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 240px;
+    vertical-align: middle;
+}
+
+/* السماح بالتفاف المحتوى لعمود واحد إن لزم */
+.table td.allow-wrap,
+.table th.allow-wrap {
+    white-space: normal;
+}

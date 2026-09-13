@@ -84,6 +84,9 @@ public class ExceptionMiddleware
             Data = null
         };
 
+        // ربط خطأ العميل بالسجل عبر TraceIdentifier — يُطابق نفس المعرف في رسائل الـ log أعلاه
+        context.Response.Headers["X-Trace-Id"] = context.TraceIdentifier;
+
         await context.Response.WriteAsJsonAsync(response);
     }
 }

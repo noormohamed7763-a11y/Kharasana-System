@@ -1,4 +1,8 @@
-﻿@{
+﻿@* TODO: refactor to use Claims instead of Session
+   — يتطلب تعديل AccountController لإضافة SignInAsync مع Claims，
+   ثم تحويل جميع Controllers المستخدمة Session للصلاحيات.
+   مؤجَّل لجلسة مستقلة. *@
+@{
     var role = Context.Session.GetString("Role") ?? "";
 }
 

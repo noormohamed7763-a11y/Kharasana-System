@@ -71,3 +71,19 @@
         scrollbar-color: var(--border-main) var(--surface-low);
     }
 }
+
+/* ==========================================================
+   CONTENT CONTAINER — منع امتداد المحتوى على الشاشات العريضة
+========================================================== */
+.content-body .container,
+.main-content .container {
+    max-width: 1400px;
+    margin-inline: auto;
+}
+
+@media (min-width: 1920px) {
+    .content-body .container,
+    .main-content .container {
+        max-width: 1600px;
+    }
+}

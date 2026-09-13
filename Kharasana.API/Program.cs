@@ -4,6 +4,7 @@ using Kharasana.Application.Common.Logging;
 using Kharasana.Infrastructure;
 using Kharasana.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -27,35 +28,34 @@ public class Program
         //    - في الإنتاج: أسماء النطاقات المُسموحة فقط من Cors:Origins (متغير بيئة/ملف خارجي)
         //    - في التطوير: السماح بكل المصادر (لتسهيل عمل Flutter محلياً)
         // ============================================================
-        var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+        var corsOrigins = builder.Configuration
+            .GetSection("Cors:Origins")
+            .Get<string[]>() ?? Array.Empty<string>();
+
+        // إنتاج بدون إعداد صريح = إيقاف فوري (fail-fast) — لا سماح مؤقت صامت
+        if (corsOrigins.Length == 0 && !builder.Environment.IsDevelopment())
+        {
+            throw new InvalidOperationException(
+                "يجب ضبط Cors:Origins في الإنتاج. حدّده في appsettings.Production.json أو عبر متغيرات البيئة.");
+        }
 
         builder.Services.AddCors(options =>
         {
-            options.AddPolicy("AllowConfiguredOrigins", policy =>
+            options.AddDefaultPolicy(policy =>
             {
                 if (corsOrigins.Length > 0)
                 {
                     policy.WithOrigins(corsOrigins)
+                          .AllowAnyHeader()
                           .AllowAnyMethod()
-                          .AllowAnyHeader();
-                }
-                else if (builder.Environment.IsDevelopment())
-                {
-                    // وضع التطوير فقط
-                    policy.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader();
+                          .AllowCredentials();
                 }
                 else
                 {
-                    // إنتاج بدون إعداد صريح — تسجيل تحذير والسماح مؤقتاً لتجنب تعطل بدء التشغيل.
-                    // المطور المسؤول يجب أن يحدد Cors:Origins عبر متغيرات البيئة عند النشر.
-                    // لا نستخدم BuildServiceProvider() هنا لتجنب تحذير ASP0000 —
-                    // نستخدم factory delegate داخل AddCors للوصول إلى ILogger لاحقاً.
+                    // وضع التطوير فقط: لكل المصادر بدون بيانات اعتماد
                     policy.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader();
-                    // سيتم تسجيل التحذير بعد بناء التطبيق عبر Middleware أو IStartupFilter.
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
                 }
             });
         });
@@ -74,11 +74,24 @@ public class Program
                 "مفتاح توقيع JWT غير مُعرّف (Jwt:Key). حددّه عبر appsettings أو متغير البيئة Jwt__Key.");
         }
 
+        // تشديد: مفتاح أقصر من 32 حرفاً يعطي عشوائية ضعيفة وسهل الكسر
+        if (jwtKey.Length < 32)
+        {
+            throw new InvalidOperationException(
+                $"Jwt:Key يجب ألا يقل عن 32 حرفاً لضمان عشوائية كافية (الطول الحالي: {jwtKey.Length}).");
+        }
+
+        var jwt = builder.Configuration.GetSection("Jwt");
+        if (string.IsNullOrWhiteSpace(jwt["Issuer"]) ||
+            string.IsNullOrWhiteSpace(jwt["Audience"]))
+        {
+            throw new InvalidOperationException(
+                "يجب ضبط Jwt:Issuer و Jwt:Audience للتطبيق.");
+        }
+
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                var jwt = builder.Configuration.GetSection("Jwt");
-
                 options.MapInboundClaims = false;
 
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -88,6 +101,9 @@ public class Program
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 },
+
+                    // صرامة أعلى: السماحة بالفرق الزمني 30 ثانية بدل الافتراضي (5 دقائق)
+                    ClockSkew = TimeSpan.FromSeconds(30),
 
                     ValidIssuer = jwt["Issuer"],
                     ValidAudience = jwt["Audience"],
@@ -200,13 +216,6 @@ public class Program
 
         var app = builder.Build();
 
-        // CORS: تسجيل تحذير إن لم يتم تحديد Origins في الإنتاج (بدون BuildServiceProvider)
-        var corsOriginsCheck = app.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
-        if (corsOriginsCheck.Length == 0 && !app.Environment.IsDevelopment())
-        {
-            app.Logger.LogWarning("CORS: لم يتم تحديد Cors:Origins في الإنتاج. سيتم السماح بكل المصادر مؤقتاً — أصلح هذا قبل الإطلاق.");
-        }
-
         app.UseMiddleware<ExceptionMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
@@ -228,7 +237,18 @@ public class Program
         // ============================================================
         // 5. تفعيل CORS (يجب أن يكون قبل UseAuthentication)
         // ============================================================
-        app.UseCors("AllowConfiguredOrigins");
+        app.UseCors();
+
+        // ============================================================
+        // 6. Forwarded Headers — لتشغيل Rate Limiter و HTTPS بشكل صحيح خلف وسيط (Proxy)
+        //    تحذير: في الإنتاج يجب ضبط KnownProxies / KnownNetworks لقبول
+        //    X-Forwarded-* من مصادر موثوقة فقط — وإلا أمكن تزوير عنوان IP.
+        // ============================================================
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                               ForwardedHeaders.XForwardedProto
+        });
 
         app.UseRateLimiter();
 
