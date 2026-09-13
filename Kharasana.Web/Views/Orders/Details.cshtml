@@ -90,9 +90,9 @@
                 <i class="bi bi-clipboard-check text-primary"></i>
                 تفاصيل الطلب
                 <span class="order-number-chip order-number-chip--lg" title="@Model.OrderNumber">
-                                <span class="order-number-seq">#@Model.OrderNumberSeq</span>
-                                <span class="order-number-date">@Model.OrderNumberDate</span>
-                            </span>
+                    <span class="order-number-seq">#@Model.OrderNumberSeq</span>
+                    <span class="order-number-date">@Model.OrderNumberDate</span>
+                </span>
             </h1>
             <p>إدارة ومتابعة الطلب من البداية إلى النهاية</p>
         </div>
@@ -265,57 +265,56 @@
     <!-- ============================================================
     PRICING - التسعير
     ============================================================ -->
-    @if ((ViewBag.UserRole == "FactoryEmployee" && factoryId == Model.FactoryId) || ViewBag.UserRole == "Admin")
+    @if (((ViewBag.UserRole == "FactoryEmployee" && factoryId == Model.FactoryId) || ViewBag.UserRole == "Admin") &&
+         (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending))
     {
-        if (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending)
-        {
-            <div class="erp-section-card border-primary">
-                <div class="erp-section-title text-primary">
-                    <i class="bi bi-currency-dollar"></i>
-                    التسعير
+        <!-- متاح للتحرير فقط في حالتي "جديد" و"قيد الانتظار" -->
+        <div class="erp-section-card border-primary">
+            <div class="erp-section-title text-primary">
+                <i class="bi bi-currency-dollar"></i>
+                التسعير
+            </div>
+            <div class="erp-section-content">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold" for="unitPriceInput">سعر المتر (ر.ي)</label>
+                        <input type="number"
+                               id="unitPriceInput"
+                               class="form-control form-control-lg"
+                               value="@(Model.UnitPrice ?? 0)"
+                               step="0.01"
+                               min="0.01"
+                               oninput="calculateTotal()" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold" for="quantityDisplay">الكمية (م³)</label>
+                        <input type="text"
+                               id="quantityDisplay"
+                               class="form-control form-control-lg"
+                               value="@Model.Quantity"
+                               readonly />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold" for="totalPriceDisplay">الإجمالي (ر.ي)</label>
+                        <input type="text"
+                               id="totalPriceDisplay"
+                               class="form-control form-control-lg text-primary fw-bold"
+                               value="@(Model.UnitPrice.HasValue ? (Model.UnitPrice.Value * Model.Quantity).ToString("N0") : "0")"
+                               readonly />
+                    </div>
                 </div>
-                <div class="erp-section-content">
-                    <div class="row align-items-end">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold" for="unitPriceInput">سعر المتر (ر.ي)</label>
-                            <input type="number"
-                                   id="unitPriceInput"
-                                   class="form-control form-control-lg"
-                                   value="@(Model.UnitPrice ?? 0)"
-                                   step="0.01"
-                                   min="0.01"
-                                   oninput="calculateTotal()" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold" for="quantityDisplay">الكمية (م³)</label>
-                            <input type="text"
-                                   id="quantityDisplay"
-                                   class="form-control form-control-lg"
-                                   value="@Model.Quantity"
-                                   readonly />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold" for="totalPriceDisplay">الإجمالي (ر.ي)</label>
-                            <input type="text"
-                                   id="totalPriceDisplay"
-                                   class="form-control form-control-lg text-primary fw-bold"
-                                   value="@(Model.UnitPrice.HasValue ? (Model.UnitPrice.Value * Model.Quantity).ToString("N0") : "0")"
-                                   readonly />
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <button class="btn btn-primary btn-lg" id="savePriceBtn" data-order-id="@Model.OrderId">
-                            <i class="bi bi-save"></i> حفظ السعر
-                        </button>
-                        <span id="priceMessage" class="ms-3"></span>
-                    </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary btn-lg" id="savePriceBtn" data-order-id="@Model.OrderId">
+                        <i class="bi bi-save"></i> حفظ السعر
+                    </button>
+                    <span id="priceMessage" class="ms-3"></span>
                 </div>
             </div>
-        }
+        </div>
     }
     else
     {
-        <!-- For non-staff (clients), show price summary only -->
+        <!-- عرض قراءة فقط لبقية الحالات والأدوار -->
         <div class="erp-section-card">
             <div class="erp-section-title">
                 <i class="bi bi-currency-dollar text-primary"></i>
@@ -572,11 +571,6 @@
                                 }
                             </select>
                             <small class="text-muted">يعرض فقط السائقين المتاحين في مصنعك</small>
-                            @if (factoryId != null && (int)factoryId > 0)
-                            {
-                                <br />
-                                <small class="text-muted">رقم المصنع: @factoryId</small>
-                            }
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold" for="truckPlateInput">رقم لوحة الشاحنة</label>
@@ -619,13 +613,5 @@ SCRIPTS
 
         document.getElementById('unitPriceInput')?.addEventListener('input', calculateTotal);
         document.addEventListener('DOMContentLoaded', calculateTotal);
-
-        console.log('✅ Details page loaded successfully');
-
-        const availableDriversCount = Number('@availableDrivers.Count') || 0;
-        const currentFactoryId = '@factoryId';
-
-        console.log(`📋 Available drivers: ${availableDriversCount}`);
-        console.log(`🏭 Factory ID: ${currentFactoryId}`);
     </script>
 }

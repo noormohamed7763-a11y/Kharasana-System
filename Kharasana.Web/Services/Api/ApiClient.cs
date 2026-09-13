@@ -1,3 +1,4 @@
+using Kharasana.Application.Common;
 using Kharasana.Web.Configuration;
 using Kharasana.Web.Localization;
 using Microsoft.Extensions.Options;
@@ -176,6 +177,18 @@ public class ApiClient
                 traceId: CurrentTraceId,
                 innerException: ex);
         }
+    }
+
+    /// <summary>
+    /// يعيد إجمالي عدد العناصر (TotalCount) لقائمة GET دون جلب بيانات الصفحة —
+    /// يُستخدم في بطاقات الإحصاءات لتغذيتها بالأرقام الحقيقية عبر كل الصفحات.
+    /// </summary>
+    public async Task<int> GetPagedTotalAsync<T>(string url, CancellationToken cancellationToken = default)
+    {
+        var response = await GetAsync<ApiResponse<PagedResult<T>>>(url, cancellationToken);
+        return response?.Success == true && response.Data != null
+            ? response.Data.TotalCount
+            : 0;
     }
 
     /// <summary>

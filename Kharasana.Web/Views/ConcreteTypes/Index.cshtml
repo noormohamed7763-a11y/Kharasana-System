@@ -78,17 +78,6 @@
                         })
     </div>
 
-    @await Html.PartialAsync(
-        "~/Views/Shared/Components/_Toolbar.cshtml",
-        new ToolbarViewModel
-        {
-            ShowAddButton = !factoryInactive,
-            AddButtonText = "إضافة نوع خرسانة",
-            AddButtonAction = "Create",
-            AddButtonController = "ConcreteTypes",
-            ShowExport = false
-        })
-
     <!-- Search -->
     <div class="mb-3">
         <div class="row align-items-center">
@@ -109,12 +98,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        document.getElementById("tableSearch").addEventListener("keyup", function () {
-            const value = this.value.toLowerCase();
-            document.querySelectorAll("tbody tr").forEach(function (row) {
-                row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
-            });
-        });
-    </script>
+    <script src="~/js/concrete-type.js" asp-append-version="true"></script>
 }

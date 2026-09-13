@@ -1,247 +1,105 @@
 @model Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeViewModel
+@using Kharasana.Web.Models.Components
 
 @{
-    ViewData["Title"] = "تفاصيل نوع الخرسانة";
+    ViewData["Title"] = $"تفاصيل نوع الخرسانة - {Model.Name}";
+
+    var statusCss = Model.IsActive ? "status-success" : "status-danger";
 }
 
-<div class="container-fluid py-4">
+<div class="dashboard-page">
 
-    <!-- Header -->
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-box-seam",
+            Title = "تفاصيل نوع الخرسانة",
+            Description = Model.Name
+        })
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="erp-section-card">
 
-        <div>
+        <!-- رأس البطاقة: الصورة، الاسم، المقاومة، الحالة -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 pb-3 border-bottom gap-3">
+            <div class="d-flex align-items-center gap-3">
+                @{
+                    var previewSrc = string.IsNullOrWhiteSpace(Model.ImageUrl)
+                        ? Url.Content("~/images/default-concrete.png")
+                        : Model.ImageUrl;
+                }
+                <img src="@previewSrc"
+                     asp-append-version="true"
+                     alt="@Model.Name"
+                     style="width:88px; height:88px; object-fit:cover; border-radius:var(--radius-md); border:2px solid var(--border-main); background:var(--surface-alt);" />
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">@Model.Name</h3>
+                    <span class="text-muted"><i class="bi bi-box-seam me-1"></i> خرسانة بقوة @Model.Strength MPa</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                @await Html.PartialAsync(
+                "~/Views/Shared/Components/_StatusBadge.cshtml",
+                    new StatusBadgeViewModel
+                    {
+                        Text = Model.IsActive ? "نشط" : "متوقف",
+                        CssClass = statusCss
+                    })
+                <a asp-action="Edit" asp-route-id="@Model.ConcreteTypeId" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-pencil"></i> تعديل
+                </a>
+            </div>
+        </div>
 
-            <nav aria-label="breadcrumb">
+        <!-- شبكة البيانات التفصيلية -->
+        <div class="row g-3">
 
-                <ol class="breadcrumb mb-2">
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1">سعر المتر المكعب</span>
+                    <h6 class="fw-bold mb-0 text-dark">@Model.UnitPrice.ToString("N0") ر.ي</h6>
+                </div>
+            </div>
 
-                    <li class="breadcrumb-item">
-                        <a asp-controller="Home" asp-action="Index">
-                            الرئيسية
-                        </a>
-                    </li>
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1">المصنع</span>
+                    <h6 class="fw-bold mb-0 text-dark">@Model.FactoryName</h6>
+                </div>
+            </div>
 
-                    <li class="breadcrumb-item">
-                        <a asp-action="Index">
-                            أنواع الخرسانة
-                        </a>
-                    </li>
-
-                    <li class="breadcrumb-item active">
-                        التفاصيل
-                    </li>
-
-                </ol>
-
-            </nav>
-
-            <h2 class="fw-bold">
-
-                <i class="bi bi-box-seam text-warning"></i>
-
-                تفاصيل نوع الخرسانة
-
-            </h2>
-
-            <p class="text-muted">
-
-                عرض جميع بيانات نوع الخرسانة.
-
-            </p>
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1">معرف النوع</span>
+                    <h6 class="fw-bold mb-0 text-dark">#@Model.ConcreteTypeId</h6>
+                </div>
+            </div>
 
         </div>
 
-        <div>
+        <!-- الوصف -->
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <div class="mt-3 p-3 bg-light rounded-3 border">
+                <span class="text-muted d-block small mb-1">الوصف</span>
+                <p class="mb-0 fw-semibold text-dark">@Model.Description</p>
+            </div>
+        }
 
-            <a asp-action="Edit"
-               asp-route-id="@Model.ConcreteTypeId"
-               class="btn btn-warning text-white">
-
-                <i class="bi bi-pencil"></i>
-
-                تعديل
-
+        <!-- أزرار الإجراءات السفلية -->
+        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <a asp-action="Index" class="btn btn-outline-secondary px-4">
+                <i class="bi bi-arrow-right me-1"></i> العودة للقائمة
             </a>
-
-            <a asp-action="Index"
-               class="btn btn-outline-secondary">
-
-                <i class="bi bi-arrow-right"></i>
-
-                رجوع
-
-            </a>
-
         </div>
 
     </div>
 
-    <div class="row g-3">
-
-        <!-- Preview -->
-
-        <div class="col-lg-4">
-
-            <div class="card">
-
-                <div class="card-body text-center">
-
-                    <img id="detailsImage"
-                         src="~/images/default-concrete.png"
-                         asp-append-version="true"
-                         data-record-image="@Model.ImageUrl"
-                         class="concrete-preview-img rounded mb-3"
-                         alt="Concrete Image" />
-
-                    <h3 class="fw-bold">
-
-                        @Model.Name
-
-                    </h3>
-
-                    <p class="text-muted">
-
-                        خرسانة بقوة
-                        @Model.Strength MPa
-
-                    </p>
-
-                    @if (Model.IsActive)
-                    {
-                        <span class="badge bg-success fs-6">
-
-                            نشط
-
-                        </span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-danger fs-6">
-
-                            متوقف
-
-                        </span>
-                    }
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- Details -->
-
-        <div class="col-lg-8">
-
-            <div class="card">
-
-                <div class="card-body">
-
-                    <div class="row g-3">
-
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-
-                                اسم النوع
-
-                            </label>
-
-                            <input class="form-control"
-                                   readonly
-                                   value="@Model.Name" />
-
-                        </div>
-
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-
-                                المقاومة
-
-                            </label>
-
-                            <input class="form-control"
-                                   readonly
-                                   value="@Model.Strength MPa" />
-
-                        </div>
-
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-
-                                سعر المتر المكعب
-
-                            </label>
-
-                            <input class="form-control"
-                                   readonly
-                                   value="@Model.UnitPrice.ToString("N0") ر.ي" />
-
-                        </div>
-
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-
-                                الحالة
-
-                            </label>
-
-                            <input class="form-control"
-                                   readonly
-                                   value="@(Model.IsActive ? "نشط" : "متوقف")" />
-
-                        </div>
-
-                        <div class="col-12">
-
-                            <label class="form-label fw-bold">
-
-                                رابط الصورة
-
-                            </label>
-
-                            <input class="form-control"
-                                   readonly
-                                   value="@Model.ImageUrl" />
-
-                        </div>
-
-                        <div class="col-12">
-
-                            <label class="form-label fw-bold">
-
-                                الوصف
-
-                            </label>
-
-                            <textarea class="form-control"
-                                      rows="6"
-                                      readonly>@Model.Description</textarea>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    <!-- العودة إلى القائمة -->
+    <div class="d-flex gap-2 mt-3">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-right"></i> العودة إلى القائمة
+        </a>
     </div>
 
 </div>
-
-@section Scripts {
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            var img = document.getElementById("detailsImage");
-            var record = img && img.getAttribute("data-record-image");
-            if (record) img.src = record;
-        });
-    </script>
-}

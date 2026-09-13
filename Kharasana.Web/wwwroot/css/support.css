@@ -154,8 +154,10 @@
    S4. WHATSAPP BUTTON (درجة أخضر واتساب الرسمية)
 ========================================================== */
 .btn-whatsapp {
-    background-color: #25D366;
-    border-color: #25D366;
+    /* أخضر واتساب لكن بدرجة داكنة تكفي لتباين النص الأبيض (5.34:1 —
+       الدرجة الرسمية #25D366 كانت 1.98:1 وتفشل WCAG AA). */
+    background-color: #0F7B41;
+    border-color: #0F7B41;
     color: #fff;
     font-weight: 700;
     white-space: nowrap;
@@ -163,8 +165,8 @@
 
 .btn-whatsapp:hover,
 .btn-whatsapp:focus {
-    background-color: #1ebe5b;
-    border-color: #1ebe5b;
+    background-color: #0E6A38;
+    border-color: #0E6A38;
     color: #fff;
 }
 

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 using System.Text;
 using System.Threading.RateLimiting;
 
@@ -148,10 +149,28 @@ public class Program
         {
             options.SwaggerDoc("v1", new OpenApiInfo
             {
-                Title = "Kharasana API",
+                Title = "Kharasana ERP API | واجهة برمجة التطبيقات",
                 Version = "v1",
-                Description = "Concrete Ordering System API"
+                Description = "واجهة برمجة تطبيقات نظام خرسانة للطلب المسبق للخرسانة الجاهزة — " +
+                              "إدارة المصانع والأنواع والطلبات والتقارير. " +
+                              "المصادقة عبر JWT Bearer: اضغط زر Authorize وأدخل التوكن بصيغة “Bearer {token}” ثم جرّب النقاط المحمية.",
+                Contact = new OpenApiContact
+                {
+                    Name = "فريق تطوير خرسانة"
+                }
             });
+
+            // دمج تعليقات التوثيق العربية (XML) الخاصة بكل نقطة نهاية في وصف Swagger
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            if (File.Exists(xmlPath))
+            {
+                options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+            }
+
+            // ترقيم النقاط حسب اسم الـ Controller ثم مسارها لعرضٍ منظّم بدل الترتيب العشوائي
+            options.TagActionsBy(api => new[] { api.ActionDescriptor.RouteValues["controller"] ?? "General" });
+            options.OrderActionsBy(api => api.RelativePath ?? string.Empty);
 
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
@@ -197,7 +216,12 @@ public class Program
 
             app.UseSwaggerUI(options =>
             {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Kharasana API v1");
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Kharasana ERP API v1");
+                options.DocumentTitle = "Kharasana ERP API | واجهة برمجة التطبيقات";
+                options.EnableTryItOutByDefault();      // تفعيل زر "Try it out" تلقائياً
+                options.EnablePersistAuthorization();   // حفظ ما يُدخله المستخدم من توكن
+                options.DisplayRequestDuration();       // عرض مدّة كل طلب بالمللي ثانية
+                options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
             });
         }
 

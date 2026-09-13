@@ -75,6 +75,18 @@ public interface IDriverApiService
     Task<bool> UpdateStatusAsync(int id, UpdateDriverStatusViewModel model, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// جلب أعداد السائقين حسب الحالة (متاح، مشغول، غير متصل) عبر كل الصفحات —
+    /// لتغذية بطاقات الإحصاءات بالأرقام الحقيقية بدلاً من عدّ الصفحة الحالية فقط.
+    /// </summary>
+    /// <param name="search">نص البحث (اختياري) — يحسب النتائج ضمن نفس سياق البحث المعروض.</param>
+    /// <param name="factoryId">معرف المصنع (اختياري) — لعزل البيانات حسب المصنع.</param>
+    /// <param name="cancellationToken">رمز إلغاء الطلب (اختياري)</param>
+    Task<(int Available, int Busy, int Offline)> GetStatusCountsAsync(
+        string? search,
+        int? factoryId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// تفعيل/إيقاف حساب السائق (عكس حالة IsActive)
     /// </summary>
     /// <param name="id">معرف السائق</param>

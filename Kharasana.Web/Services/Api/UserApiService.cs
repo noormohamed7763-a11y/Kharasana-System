@@ -51,6 +51,23 @@ public class UserApiService : IUserApiService
         }
     }
 
+    public async Task<(int Admins, int FactoryEmployees, int Drivers)> GetRoleCountsAsync(
+        string? search,
+        int? factoryId)
+    {
+        // تنفيذ متسلسل — لا نجعل ApiClient يشارك رأس Authorization بين طلبات متزامنة
+        string CountQuery(string role) =>
+            $"Users?pageNumber=1&pageSize=1&Role={role}"
+            + (string.IsNullOrWhiteSpace(search) ? "" : $"&Search={Uri.EscapeDataString(search)}")
+            + (factoryId.HasValue ? $"&FactoryId={factoryId.Value}" : "");
+
+        var admins = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery("Admin"));
+        var employees = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery("FactoryEmployee"));
+        var drivers = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery("Driver"));
+
+        return (admins, employees, drivers);
+    }
+
     public async Task<PagedResult<UserListItemViewModel>?> GetUsersAsync(
         int pageNumber = 1,
         int pageSize = 20,

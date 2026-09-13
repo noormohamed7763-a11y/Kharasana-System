@@ -19,7 +19,8 @@
             </thead>
             <tbody>
                 @{
-                    var index = 1;
+                    // ترقيم متصل عبر الصفحات — يبدأ من ((صفحة-1) × حجم الصفحة) + 1
+                    var index = ((int)(ViewData["RowOffset"] ?? 0)) + 1;
                 }
                 @foreach (var driver in Model)
                 {
@@ -106,7 +107,7 @@
                                 <input type="hidden" name="id" value="@driver.UserId" />
                                 <button type="submit"
                                         class="btn btn-light border @(driver.IsActive ? "text-danger" : "text-success")"
-                                        title="@(driver.IsActive ? "إيقاف السائق" : "تفعيل السائق")"
+                                        aria-label="@(driver.IsActive ? "إيقاف السائق" : "تفعيل السائق")"
                                         data-bs-toggle="tooltip">
                                     <i class="bi @(driver.IsActive ? "bi-stop-circle" : "bi-play-circle")"></i>
                                 </button>

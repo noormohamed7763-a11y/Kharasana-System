@@ -29,11 +29,14 @@ public class FactoriesController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index()
     {
+        _logger.LogInformation(">>> FactoriesController.Index START");
         var result = await _factoryService.GetAllAsync();
+        _logger.LogInformation(">>> FactoriesController.Index AFTER API, Succeeded={Succeeded}", result.Succeeded);
 
         if (!result.Succeeded)
             TempData[TempDataError] = result.Message;
 
+        _logger.LogInformation(">>> FactoriesController.Index BEFORE View");
         return View(result.Data ?? new List<FactoryListItemViewModel>());
     }
 

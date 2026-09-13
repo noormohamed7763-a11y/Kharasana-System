@@ -126,7 +126,7 @@
                                 <a asp-action="Details"
                                    asp-route-id="@item.ConcreteTypeId"
                                    class="btn btn-light action-btn"
-                                   title="التفاصيل">
+                                   aria-label="التفاصيل">
 
                                     <i class="bi bi-eye"></i>
 
@@ -137,7 +137,7 @@
                                     <a asp-action="Edit"
                                        asp-route-id="@item.ConcreteTypeId"
                                        class="btn btn-warning text-white action-btn"
-                                       title="تعديل">
+                                       aria-label="تعديل">
 
                                         <i class="bi bi-pencil"></i>
 
@@ -153,7 +153,7 @@
 
                                     <button type="submit"
                                             class="btn btn-danger action-btn"
-                                            title="حذف">
+                                            aria-label="حذف">
 
                                         <i class="bi bi-trash"></i>
 
@@ -183,7 +183,7 @@
                                 ImageUrl = "/images/empty-concrete.png",
                                 Title = "لا توجد أنواع خرسانة",
                                 Message = "قم بإضافة أول نوع خرسانة ليظهر هنا.",
-                                ShowActionButton = true,
+                                ShowActionButton = !factoryInactive,
                                 ActionController = "ConcreteTypes",
                                 ActionAction = "Create",
                                 ActionText = "إضافة نوع خرسانة"

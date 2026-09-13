@@ -22,7 +22,7 @@
 
     <!-- Bootstrap & Icons (RTL لتناسق التطبيق العربي) -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
 
     <!-- Kharasana Design System Stylesheets (Strict Order) -->
     <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
@@ -63,6 +63,9 @@
 
                 <!-- رسائل النجاح/الخطأ الموحّدة من TempData -->
                 @await Html.PartialAsync("Components/_Alerts")
+
+                <!-- Toast Container for AJAX notifications (orders.js showMessage) -->
+                <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;"></div>
 
                 @RenderBody()
 

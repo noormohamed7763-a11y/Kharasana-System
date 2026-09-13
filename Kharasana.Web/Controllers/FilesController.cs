@@ -30,10 +30,10 @@ public class FilesController : BaseController
 
     /// <summary>
     /// يعيد صورة شعار مصنع بالتمرير المباشر (stream) من API.
-    /// المسار المتوقع: /Files/factories/{relativePath}
+    /// المسار: /Files/factories/{relativePath}
     /// مثال: /Files/factories/Images/Factories/abc123.png
     /// </summary>
-    [HttpGet("factories/{*relativePath}")]
+    [HttpGet("Files/factories/{*relativePath:minlength(1)}")]
     public async Task<IActionResult> FactoryLogo(string relativePath)
     {
         if (string.IsNullOrWhiteSpace(relativePath))

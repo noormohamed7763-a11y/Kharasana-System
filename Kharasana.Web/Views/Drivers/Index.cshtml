@@ -1,15 +1,9 @@
 @model Kharasana.Web.ViewModels.Drivers.DriversIndexViewModel
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.Models.Components.Search
-@using Kharasana.Domain.Enums
 
 @{
     ViewData["Title"] = "إدارة السائقين";
-
-    var totalDrivers = Model.PagedDrivers?.TotalCount ?? 0;
-    var availableCount = Model.PagedDrivers?.Items?.Count(d => d.DriverStatus == DriverStatus.Available) ?? 0;
-    var busyCount = Model.PagedDrivers?.Items?.Count(d => d.DriverStatus == DriverStatus.Busy) ?? 0;
-    var offlineCount = Model.PagedDrivers?.Items?.Count(d => d.DriverStatus == DriverStatus.Offline) ?? 0;
 }
 
 <div class="dashboard-page">
@@ -20,7 +14,10 @@
         {
             Icon = "bi-truck",
             Title = "إدارة السائقين",
-            Description = "عرض وإدارة سائقي المصنع، حالتهم، وبيانات رخصهم."
+            Description = "عرض وإدارة سائقي المصنع، حالتهم، وبيانات رخصهم.",
+            ActionText = "إضافة سائق",
+            ActionController = "Drivers",
+            ActionMethod = "Create"
         })
 
     <div class="summary-cards-grid mb-3">
@@ -29,7 +26,7 @@
                         new SummaryCardViewModel
                         {
                             Title = "إجمالي السائقين",
-                            Value = totalDrivers.ToString(),
+                            Value = Model.TotalDrivers.ToString(),
                             Icon = "bi-people",
                             IconClass = "kpi-icon-primary",
                             LinkUrl = Url.Action("Index", "Drivers")
@@ -39,7 +36,7 @@
                         new SummaryCardViewModel
                         {
                             Title = "متاحون",
-                            Value = availableCount.ToString(),
+                            Value = Model.AvailableDrivers.ToString(),
                             Icon = "bi-person-check",
                             IconClass = "kpi-icon-success",
                             LinkUrl = Url.Action("Index", "Drivers")
@@ -49,7 +46,7 @@
                         new SummaryCardViewModel
                         {
                             Title = "مشغولون",
-                            Value = busyCount.ToString(),
+                            Value = Model.BusyDrivers.ToString(),
                             Icon = "bi-truck",
                             IconClass = "kpi-icon-warning",
                             LinkUrl = Url.Action("Index", "Drivers")
@@ -59,23 +56,12 @@
                         new SummaryCardViewModel
                         {
                             Title = "غير متصلين",
-                            Value = offlineCount.ToString(),
+                            Value = Model.OfflineDrivers.ToString(),
                             Icon = "bi-power",
                             IconClass = "kpi-icon-neutral",
                             LinkUrl = Url.Action("Index", "Drivers")
                         })
     </div>
-
-    @await Html.PartialAsync(
-        "~/Views/Shared/Components/_Toolbar.cshtml",
-        new ToolbarViewModel
-        {
-            ShowAddButton = true,
-            AddButtonText = "إضافة سائق",
-            AddButtonAction = "Create",
-            AddButtonController = "Drivers",
-            ShowExport = false
-        })
 
     <form method="get" asp-action="Index" class="mb-3">
         <div class="row align-items-center">
@@ -117,6 +103,7 @@
     }
     else
     {
+        ViewData["RowOffset"] = (Model.PageNumber - 1) * Model.PageSize;
         <partial name="_DriverTable" model="Model.PagedDrivers.Items" />
     }
 

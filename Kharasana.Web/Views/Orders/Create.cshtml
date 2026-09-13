@@ -1,5 +1,6 @@
 ﻿@model Kharasana.Web.ViewModels.Orders.CreatePhoneOrderViewModel
 @using Kharasana.Web.ViewModels.Shared
+@using Kharasana.Web.Models.Components
 @using Kharasana.Domain.Enums
 
 @{
@@ -10,25 +11,14 @@
 
 <div class="dashboard-page">
 
-    <!-- ============================================================
-    PAGE HEADER - رأس الصفحة
-    ============================================================ -->
-    <div class="dashboard-header">
-        <div class="dashboard-title">
-            <h1>
-                <i class="bi bi-plus-circle text-primary"></i>
-                إنشاء طلب جديد
-            </h1>
-            <p>
-                إنشاء طلب خرسانة جديد للعميل
-            </p>
-        </div>
-        <div>
-            <a asp-action="Index" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-right"></i> العودة إلى القائمة
-            </a>
-        </div>
-    </div>
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-plus-circle",
+            Title = "إنشاء طلب جديد",
+            Description = "إنشاء طلب خرسانة جديد للعميل"
+        })
 
     <!-- ============================================================
     FORM - نموذج إنشاء الطلب

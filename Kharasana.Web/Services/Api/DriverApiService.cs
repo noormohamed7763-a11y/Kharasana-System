@@ -352,6 +352,42 @@ public class DriverApiService : IDriverApiService
     }
 
     /// <inheritdoc />
+    public async Task<(int Available, int Busy, int Offline)> GetStatusCountsAsync(
+        string? search,
+        int? factoryId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(RequestTimeoutSeconds));
+
+            string CountQuery(DriverStatus status) =>
+                $"Users?role={(int)UserRole.Driver}&PageNumber=1&PageSize=1&driverStatus={(int)status}"
+                + (string.IsNullOrWhiteSpace(search) ? "" : $"&Search={Uri.EscapeDataString(search)}")
+                + (factoryId.HasValue ? $"&factoryId={factoryId.Value}" : "");
+
+            // تنفيذ متسلسل — لا نجعل ApiClient يشارك رأس Authorization بين طلبات متزامنة
+            var available = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(DriverStatus.Available), cts.Token);
+            var busy = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(DriverStatus.Busy), cts.Token);
+            var offline = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(DriverStatus.Offline), cts.Token);
+
+            return (available, busy, offline);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("GetStatusCountsAsync: Request was cancelled or timed out.");
+            return (0, 0, 0);
+        }
+        catch (ApiServiceException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception in GetStatusCountsAsync");
+            return (0, 0, 0);
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<bool> ToggleActiveAsync(int id, CancellationToken cancellationToken = default)
     {
         try

@@ -45,13 +45,31 @@ public class UsersController : BaseController
             role,
             factoryId);
 
+        // أعداد الأدوار عبر كل الصفحات — فشلها لا ينبغي أن يُسقط الصفحة بعد أن حمّلنا القائمة
+        var counts = (Admins: 0, FactoryEmployees: 0, Drivers: 0);
+        if (users != null)
+        {
+            try
+            {
+                counts = await _userApiService.GetRoleCountsAsync(search, factoryId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "تعذر جلب إحصاءات أدوار المستخدمين — ستُعرض البطاقات بقيمة صفر.");
+            }
+        }
+
         var model = new UsersIndexViewModel
         {
             PagedUsers = users,
             Search = search,
             Role = role,
             PageNumber = pageNumber,
-            PageSize = pageSize
+            PageSize = pageSize,
+            TotalUsers = users?.TotalCount ?? 0,
+            AdminsCount = counts.Admins,
+            FactoryEmployeesCount = counts.FactoryEmployees,
+            DriversCount = counts.Drivers
         };
 
         return View(model);

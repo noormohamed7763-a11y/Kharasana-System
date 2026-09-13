@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Kharasana.API.Controllers;
 
+/// <summary>
+/// إدارة مستخدمي النظام (عملاء، سائقون، موظفو مصانع) مع عزل بيانات المصانع
+/// — موظف المصنع لا يرى ولا يعدّل إلا سائقي مصنعه.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize] // حد أدنى: توكن صالح
@@ -23,6 +27,14 @@ public class UsersController : ControllerBase
     // ============================================================
     // 1. GET ALL - عرض المستخدمين مع عزل المصانع
     // ============================================================
+    /// <summary>جلب قائمة المستخدمين مع فلاتر (الدور والمصنع وحالة السائق) وترقيم الصفحات.</summary>
+    /// <remarks>موظف المصنع يرى سائقي مصنعه فقط (عزل إجباري).</remarks>
+    /// <param name="role">الدور لتصفية القائمة.</param>
+    /// <param name="factoryId">المصنع لتصفية القائمة (للمدير فقط).</param>
+    /// <param name="driverStatus">حالة السائق لتصفية القائمة.</param>
+    /// <param name="pagination">خيارات الترقيم.</param>
+    /// <response code="200">تم جلب المستخدمين بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpGet]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> GetAll(
@@ -70,6 +82,12 @@ public class UsersController : ControllerBase
     // ============================================================
     // 2. GET BY ID - عرض مستخدم مع عزل المصانع
     // ============================================================
+    /// <summary>جلب تفاصيل مستخدم بمعرّفه.</summary>
+    /// <remarks>المدير أي مستخدم؛ موظف المصنع سائقو مصنعه فقط.</remarks>
+    /// <param name="id">معرّف المستخدم.</param>
+    /// <response code="200">تم جلب المستخدم بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">المستخدم غير موجود أو لا ينتمي لمصنع الموظف.</response>
     [HttpGet("{id:int}")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> GetById(int id)
@@ -130,6 +148,13 @@ public class UsersController : ControllerBase
     // ============================================================
     // 3. CREATE - إنشاء مستخدم جديد
     // ============================================================
+    /// <summary>إنشاء مستخدم جديد بأي دور (للمدير) أو سائق فقط (لموظف المصنع).</summary>
+    /// <remarks>موظف المصنع يُجبر FactoryId على مصنعه من التوكن.</remarks>
+    /// <param name="dto">بيانات المستخدم الجديد.</param>
+    /// <response code="201">تم إنشاء المستخدم بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="403">موظف المصنع يحاول إنشاء دور غير السائق.</response>
     [HttpPost]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
@@ -194,6 +219,14 @@ public class UsersController : ControllerBase
     // ============================================================
     // 4. UPDATE - تعديل مستخدم
     // ============================================================
+    /// <summary>تعديل بيانات مستخدم موجود.</summary>
+    /// <remarks>المدير أي مستخدم؛ موظف المصنع سائقو مصنعه فقط.</remarks>
+    /// <param name="id">معرّف المستخدم.</param>
+    /// <param name="dto">البيانات الجديدة للمستخدم.</param>
+    /// <response code="200">تم التعديل بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">المستخدم غير موجود أو لا ينتمي لمصنع الموظف.</response>
     [HttpPut("{id:int}")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDto dto)
@@ -263,6 +296,11 @@ public class UsersController : ControllerBase
     // ============================================================
     // 5. UPDATE MY PROFILE - تعديل الملف الشخصي
     // ============================================================
+    /// <summary>تعديل الملف الشخصي للمستخدم الحالي.</summary>
+    /// <param name="dto">البيانات الجديدة للملف الشخصي.</param>
+    /// <response code="200">تم التعديل بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPut("me")]
     [Authorize]
     public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
@@ -291,6 +329,12 @@ public class UsersController : ControllerBase
     // ============================================================
     // 6. DELETE - حذف مستخدم
     // ============================================================
+    /// <summary>حذف مستخدم.</summary>
+    /// <remarks>المدير أي مستخدم؛ موظف المصنع سائقو مصنعه فقط.</remarks>
+    /// <param name="id">معرّف المستخدم.</param>
+    /// <response code="200">تم الحذف بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">المستخدم غير موجود أو لا ينتمي لمصنع الموظف.</response>
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> Delete(int id)
@@ -352,6 +396,14 @@ public class UsersController : ControllerBase
     // ============================================================
     // 7. UPDATE DRIVER STATUS - تحديث حالة السائق
     // ============================================================
+    /// <summary>تحديث حالة عمل السائق (متاح/مشغول/غير متاح...).</summary>
+    /// <remarks>عند FactoryEmployee تتأكد الخدمة من انتماء السائق لمصنعه.</remarks>
+    /// <param name="id">معرّف السائق.</param>
+    /// <param name="dto">الحالة الجديدة.</param>
+    /// <response code="200">تم تحديث الحالة بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">السائق غير موجود.</response>
     [HttpPut("{id:int}/driver-status")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> UpdateDriverStatus(int id, [FromBody] UpdateDriverStatusDto dto)
@@ -382,6 +434,11 @@ public class UsersController : ControllerBase
     // ============================================================
     // 8. TOGGLE ACTIVE - تفعيل/تعطيل حساب السائق
     // ============================================================
+    /// <summary>تفعيل أو تعطيل حساب سائق (تبديل الحالة).</summary>
+    /// <param name="id">معرّف السائق.</param>
+    /// <response code="200">تم تبديل الحالة بنجاح — يرجع الحالة الجديدة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">السائق غير موجود.</response>
     [HttpPut("{id:int}/toggle-active")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> ToggleActive(int id)

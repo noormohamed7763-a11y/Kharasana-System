@@ -9,6 +9,10 @@ using Kharasana.Application.DTOs.Customer;
 
 namespace Kharasana.API.Controllers;
 
+/// <summary>
+/// إدارة طلبات الخرسانة بدورة حياتها الكاملة: إنشاء، تسعير، موافقة عميل،
+/// إسناد سائق، توصيل، إغلاق، رفض وإلغاء — مع عزل البيانات بحسب دور المتصل.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -52,6 +56,16 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 1. GET ALL
     // ============================================================
+    /// <summary>جلب قائمة الطلبات مع ترقيم الصفحات وصفّ البيانات بِناءً على الدور.</summary>
+    /// <remarks>
+    /// - <b>Admin:</b> كل الطلبات (يمكن تضييق النطاق عبر FactoryId).
+    /// - <b>FactoryEmployee:</b> طلبات مصنعه فقط.
+    /// - <b>Client:</b> طلباته فقط.
+    /// - <b>Driver:</b> الطلبات المسندة له فقط.
+    /// </remarks>
+    /// <param name="pagination">خيارات الترقيم (الصفحة والحجم والفلاتر الاختيارية).</param>
+    /// <response code="200">تم جلب الطلبات بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح أو لا يوجد مصنع مرتبط.</response>
     [HttpGet]
     [Authorize(Roles = "Admin,FactoryEmployee,Client,Driver")]
     public async Task<IActionResult> GetAll([FromQuery] PaginationParams pagination)
@@ -99,6 +113,15 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 2. GET CUSTOMERS
     // ============================================================
+    /// <summary>جلب قائمة العملاء الذين لديهم طلبات عند مصنع معيّن.</summary>
+    /// <remarks>
+    /// - <b>Admin:</b> يحدّد المصنع عبر factoryId (اختياري — كل المصانع بدونه).
+    /// - <b>FactoryEmployee:</b> مصنعه تلقائياً ويُتجاهَل أي factoryId مرسَل.
+    /// </remarks>
+    /// <param name="factoryId">معرّف المصنع (اختياري للمدير).</param>
+    /// <param name="pagination">خيارات الترقيم.</param>
+    /// <response code="200">تم جلب العملاء بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpGet("customers")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> GetCustomers([FromQuery] int? factoryId, [FromQuery] PaginationParams pagination)
@@ -132,6 +155,11 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 3. GET BY ID
     // ============================================================
+    /// <summary>جلب تفاصيل طلب واحد مع التحقق من صلاحية المتصل لعرضه.</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <response code="200">تم جلب الطلب بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">الطلب غير موجود أو لا يخص المتصل.</response>
     [HttpGet("{id:int}")]
     [Authorize(Roles = "Admin,FactoryEmployee,Client,Driver")]
     public async Task<IActionResult> GetById(int id)
@@ -152,6 +180,11 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 4. CREATE
     // ============================================================
+    /// <summary>إنشاء طلب جديد (يُنشئه العميل بنفسه، أو المصنع/المدير بالنيابة).</summary>
+    /// <param name="dto">بيانات الطلب الجديد.</param>
+    /// <response code="201">تم إنشاء الطلب بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPost]
     [Authorize(Roles = "Client,Admin,FactoryEmployee")]
     public async Task<IActionResult> Create([FromBody] CreateOrderDto dto)
@@ -175,6 +208,13 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 5. UPDATE
     // ============================================================
+    /// <summary>تعديل بيانات طلب موجود.</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <param name="dto">البيانات الجديدة للطلب.</param>
+    /// <response code="200">تم تحديث الطلب بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateOrderDto dto)
@@ -195,6 +235,12 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 6. CREATE PHONE ORDER
     // ============================================================
+    /// <summary>إنشاء طلب هاتفي بالنيابة عن عميل (يستخدمه المصنع/المدير).</summary>
+    /// <remarks>موظف المصنع يُنشئ الطلب لمصنعه تلقائياً؛ المدير يحدّد المصنع في الحمولة.</remarks>
+    /// <param name="dto">بيانات الطلب الهاتفي.</param>
+    /// <response code="201">تم إنشاء الطلب بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPost("phone-order")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> CreatePhoneOrder([FromBody] PhoneOrderDto dto)
@@ -237,6 +283,12 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 7. SET PRICE
     // ============================================================
+    /// <summary>حفظ/تحديث سعر الطلب.</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <param name="dto">بيانات السعر.</param>
+    /// <response code="200">تم حفظ السعر بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/price")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> SetPrice(int id, [FromBody] SetPriceDto dto)
@@ -252,6 +304,11 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 8. APPROVE
     // ============================================================
+    /// <summary>الموافقة على طلب (اعتماد السعر من جهة المصنع).</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <response code="200">تمت الموافقة بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/approve")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> Approve(int id)
@@ -267,6 +324,13 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 9. UPDATE STATUS
     // ============================================================
+    /// <summary>تحديث حالة الطلب يدوياً (للمدير فقط).</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <param name="dto">الحالة الجديدة للطلب.</param>
+    /// <response code="200">تم تحديث الحالة بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     [HttpPut("{id:int}/status")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto)
@@ -282,6 +346,13 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 10. ASSIGN DRIVER ✅
     // ============================================================
+    /// <summary>إسناد طلب إلى سائق معيّن.</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <param name="dto">بيانات الإسناد (معرّف السائق).</param>
+    /// <response code="200">تم إسناد السائق بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">الطلب أو السائق غير موجود.</response>
     [HttpPut("{id:int}/assign-driver")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> AssignDriver(int id, [FromBody] AssignDriverDto dto)
@@ -297,6 +368,11 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 11. START DELIVERY ✅ (تم إضافة Driver)
     // ============================================================
+    /// <summary>بدء عملية التوصيل للطلب المسند للسائق.</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <response code="200">تم بدء التوصيل بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">الطلب غير موجود أو غير مسند لهذا السائق.</response>
     [HttpPut("{id:int}/start-delivery")]
     [Authorize(Roles = "Admin,FactoryEmployee,Driver")]  // ✅ Driver مُضاف
     public async Task<IActionResult> StartDelivery(int id)
@@ -312,6 +388,11 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 12. DELIVER ✅ (تم إضافة Driver)
     // ============================================================
+    /// <summary>تسليم الطلب (تأكيد وصوله للعميل).</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <response code="200">تم تسليم الطلب بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/deliver")]
     [Authorize(Roles = "Admin,FactoryEmployee,Driver")]  // ✅ Driver مُضاف
     public async Task<IActionResult> Deliver(int id)
@@ -327,6 +408,11 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 13. CLOSE
     // ============================================================
+    /// <summary>إغلاق الطلب واستكماله (إنهاء دورة حياته).</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <response code="200">تم إغلاق الطلب بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/close")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> Close(int id)
@@ -342,6 +428,12 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 14. REJECT
     // ============================================================
+    /// <summary>رفض الطلب مع إمكانية إرفاق سبب الرفض.</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <param name="dto">سبب الرفض (اختياري).</param>
+    /// <response code="200">تم رفض الطلب بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPut("{id:int}/reject")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> Reject(int id, [FromBody] RejectOrderDto dto)
@@ -357,6 +449,11 @@ public class OrdersController : ControllerBase
     // ============================================================
     // 15. CANCEL ✅ (تم إضافة Driver)
     // ============================================================
+    /// <summary>إلغاء طلب (ممكن من كل الأطراف المعنية).</summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <response code="200">تم إلغاء الطلب بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/cancel")]
     [Authorize(Roles = "Admin,FactoryEmployee,Client,Driver")]  // ✅ Driver مُضاف
     public async Task<IActionResult> Cancel(int id)

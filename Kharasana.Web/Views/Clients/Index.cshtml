@@ -20,7 +20,10 @@
         {
             Icon = "bi-people-fill",
             Title = "إدارة العملاء",
-            Description = "عرض العملاء الذين لديهم تعاملات فعلية مع المصنع، مستخرجين من سجل الطلبات."
+            Description = "عرض العملاء الذين لديهم تعاملات فعلية مع المصنع، مستخرجين من سجل الطلبات.",
+            ActionText = "إضافة عميل",
+            ActionController = "Clients",
+            ActionMethod = "Create"
         })
 
     <!-- بطاقات الإحصائيات -->
@@ -56,24 +59,12 @@
                         "~/Views/Shared/Components/_SummaryCard.cshtml",
                         new SummaryCardViewModel
                         {
-                            Title = "إجمالي الكمية (م³)",
-                            Value = totalQuantity.ToString("N0"),
+                            Title = "إجمالي الكمية (هذه الصفحة)",
+                            Value = totalQuantity.ToString("N0") + " م³",
                             Icon = "bi-truck",
                             IconClass = "kpi-icon-warning"
                         })
     </div>
-
-    <!-- شريط الأدوات -->
-    @await Html.PartialAsync(
-        "~/Views/Shared/Components/_Toolbar.cshtml",
-        new ToolbarViewModel
-        {
-            ShowAddButton = true,
-            AddButtonText = "إضافة عميل",
-            AddButtonAction = "Create",
-            AddButtonController = "Clients",
-            ShowExport = false
-        })
 
     <!-- نموذج البحث -->
     <form method="get" asp-action="Index" class="mb-3">

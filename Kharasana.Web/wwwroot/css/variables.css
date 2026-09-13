@@ -7,21 +7,24 @@
     --color-slate-900: #1E293B;
     --color-slate-800: #334155;
     --color-slate-700: #475569;
+    --color-slate-300: #94A3B8;
     --color-slate-200: #CBD5E1;
     --color-slate-100: #E2E8F0;
     --color-slate-50: #F8FAFC;
 
-    --brand-cta: #e85d22;
-    --brand-cta-dark: #c24b17;
-    --brand-cta-soft: rgba(232, 93, 34, 0.12);
-    --brand-cta-glow: rgba(232, 93, 34, 0.2);
+    /* CTA عُتّم إلى #c24b17 لضمان تباين WCAG AA (4.87:1) لكل من
+       نص البرتقالي على الفاتح والنص الأبيض فوق أزرار CTA (كان 3.49:1 ← يفشل). */
+    --brand-cta: #c24b17;
+    --brand-cta-dark: #a7400f;
+    --brand-cta-soft: rgba(194, 75, 23, 0.12);
+    --brand-cta-glow: rgba(194, 75, 23, 0.2);
 
     --color-info: #1D4ED8;
     --color-info-soft: rgba(29, 78, 216, 0.12);
-    --color-success: #15803D;
-    --color-success-soft: rgba(21, 128, 61, 0.12);
-    --color-warning: #B45309;
-    --color-warning-soft: rgba(180, 83, 9, 0.12);
+    --color-success: #106B2F;
+    --color-success-soft: rgba(16, 107, 47, 0.12);
+    --color-warning: #9A3F08;
+    --color-warning-soft: rgba(154, 63, 8, 0.12);
     --color-danger: #B91C1C;
     --color-danger-soft: rgba(185, 28, 28, 0.12);
 
@@ -97,9 +100,9 @@
     --space-6: 24px;
     --space-8: 32px;
     --space-10: 40px;
-    --card-padding: 20px;
+    --card-padding: 16px;
     --section-gap: 24px;
-    --page-padding: 22px;
+    --page-padding: 16px;
     --chart-height: 220px;
     --icon-size-lg: 42px;
     --icon-size-md: 38px;
@@ -133,7 +136,7 @@
 
     --sidebar-width: 260px;
     --sidebar-width-collapsed: 76px;
-    --navbar-height: 68px;
+    --navbar-height: 60px;
     --z-sidebar: 1000;
     --z-navbar: 900;
     --z-dropdown: 1100;

@@ -135,6 +135,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 setTimeout(() => alertDiv.style.display = 'none', CONFIG.toastDuration);
             } else {
+                // fall-back for older browsers without toast support
                 alert(message);
             }
         }
@@ -598,46 +599,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-
-    // ============================================================
-    // 10. LOGGING - معلومات التحميل
-    // ============================================================
-
-    console.log('✅ Orders.js v2.3 loaded successfully');
-    console.log(`📋 Found ${document.querySelectorAll('form[data-ajax-assign="true"]').length} assign forms`);
-    console.log(`📋 Found ${document.querySelectorAll('form[data-ajax-status="true"]').length} status forms`);
-    console.log(`📋 Found ${document.querySelectorAll('form[data-ajax-delete="true"]').length} delete forms`);
-    console.log(`📋 Found ${document.querySelectorAll('[data-action]').length} action buttons`);
 });
-
-
-// ============================================================
-// 11. EXPORT FUNCTIONS - دوال التصدير (للاستخدام في Index)
-// ============================================================
-
-/**
- * تصدير الطلبات إلى Excel
- */
-function exportOrders(search = '', status = '', factoryId = '') {
-    const params = new URLSearchParams();
-    if (search) params.append('search', search);
-    if (status) params.append('status', status);
-    if (factoryId) params.append('factoryId', factoryId);
-
-    window.location.href = `/Orders/Export?${params.toString()}`;
-}
-
-/**
- * تصدير الطلبات إلى PDF
- */
-function exportOrdersPdf(search = '', status = '', factoryId = '') {
-    const params = new URLSearchParams();
-    if (search) params.append('search', search);
-    if (status) params.append('status', status);
-    if (factoryId) params.append('factoryId', factoryId);
-
-    window.location.href = `/Orders/ExportPdf?${params.toString()}`;
-}
 
 /**
  * تطبيق الفلاتر وإعادة تحميل الصفحة

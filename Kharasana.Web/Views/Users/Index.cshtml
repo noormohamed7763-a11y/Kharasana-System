@@ -5,7 +5,6 @@
 
 @{
     ViewData["Title"] = "إدارة المستخدمين";
-    var totalUsers = Model.PagedUsers?.TotalCount ?? 0;
 }
 
 <!-- تم حذف هذه الكتلة: كانت تعيد تعريف .erp-table/.form-card/.pagination
@@ -33,7 +32,7 @@
                         new SummaryCardViewModel
                         {
                             Title = "إجمالي المستخدمين",
-                            Value = totalUsers.ToString(),
+                            Value = Model.TotalUsers.ToString(),
                             Icon = "bi-people",
                             IconClass = "kpi-icon-primary"
                         })
@@ -43,7 +42,7 @@
                         new SummaryCardViewModel
                         {
                             Title = "المديرون",
-                            Value = Model.PagedUsers?.Items.Count(x => x.Role == "Admin").ToString() ?? "0",
+                            Value = Model.AdminsCount.ToString(),
                             Icon = "bi-shield-lock",
                             IconClass = "kpi-icon-danger"
                         })
@@ -53,7 +52,7 @@
                         new SummaryCardViewModel
                         {
                             Title = "موظفو المصانع",
-                            Value = Model.PagedUsers?.Items.Count(x => x.Role == "FactoryEmployee").ToString() ?? "0",
+                            Value = Model.FactoryEmployeesCount.ToString(),
                             Icon = "bi-building",
                             IconClass = "kpi-icon-info"
                         })
@@ -63,23 +62,11 @@
                         new SummaryCardViewModel
                         {
                             Title = "السائقون",
-                            Value = Model.PagedUsers?.Items.Count(x => x.Role == "Driver").ToString() ?? "0",
+                            Value = Model.DriversCount.ToString(),
                             Icon = "bi-truck",
                             IconClass = "kpi-icon-warning"
                         })
     </div>
-
-    <!-- شريط الأدوات -->
-    @await Html.PartialAsync(
-        "~/Views/Shared/Components/_Toolbar.cshtml",
-        new ToolbarViewModel
-        {
-            ShowAddButton = true,
-            AddButtonText = "مستخدم جديد",
-            AddButtonController = "Users",
-            AddButtonAction = "Create",
-            ShowExport = false
-        })
 
     <!-- نموذج البحث -->
     <form method="get" asp-action="Index" class="mb-3">
@@ -148,7 +135,8 @@
                     </thead>
                     <tbody>
                         @{
-                            var index = 1;
+                            // ترقيم متصل عبر الصفحات — يبدأ من ((صفحة-1) × حجم الصفحة) + 1
+                            var index = (Model.PageNumber - 1) * Model.PageSize + 1;
                         }
 
                         @foreach (var user in Model.PagedUsers.Items)
@@ -224,10 +212,8 @@
                                                             ShowEdit = true,
                                                             EditAction = "Edit",
 
-                                                            // TODO: تأكيد وجود UsersController.Delete(int id) [POST] فعليًا
-                                                            // قبل تفعيل هذا الزر — كان يستدعي سابقًا confirmDelete()
-                                                            // وهي دالة غير معرّفة في أي ملف JS بالمشروع (زر معطّل فعليًا).
-                                                            ShowDelete = false
+                                                            ShowDelete = true,
+                                                            DeleteAction = "Delete"
                                                         })
                         </td>
                     </tr>
@@ -252,7 +238,8 @@
                            asp-action="Index"
                            asp-route-pageNumber="@(Model.PageNumber - 1)"
                            asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search">
+                           asp-route-search="@Model.Search"
+                           aria-label="الصفحة السابقة">
                             <i class="bi bi-chevron-right"></i>
                         </a>
                     </li>
@@ -278,7 +265,8 @@
                            asp-action="Index"
                            asp-route-pageNumber="@(Model.PageNumber + 1)"
                            asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search">
+                           asp-route-search="@Model.Search"
+                           aria-label="الصفحة التالية">
                             <i class="bi bi-chevron-left"></i>
                         </a>
                     </li>

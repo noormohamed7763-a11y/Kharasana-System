@@ -1,7 +1,7 @@
 @model IEnumerable<Kharasana.Web.Models.Factories.FactoryListItemViewModel>
 @using Kharasana.Web.Models.Components
 
-<div class="erp-section-card bg-white p-4 rounded-3 shadow-sm border">
+<div class="erp-section-card">
     <div class="table-responsive">
         <table class="table erp-table erp-table--sticky-cols align-middle mb-0 table-hover" id="factoriesTable">
             <thead class="table-light">
@@ -98,26 +98,25 @@
                                              Text = item.IsActive ? "نشط" : "متوقف",
                                              CssClass = item.IsActive ? "status-success" : "status-danger"
                                          }' />
-                    </td>
+                            </td>
 
                             <td class="text-center">
                                 <partial name="Components/_ActionButtons"
                                          model='new ActionButtonsViewModel
-                                 {
-                                     Id = item.FactoryId,
-                                     ControllerName = "Factories",
-                                     ShowDelete = true
-                                 }' />
-                    </td>
+                                         {
+                                             Id = item.FactoryId,
+                                             ControllerName = "Factories",
+                                             ShowDelete = true
+                                         }' />
+                            </td>
 
-                </tr>
-                                }
+                        </tr>
+                    }
                 }
                 else
                 {
                     <tr>
                         <td colspan="9" class="p-0 border-0">
-
                             <partial name="Components/_EmptyState"
                                      model='new EmptyStateViewModel
                                      {
@@ -128,10 +127,9 @@
                                          ActionController = "Factories",
                                          ActionAction = "Create"
                                      }' />
-
-                    </td>
-                </tr>
-                                }
+                        </td>
+                    </tr>
+                }
 
             </tbody>
         </table>

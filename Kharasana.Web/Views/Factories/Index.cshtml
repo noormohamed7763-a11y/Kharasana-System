@@ -101,19 +101,6 @@
             </div>
 
         </div>
-
-        <!-- ج. شريط الأدوات -->
-        <div>
-            @{
-                var toolbarModel = new Kharasana.Web.Models.Components.ToolbarViewModel
-                {
-                    ShowAddButton = false,
-                    ShowExport = true,
-                    ExportActionScript = "alert('جاري تصدير التقرير...')"
-                };
-            }
-            <partial name="Components/_Toolbar" model="toolbarModel" />
-        </div>
     </div>
 
     <!-- 4. جدول العرض الأساسي -->

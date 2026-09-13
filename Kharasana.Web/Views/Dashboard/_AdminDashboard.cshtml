@@ -15,7 +15,7 @@
         new { label = "الطلبات", count = Model.TotalOrders }
     });
 
-    // 2) رسم "حالة النظام" (Doughnut): توزيع المستخدمين حسب الدور — أفضل توزيع منطقي متاح فعلياً
+    // 2) رسم "توزيع المستخدمين حسب الدور" (Doughnut): عملاء / موظفو المصانع / سائقون
     var systemStatusJson = System.Text.Json.JsonSerializer.Serialize(new[]
     {
         new { label = "العملاء", count = Model.TotalClients },
@@ -30,21 +30,21 @@
     <div class="hero-banner">
         <div class="hero-content">
             <div class="hero-text">
-                <h1>👋 @Kharasana.Web.Helpers.GreetingHelper.Greeting() يا @ViewBag.UserName</h1>
+                <h1><i class="bi bi-hand-thumbs-up me-2" aria-hidden="true"></i>@Kharasana.Web.Helpers.GreetingHelper.Greeting() يا @ViewBag.UserName</h1>
                 <p>هنا نظرة شاملة على أداء جميع الفروع والمصانع</p>
                 <span class="hero-quote">"معاً نبني مستقبلاً أكثر قوة"</span>
             </div>
             <div class="hero-meta">
                 <div class="hero-date">
-                    <i class="bi bi-calendar-event"></i>
+                    <i class="bi bi-calendar-event" aria-hidden="true"></i>
                     <div class="date-text">
                         <span>@DateTime.Now.ToString("dddd، d MMMM yyyy")</span>
-                        <small>@DateTime.Now.ToString("hh:mm tt")</small>
+                        <small>آخر تحديث @DateTime.Now.ToString("HH:mm")</small>
                     </div>
                 </div>
                 <div class="hero-status">
-                    <i class="bi bi-check-circle-fill"></i>
-                    جميع الأنظمة تعمل بشكل طبيعي
+                    <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                    لوحة التحكم متاحة
                 </div>
             </div>
         </div>
@@ -69,7 +69,7 @@
             Title = "إجمالي الطلبات",
             Value = Model.TotalOrders.ToString(),
             Icon = "bi-receipt",
-            IconClass = "kpi-icon-purple",
+            IconClass = "kpi-icon-warning",
             LinkUrl = Url.Action("Index", "Orders")
         })
         @await Html.PartialAsync(
@@ -103,19 +103,45 @@
                     <h5 class="erp-section-title"><i class="bi bi-graph-up"></i>نظرة عامة على النظام</h5>
                 </div>
                 <div class="chart-container">
-                    <canvas id="systemOverviewChart" role="img" aria-label="رسم بياني أعمدة لنظرة عامة على النظام: المصانع والعملاء وموظفو المصانع والسائقون والطلبات" data-chart-values='@Html.Raw(systemOverviewJson)'></canvas>
+                    <canvas id="systemOverviewChart" role="img" aria-label="رسم بياني أعمدة لنظرة عامة على النظام: المصانع والعملاء وموظفو المصانع والسائقون والطلبات" aria-describedby="overviewDataTable" data-chart-values='@Html.Raw(systemOverviewJson)'></canvas>
+                    @* جدول بديل لقارئات الشاشة — مخفي بصرياً (Bootstrap .visually-hidden) بنفس قيم الرسم *@
+                    <table id="overviewDataTable" class="visually-hidden">
+                        <caption>نظرة عامة على النظام</caption>
+                        <thead>
+                            <tr><th scope="col">المكوّن</th><th scope="col">العدد</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>المصانع</td><td>@Model.TotalFactories</td></tr>
+                            <tr><td>العملاء</td><td>@Model.TotalClients</td></tr>
+                            <tr><td>موظفو المصانع</td><td>@Model.TotalEmployees</td></tr>
+                            <tr><td>السائقون</td><td>@Model.TotalDrivers</td></tr>
+                            <tr><td>الطلبات</td><td>@Model.TotalOrders</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- T3.2 رسم "حالة النظام" (Doughnut): توزيع المستخدمين حسب الدور -->
+        <!-- T3.2 رسم توزيع المستخدمين حسب الدور (Doughnut) -->
         <div class="col-xl-4 col-lg-12">
             <div class="erp-section-card">
                 <div class="mb-3">
-                    <h5 class="erp-section-title"><i class="bi bi-pie-chart-fill"></i>حالة النظام</h5>
+                    <h5 class="erp-section-title"><i class="bi bi-pie-chart-fill"></i>توزيع المستخدمين حسب الدور</h5>
                 </div>
                 <div class="chart-container d-flex align-items-center justify-content-center">
-                    <canvas id="systemStatusChart" role="img" aria-label="رسم بياني دائري لحالة النظام: توزيع المستخدمين حسب الدور" data-chart-values='@Html.Raw(systemStatusJson)'></canvas>
+                    <canvas id="systemStatusChart" role="img" aria-label="رسم بياني دائري لتوزيع المستخدمين حسب الدور" aria-describedby="statusDataTable" data-chart-values='@Html.Raw(systemStatusJson)'></canvas>
+                    @* جدول بديل لقارئات الشاشة — مخفي بصرياً (Bootstrap .visually-hidden) بنفس قيم الرسم *@
+                    <table id="statusDataTable" class="visually-hidden">
+                        <caption>توزيع المستخدمين حسب الدور</caption>
+                        <thead>
+                            <tr><th scope="col">الدور</th><th scope="col">العدد</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>العملاء</td><td>@Model.TotalClients</td></tr>
+                            <tr><td>موظفو المصانع</td><td>@Model.TotalEmployees</td></tr>
+                            <tr><td>السائقون</td><td>@Model.TotalDrivers</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

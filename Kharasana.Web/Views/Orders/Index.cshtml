@@ -134,20 +134,6 @@
                 </div>
             }
         </div>
-
-        <div>
-            @await Html.PartialAsync(
-            "~/Views/Shared/Components/_Toolbar.cshtml",
-                        new ToolbarViewModel
-                        {
-                            ShowAddButton = true,
-                            AddButtonText = "طلب جديد",
-                            AddButtonAction = "Create",
-                            AddButtonController = "Orders",
-                            ShowExport = true,
-                            ExportActionScript = "exportOrders()"
-                        })
-        </div>
     </div>
 
     <!-- SEARCH -->
@@ -261,7 +247,7 @@
                                     {
                                         <button type="button" class="btn btn-light border text-success"
                                                 data-action="approve" data-order-id="@order.OrderId"
-                                                title="اعتماد الطلب" data-bs-toggle="tooltip">
+                                                aria-label="اعتماد الطلب" data-bs-toggle="tooltip">
                                             <i class="bi bi-check-circle"></i>
                                         </button>
                                     }
@@ -269,23 +255,23 @@
                                     {
                                         <button type="button" class="btn btn-light border text-warning"
                                                 data-action="cancel" data-order-id="@order.OrderId"
-                                                title="إلغاء الطلب" data-bs-toggle="tooltip">
+                                                aria-label="إلغاء الطلب" data-bs-toggle="tooltip">
                                             <i class="bi bi-x-circle"></i>
                                         </button>
                                     }
                                     @await Html.PartialAsync(
-                                    "~/Views/Shared/Components/_ActionButtons.cshtml",
-                                                        new ActionButtonsViewModel
-                                                        {
-                                                            Id = order.OrderId,
-                                                            ControllerName = "Orders",
-                                                            ShowDetails = true,
-                                                            ShowEdit = order.Status == OrderStatus.New || order.Status == OrderStatus.Pending,
-                                                            ShowDelete = User.IsInRole("Admin") && (order.Status == OrderStatus.New || order.Status == OrderStatus.Pending)
-                                                        })
-                        </td>
-                    </tr>
-                                        }
+                                        "~/Views/Shared/Components/_ActionButtons.cshtml",
+                                        new ActionButtonsViewModel
+                                        {
+                                            Id = order.OrderId,
+                                            ControllerName = "Orders",
+                                            ShowDetails = true,
+                                            ShowEdit = order.Status == OrderStatus.New || order.Status == OrderStatus.Pending,
+                                            ShowDelete = User.IsInRole("Admin") && (order.Status == OrderStatus.New || order.Status == OrderStatus.Pending)
+                                        })
+                                </td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -308,7 +294,8 @@
                            asp-route-pageSize="@Model.PageSize"
                            asp-route-search="@Model.Search"
                            asp-route-status="@((int?)Model.StatusFilter)"
-                           asp-route-factoryId="@Model.FactoryIdFilter">
+                           asp-route-factoryId="@Model.FactoryIdFilter"
+                           aria-label="الصفحة السابقة">
                             <i class="bi bi-chevron-right"></i>
                         </a>
                     </li>
@@ -372,7 +359,8 @@
                            asp-route-pageSize="@Model.PageSize"
                            asp-route-search="@Model.Search"
                            asp-route-status="@((int?)Model.StatusFilter)"
-                           asp-route-factoryId="@Model.FactoryIdFilter">
+                           asp-route-factoryId="@Model.FactoryIdFilter"
+                           aria-label="الصفحة التالية">
                             <i class="bi bi-chevron-left"></i>
                         </a>
                     </li>

@@ -23,8 +23,12 @@ public class SettingsController : ControllerBase
         _factoryService = factoryService;
     }
 
-    // GET /api/Settings
-    // يرجع بيانات المصنع المرتبط بموظف المصنع الحالي (للعرض فقط).
+    /// <summary>
+    /// جلب بيانات المصنع المرتبط بموظف المصنع الحالي (للعرض فقط).
+    /// </summary>
+    /// <remarks>لا توجد هنا أي إمكانية للتعديل؛ تحرير بيانات المصنع من صلاحيات Admin عبر نقاط المصانع.</remarks>
+    /// <response code="200">تم جلب بيانات المصنع بنجاح.</response>
+    /// <response code="401">لا يوجد مصنع مرتبط بالحساب.</response>
     [HttpGet]
     public async Task<IActionResult> GetMySettings()
     {
@@ -48,8 +52,14 @@ public class SettingsController : ControllerBase
         });
     }
 
-    // POST /api/Settings/logo
-    // رفع أو استبدال شعار المصنع الخاص بالموظف الحالي فقط.
+    /// <summary>
+    /// رفع أو استبدال شعار المصنع الخاص بالموظف الحالي فقط.
+    /// </summary>
+    /// <remarks>يُرسل الملف بصيغة form-data ضمن حقل اسمه <c>file</c>.</remarks>
+    /// <param name="file">ملف صورة الشعار الجديد.</param>
+    /// <response code="200">تم رفع الشعار بنجاح — يرجع مسار الشعار الجديد.</response>
+    /// <response code="400">لم يتم إرسال ملف صورة صالح.</response>
+    /// <response code="401">لا يوجد مصنع مرتبط بالحساب.</response>
     [HttpPost("logo")]
     public async Task<IActionResult> UploadLogo(IFormFile file)
     {
@@ -83,8 +93,11 @@ public class SettingsController : ControllerBase
         });
     }
 
-    // DELETE /api/Settings/logo
-    // حذف شعار المصنع الخاص بالموظف الحالي فقط.
+    /// <summary>
+    /// حذف شعار المصنع الخاص بالموظف الحالي فقط.
+    /// </summary>
+    /// <response code="200">تم حذف الشعار بنجاح.</response>
+    /// <response code="401">لا يوجد مصنع مرتبط بالحساب.</response>
     [HttpDelete("logo")]
     public async Task<IActionResult> DeleteLogo()
     {

@@ -4,6 +4,27 @@
 
     <div asp-validation-summary="All" class="alert alert-danger"></div>
 
+    <!-- معاينة مباشرة -->
+    <div class="col-12">
+        <div class="erp-section-card text-center py-3">
+            <div class="d-inline-flex align-items-center gap-4 flex-wrap justify-content-center">
+                <img id="previewImage"
+                     src="~/images/default-concrete.png"
+                     asp-append-version="true"
+                     alt="معاينة"
+                     style="width:100px; height:100px; object-fit:cover; border-radius:var(--radius-md); border:2px solid var(--border-main); background:var(--surface-alt);" />
+                <div class="text-end">
+                    <div id="previewName" class="fw-bold fs-5 text-dark">لم يتم اختيار نوع</div>
+                    <div id="previewUsage" class="text-muted">اختر نوع الخرسانة</div>
+                    <div class="d-flex gap-3 mt-1">
+                        <div><small class="text-muted">المقاومة</small> <span id="previewStrength" class="fw-bold">-</span></div>
+                        <div><small class="text-muted">السعر</small>      <span id="previewPrice"   class="fw-bold text-primary">0 ر.ي</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- المعلومات الأساسية -->
     <div class="col-12">
         <div class="form-section-title">
@@ -29,49 +50,51 @@
 
     <!-- النوع القياسي -->
     <div id="standardConcreteSection">
+        <div class="row">
 
-        <div class="col-md-6">
+            <div class="col-md-6">
 
-            <label asp-for="SelectedConcreteCode"
-                   class="form-label fw-bold"></label>
+                <label asp-for="SelectedConcreteCode"
+                       class="form-label fw-bold"></label>
 
-            <select asp-for="SelectedConcreteCode"
-                    class="form-select"
-                    id="concreteTypeSelect">
+                <select asp-for="SelectedConcreteCode"
+                        class="form-select"
+                        id="concreteTypeSelect">
 
-                <option value="">-- اختر نوع الخرسانة --</option>
+                    <option value="">-- اختر نوع الخرسانة --</option>
 
-                @foreach (var item in ViewBag.ConcreteCatalog)
-                {
-                    <option value="@item.Code"
-                            data-strength="@item.Strength"
-                            data-usage="@item.Usage"
-                            selected="@(Model.SelectedConcreteCode == item.Code ? "selected" : null)">
+                    @foreach (var item in ViewBag.ConcreteCatalog)
+                    {
+                        <option value="@item.Code"
+                                data-strength="@item.Strength"
+                                data-usage="@item.Usage"
+                                selected="@(Model.SelectedConcreteCode == item.Code ? "selected" : null)">
 
-                        @item.Code - @item.Usage
+                            @item.Code - @item.Usage
 
-                    </option>
-                }
+                        </option>
+                    }
 
-            </select>
+                </select>
 
-            <span asp-validation-for="SelectedConcreteCode"
-                  class="text-danger"></span>
+                <span asp-validation-for="SelectedConcreteCode"
+                      class="text-danger"></span>
 
-        </div>
+            </div>
 
-        <div class="col-md-6 d-flex align-items-end">
+            <div class="col-md-6 d-flex align-items-end">
 
-            <button type="button"
-                    id="btnCustomType"
-                    class="btn btn-outline-primary w-100">
+                <button type="button"
+                        id="btnCustomType"
+                        class="btn btn-outline-primary w-100">
 
-                <i class="bi bi-plus-circle"></i>
+                    <i class="bi bi-plus-circle"></i>
 
-                إنشاء نوع خرسانة مخصص
+                    إنشاء نوع خرسانة مخصص
 
-            </button>
+                </button>
 
+            </div>
         </div>
 
         <div class="col-12 mt-3">
@@ -127,58 +150,59 @@
     </div>
 
     <!-- النوع المخصص -->
-    <div id="customConcreteSection" style="display:none;">
+    <div id="customConcreteSection" class="d-none">
+        <div class="row">
 
-        <div class="col-md-6">
+            <div class="col-md-6">
 
-            <label asp-for="CustomName"
-                   class="form-label fw-bold"></label>
+                <label asp-for="CustomName"
+                       class="form-label fw-bold"></label>
 
-            <input asp-for="CustomName"
-                   class="form-control"
-                   placeholder="مثال: خرسانة مقاومة للأملاح" />
-
-            <span asp-validation-for="CustomName"
-                  class="text-danger"></span>
-
-        </div>
-
-        <div class="col-md-6">
-
-            <label asp-for="CustomStrength"
-                   class="form-label fw-bold"></label>
-
-            <div class="input-group">
-
-                <input asp-for="CustomStrength"
+                <input asp-for="CustomName"
                        class="form-control"
-                       placeholder="35" />
+                       placeholder="مثال: خرسانة مقاومة للأملاح" />
 
-                <span class="input-group-text">
-                    MPa
-                </span>
+                <span asp-validation-for="CustomName"
+                      class="text-danger"></span>
 
             </div>
 
-            <span asp-validation-for="CustomStrength"
-                  class="text-danger"></span>
+            <div class="col-md-6">
 
+                <label asp-for="CustomStrength"
+                       class="form-label fw-bold"></label>
+
+                <div class="input-group">
+
+                    <input asp-for="CustomStrength"
+                           class="form-control"
+                           placeholder="35" />
+
+                    <span class="input-group-text">
+                        MPa
+                    </span>
+
+                </div>
+
+                <span asp-validation-for="CustomStrength"
+                      class="text-danger"></span>
+
+            </div>
+
+            <div class="col-12 mt-3">
+
+                <button type="button"
+                        id="btnStandardType"
+                        class="btn btn-outline-secondary">
+
+                    <i class="bi bi-arrow-right"></i>
+
+                    الرجوع إلى الأنواع القياسية
+
+                </button>
+
+            </div>
         </div>
-
-        <div class="col-12 mt-3">
-
-            <button type="button"
-                    id="btnStandardType"
-                    class="btn btn-outline-secondary">
-
-                <i class="bi bi-arrow-right"></i>
-
-                الرجوع إلى الأنواع القياسية
-
-            </button>
-
-        </div>
-
     </div>
 
     <!-- الحقول المخفية -->

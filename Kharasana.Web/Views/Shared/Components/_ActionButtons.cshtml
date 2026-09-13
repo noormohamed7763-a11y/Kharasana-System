@@ -8,7 +8,7 @@
            asp-action="@Model.DetailsAction"
            asp-route-id="@Model.Id"
            class="btn btn-light border text-info"
-           title="@Model.DetailsTooltip"
+           aria-label="@Model.DetailsTooltip"
            data-bs-toggle="tooltip">
             <i class="bi bi-eye"></i>
         </a>
@@ -18,7 +18,7 @@
         <a asp-action="@Model.DetailsAction"
            asp-route-id="@Model.Id"
            class="btn btn-light border text-info"
-           title="@Model.DetailsTooltip"
+           aria-label="@Model.DetailsTooltip"
            data-bs-toggle="tooltip">
             <i class="bi bi-eye"></i>
         </a>
@@ -33,7 +33,7 @@
            asp-action="@Model.EditAction"
            asp-route-id="@Model.Id"
            class="btn btn-light border text-primary"
-           title="@Model.EditTooltip"
+           aria-label="@Model.EditTooltip"
            data-bs-toggle="tooltip">
             <i class="bi bi-pencil"></i>
         </a>
@@ -43,7 +43,7 @@
         <a asp-action="@Model.EditAction"
            asp-route-id="@Model.Id"
            class="btn btn-light border text-primary"
-           title="@Model.EditTooltip"
+           aria-label="@Model.EditTooltip"
            data-bs-toggle="tooltip">
             <i class="bi bi-pencil"></i>
         </a>
@@ -63,7 +63,7 @@
             @Html.AntiForgeryToken()
             <button type="submit"
                     class="btn btn-light border text-danger"
-                    title="@Model.DeleteTooltip"
+                    aria-label="@Model.DeleteTooltip"
                     data-bs-toggle="tooltip">
                 <i class="bi bi-trash"></i>
             </button>
@@ -79,7 +79,7 @@
             @Html.AntiForgeryToken()
             <button type="submit"
                     class="btn btn-light border text-danger"
-                    title="@Model.DeleteTooltip"
+                    aria-label="@Model.DeleteTooltip"
                     data-bs-toggle="tooltip">
                 <i class="bi bi-trash"></i>
             </button>

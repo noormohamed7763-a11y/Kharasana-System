@@ -31,12 +31,30 @@ public class DriversController : BaseController
 
             var pagedDrivers = await _driverApiService.GetDriversAsync(pageNumber, pageSize, search, factoryId);
 
+            // أعداد الحالة عبر كل الصفحات — فشلها لا ينبغي أن يُسقط الصفحة بعد أن حمّلنا القائمة
+            var counts = (Available: 0, Busy: 0, Offline: 0);
+            if (pagedDrivers != null)
+            {
+                try
+                {
+                    counts = await _driverApiService.GetStatusCountsAsync(search, factoryId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "تعذر جلب إحصاءات حالة السائقين — ستُعرض البطاقات بقيمة صفر.");
+                }
+            }
+
             var vm = new DriversIndexViewModel
             {
                 PagedDrivers = pagedDrivers,
                 Search = search,
                 PageNumber = pageNumber,
-                PageSize = pageSize
+                PageSize = pageSize,
+                TotalDrivers = pagedDrivers?.TotalCount ?? 0,
+                AvailableDrivers = counts.Available,
+                BusyDrivers = counts.Busy,
+                OfflineDrivers = counts.Offline
             };
 
             return View(vm);

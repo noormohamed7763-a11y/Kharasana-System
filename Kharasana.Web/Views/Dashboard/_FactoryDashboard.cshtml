@@ -39,13 +39,27 @@
         <div class="col-xl-7 col-lg-12">
             <div class="erp-section-card">
                 <div class="mb-3">
-                    <h5 class="erp-section-title"><i class="bi bi-pie-chart-fill"></i>حالة الطلبات النشطة</h5>
+                    <h5 class="erp-section-title"><i class="bi bi-pie-chart-fill"></i>توزيع الطلبات النشطة</h5>
                 </div>
                 <div class="chart-container d-flex align-items-center justify-content-center">
                     <canvas id="factoryOrdersChart"
                             role="img"
                             aria-label="رسم بياني دائري لتوزيع الطلبات النشطة: جديدة وقيد التنفيذ وجاهزة للتسليم وقيد النقل"
+                            aria-describedby="factoryOrdersDataTable"
                             data-chart-values='@Html.Raw(factoryOrdersJson)'></canvas>
+                    @* جدول بديل لقارئات الشاشة *@
+                    <table id="factoryOrdersDataTable" class="visually-hidden">
+                        <caption>توزيع الطلبات النشطة</caption>
+                        <thead>
+                            <tr><th scope="col">الحالة</th><th scope="col">العدد</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>جديدة</td><td>@Model.TodayOrdersCount</td></tr>
+                            <tr><td>قيد التنفيذ</td><td>@Model.InProgressOrdersCount</td></tr>
+                            <tr><td>جاهزة للتسليم</td><td>@Model.ReadyOrdersCount</td></tr>
+                            <tr><td>قيد النقل</td><td>@Model.OnTheWayOrders</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

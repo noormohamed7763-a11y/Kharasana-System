@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Kharasana.API.Controllers;
 
+/// <summary>
+/// أنواع الخرسانة لكل مصنع: قائمة وتفاصيل وإنشاء وتعديل وحذف.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -23,6 +26,14 @@ public class ConcreteTypesController : ControllerBase
     // ============================================================
     // ✅ GET ALL - تم إضافة Client للصلاحيات
     // ============================================================
+    /// <summary>جلب قائمة أنواع الخرسانة بحسب صلاحية المتصل.</summary>
+    /// <remarks>
+    /// - <b>Admin:</b> كل الأنواع (بما فيها غير النشطة).
+    /// - <b>FactoryEmployee:</b> أنواع مصنعه فقط.
+    /// - <b>Client:</b> الأنواع النشطة فقط.
+    /// </remarks>
+    /// <response code="200">تم جلب الأنواع بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpGet]
     [Authorize(Roles = "Admin,FactoryEmployee,Client")]  // ✅ إضافة Client
     public async Task<IActionResult> GetAll()
@@ -93,6 +104,15 @@ public class ConcreteTypesController : ControllerBase
     // ============================================================
     // ✅ GET BY ID - تم إضافة Client للصلاحيات
     // ============================================================
+    /// <summary>جلب نوع خرسانة واحد بمعرّفه.</summary>
+    /// <remarks>
+    /// - <b>Admin:</b> أي نوع.
+    /// - <b>FactoryEmployee:</b> أنواع مصنعه فقط.
+    /// - <b>Client:</b> الأنواع النشطة فقط.
+    /// </remarks>
+    /// <param name="id">معرّف نوع الخرسانة.</param>
+    /// <response code="200">تم جلب النوع بنجاح.</response>
+    /// <response code="404">النوع غير موجود، أو غير نشط، أو لا ينتمي لمصنع الموظف.</response>
     [HttpGet("{id:int}")]
     [Authorize(Roles = "Admin,FactoryEmployee,Client")]  // ✅ إضافة Client
     public async Task<IActionResult> GetById(int id)
@@ -177,6 +197,13 @@ public class ConcreteTypesController : ControllerBase
     // ============================================================
     // ✅ CREATE - للمدير وموظف المصنع
     // ============================================================
+    /// <summary>إنشاء نوع خرسانة جديد.</summary>
+    /// <remarks>موظف المصنع يُنشئ النوع لمصنعه تلقائياً؛ المدير يحدّد المصنع في الحمولة.</remarks>
+    /// <param name="dto">بيانات النوع الجديد.</param>
+    /// <response code="201">تم إنشاء النوع بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="403">الحساب لا يملك صلاحية الإنشاء.</response>
     [HttpPost]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> Create([FromBody] CreateConcreteTypeDto dto)
@@ -213,6 +240,15 @@ public class ConcreteTypesController : ControllerBase
     // ============================================================
     // ✅ UPDATE - للمدير وموظف المصنع
     // ============================================================
+    /// <summary>تعديل نوع خرسانة موجود.</summary>
+    /// <remarks>موظف المصنع لا يعدّل إلا نوعاً يتبع مصنعه.</remarks>
+    /// <param name="id">معرّف النوع.</param>
+    /// <param name="dto">البيانات الجديدة للنوع.</param>
+    /// <response code="200">تم التعديل بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="403">النوع لا ينتمي لمصنع الموظف.</response>
+    /// <response code="404">النوع غير موجود.</response>
     [HttpPut("{id:int}")]
     [Authorize(Roles = "Admin,FactoryEmployee")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateConcreteTypeDto dto)
@@ -252,6 +288,12 @@ public class ConcreteTypesController : ControllerBase
     // ============================================================
     // ✅ DELETE - للمدير فقط
     // ============================================================
+    /// <summary>حذف نوع خرسانة.</summary>
+    /// <remarks>مخصصة لدور Admin فقط.</remarks>
+    /// <param name="id">معرّف النوع.</param>
+    /// <response code="200">تم الحذف بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)

@@ -4,10 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const success = rootStyles.getPropertyValue('--success').trim();
     const warning = rootStyles.getPropertyValue('--warning').trim();
     const info = rootStyles.getPropertyValue('--info').trim();
+    const danger = rootStyles.getPropertyValue('--danger').trim();
     const fontMain = rootStyles.getPropertyValue('--font-main').trim() || 'Cairo';
-
-    // لون بنفسجي ثابت يتطابق مع kpi-icon-purple في التصميم
-    const purple = '#a855f7';
 
     // 1. Bar Chart: System Overview (نظرة عامة على النظام)
     // بيانات حقيقية من الـ ViewModel: مصانع / عملاء / موظفو المصانع / سائقون / طلبات
@@ -15,8 +13,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (overviewCanvas) {
         try {
             const values = JSON.parse(overviewCanvas.dataset.chartValues || '[]');
-            if (Array.isArray(values) && values.length > 0) {
-                const palette = [primary, info, purple, success, warning];
+            const hasData = Array.isArray(values) && values.some(v => (v.count || 0) > 0);
+            if (hasData) {
+                const palette = [primary, info, success, warning, danger];
                 new Chart(overviewCanvas.getContext('2d'), {
                     type: 'bar',
                     data: {
@@ -52,26 +51,37 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     }
                 });
+            } else {
+                // لا توجد بيانات — نعرض حالة فارغة صادقة
+                const wrap = overviewCanvas.closest('.chart-container');
+                if (wrap) {
+                    overviewCanvas.style.display = 'none';
+                    const empty = document.createElement('div');
+                    empty.className = 'chart-empty-state';
+                    empty.innerHTML = '<i class="bi bi-graph-up"></i><span>لا توجد بيانات للعرض</span>';
+                    wrap.appendChild(empty);
+                }
             }
         } catch (e) {
             console.error("Error parsing System Overview JSON:", e);
         }
     }
 
-    // 2. Doughnut Chart: System Status (حالة النظام)
+    // 2. Doughnut Chart: System Status (توزيع المستخدمين حسب الدور)
     // توزيع المستخدمين حسب الدور: عملاء / موظفو المصانع / سائقون
     const statusCanvas = document.getElementById('systemStatusChart');
     if (statusCanvas) {
         try {
             const values = JSON.parse(statusCanvas.dataset.chartValues || '[]');
-            if (Array.isArray(values) && values.length > 0) {
+            const hasData = Array.isArray(values) && values.some(v => (v.count || 0) > 0);
+            if (hasData) {
                 new Chart(statusCanvas.getContext('2d'), {
                     type: 'doughnut',
                     data: {
                         labels: values.map(v => v.label),
                         datasets: [{
                             data: values.map(v => v.count),
-                            backgroundColor: [info, purple, success],
+                            backgroundColor: [info, success, warning],
                             borderWidth: 0
                         }]
                     },
@@ -87,6 +97,16 @@ document.addEventListener("DOMContentLoaded", function () {
                         cutout: '70%'
                     }
                 });
+            } else {
+                // لا توجد بيانات — نعرض حالة فارغة صادقة
+                const wrap = statusCanvas.closest('.chart-container');
+                if (wrap) {
+                    statusCanvas.style.display = 'none';
+                    const empty = document.createElement('div');
+                    empty.className = 'chart-empty-state';
+                    empty.innerHTML = '<i class="bi bi-pie-chart"></i><span>لا توجد بيانات للعرض</span>';
+                    wrap.appendChild(empty);
+                }
             }
         } catch (e) {
             console.error("Error parsing System Status JSON:", e);
@@ -107,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         labels: values.map(v => v.label),
                         datasets: [{
                             data: values.map(v => v.count),
-                            backgroundColor: [primary, warning, info, purple],
+                            backgroundColor: [primary, warning, info, danger],
                             borderWidth: 0
                         }]
                     },

@@ -201,4 +201,56 @@ document.addEventListener("DOMContentLoaded", () => {
     updatePrice();
     updateImage();
 
+    // ==========================
+    // Edit Page Initialization (if present)
+    // ==========================
+    // Elements specific to edit page
+    const editPreviewPrice = document.getElementById("editPreviewPrice");
+    const editPrice = document.getElementById("editPrice");
+    const editImageUrl = document.getElementById("editImageUrl");
+    const editPreviewImage = document.getElementById("editPreviewImage");
+    const editForm = document.getElementById("editConcreteTypeForm");
+
+    function updateEditPrice() {
+        if (!editPreviewPrice || !editPrice) return;
+        const value = parseFloat(editPrice.value);
+        editPreviewPrice.textContent =
+            isNaN(value) ? "0 ر.ي" : value.toLocaleString() + " ر.ي";
+    }
+
+    // التقاط الصورة الافتراضية مرة واحدة فقط (default-concrete.png)
+    const editDefaultImage = editPreviewImage?.src;
+
+    function updateEditImage() {
+        if (!editPreviewImage || !editImageUrl) return;
+        editPreviewImage.src =
+            editImageUrl.value.trim() !== ""
+                ? editImageUrl.value
+                : editDefaultImage;
+    }
+
+    editPrice?.addEventListener("input", updateEditPrice);
+    editImageUrl?.addEventListener("input", updateEditImage);
+    // عرض صورة السجل إذا وُجدت عند تحميل الصفحة
+    if (editPreviewImage && editPreviewImage.dataset.recordImage) {
+        editPreviewImage.src = editPreviewImage.dataset.recordImage;
+    }
+
+    editForm?.addEventListener("submit", () => {
+        // No extra processing needed for edit form
+    });
+
+    // ==========================
+    // Index Page: Filter Rows by Search (if present)
+    // ==========================
+    // فلترة جدول قائمة الأنواع حسب نص البحث (متوافقة مع صفحة Index فقط)
+    const tableSearch = document.getElementById("tableSearch");
+
+    tableSearch?.addEventListener("keyup", function () {
+        const value = this.value.toLowerCase();
+        document.querySelectorAll("tbody tr").forEach(function (row) {
+            row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
+        });
+    });
+
 });

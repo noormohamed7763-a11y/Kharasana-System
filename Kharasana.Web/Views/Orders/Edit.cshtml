@@ -1,4 +1,5 @@
 ﻿@model Kharasana.Web.ViewModels.Orders.EditOrderViewModel
+@using Kharasana.Web.Models.Components
 @using Kharasana.Domain.Enums
 
 @{
@@ -35,26 +36,14 @@
 
 <div class="dashboard-page">
 
-    <!-- ============================================================
-    PAGE HEADER - رأس الصفحة
-    ============================================================ -->
-    <div class="dashboard-header">
-        <div class="dashboard-title">
-            <h1>
-                <i class="bi bi-pencil-square text-primary"></i>
-                تعديل الطلب
-                <span class="text-muted fs-5 fw-normal">- @ViewBag.OrderNumber</span>
-            </h1>
-            <p>
-                تعديل بيانات الطلب (يسمح فقط في حالة <strong>جديد</strong> أو <strong>قيد الانتظار</strong>)
-            </p>
-        </div>
-        <div>
-            <a asp-action="Index" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-right"></i> العودة إلى القائمة
-            </a>
-        </div>
-    </div>
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-pencil-square",
+            Title = "تعديل الطلب",
+            Description = $"تعديل بيانات الطلب: @ViewBag.OrderNumber"
+        })
 
     <!-- ============================================================
     INFO ALERT - رسالة توضيحية
@@ -318,22 +307,26 @@
                 <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn">
                     <i class="bi bi-save"></i> حفظ التغييرات
                 </button>
-                <a asp-action="Details" asp-route-id="@ViewBag.OrderId" class="btn btn-outline-secondary btn-lg px-5">
+                <a asp-action="Details" asp-route-id="@ViewBag.OrderId" class="btn btn-outline-secondary btn-lg px-5" id="cancelOrderBtn">
                     <i class="bi bi-x-circle"></i> إلغاء
                 </a>
-                @if (ViewBag.ShowDeleteButton == true && User.IsInRole("Admin"))
-                {
-                    <form asp-action="Delete" method="post" class="d-inline" data-ajax-delete="true">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@ViewBag.OrderId" />
-                        <button type="submit" class="btn btn-outline-danger btn-lg">
-                            <i class="bi bi-trash"></i> حذف
-                        </button>
-                    </form>
-                }
             </div>
 
         </form>
+
+        @if (ViewBag.ShowDeleteButton == true && User.IsInRole("Admin"))
+        {
+            <div class="mt-4 pt-3 border-top">
+                <p class="text-muted small mb-2"><i class="bi bi-exclamation-triangle me-1"></i> منطقة خطرة — لا يمكن التراجع عن الحذف.</p>
+                <form asp-action="Delete" method="post" data-ajax-delete="true">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@ViewBag.OrderId" />
+                    <button type="submit" class="btn btn-outline-danger btn-lg">
+                        <i class="bi bi-trash"></i> حذف الطلب
+                    </button>
+                </form>
+            </div>
+        }
     </div>
 
 </div>
@@ -379,7 +372,7 @@
                 });
             }
 
-            const cancelBtn = document.querySelector('a[asp-action="Details"]');
+            const cancelBtn = document.getElementById('cancelOrderBtn');
             if (cancelBtn) {
                 cancelBtn.addEventListener('click', function (e) {
                     if (!confirm('هل أنت متأكد من إلغاء التعديلات؟ سيتم فقدان التغييرات غير المحفوظة.')) {
@@ -403,16 +396,6 @@
                 });
             }
 
-            const needPumpSwitch = document.getElementById('needPumpSwitch');
-            if (needPumpSwitch) {
-                console.log('NeedPump status:', needPumpSwitch.checked);
-
-                needPumpSwitch.addEventListener('change', function () {
-                    console.log('NeedPump changed to:', this.checked);
-                });
-            }
-
-            console.log('✅ Edit page loaded successfully');
-        });
+            });
     </script>
 }

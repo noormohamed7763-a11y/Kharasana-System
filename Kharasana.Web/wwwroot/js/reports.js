@@ -4,9 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const success = rootStyles.getPropertyValue('--success').trim();
     const warning = rootStyles.getPropertyValue('--warning').trim();
     const info = rootStyles.getPropertyValue('--info').trim();
+    const danger = rootStyles.getPropertyValue('--danger').trim();
     const fontMain = rootStyles.getPropertyValue('--font-main').trim() || 'Cairo';
-    const purple = '#a855f7';
-    const danger = rootStyles.getPropertyValue('--danger').trim() || '#ef4444';
 
     // 1. Doughnut Chart: توزيع الطلبات حسب الحالة
     const statusCanvas = document.getElementById('reportsStatusChart');
@@ -15,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const values = JSON.parse(statusCanvas.dataset.chartValues || '[]');
             const hasData = Array.isArray(values) && values.some(v => (v.count || 0) > 0);
             if (hasData) {
-                const palette = [primary, warning, info, danger, '#9ca3af', purple, success, '#64748b'];
+                const palette = [primary, warning, info, danger, success, '#9ca3af', '#64748b'];
                 new Chart(statusCanvas.getContext('2d'), {
                     type: 'doughnut',
                     data: {
