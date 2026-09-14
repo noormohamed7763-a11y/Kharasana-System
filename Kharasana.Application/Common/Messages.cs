@@ -22,6 +22,22 @@ public static class Messages
 
     public const string FactoriesRetrievedSuccessfully = "تم جلب المصانع بنجاح.";
     public const string FactoryRetrievedSuccessfully = "تم جلب المصنع بنجاح.";
+    public const string ArchivedFactoriesRetrievedSuccessfully = "تم جلب المصانع المؤرشفة بنجاح";
+    public const string FactoryRestoredSuccessfully = "تم استعادة المصنع بنجاح.";
+    public const string FactoryLogoUploadedSuccessfully = "تم رفع شعار المصنع بنجاح.";
+    public const string FactoryLogoDeletedSuccessfully = "تم حذف شعار المصنع بنجاح.";
+    public const string FactorySettingsRetrievedSuccessfully = "تم جلب بيانات المصنع بنجاح.";
+    public const string DriverActivatedSuccessfully = "تم تفعيل حساب السائق بنجاح.";
+    public const string DriverDeactivatedSuccessfully = "تم إيقاف حساب السائق بنجاح.";
+
+    public const string OrderUpdatedSuccessfully = "تم تحديث الطلب بنجاح.";
+    public const string PriceSavedSuccessfully = "تم حفظ السعر بنجاح.";
+    public const string OrderApprovedSuccessfully = "تمت موافقة العميل بنجاح.";
+    public const string DeliveryStartedSuccessfully = "تم بدء التوصيل بنجاح.";
+    public const string OrderDeliveredSuccessfully = "تم تسليم الطلب بنجاح.";
+    public const string OrderClosedSuccessfully = "تم إغلاق الطلب بنجاح.";
+    public const string OrderRejectedSuccessfully = "تم رفض الطلب بنجاح.";
+    public const string OrderCancelledSuccessfully = "تم إلغاء الطلب بنجاح.";
 
     #endregion
 
@@ -47,6 +63,7 @@ public static class Messages
     public const string InvalidCredentials = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
     public const string AccountLocked = "تم قفل الحساب بسبب محاولات دخول فاشلة متكررة. حاول مرة أخرى بعد 15 دقيقة.";
     public const string Unauthorized = "ليس لديك صلاحية لتنفيذ هذه العملية.";
+    public const string InvalidOrExpiredToken = "التوكن غير موجود أو غير صالح أو منتهي الصلاحية.";
     public const string InvalidDriver = "المستخدم المحدد ليس سائقًا.";
     public const string InvalidClient = "المستخدم المحدد ليس عميلاً.";
     public const string InvalidFactory = "المصنع المحدد غير صالح.";
@@ -61,6 +78,13 @@ public static class Messages
     public const string FactoryInactiveLogin = "تنبيه: مصنعك غير نشط. بعض الميزات قد لا تكون متاحة.";
     public const string DriverDeactivated = "حسابك غير نشط. راجع موظف المصنع لتفعيل حسابك.";
     public const string UserInactive = "الحساب غير نشط.";
+
+    public const string InvalidLogoFile = "يرجى اختيار ملف صورة صالح.";
+    public const string FactoryHasNoLogoToDelete = "لا يوجد شعار لهذا المصنع لحذفه.";
+    public const string FactoryNotFoundOrInactive = "المصنع غير موجود أو غير نشط.";
+    public const string ConcreteTypeNotFoundShort = "نوع الخرسانة غير موجود.";
+    public const string ConcreteTypeNotActiveForClient = "نوع الخرسانة غير نشط.";
+    public const string ConcreteTypeNotFoundOrNotForFactory = "نوع الخرسانة غير موجود أو لا ينتمي لمصنعك.";
 
     public const string FactoryRequiredForDriver = "يجب تحديد المصنع للسائق.";
     public const string FactoryRequiredForEmployee = "يجب تحديد المصنع للموظف.";
@@ -111,6 +135,22 @@ public static class Messages
     public const string PumpRequiresFloorNumber = "عند اختيار مضخة، يجب تحديد رقم الطابق.";
     public const string FloorNumberMustBeNonNegative = "رقم الطابق يجب أن يكون صفر أو أكبر (الأرضي = 0).";
     public const string RejectionReasonPrefix = "سبب الرفض: {0}";
+    public const string UnitPriceMustBePositive = "سعر المتر يجب أن يكون أكبر من صفر.";
+    public const string CannotUpdatePriceAtThisStage = "لا يمكن تعديل السعر في هذه المرحلة من الطلب.";
+    public const string NotAuthorizedToApproveOrder = "غير مخول لاعتماد الطلب.";
+    public const string CannotApproveNonPendingOrder = "لا يمكن اعتماد الطلب إلا وهو في حالة قيد الانتظار.";
+    public const string PriceRequiredBeforeApproval = "يجب تحديد سعر المتر قبل الاعتماد.";
+    public const string OrderNotAssignedForStartDelivery = "هذا الطلب غير مسند إليك. لا يمكنك بدء التوصيل.";
+    public const string OrderNotAssignedForDeliver = "هذا الطلب غير مسند إليك. لا يمكنك تأكيد التسليم.";
+    public const string OrderNotAssignedForCancel = "هذا الطلب غير مسند إليك. لا يمكنك إلغاؤه.";
+    public const string CannotStartDeliveryForNonApprovedOrder = "لا يمكن بدء التوصيل إلا لطلب معتمد.";
+    public const string DriverRequiredForDelivery = "يجب تعيين سائق قبل بدء التوصيل.";
+    public const string CannotDeliverNonOnTheWayOrder = "لا يمكن تأكيد التسليم إلا لطلب في الطريق.";
+    public const string CannotCloseNonDeliveredOrder = "لا يمكن إغلاق الطلب إلا بعد تسليمه.";
+    public const string CannotCancelDeliveredOrClosedOrder = "لا يمكن إلغاء طلب تم تسليمه أو إغلاقه.";
+    public const string OrderAlreadyRejectedOrCancelled = "الطلب مرفوض أو ملغي بالفعل.";
+    public const string CannotChangeDriverRole = "لا يمكن تغيير دور السائق.";
+    public const string PhoneLinkedToNonClientAccount = "رقم الهاتف مرتبط بحساب موظف/سائق موجود في النظام. لا يمكن إنشاء عميل جديد بنفس الرقم. يرجى التحقق من الرقم أو التواصل مع مدير النظام.";
 
     #endregion
 

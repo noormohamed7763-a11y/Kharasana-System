@@ -78,7 +78,7 @@ public class DashboardController : ControllerBase
                 return Unauthorized(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "لم يتم العثور على المصنع المرتبط بالمستخدم.",
+                    Message = Messages.FactoryNotFoundForUser,
                     Data = null
                 });
             }

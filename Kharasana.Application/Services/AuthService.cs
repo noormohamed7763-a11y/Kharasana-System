@@ -3,6 +3,7 @@ using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Auth;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 

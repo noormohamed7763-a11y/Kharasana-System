@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Order;
+using Kharasana.Domain.Common;
 
 namespace Kharasana.Application.Validators.Order;
 

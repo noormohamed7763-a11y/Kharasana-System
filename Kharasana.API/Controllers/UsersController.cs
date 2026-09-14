@@ -62,7 +62,7 @@ public class UsersController : ControllerBase
                 return Unauthorized(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "لم يتم العثور على المصنع المرتبط بالمستخدم.",
+                    Message = Messages.FactoryNotFoundForUser,
                     Data = null
                 });
             }
@@ -121,7 +121,7 @@ public class UsersController : ControllerBase
             return Unauthorized(new ApiResponse<object>
             {
                 Success = false,
-                Message = "لم يتم العثور على المصنع المرتبط بالمستخدم.",
+                Message = Messages.FactoryNotFoundForUser,
                 Data = null
             });
         }
@@ -196,7 +196,7 @@ public class UsersController : ControllerBase
             return Unauthorized(new ApiResponse<object>
             {
                 Success = false,
-                Message = "لم يتم العثور على المصنع المرتبط بالمستخدم.",
+                Message = Messages.FactoryNotFoundForUser,
                 Data = null
             });
         }
@@ -260,7 +260,7 @@ public class UsersController : ControllerBase
             return Unauthorized(new ApiResponse<object>
             {
                 Success = false,
-                Message = "لم يتم العثور على المصنع المرتبط بالمستخدم.",
+                Message = Messages.FactoryNotFoundForUser,
                 Data = null
             });
         }
@@ -368,7 +368,7 @@ public class UsersController : ControllerBase
             return Unauthorized(new ApiResponse<object>
             {
                 Success = false,
-                Message = "لم يتم العثور على المصنع المرتبط بالمستخدم.",
+                Message = Messages.FactoryNotFoundForUser,
                 Data = null
             });
         }
@@ -460,7 +460,7 @@ public class UsersController : ControllerBase
         return Ok(new ApiResponse<object>
         {
             Success = true,
-            Message = isActive ? "تم تفعيل حساب السائق بنجاح." : "تم إيقاف حساب السائق بنجاح.",
+            Message = isActive ? Messages.DriverActivatedSuccessfully : Messages.DriverDeactivatedSuccessfully,
             Data = isActive
         });
     }
@@ -470,21 +470,14 @@ public class UsersController : ControllerBase
     // ============================================================
     private async Task<UserDto?> GetDriverForCurrentFactoryAsync(int userId, int factoryId)
     {
-        try
-        {
-            var user = await _userService.GetByIdAsync(userId);
+        var user = await _userService.GetByIdAsync(userId);
 
-            // ✅ التحقق: المستخدم موجود، سائق، ويتبع المصنع المطلوب
-            if (user == null || user.Role != UserRole.Driver.ToString() || user.FactoryId != factoryId)
-            {
-                return null;
-            }
-
-            return user;
-        }
-        catch
+        // ✅ التحقق: المستخدم موجود، سائق، ويتبع المصنع المطلوب
+        if (user == null || user.Role != UserRole.Driver.ToString() || user.FactoryId != factoryId)
         {
             return null;
         }
+
+        return user;
     }
 }

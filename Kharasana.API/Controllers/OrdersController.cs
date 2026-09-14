@@ -81,7 +81,7 @@ public class OrdersController : ControllerBase
                 if (callerFactoryId == null)
                 {
                     return Unauthorized(new ApiResponse<object>
-                    { Success = false, Message = "لم يتم العثور على المصنع المرتبط بالمستخدم.", Data = null });
+                    { Success = false, Message = Messages.FactoryNotFoundForUser, Data = null });
                 }
                 factoryId = callerFactoryId;
                 break;
@@ -137,7 +137,7 @@ public class OrdersController : ControllerBase
             if (callerFactoryId == null)
             {
                 return Unauthorized(new ApiResponse<object>
-                { Success = false, Message = "لم يتم العثور على المصنع المرتبط بالمستخدم.", Data = null });
+                { Success = false, Message = Messages.FactoryNotFoundForUser, Data = null });
             }
             factoryId = callerFactoryId;
         }
@@ -227,7 +227,7 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse<OrderDto>
         {
             Success = true,
-            Message = "تم تحديث الطلب بنجاح.",
+            Message = Messages.OrderUpdatedSuccessfully,
             Data = result
         });
     }
@@ -258,7 +258,7 @@ public class OrdersController : ControllerBase
             if (factoryId == null)
             {
                 return Unauthorized(new ApiResponse<object>
-                { Success = false, Message = "لم يتم العثور على المصنع المرتبط بالمستخدم.", Data = null });
+                { Success = false, Message = Messages.FactoryNotFoundForUser, Data = null });
             }
             employeeFactoryId = factoryId.Value;
         }
@@ -298,7 +298,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.SetPriceAsync(id, dto.UnitPrice, callerId, callerRole, callerFactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = "تم حفظ السعر بنجاح.", Data = null });
+        return Ok(new ApiResponse<object> { Success = true, Message = Messages.PriceSavedSuccessfully, Data = null });
     }
 
     // ============================================================
@@ -318,7 +318,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.ApproveOrderAsync(id, callerId, callerRole, callerFactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = "تمت موافقة العميل بنجاح.", Data = null });
+        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderApprovedSuccessfully, Data = null });
     }
 
     // ============================================================
@@ -382,7 +382,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.StartDeliveryAsync(id, callerId, callerRole, callerFactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = "تم بدء التوصيل بنجاح.", Data = null });
+        return Ok(new ApiResponse<object> { Success = true, Message = Messages.DeliveryStartedSuccessfully, Data = null });
     }
 
     // ============================================================
@@ -402,7 +402,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.DeliverOrderAsync(id, callerId, callerRole, callerFactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = "تم تسليم الطلب بنجاح.", Data = null });
+        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderDeliveredSuccessfully, Data = null });
     }
 
     // ============================================================
@@ -422,7 +422,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.CloseOrderAsync(id, callerId, callerRole, callerFactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = "تم إغلاق الطلب بنجاح.", Data = null });
+        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderClosedSuccessfully, Data = null });
     }
 
     // ============================================================
@@ -443,7 +443,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.RejectOrderAsync(id, dto.Reason, callerId, callerRole, callerFactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = "تم رفض الطلب بنجاح.", Data = null });
+        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderRejectedSuccessfully, Data = null });
     }
 
     // ============================================================
@@ -463,11 +463,6 @@ public class OrdersController : ControllerBase
 
         await _orderService.CancelOrderAsync(id, callerId, callerRole, callerFactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = "تم إلغاء الطلب بنجاح.", Data = null });
+        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderCancelledSuccessfully, Data = null });
     }
-}
-
-public class RejectOrderDto
-{
-    public string? Reason { get; set; }
 }

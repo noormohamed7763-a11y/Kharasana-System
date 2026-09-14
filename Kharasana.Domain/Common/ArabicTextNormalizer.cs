@@ -1,4 +1,4 @@
-﻿namespace Kharasana.Application.Common;
+namespace Kharasana.Domain.Common;
 
 /// <summary>
 /// توحيد الاختلافات الشائعة في كتابة الأسماء العربية عند البحث،

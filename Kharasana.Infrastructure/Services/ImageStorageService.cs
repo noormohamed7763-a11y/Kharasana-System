@@ -49,9 +49,6 @@ public class ImageStorageService : IImageStorageService
         var uniqueFileName = $"{Guid.NewGuid()}{extension}";
         var fullPath = Path.Combine(folderPath, uniqueFileName);
 
-        // ✅ سجل المسار لمعرفة أين يتم الحفظ (للتتبع)
-        Console.WriteLine($"💾 Saving image to: {fullPath}");
-
         await using (var output = new FileStream(fullPath, FileMode.Create))
         {
             await fileStream.CopyToAsync(output);

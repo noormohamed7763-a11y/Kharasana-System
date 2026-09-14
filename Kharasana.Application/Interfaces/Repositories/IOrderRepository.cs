@@ -7,10 +7,7 @@ namespace Kharasana.Application.Interfaces.Repositories;
 
 public interface IOrderRepository : IGenericRepository<Order>
 {
-    Task<IEnumerable<Order>> GetAllWithDetailsAsync();
     Task<Order?> GetByIdWithDetailsAsync(int id);
-    Task<IEnumerable<Order>> GetAllByFactoryIdAsync(int factoryId);
-    Task<IEnumerable<Order>> GetAllByClientIdAsync(int clientId);
 
     Task<(IEnumerable<Order> Items, int TotalCount)> GetPagedAsync(
         int? factoryId, int? clientId, int? driverId, OrderStatus? status, string? search, int pageNumber, int pageSize);

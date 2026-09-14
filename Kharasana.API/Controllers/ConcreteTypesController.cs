@@ -59,7 +59,7 @@ public class ConcreteTypesController : ControllerBase
             return Ok(new ApiResponse<IEnumerable<ConcreteTypeDto>>
             {
                 Success = true,
-                Message = "تم جلب أنواع الخرسانة بنجاح.",
+                Message = Messages.ConcreteTypesRetrievedSuccessfully,
                 Data = activeTypes
             });
         }
@@ -84,7 +84,7 @@ public class ConcreteTypesController : ControllerBase
             return Ok(new ApiResponse<IEnumerable<ConcreteTypeDto>>
             {
                 Success = true,
-                Message = "تم جلب أنواع الخرسانة بنجاح.",
+                Message = Messages.ConcreteTypesRetrievedSuccessfully,
                 Data = factoryTypes
             });
         }
@@ -133,7 +133,7 @@ public class ConcreteTypesController : ControllerBase
             return NotFound(new ApiResponse<object>
             {
                 Success = false,
-                Message = "نوع الخرسانة غير موجود.",
+                Message = Messages.ConcreteTypeNotFoundShort,
                 Data = null
             });
         }
@@ -148,7 +148,7 @@ public class ConcreteTypesController : ControllerBase
                 return NotFound(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "نوع الخرسانة غير نشط.",
+                    Message = Messages.ConcreteTypeNotActiveForClient,
                     Data = null
                 });
             }
@@ -171,7 +171,7 @@ public class ConcreteTypesController : ControllerBase
                 return NotFound(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "نوع الخرسانة غير موجود أو لا ينتمي لمصنعك.",
+                    Message = Messages.ConcreteTypeNotFoundOrNotForFactory,
                     Data = null
                 });
             }
@@ -263,19 +263,23 @@ public class ConcreteTypesController : ControllerBase
             });
         }
 
+        int? currentFactoryId = null;
+
         if (currentRole == UserRole.FactoryEmployee)
         {
-            var factoryId = User.GetFactoryId();
-            var concreteType = await _concreteTypeService.GetByIdAsync(id);
-
-            if (concreteType == null || concreteType.FactoryId != factoryId)
+            currentFactoryId = User.GetFactoryId();
+            if (currentFactoryId == null)
             {
-                throw new Application.Common.Exceptions.BusinessException(
-                    "لا يمكنك تعديل نوع خرسانة لا ينتمي لمصنعك.");
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = Messages.FactoryNotFoundForUser,
+                    Data = null
+                });
             }
         }
 
-        await _concreteTypeService.UpdateAsync(id, dto);
+        await _concreteTypeService.UpdateAsync(id, dto, currentFactoryId);
 
         return Ok(new ApiResponse<object>
         {

@@ -1,4 +1,5 @@
-﻿using Kharasana.Web.Filters;
+﻿using Kharasana.Application.DTOs.Order;
+using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
 using Kharasana.Web.Services.Interfaces;
@@ -958,8 +959,4 @@ namespace Kharasana.Web.Controllers
         public decimal UnitPrice { get; set; }
     }
 
-    public class RejectOrderDto
-    {
-        public string? Reason { get; set; }
     }
-}

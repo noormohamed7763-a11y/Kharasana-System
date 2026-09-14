@@ -24,10 +24,9 @@ public class RegisterUserDto
     [Compare(nameof(Password), ErrorMessage = "كلمتا المرور غير متطابقتين.")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
-    [YemeniPhone(ErrorMessage = "رقم الهاتف غير صالح.")]
+    // ✅ التحقق من صيغة الهاتف يتم عبر RegisterClientValidator (FluentValidation) بقاعدة YemeniPhoneHelper
     public string? Phone { get; set; }
 
-    [YemeniPhone(ErrorMessage = "رقم الواتساب غير صالح.")]
     public string? WhatsApp { get; set; }
 
     // ✅ تم إزالة Role و FactoryId لأنهما ليسا جزءاً من التسجيل الذاتي للعميل

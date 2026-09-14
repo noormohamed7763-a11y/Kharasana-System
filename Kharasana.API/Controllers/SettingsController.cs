@@ -38,7 +38,7 @@ public class SettingsController : ControllerBase
             return Unauthorized(new ApiResponse<object>
             {
                 Success = false,
-                Message = "لم يتم العثور على المصنع المرتبط بالمستخدم."
+                Message = Messages.FactoryNotFoundForUser
             });
         }
 
@@ -47,7 +47,7 @@ public class SettingsController : ControllerBase
         return Ok(new ApiResponse<FactoryDto>
         {
             Success = true,
-            Message = "تم جلب بيانات المصنع بنجاح.",
+            Message = Messages.FactorySettingsRetrievedSuccessfully,
             Data = factory
         });
     }
@@ -69,7 +69,7 @@ public class SettingsController : ControllerBase
             return Unauthorized(new ApiResponse<object>
             {
                 Success = false,
-                Message = "لم يتم العثور على المصنع المرتبط بالمستخدم."
+                Message = Messages.FactoryNotFoundForUser
             });
         }
 
@@ -78,7 +78,7 @@ public class SettingsController : ControllerBase
             return BadRequest(new ApiResponse<object>
             {
                 Success = false,
-                Message = "يرجى اختيار ملف صورة صالح."
+                Message = Messages.InvalidLogoFile
             });
         }
 
@@ -88,7 +88,7 @@ public class SettingsController : ControllerBase
         return Ok(new ApiResponse<object>
         {
             Success = true,
-            Message = "تم رفع شعار المصنع بنجاح.",
+            Message = Messages.FactoryLogoUploadedSuccessfully,
             Data = new { logo = logoPath }
         });
     }
@@ -107,7 +107,7 @@ public class SettingsController : ControllerBase
             return Unauthorized(new ApiResponse<object>
             {
                 Success = false,
-                Message = "لم يتم العثور على المصنع المرتبط بالمستخدم."
+                Message = Messages.FactoryNotFoundForUser
             });
         }
 
@@ -116,7 +116,7 @@ public class SettingsController : ControllerBase
         return Ok(new ApiResponse<object>
         {
             Success = true,
-            Message = "تم حذف شعار المصنع بنجاح.",
+            Message = Messages.FactoryLogoDeletedSuccessfully,
             Data = null
         });
     }

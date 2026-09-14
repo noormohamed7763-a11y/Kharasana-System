@@ -3,6 +3,7 @@ using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.User;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 
@@ -167,7 +168,7 @@ public class UserService : IUserService
         // ✅ لا يسمح بتغيير دور السائق إلى دور آخر (حماية إضافية)
         if (user.Role == UserRole.Driver && dto.Role != UserRole.Driver)
         {
-            throw new BusinessException("لا يمكن تغيير دور السائق.");
+            throw new BusinessException(Messages.CannotChangeDriverRole);
         }
 
         await ValidateUserRoleAsync(

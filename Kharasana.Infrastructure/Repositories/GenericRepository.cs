@@ -47,11 +47,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         return await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(lambda);
     }
 
-    public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
-    {
-        return await _dbSet.Where(predicate).ToListAsync();
-    }
-
     public async Task AddAsync(T entity)
     {
         await _dbSet.AddAsync(entity);
@@ -107,18 +102,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     public void Delete(T entity)
     {
         _dbSet.Remove(entity);
-    }
-
-    public async Task<bool> ExistsAsync(int id)
-    {
-        // ✅ Use LINQ to respect global query filters
-        var pk = _context.Model.FindEntityType(typeof(T))!.FindPrimaryKey()!;
-        var param = Expression.Parameter(typeof(T), "e");
-        var property = Expression.Property(param, pk.Properties[0].Name);
-        var constant = Expression.Constant(id);
-        var equal = Expression.Equal(property, constant);
-        var lambda = Expression.Lambda<Func<T, bool>>(equal, param);
-        return await _dbSet.AnyAsync(lambda);
     }
 
     public async Task<int> CountAsync()

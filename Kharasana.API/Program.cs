@@ -1,5 +1,6 @@
 using Kharasana.API.Middlewares;
 using Kharasana.Application;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Logging;
 using Kharasana.Infrastructure;
 using Kharasana.Infrastructure.Persistence;
@@ -10,12 +11,16 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.RateLimiting;
 
 namespace Kharasana.API;
 
 public class Program
 {
+    // خيارات JSON مطابقة لافتراضيات Web API (camelCase) للردود الموحّدة في JwtBearerEvents
+    private static readonly JsonSerializerOptions ApiJsonOptions = new(JsonSerializerDefaults.Web);
+
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -110,6 +115,46 @@ public class Program
 
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(jwtKey))
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    // رد موحّد عربي عند غياب/تلف/انتهاء التوكن (401)
+                    OnChallenge = context =>
+                    {
+                        if (context.Handled)
+                            return Task.CompletedTask;
+
+                        context.HandleResponse();
+
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.ContentType = "application/json; charset=utf-8";
+
+                        var payload = JsonSerializer.Serialize(new ApiResponse<object>
+                        {
+                            Success = false,
+                            Message = Messages.InvalidOrExpiredToken,
+                            Data = null
+                        }, ApiJsonOptions);
+
+                        return context.Response.WriteAsync(payload);
+                    },
+
+                    // رد موحّد عربي عند مصادقة ناجحة لكن بدون الصلاحية المطلوبة (403)
+                    OnForbidden = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        context.Response.ContentType = "application/json; charset=utf-8";
+
+                        var payload = JsonSerializer.Serialize(new ApiResponse<object>
+                        {
+                            Success = false,
+                            Message = Messages.Unauthorized,
+                            Data = null
+                        }, ApiJsonOptions);
+
+                        return context.Response.WriteAsync(payload);
+                    }
                 };
             });
 

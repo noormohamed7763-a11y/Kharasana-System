@@ -180,7 +180,7 @@ public class FactoryService : IFactoryService
             throw new NotFoundException(Messages.FactoryNotFound);
 
         if (string.IsNullOrWhiteSpace(factory.Logo))
-            throw new BusinessException("لا يوجد شعار لهذا المصنع لحذفه.");
+            throw new BusinessException(Messages.FactoryHasNoLogoToDelete);
 
         _imageStorageService.DeleteImage(factory.Logo);
 

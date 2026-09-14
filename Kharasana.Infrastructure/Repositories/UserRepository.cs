@@ -1,5 +1,5 @@
-﻿using Kharasana.Application.Common;
-using Kharasana.Application.Interfaces.Repositories;
+﻿using Kharasana.Application.Interfaces.Repositories;
+using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Persistence;

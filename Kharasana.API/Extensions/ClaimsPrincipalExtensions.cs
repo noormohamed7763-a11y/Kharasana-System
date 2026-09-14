@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Kharasana.Domain.Enums;
+using Kharasana.Infrastructure.Authentication;
 
 namespace Kharasana.API.Extensions;
 
@@ -13,7 +14,7 @@ public static class ClaimsPrincipalExtensions
 
     public static int? GetFactoryId(this ClaimsPrincipal user)
     {
-        var factoryIdClaim = user.FindFirst("FactoryId")?.Value;
+        var factoryIdClaim = user.FindFirst(CustomClaimTypes.FactoryId)?.Value;
         return int.TryParse(factoryIdClaim, out var factoryId) ? factoryId : null;
     }
 

@@ -4,6 +4,7 @@ using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 using Kharasana.Application.DTOs.Customer;
@@ -169,9 +170,7 @@ public class OrderService : IOrderService
         }
         else
         {
-            throw new BusinessException(
-                "رقم الهاتف مرتبط بحساب موظف/سائق موجود في النظام. " +
-                "لا يمكن إنشاء عميل جديد بنفس الرقم. يرجى التحقق من الرقم أو التواصل مع مدير النظام.");
+            throw new BusinessException(Messages.PhoneLinkedToNonClientAccount);
         }
 
         var createDto = new CreateOrderDto
@@ -209,16 +208,7 @@ public class OrderService : IOrderService
 
         if (order.Status != OrderStatus.New && order.Status != OrderStatus.Pending)
         {
-            var statusName = order.Status switch
-            {
-                OrderStatus.Approved => "معتمد",
-                OrderStatus.Rejected => "مرفوض",
-                OrderStatus.Cancelled => "ملغي",
-                OrderStatus.OnTheWay => "في الطريق",
-                OrderStatus.Delivered => "تم التسليم",
-                OrderStatus.Closed => "مغلق",
-                _ => order.Status.ToString()
-            };
+            var statusName = OrderStatusHelper.GetArabicName(order.Status);
             throw new BusinessException(string.Format(Messages.OrderCannotBeUpdatedInStatus, statusName));
         }
 
@@ -305,12 +295,12 @@ public class OrderService : IOrderService
     public async Task<bool> SetPriceAsync(int id, decimal unitPrice, int callerId, UserRole callerRole, int? callerFactoryId)
     {
         if (unitPrice <= 0)
-            throw new BusinessException("سعر المتر يجب أن يكون أكبر من صفر.");
+            throw new BusinessException(Messages.UnitPriceMustBePositive);
 
         var order = await GetOrderOrThrowAsync(id, callerId, callerRole, callerFactoryId);
 
         if (order.Status != OrderStatus.New && order.Status != OrderStatus.Pending)
-            throw new BusinessException("لا يمكن تعديل السعر في هذه المرحلة من الطلب.");
+            throw new BusinessException(Messages.CannotUpdatePriceAtThisStage);
 
         order.UnitPrice = unitPrice;
         order.TotalPrice = unitPrice * order.Quantity;
@@ -333,13 +323,13 @@ public class OrderService : IOrderService
         var order = await GetOrderOrThrowAsync(id, callerId, callerRole, callerFactoryId);
 
         if (callerRole != UserRole.FactoryEmployee && callerRole != UserRole.Admin)
-            throw new ForbiddenException("غير مخول لاعتماد الطلب.");
+            throw new ForbiddenException(Messages.NotAuthorizedToApproveOrder);
 
         if (order.Status != OrderStatus.Pending)
-            throw new BusinessException("لا يمكن اعتماد الطلب إلا وهو في حالة قيد الانتظار.");
+            throw new BusinessException(Messages.CannotApproveNonPendingOrder);
 
         if (order.UnitPrice <= 0)
-            throw new BusinessException("يجب تحديد سعر المتر قبل الاعتماد.");
+            throw new BusinessException(Messages.PriceRequiredBeforeApproval);
 
         order.Status = OrderStatus.Approved;
         order.UpdatedAt = DateTime.UtcNow;
@@ -360,14 +350,14 @@ public class OrderService : IOrderService
         // ✅ السماح للسائق ببدء التوصيل إذا كان الطلب مسنداً إليه
         if (callerRole == UserRole.Driver && order.DriverId != callerId)
         {
-            throw new ForbiddenException("هذا الطلب غير مسند إليك. لا يمكنك بدء التوصيل.");
+            throw new ForbiddenException(Messages.OrderNotAssignedForStartDelivery);
         }
 
         if (order.Status != OrderStatus.Approved)
-            throw new BusinessException("لا يمكن بدء التوصيل إلا لطلب معتمد.");
+            throw new BusinessException(Messages.CannotStartDeliveryForNonApprovedOrder);
 
         if (order.TransportMethod == TransportMethod.FactoryTransport && !order.DriverId.HasValue)
-            throw new BusinessException("يجب تعيين سائق قبل بدء التوصيل.");
+            throw new BusinessException(Messages.DriverRequiredForDelivery);
 
         order.Status = OrderStatus.OnTheWay;
         order.UpdatedAt = DateTime.UtcNow;
@@ -388,11 +378,11 @@ public class OrderService : IOrderService
         // ✅ السماح للسائق بتأكيد التسليم إذا كان الطلب مسنداً إليه
         if (callerRole == UserRole.Driver && order.DriverId != callerId)
         {
-            throw new ForbiddenException("هذا الطلب غير مسند إليك. لا يمكنك تأكيد التسليم.");
+            throw new ForbiddenException(Messages.OrderNotAssignedForDeliver);
         }
 
         if (order.Status != OrderStatus.OnTheWay)
-            throw new BusinessException("لا يمكن تأكيد التسليم إلا لطلب في الطريق.");
+            throw new BusinessException(Messages.CannotDeliverNonOnTheWayOrder);
 
         order.Status = OrderStatus.Delivered;
         order.DeliveredAt = DateTime.UtcNow;
@@ -414,7 +404,7 @@ public class OrderService : IOrderService
         var order = await GetOrderOrThrowAsync(id, callerId, callerRole, callerFactoryId);
 
         if (order.Status != OrderStatus.Delivered)
-            throw new BusinessException("لا يمكن إغلاق الطلب إلا بعد تسليمه.");
+            throw new BusinessException(Messages.CannotCloseNonDeliveredOrder);
 
         order.Status = OrderStatus.Closed;
         order.ClosedAt = DateTime.UtcNow;
@@ -433,7 +423,7 @@ public class OrderService : IOrderService
     {
         var order = await GetOrderOrThrowAsync(id, callerId, callerRole, callerFactoryId);
 
-        if (!IsValidStatusTransition(order.Status, dto.Status))
+        if (!OrderStatusHelper.CanTransitionTo(order.Status, dto.Status))
             throw new BusinessException(Messages.InvalidStatusTransition);
 
         order.Status = dto.Status;
@@ -539,14 +529,14 @@ public class OrderService : IOrderService
         // ✅ السماح للسائق بإلغاء الطلب إذا كان مسنداً إليه
         if (callerRole == UserRole.Driver && order.DriverId != callerId)
         {
-            throw new ForbiddenException("هذا الطلب غير مسند إليك. لا يمكنك إلغاؤه.");
+            throw new ForbiddenException(Messages.OrderNotAssignedForCancel);
         }
 
         if (order.Status == OrderStatus.Delivered || order.Status == OrderStatus.Closed)
-            throw new BusinessException("لا يمكن إلغاء طلب تم تسليمه أو إغلاقه.");
+            throw new BusinessException(Messages.CannotCancelDeliveredOrClosedOrder);
 
         if (order.Status == OrderStatus.Rejected || order.Status == OrderStatus.Cancelled)
-            throw new BusinessException("الطلب مرفوض أو ملغي بالفعل.");
+            throw new BusinessException(Messages.OrderAlreadyRejectedOrCancelled);
 
         order.Status = OrderStatus.Cancelled;
         order.UpdatedAt = DateTime.UtcNow;
@@ -706,21 +696,6 @@ public class OrderService : IOrderService
             TruckPlate = order.TruckPlate,
             Status = order.Status,
             Notes = order.Notes
-        };
-    }
-
-    private static bool IsValidStatusTransition(OrderStatus currentStatus, OrderStatus newStatus)
-    {
-        return newStatus switch
-        {
-            OrderStatus.Pending => currentStatus == OrderStatus.New,
-            OrderStatus.Cancelled => currentStatus == OrderStatus.New || currentStatus == OrderStatus.Pending,
-            OrderStatus.Rejected => currentStatus == OrderStatus.New || currentStatus == OrderStatus.Pending,
-            OrderStatus.Approved => currentStatus == OrderStatus.Pending,
-            OrderStatus.OnTheWay => currentStatus == OrderStatus.Approved,
-            OrderStatus.Delivered => currentStatus == OrderStatus.OnTheWay,
-            OrderStatus.Closed => currentStatus == OrderStatus.Delivered,
-            _ => false
         };
     }
 }

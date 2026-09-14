@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.User;
+using Kharasana.Domain.Common;
 using Kharasana.Domain.Enums;
 
 namespace Kharasana.Application.Validators.User;

@@ -1,4 +1,4 @@
-using Kharasana.Application.Common;
+using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Persistence;

@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Auth;
+using Kharasana.Domain.Common;
 
 namespace Kharasana.Application.Validators.Auth;
 

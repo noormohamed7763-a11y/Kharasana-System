@@ -1,7 +1,7 @@
-﻿using Kharasana.Application.Common;
-using Kharasana.Application.DTOs.Customer;
+﻿using Kharasana.Application.DTOs.Customer;
 using Kharasana.Application.DTOs.Report;
 using Kharasana.Application.Interfaces.Repositories;
+using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Persistence;
@@ -26,29 +26,10 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .Include(o => o.Driver);
     }
 
-    public async Task<IEnumerable<Order>> GetAllWithDetailsAsync()
-    {
-        return await OrdersWithDetails().ToListAsync();
-    }
-
     public async Task<Order?> GetByIdWithDetailsAsync(int id)
     {
         return await OrdersWithDetails()
             .FirstOrDefaultAsync(o => o.OrderId == id);
-    }
-
-    public async Task<IEnumerable<Order>> GetAllByFactoryIdAsync(int factoryId)
-    {
-        return await OrdersWithDetails()
-            .Where(o => o.FactoryId == factoryId)
-            .ToListAsync();
-    }
-
-    public async Task<IEnumerable<Order>> GetAllByClientIdAsync(int clientId)
-    {
-        return await OrdersWithDetails()
-            .Where(o => o.ClientId == clientId)
-            .ToListAsync();
     }
 
     public async Task<(IEnumerable<Order> Items, int TotalCount)> GetPagedAsync(
@@ -174,7 +155,7 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
 
         // Set Arabic names (EF Core can't translate static methods)
         foreach (var item in grouped)
-            item.StatusName = GetStatusName((OrderStatus)item.Status);
+            item.StatusName = OrderStatusHelper.GetArabicName((OrderStatus)item.Status);
 
         return grouped;
     }
@@ -200,17 +181,4 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
 
         return grouped;
     }
-
-    private static string GetStatusName(OrderStatus status) => status switch
-    {
-        OrderStatus.New => "جديد",
-        OrderStatus.Pending => "قيد الانتظار",
-        OrderStatus.Approved => "معتمد",
-        OrderStatus.Rejected => "مرفوض",
-        OrderStatus.Cancelled => "ملغي",
-        OrderStatus.OnTheWay => "في الطريق",
-        OrderStatus.Delivered => "تم التسليم",
-        OrderStatus.Closed => "مغلق",
-        _ => "غير معروف"
-    };
 }

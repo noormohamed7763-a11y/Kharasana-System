@@ -70,7 +70,7 @@ public class FactoriesController : ControllerBase
                 return Unauthorized(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "لم يتم العثور على المصنع المرتبط بالمستخدم."
+                    Message = Messages.FactoryNotFoundForUser
                 });
             }
 
@@ -111,7 +111,7 @@ public class FactoriesController : ControllerBase
         return Ok(new ApiResponse<IEnumerable<FactoryDto>>
         {
             Success = true,
-            Message = "تم جلب المصانع المؤرشفة بنجاح",
+            Message = Messages.ArchivedFactoriesRetrievedSuccessfully,
             Data = factories
         });
     }
@@ -149,7 +149,7 @@ public class FactoriesController : ControllerBase
                 return NotFound(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "المصنع غير موجود أو غير نشط."
+                    Message = Messages.FactoryNotFoundOrInactive
                 });
             }
             return Ok(new ApiResponse<FactoryDto>
@@ -265,7 +265,7 @@ public class FactoriesController : ControllerBase
         return Ok(new ApiResponse<object>
         {
             Success = true,
-            Message = "تم استعادة المصنع بنجاح.",
+            Message = Messages.FactoryRestoredSuccessfully,
             Data = null
         });
     }
@@ -299,7 +299,7 @@ public class FactoriesController : ControllerBase
 
         if (file == null || file.Length == 0)
         {
-            return BadRequest(new ApiResponse<object> { Success = false, Message = "يرجى اختيار ملف صورة صالح." });
+            return BadRequest(new ApiResponse<object> { Success = false, Message = Messages.InvalidLogoFile });
         }
 
         await using var stream = file.OpenReadStream();
@@ -308,7 +308,7 @@ public class FactoriesController : ControllerBase
         return Ok(new ApiResponse<object>
         {
             Success = true,
-            Message = "تم رفع شعار المصنع بنجاح.",
+            Message = Messages.FactoryLogoUploadedSuccessfully,
             Data = new { logo = logoPath }
         });
     }
@@ -343,7 +343,7 @@ public class FactoriesController : ControllerBase
         return Ok(new ApiResponse<object>
         {
             Success = true,
-            Message = "تم حذف شعار المصنع بنجاح.",
+            Message = Messages.FactoryLogoDeletedSuccessfully,
             Data = null
         });
     }
