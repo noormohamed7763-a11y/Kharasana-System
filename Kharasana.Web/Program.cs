@@ -7,7 +7,6 @@ using Kharasana.Web.Services.Interfaces;
 using Kharasana.Application.Common.Logging;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Controllers;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
@@ -27,14 +26,9 @@ namespace Kharasana.Web
             builder.Services.AddControllersWithViews(options =>
                 options.Filters.Add<UnhandledExceptionFilter>());
 
-            // Authentication Configuration (Cookie)
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
-                {
-                    options.LoginPath = "/Account/Login"; // مسار صفحة تسجيل الدخول
-                    options.AccessDeniedPath = "/Account/AccessDenied"; // صفحة منع الوصول
-                    options.ExpireTimeSpan = TimeSpan.FromHours(2);
-                });
+            // المصادقة في هذا المشروع تعمل عبر Session + SessionAuthorizeAttribute،
+            // ولا يوجد أي استخدام لـ SignInAsync — لذا لا نُسجّل Cookie Authentication (كود ميت)
+            builder.Services.AddAuthentication();
 
             // Session
             builder.Services.AddDistributedMemoryCache();

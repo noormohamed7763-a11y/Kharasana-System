@@ -1,4 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using Kharasana.Application.Common;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -35,8 +36,7 @@ public class SessionAuthorizeAttribute : ActionFilterAttribute
             {
                 if (context.Controller is Controller controller)
                 {
-                    controller.TempData["ErrorMessage"] =
-                        "عذراً، ليس لديك صلاحية للوصول إلى هذه الصفحة.";
+                    controller.TempData["ErrorMessage"] = Messages.Unauthorized;
                 }
 
                 RedirectToDashboard(context);
