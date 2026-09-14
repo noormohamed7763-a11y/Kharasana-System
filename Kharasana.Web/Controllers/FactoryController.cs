@@ -1,8 +1,8 @@
 using Kharasana.Web.Common;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
-using Kharasana.Web.Models.Factories;
-using Kharasana.Web.Models.Users;
+using Kharasana.Web.ViewModels.Factories;
+using Kharasana.Web.ViewModels.Users;
 using Kharasana.Web.Services.Api;
 using Kharasana.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;

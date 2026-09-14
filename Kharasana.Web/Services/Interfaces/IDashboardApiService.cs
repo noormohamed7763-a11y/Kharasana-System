@@ -1,4 +1,4 @@
-﻿using Kharasana.Web.Models.Dashboard;
+﻿using Kharasana.Web.ViewModels.Dashboard;
 
 namespace Kharasana.Web.Services.Interfaces
 {

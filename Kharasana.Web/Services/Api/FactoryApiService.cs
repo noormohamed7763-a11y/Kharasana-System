@@ -2,7 +2,7 @@ using Kharasana.Web.Common;
 using Kharasana.Web.Configuration;
 using Kharasana.Web.Localization;
 using Kharasana.Application.Common;
-using Kharasana.Web.Models.Factories;
+using Kharasana.Web.ViewModels.Factories;
 using Kharasana.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;

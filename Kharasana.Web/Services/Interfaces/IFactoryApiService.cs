@@ -1,5 +1,5 @@
 using Kharasana.Web.Common;
-using Kharasana.Web.Models.Factories;
+using Kharasana.Web.ViewModels.Factories;
 using Microsoft.AspNetCore.Http;
 
 namespace Kharasana.Web.Services.Interfaces

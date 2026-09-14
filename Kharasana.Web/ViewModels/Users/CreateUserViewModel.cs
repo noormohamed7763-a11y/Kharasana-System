@@ -2,7 +2,7 @@
 using Kharasana.Domain.Validation;
 using System.ComponentModel.DataAnnotations;
 
-namespace Kharasana.Web.Models.Users;
+namespace Kharasana.Web.ViewModels.Users;
 
 public class CreateUserViewModel
 {

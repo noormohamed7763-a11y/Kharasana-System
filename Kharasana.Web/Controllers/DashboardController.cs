@@ -1,5 +1,5 @@
 ﻿using Kharasana.Web.Filters;
-using Kharasana.Web.Models.Dashboard;
+using Kharasana.Web.ViewModels.Dashboard;
 using Kharasana.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 

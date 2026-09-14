@@ -4,7 +4,6 @@ using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Users;
-using Kharasana.Web.Models.Users;
 using Microsoft.AspNetCore.Mvc;
 using Kharasana.Domain.Enums;
 

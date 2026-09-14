@@ -1,4 +1,4 @@
-﻿namespace Kharasana.Web.Models.Factories
+﻿namespace Kharasana.Web.ViewModels.Factories
 {
     public class FactoryDto
     {

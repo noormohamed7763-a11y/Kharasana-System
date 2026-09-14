@@ -1,5 +1,5 @@
 ﻿using Kharasana.Application.Common;
-using Kharasana.Web.Models.Users;
+using Kharasana.Web.ViewModels.Users;
 
 namespace Kharasana.Web.ViewModels.Users;
 

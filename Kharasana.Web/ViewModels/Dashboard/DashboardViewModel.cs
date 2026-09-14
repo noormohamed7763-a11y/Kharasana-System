@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Kharasana.Web.Models.Dashboard
+namespace Kharasana.Web.ViewModels.Dashboard
 {
     public class DashboardViewModel
     {

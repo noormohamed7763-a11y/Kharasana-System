@@ -1,4 +1,4 @@
-﻿namespace Kharasana.Web.Models.Users;
+﻿namespace Kharasana.Web.ViewModels.Users;
 
 public class UserListItemViewModel
 {

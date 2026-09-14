@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kharasana.Application.Common;
-using Kharasana.Web.Models.Dashboard;
 using Kharasana.Web.ViewModels.Dashboard;
 using Kharasana.Web.ViewModels.Orders;
 using Kharasana.Web.Services.Interfaces;

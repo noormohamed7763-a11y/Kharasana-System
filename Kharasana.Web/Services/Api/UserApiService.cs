@@ -1,7 +1,6 @@
 using Kharasana.Application.Common;
-using Kharasana.Web.Models.Users;
-using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Users;
+using Kharasana.Web.Services.Interfaces;
 using Kharasana.Application.DTOs.User;
 
 namespace Kharasana.Web.Services.Api;
