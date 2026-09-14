@@ -172,46 +172,7 @@ public class OrderDto
         _ => "غير معروف"
     };
 
-    public string StatusCssClass => Status switch
-    {
-        OrderStatus.New => "status-New",
-        OrderStatus.Pending => "status-Pending",
-        OrderStatus.Approved => "status-Approved",
-        OrderStatus.Rejected => "status-Rejected",
-        OrderStatus.Cancelled => "status-Cancelled",
-        OrderStatus.OnTheWay => "status-OnTheWay",
-        OrderStatus.Delivered => "status-Delivered",
-        OrderStatus.Closed => "status-Closed",
-        _ => "status-default"
-    };
-
     public int StatusInt => (int)Status;
-
-    public int ProgressPercentage => Status switch
-    {
-        OrderStatus.New => 10,
-        OrderStatus.Pending => 25,
-        OrderStatus.Approved => 50,
-        OrderStatus.Rejected => 30,
-        OrderStatus.Cancelled => 20,
-        OrderStatus.OnTheWay => 65,
-        OrderStatus.Delivered => 85,
-        OrderStatus.Closed => 100,
-        _ => 10
-    };
-
-    public string ProgressColor => Status switch
-    {
-        OrderStatus.New => "bg-info",
-        OrderStatus.Pending => "bg-warning",
-        OrderStatus.Approved => "bg-primary",
-        OrderStatus.Rejected => "bg-danger",
-        OrderStatus.Cancelled => "bg-secondary",
-        OrderStatus.OnTheWay => "bg-warning",
-        OrderStatus.Delivered => "bg-success",
-        OrderStatus.Closed => "bg-secondary",
-        _ => "bg-info"
-    };
 
     /// <summary>
     /// تاريخ الصب بصيغة dd/MM/yyyy جاهزة للعرض

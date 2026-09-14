@@ -10,22 +10,25 @@ namespace Kharasana.Web.Helpers
     public static class OrderStatusExtensions
     {
         /// <summary>
-        /// الحصول على اسم الحالة باللغة العربية
+        /// الحصول على اسم الحالة باللغة العربية مع إيموجي توضيحي
+        /// (الاسم النصي مصدره الوحيد هو OrderStatusHelper في Domain — هنا إضافة إيموجي العرض فقط)
         /// </summary>
         public static string GetArabicName(this OrderStatus status)
         {
-            return status switch
+            string emoji = status switch
             {
-                OrderStatus.New => "جديد",
-                OrderStatus.Pending => "⏳ قيد الانتظار",
-                OrderStatus.Approved => "✅ معتمد",
-                OrderStatus.Rejected => "❌ مرفوض",
-                OrderStatus.Cancelled => "🚫 ملغي",
-                OrderStatus.OnTheWay => "🚚 في الطريق",
-                OrderStatus.Delivered => "📦 تم التسليم",
-                OrderStatus.Closed => "🔒 مغلق",
-                _ => "غير معروف"
+                OrderStatus.Pending => "⏳",
+                OrderStatus.Approved => "✅",
+                OrderStatus.Rejected => "❌",
+                OrderStatus.Cancelled => "🚫",
+                OrderStatus.OnTheWay => "🚚",
+                OrderStatus.Delivered => "📦",
+                OrderStatus.Closed => "🔒",
+                _ => string.Empty
             };
+
+            var name = OrderStatusHelper.GetArabicName(status);
+            return string.IsNullOrEmpty(emoji) ? name : $"{emoji} {name}";
         }
 
         /// <summary>
@@ -35,53 +38,16 @@ namespace Kharasana.Web.Helpers
         {
             return status switch
             {
-                OrderStatus.New => "status-New",
-                OrderStatus.Pending => "status-Pending",
-                OrderStatus.Approved => "status-Approved",
-                OrderStatus.Rejected => "status-Rejected",
-                OrderStatus.Cancelled => "status-Cancelled",
-                OrderStatus.OnTheWay => "status-OnTheWay",
-                OrderStatus.Delivered => "status-Delivered",
-                OrderStatus.Closed => "status-Closed",
+                // مهم: CSS حساس لحالة الأحرف — الأصناف كلها lowercase وتطابق components.css
+                OrderStatus.New => "status-new",
+                OrderStatus.Pending => "status-pending",
+                OrderStatus.Approved => "status-approved",
+                OrderStatus.Rejected => "status-rejected",
+                OrderStatus.Cancelled => "status-cancelled",
+                OrderStatus.OnTheWay => "status-ontheway",
+                OrderStatus.Delivered => "status-delivered",
+                OrderStatus.Closed => "status-closed",
                 _ => "status-default"
-            };
-        }
-
-        /// <summary>
-        /// الحصول على نسبة التقدم للحالة (0-100)
-        /// </summary>
-        public static int GetProgressPercentage(this OrderStatus status)
-        {
-            return status switch
-            {
-                OrderStatus.New => 10,
-                OrderStatus.Pending => 25,
-                OrderStatus.Approved => 50,
-                OrderStatus.Rejected => 30,
-                OrderStatus.Cancelled => 20,
-                OrderStatus.OnTheWay => 65,
-                OrderStatus.Delivered => 85,
-                OrderStatus.Closed => 100,
-                _ => 10
-            };
-        }
-
-        /// <summary>
-        /// الحصول على لون شريط التقدم المناسب للحالة
-        /// </summary>
-        public static string GetProgressColor(this OrderStatus status)
-        {
-            return status switch
-            {
-                OrderStatus.New => "bg-info",
-                OrderStatus.Pending => "bg-warning",
-                OrderStatus.Approved => "bg-primary",
-                OrderStatus.Rejected => "bg-danger",
-                OrderStatus.Cancelled => "bg-secondary",
-                OrderStatus.OnTheWay => "bg-warning",
-                OrderStatus.Delivered => "bg-success",
-                OrderStatus.Closed => "bg-secondary",
-                _ => "bg-info"
             };
         }
 
@@ -159,21 +125,11 @@ namespace Kharasana.Web.Helpers
 
         /// <summary>
         /// الحصول على قائمة بالحالات المسموح بالانتقال إليها من الحالة الحالية
+        /// (المصدر الوحيد هو OrderStatusHelper في Domain)
         /// </summary>
         public static OrderStatus[] GetAllowedTransitions(this OrderStatus status)
         {
-            return status switch
-            {
-                OrderStatus.New => new[] { OrderStatus.Pending, OrderStatus.Rejected, OrderStatus.Cancelled },
-                OrderStatus.Pending => new[] { OrderStatus.Approved, OrderStatus.Rejected, OrderStatus.Cancelled },
-                OrderStatus.Approved => new[] { OrderStatus.OnTheWay, OrderStatus.Cancelled },
-                OrderStatus.OnTheWay => new[] { OrderStatus.Delivered, OrderStatus.Cancelled },
-                OrderStatus.Delivered => new[] { OrderStatus.Closed },
-                OrderStatus.Rejected => Array.Empty<OrderStatus>(),
-                OrderStatus.Cancelled => Array.Empty<OrderStatus>(),
-                OrderStatus.Closed => Array.Empty<OrderStatus>(),
-                _ => Array.Empty<OrderStatus>()
-            };
+            return OrderStatusHelper.GetAllowedTransitions(status);
         }
 
         /// <summary>
