@@ -55,7 +55,7 @@ public class FactoriesController : ControllerBase
             {
                 Success = true,
                 Message = Messages.FactoriesRetrievedSuccessfully,
-                Data = activeFactories
+                Data = this.ToAbsoluteLogo(activeFactories)
             });
         }
 
@@ -79,7 +79,7 @@ public class FactoriesController : ControllerBase
             {
                 Success = true,
                 Message = Messages.FactoriesRetrievedSuccessfully,
-                Data = ownFactory == null ? Enumerable.Empty<FactoryDto>() : new[] { ownFactory }
+                Data = ownFactory == null ? Enumerable.Empty<FactoryDto>() : new[] { this.ToAbsoluteLogo(ownFactory) }
             });
         }
 
@@ -91,7 +91,7 @@ public class FactoriesController : ControllerBase
         {
             Success = true,
             Message = Messages.FactoriesRetrievedSuccessfully,
-            Data = factories
+            Data = this.ToAbsoluteLogo(factories)
         });
     }
 
@@ -112,7 +112,7 @@ public class FactoriesController : ControllerBase
         {
             Success = true,
             Message = Messages.ArchivedFactoriesRetrievedSuccessfully,
-            Data = factories
+            Data = this.ToAbsoluteLogo(factories)
         });
     }
 
@@ -156,7 +156,7 @@ public class FactoriesController : ControllerBase
             {
                 Success = true,
                 Message = Messages.FactoryRetrievedSuccessfully,
-                Data = factory
+                Data = this.ToAbsoluteLogo(factory)
             });
         }
 
@@ -175,7 +175,7 @@ public class FactoriesController : ControllerBase
         {
             Success = true,
             Message = Messages.FactoryRetrievedSuccessfully,
-            Data = factoryResult
+            Data = factoryResult is null ? null : this.ToAbsoluteLogo(factoryResult)
         });
     }
 
@@ -198,7 +198,7 @@ public class FactoriesController : ControllerBase
         {
             Success = true,
             Message = Messages.CreatedSuccessfully,
-            Data = factory
+            Data = this.ToAbsoluteLogo(factory)
         });
     }
 
@@ -309,7 +309,7 @@ public class FactoriesController : ControllerBase
         {
             Success = true,
             Message = Messages.FactoryLogoUploadedSuccessfully,
-            Data = new { logo = logoPath }
+            Data = new { logo = this.ToAbsoluteLogoUrl(logoPath) }
         });
     }
 

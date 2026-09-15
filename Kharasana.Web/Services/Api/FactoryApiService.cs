@@ -28,8 +28,22 @@ namespace Kharasana.Web.Services.Api
             if (string.IsNullOrWhiteSpace(logo))
                 return null;
 
+            // الـ DTO يعيد رابطاً مطلقاً الآن (مطلب الرابط المطلق)
             if (logo.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                // إن كان الرابط من أصل الـ API نفسه، نعيد توجيهه عبر وسيط نفس الأصل
+                // (FilesController) ليبقى img-src 'self' في CSP سليماً.
+                if (Uri.TryCreate(logo, UriKind.Absolute, out var absolute)
+                    && Uri.TryCreate(_apiSettings.FilesOrigin, UriKind.Absolute, out var origin)
+                    && string.Equals(absolute.Authority, origin.Authority, StringComparison.OrdinalIgnoreCase))
+                {
+                    var path = absolute.AbsolutePath;
+                    return path.StartsWith("/", StringComparison.Ordinal) ? $"/Files/factories{path}" : null;
+                }
+
+                // رابط مطلق لأصل خارجي (نادر) — نمرّره كما هو
                 return logo;
+            }
 
             // دفاع ضد قيم غير صالحة في DB (اسم ملف عارٍ بلا "/")
             if (!logo.StartsWith("/", StringComparison.Ordinal))

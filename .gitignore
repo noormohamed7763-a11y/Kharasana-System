@@ -29,3 +29,6 @@ appsettings.Staging*.json
 
 # Test results
 TestResults/
+
+# AppleDouble — ملفات macOS metadata
+._*

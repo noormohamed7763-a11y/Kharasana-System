@@ -48,7 +48,7 @@ public class SettingsController : ControllerBase
         {
             Success = true,
             Message = Messages.FactorySettingsRetrievedSuccessfully,
-            Data = factory
+            Data = factory is null ? null : this.ToAbsoluteLogo(factory)
         });
     }
 
@@ -89,7 +89,7 @@ public class SettingsController : ControllerBase
         {
             Success = true,
             Message = Messages.FactoryLogoUploadedSuccessfully,
-            Data = new { logo = logoPath }
+            Data = new { logo = this.ToAbsoluteLogoUrl(logoPath) }
         });
     }
 

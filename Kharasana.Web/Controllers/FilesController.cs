@@ -16,16 +16,13 @@ public class FilesController : BaseController
 {
     private readonly ApiClient _apiClient;
     private readonly ApiSettings _apiSettings;
-    private readonly ILogger<FilesController> _logger;
 
     public FilesController(
         ApiClient apiClient,
-        IOptions<ApiSettings> apiSettings,
-        ILogger<FilesController> logger)
+        IOptions<ApiSettings> apiSettings)
     {
         _apiClient = apiClient;
         _apiSettings = apiSettings.Value;
-        _logger = logger;
     }
 
     /// <summary>
@@ -39,52 +36,42 @@ public class FilesController : BaseController
         if (string.IsNullOrWhiteSpace(relativePath))
             return NotFound();
 
-        try
-        {
-            // الملفات الثابتة على API تُخدم من جذر المضيف (ليس تحت /api/)
-            // نبني URL مطلق باستخدام FilesOrigin (مشتق من BaseUrl بإزالة المسار)
-            var origin = _apiSettings.FilesOrigin;
-            if (string.IsNullOrWhiteSpace(origin))
-            {
-                _logger.LogError("FilesOrigin غير مهيأ — تحقق من ApiSettings.BaseUrl");
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
-
-            var apiUrl = $"{origin}/{relativePath.TrimStart('/')}";
-
-            using var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
-
-            // تمرير توكن المصادقة الحالي للسماح بالوصول للملفات المحمية
-            var token = HttpContext.Session.GetString("Token");
-            if (!string.IsNullOrWhiteSpace(token))
-            {
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            }
-
-            using var response = await _apiClient.HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    return NotFound();
-
-                _logger.LogWarning("API أعاد {StatusCode} لملف {Path}", (int)response.StatusCode, relativePath);
-                return StatusCode((int)response.StatusCode);
-            }
-
-            var stream = await response.Content.ReadAsStreamAsync();
-            var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
-
-            // ترويسات التخزين المؤقت المعقولة للملفات الثابتة
-            Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
-            Response.Headers["ETag"] = $"\"{relativePath}\"";
-
-            return File(stream, contentType, enableRangeProcessing: true);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ في تقديم ملف {Path}", relativePath);
+        // الملفات الثابتة على API تُخدم من جذر المضيف (ليس تحت /api/)
+        var origin = _apiSettings.FilesOrigin;
+        if (string.IsNullOrWhiteSpace(origin))
             return StatusCode(StatusCodes.Status500InternalServerError);
+
+        var apiUrl = $"{origin}/{relativePath.TrimStart('/')}";
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
+
+        var token = HttpContext.Session.GetString("Token");
+        if (!string.IsNullOrWhiteSpace(token))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // ResponseHeadersRead: نuelaq streaming بدون حجز الذاكرة للملفات الكبيرة
+        // نellyا نUse using للاستجابة لأن FileResult يُنفّذ بعد انتهاء الدالة — استخدام using
+        // يؤدي لإغلاق الدفق قبل نسخه، لذا ننسخ مباشرة إلى Response.Body داخل الدالة.
+        using var response = await _apiClient.HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return NotFound();
+
+            return StatusCode((int)response.StatusCode);
         }
+
+        var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+
+        Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
+        Response.Headers["ETag"] = $"\"{relativePath}\"";
+        Response.ContentType = contentType;
+
+        // نسخ مباشر من دفق API إلى جسم استجابة الويب (streaming فعلي بدون ملف ناتج)
+        var stream = await response.Content.ReadAsStreamAsync();
+        await stream.CopyToAsync(Response.Body, HttpContext.RequestAborted);
+
+        return new EmptyResult();
     }
 }
