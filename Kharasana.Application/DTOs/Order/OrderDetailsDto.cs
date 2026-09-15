@@ -42,6 +42,7 @@ public class OrderDetailsDto
     // ✅ معلومات السائق
     public int? DriverId { get; set; }
     public string? DriverName { get; set; }
+    public string? DriverPhone { get; set; }
     public string? TruckPlate { get; set; }
 
     // ✅ معلومات الحالة

@@ -6,6 +6,7 @@ using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Users;
 using Microsoft.AspNetCore.Mvc;
 using Kharasana.Domain.Enums;
+using Kharasana.Web.ViewModels.Orders;
 
 namespace Kharasana.Web.Controllers;
 
@@ -13,13 +14,16 @@ namespace Kharasana.Web.Controllers;
 public class UsersController : BaseController
 {
     private readonly IUserApiService _userApiService;
+    private readonly IOrdersApiService _ordersApiService;
     private readonly ILogger<UsersController> _logger;
 
     public UsersController(
         IUserApiService userApiService,
+        IOrdersApiService ordersApiService,
         ILogger<UsersController> logger)
     {
         _userApiService = userApiService;
+        _ordersApiService = ordersApiService;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -168,6 +172,42 @@ public class UsersController : BaseController
             },
             CreatedAt = null,
             UpdatedAt = null
+        };
+
+        return View(model);
+    }
+
+    // GET: Users/DriverReport/{id}
+    [HttpGet]
+    [SessionAuthorize("Admin,FactoryEmployee")]
+    public async Task<IActionResult> DriverReport(int id)
+    {
+        var user = await _userApiService.GetUserByIdAsync(id);
+
+        if (user == null)
+        {
+            TempData[TempDataError] = AppMessages.Common.NotFound;
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (user.Role != "Driver")
+        {
+            TempData[TempDataError] = "التقرير متاح لبطاقة سائق فقط.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var orders = await _ordersApiService.GetOrdersByDriverIdAsync(id);
+
+        var model = new DriverReportViewModel
+        {
+            DriverId = user.UserId,
+            DriverName = user.FullName,
+            Phone = user.Phone,
+            LicenseNumber = user.LicenseNumber,
+            FactoryName = user.FactoryName,
+            OrderCount = orders?.Count() ?? 0,
+            ReportDate = DateTime.Now,
+            Orders = orders?.ToList() ?? new List<OrderDto>()
         };
 
         return View(model);

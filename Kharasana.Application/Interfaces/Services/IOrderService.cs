@@ -16,6 +16,9 @@ public interface IOrderService
     Task<PagedResult<OrderDto>> GetPagedAsync(
         int? factoryId, int? clientId, int? driverId, UserRole callerRole, PaginationParams pagination);
 
+    /// <summary>جلب جميع طلبات سائق محدد (للتقارير) — بدون ترقيم، مرتبة تنازلياً بالتاريخ.</summary>
+    Task<IEnumerable<OrderDto>> GetOrdersByDriverIdAsync(int driverId, int? callerFactoryId, UserRole callerRole);
+
     Task<OrderDetailsDto> GetByIdAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
     Task<PagedResult<CustomerSummaryDto>> GetCustomersAsync(int? factoryId, PaginationParams pagination);

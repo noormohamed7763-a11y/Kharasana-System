@@ -138,6 +138,7 @@ public static class Messages
     public const string UnitPriceMustBePositive = "سعر المتر يجب أن يكون أكبر من صفر.";
     public const string CannotUpdatePriceAtThisStage = "لا يمكن تعديل السعر في هذه المرحلة من الطلب.";
     public const string NotAuthorizedToApproveOrder = "غير مخول لاعتماد الطلب.";
+    public const string NotAuthorizedToViewReport = "غير مخول لعرض تقرير سائق خارج نطاقك.";
     public const string CannotApproveNonPendingOrder = "لا يمكن اعتماد الطلب إلا وهو في حالة قيد الانتظار.";
     public const string PriceRequiredBeforeApproval = "يجب تحديد سعر المتر قبل الاعتماد.";
     public const string OrderNotAssignedForStartDelivery = "هذا الطلب غير مسند إليك. لا يمكنك بدء التوصيل.";

@@ -29,4 +29,7 @@ public class PaginationParams
 
     /// <summary>فلتر المصنع (يستخدمه المدير لتضييق نطاق القائمة).</summary>
     public int? FactoryId { get; set; }
+
+    /// <summary>فلتر السائق (لجلب طلبات سائق محدد — يستخدم في التقارير).</summary>
+    public int? DriverId { get; set; }
 }

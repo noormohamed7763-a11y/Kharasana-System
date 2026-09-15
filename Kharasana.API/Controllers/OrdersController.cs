@@ -111,7 +111,36 @@ public class OrdersController : ControllerBase
     }
 
     // ============================================================
-    // 2. GET CUSTOMERS
+    // 2. GET BY DRIVER (تقرير سائق)
+    // ============================================================
+    /// <summary>جلب جميع طلبات سائق محدّد لطباعة تقرير — مرتبة تنازلياً بتاريخ الإنشاء.</summary>
+    /// <remarks>
+    /// - <b>Admin:</b> يرى طلبات أي سائق.
+    /// - <b>FactoryEmployee:</b> يرى طلبات سائقي مصنعه فقط.
+    /// </remarks>
+    /// <param name="driverId">معرّف السائق.</param>
+    /// <response code="200">تم جلب الطلبات بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="403">المتصل لا يملك صلاحية، أو السائق خارج نطاق مصنع موظف المصنع.</response>
+    [HttpGet("by-driver/{driverId:int}")]
+    [Authorize(Roles = "Admin,FactoryEmployee")]
+    public async Task<IActionResult> GetByDriver(int driverId)
+    {
+        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
+            return err!;
+
+        var orders = await _orderService.GetOrdersByDriverIdAsync(driverId, callerFactoryId, callerRole);
+
+        return Ok(new ApiResponse<IEnumerable<OrderDto>>
+        {
+            Success = true,
+            Message = Messages.OrdersRetrievedSuccessfully,
+            Data = orders
+        });
+    }
+
+    // ============================================================
+    // 3. GET CUSTOMERS
     // ============================================================
     /// <summary>جلب قائمة العملاء الذين لديهم طلبات عند مصنع معيّن.</summary>
     /// <remarks>

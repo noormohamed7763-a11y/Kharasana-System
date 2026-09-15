@@ -1,0 +1,189 @@
+@model Kharasana.Web.ViewModels.Users.DriverReportViewModel
+@using Kharasana.Web.Helpers
+@using Kharasana.Domain.Enums
+
+@{
+    ViewData["Title"] = "تقرير طلبات السائق";
+}
+
+@* تنسيقات الطباعة: إخفاء القائمة الجانبية والشريط العلوي والأزرار عند الطباعة، وإبقاء التقرير فقط *@
+<style>
+    .driver-report {
+        font-family: "Cairo", Tahoma, sans-serif;
+    }
+
+    .driver-report__toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .driver-report__brand {
+        color: var(--kpi-icon-primary, #0d6efd);
+        font-weight: 800;
+    }
+
+    .driver-report__header {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+        background: #fff;
+    }
+
+    .driver-report__title {
+        font-weight: 800;
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    @@media print {
+        /* إخفاء عناصر النظام (الشريط الجانبي + الشريط العلوي + الأزرار) عند الطباعة */
+        .sidebar,
+        .navbar-top,
+        .no-print {
+            display: none !important;
+        }
+
+        .wrapper {
+            display: block !important;
+        }
+
+        .main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .content-body {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        body {
+            background: #fff !important;
+        }
+
+        .driver-report__toolbar {
+            display: none !important;
+        }
+
+        .driver-report__header {
+            border: none;
+            padding: 0;
+            margin-bottom: 0.75rem;
+        }
+    }
+</style>
+
+<div class="dashboard-page">
+
+    <!-- شريط الأدوات: يظهر على الشاشة فقط ويختفي عند الطباعة -->
+    <div class="driver-report__toolbar no-print">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-right"></i>
+            العودة للمستخدمين
+        </a>
+
+        <button type="button"
+                class="btn btn-primary btn-sm"
+                onclick="window.print()">
+            <i class="bi bi-printer"></i>
+            طباعة التقرير
+        </button>
+    </div>
+
+    <!-- التقرير -->
+    <div class="driver-report">
+
+        <!-- ترويسة التقرير -->
+        <div class="driver-report__header">
+            <div class="driver-report__title">
+                <span class="driver-report__brand">Kharasana</span>
+                — تقرير طلبات السائق
+            </div>
+            <div class="row g-3 mt-0">
+                <div class="col-md-4">
+                    <div class="detail-label">اسم السائق</div>
+                    <div class="detail-value fw-bold">@Model.DriverName</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="detail-label">المصنع</div>
+                    <div class="detail-value">
+                        @(string.IsNullOrWhiteSpace(Model.FactoryName) ? "-" : Model.FactoryName)
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="detail-label">تاريخ التقرير</div>
+                    <div class="detail-value">@Model.ReportDate.ToString("yyyy-MM-dd")</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="detail-label">رقم الهاتف</div>
+                    <div class="detail-value" dir="ltr">
+                        @(string.IsNullOrWhiteSpace(Model.Phone) ? "-" : Model.Phone)
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="detail-label">رقم الرخصة</div>
+                    <div class="detail-value">
+                        @(string.IsNullOrWhiteSpace(Model.LicenseNumber) ? "-" : Model.LicenseNumber)
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="detail-label">إجمالي الطلبات</div>
+                    <div class="detail-value fw-bold">@Model.OrderCount</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- جدول الطلبات -->
+        @if (!Model.Orders.Any())
+        {
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                لا توجد طلبات مسندة لهذا السائق
+            </div>
+        }
+        else
+        {
+            <div class="form-card">
+                <div class="table-responsive">
+                    <table class="erp-table" id="driverReportTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>رقم الطلب</th>
+                                <th>اسم العميل</th>
+                                <th>التاريخ</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var rowIndex = 1;
+                            }
+
+                            @foreach (var order in Model.Orders)
+                            {
+                                <tr>
+                                    <td class="text-muted fw-bold">@(rowIndex++)</td>
+                                    <td>@order.OrderNumber</td>
+                                    <td>@order.ClientName</td>
+                                    <td>@order.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <span class="status-badge @order.Status.GetCssClass()">
+                                            @order.Status.GetArabicName()
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+    </div>
+
+</div>

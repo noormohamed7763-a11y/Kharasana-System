@@ -2,6 +2,7 @@ using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Services;
+using Kharasana.Domain.Common;
 using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
@@ -301,6 +302,78 @@ public class OrderServiceTests : IDisposable
     }
 
     // ─────────────────────────────────────────────
+    // ⑥  بيانات السائق للعميل — تُعرض فقط أثناء التوصيل النشط
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetOrder_ClientSeesDriverInfo_WhenApproved()
+    {
+        // Arrange — طلب معتمد ومسند لسائق
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(103, "سائق_نشط", 1, status: DriverStatus.Busy);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(status: OrderStatus.Approved, unitPrice: 150m);
+        order.DriverId = driver.UserId;
+        order.TruckPlate = "أ ب ج 123";
+        await _context.SaveChangesAsync();
+
+        // Act — العميل صاحب الطلب
+        var details = await _orderService.GetByIdAsync(
+            order.OrderId, callerId: 90, UserRole.Client, callerFactoryId: null);
+
+        // Assert — الاسم والهاتف (مُطبيع) ورقم الشاحنة ظاهرة
+        details.DriverId.Should().Be(driver.UserId);
+        details.DriverName.Should().Be("سائق_نشط");
+        details.DriverPhone.Should().Be(YemeniPhoneHelper.Normalize(driver.Phone));
+        details.TruckPlate.Should().Be("أ ب ج 123");
+    }
+
+    [Fact]
+    public async Task GetOrder_ClientDoesNotSeeDriverInfo_WhenOrderNotActive()
+    {
+        // Arrange — طلب مُسلم (Delivered) لكن السائق ما زال معينا
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(104, "سائق_منتهي", 1, status: DriverStatus.Available);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(status: OrderStatus.Delivered, unitPrice: 150m);
+        order.DriverId = driver.UserId;
+        order.TruckPlate = "أ ب ج 123";
+        await _context.SaveChangesAsync();
+
+        // Act — العميل يرى طلبه المسلَّم
+        var details = await _orderService.GetByIdAsync(
+            order.OrderId, callerId: 90, UserRole.Client, callerFactoryId: null);
+
+        // Assert — بيانات السائق مخفية خارج Approved/OnTheWay
+        details.DriverId.Should().BeNull();
+        details.DriverName.Should().BeNull();
+        details.DriverPhone.Should().BeNull();
+        details.TruckPlate.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetOrder_ClientDoesNotSeeDriverInfo_WhenNoDriverAssigned()
+    {
+        // Arrange — طلب Approved لكن لم يُسند له سائق بعد
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(status: OrderStatus.Approved, unitPrice: 150m);
+
+        // Act
+        var details = await _orderService.GetByIdAsync(
+            order.OrderId, callerId: 90, UserRole.Client, callerFactoryId: null);
+
+        // Assert
+        details.DriverId.Should().BeNull();
+        details.DriverName.Should().BeNull();
+        details.DriverPhone.Should().BeNull();
+        details.TruckPlate.Should().BeNull();
+    }
+
+    // ─────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────
 
@@ -336,4 +409,160 @@ public class OrderServiceTests : IDisposable
     }
 
     public void Dispose() => _context.Dispose();
+
+    // ─────────────────────────────────────────────
+    // ⑦  GetOrdersByDriverIdAsync — تقرير السائق
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetOrdersByDriverId_Admin_ReturnsAllOrdersDescending()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(200, "سائق_اختبار", 1, status: DriverStatus.Available);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        // Create 3 orders for the driver with different dates
+        var order1 = CreateAndSeedOrder(OrderStatus.Approved, 100m, 10);
+        order1.DriverId = 200;
+        order1.CreatedAt = new DateTime(2024, 1, 1);
+        await _context.SaveChangesAsync();
+
+        var order2 = CreateAndSeedOrder(OrderStatus.Delivered, 150m, 20);
+        order2.DriverId = 200;
+        order2.CreatedAt = new DateTime(2024, 1, 5);
+        await _context.SaveChangesAsync();
+
+        var order3 = CreateAndSeedOrder(OrderStatus.New, 200m, 30);
+        order3.DriverId = 200;
+        order3.CreatedAt = new DateTime(2024, 1, 3);
+        await _context.SaveChangesAsync();
+
+        // Act — Admin يرى جميع الطلبات مرتبة تنازلياً
+        var orders = await _orderService.GetOrdersByDriverIdAsync(
+            driverId: 200, callerFactoryId: null, callerRole: UserRole.Admin);
+
+        // Assert
+        orders.Should().HaveCount(3);
+        orders.Select(o => o.CreatedAt).Should().BeInDescendingOrder();
+        orders.First().CreatedAt.Should().Be(new DateTime(2024, 1, 5));
+        orders.Last().CreatedAt.Should().Be(new DateTime(2024, 1, 1));
+    }
+
+    [Fact]
+    public async Task GetOrdersByDriverId_FactoryEmployee_SameFactory_ReturnsOrders()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(201, "سائق_مصنع_1", 1, status: DriverStatus.Available);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(OrderStatus.Approved, 100m);
+        order.DriverId = 201;
+        order.CreatedAt = new DateTime(2024, 2, 1);
+        await _context.SaveChangesAsync();
+
+        // Act — موظف المصنع 1 يرى طلبات سائق المصنع 1
+        var orders = await _orderService.GetOrdersByDriverIdAsync(
+            driverId: 201, callerFactoryId: 1, callerRole: UserRole.FactoryEmployee);
+
+        // Assert
+        orders.Should().HaveCount(1);
+        orders.First().OrderId.Should().Be(order.OrderId);
+    }
+
+    [Fact]
+    public async Task GetOrdersByDriverId_FactoryEmployee_DifferentFactory_Throws()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var otherFactory = TestDataSeeder.CreateFactory(900, "مصنع_أخرى");
+        var driver = TestDataSeeder.CreateDriver(202, "سائق_مصنع_أخرى", 900, status: DriverStatus.Available);
+        _context.Factories.Add(otherFactory);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(OrderStatus.Approved, 100m);
+        order.DriverId = 202;
+        order.FactoryId = 900;
+        await _context.SaveChangesAsync();
+
+        // Act — موظف المصنع 1 يحاول رؤية طلبات سائق المصنع 900
+        var act = () => _orderService.GetOrdersByDriverIdAsync(
+            driverId: 202, callerFactoryId: 1, callerRole: UserRole.FactoryEmployee);
+
+        // Assert
+        await act.Should().ThrowAsync<ForbiddenException>()
+            .WithMessage(Messages.NotAuthorizedToViewReport);
+    }
+
+    [Fact]
+    public async Task GetOrdersByDriverId_FactoryEmployee_NonDriverUser_Throws()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var client = TestDataSeeder.CreateUser(300, "عميل_ليس_سائق", UserRole.Client, phone: "050000300");
+        _context.Users.Add(client);
+        await _context.SaveChangesAsync();
+
+        // Act — موظف المصنع يحاول إنشاء تقرير لمستخدم ليس سائقاً
+        var act = () => _orderService.GetOrdersByDriverIdAsync(
+            driverId: 300, callerFactoryId: 1, callerRole: UserRole.FactoryEmployee);
+
+        // Assert
+        await act.Should().ThrowAsync<ForbiddenException>()
+            .WithMessage(Messages.NotAuthorizedToViewReport);
+    }
+
+    [Fact]
+    public async Task GetOrdersByDriverId_Client_Throws()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(203, "سائق_اختبار", 1, status: DriverStatus.Available);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        // Act — العميل يحاول رؤية تقرير السائق
+        var act = () => _orderService.GetOrdersByDriverIdAsync(
+            driverId: 203, callerFactoryId: null, callerRole: UserRole.Client);
+
+        // Assert
+        await act.Should().ThrowAsync<ForbiddenException>()
+            .WithMessage(Messages.NotAuthorizedToViewReport);
+    }
+
+    [Fact]
+    public async Task GetOrdersByDriverId_Driver_Throws()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(204, "سائق_آخر", 1, status: DriverStatus.Available);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        // Act — سائق يحاول رؤية تقرير سائق آخر
+        var act = () => _orderService.GetOrdersByDriverIdAsync(
+            driverId: 204, callerFactoryId: 1, callerRole: UserRole.Driver);
+
+        // Assert
+        await act.Should().ThrowAsync<ForbiddenException>()
+            .WithMessage(Messages.NotAuthorizedToViewReport);
+    }
+
+    [Fact]
+    public async Task GetOrdersByDriverId_NonExistentDriver_ReturnsEmpty()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+
+        // Act — سائق غير موجود
+        var orders = await _orderService.GetOrdersByDriverIdAsync(
+            driverId: 9999, callerFactoryId: null, callerRole: UserRole.Admin);
+
+        // Assert
+        orders.Should().BeEmpty();
+    }
 }

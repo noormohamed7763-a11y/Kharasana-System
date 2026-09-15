@@ -269,7 +269,13 @@ public class OrderService : IOrderService
     public async Task<OrderDetailsDto> GetByIdAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId)
     {
         var order = await GetOrderOrThrowAsync(id, callerId, callerRole, callerFactoryId);
-        return MapToDetailsDto(order, hidePricing: callerRole == UserRole.Driver);
+
+        // ✅ العميل يرى بيانات السائق فقط أثناء التوصيل النشط (Approved / OnTheWay)
+        //     ولا تُعرض لطلب لم يُسند له سائق بعد — باقي الأدوار تحتفظ بسلوكها الحالي
+        var restrictDriverToActive = callerRole == UserRole.Client;
+
+        return MapToDetailsDto(order, hidePricing: callerRole == UserRole.Driver,
+            restrictDriverToActive: restrictDriverToActive);
     }
 
     public async Task<PagedResult<OrderDto>> GetPagedAsync(
@@ -287,6 +293,43 @@ public class OrderService : IOrderService
             PageSize = pagination.PageSize,
             TotalCount = totalCount
         };
+    }
+
+    // ============================================================
+    // GET ORDERS BY DRIVER ID (for reports)
+    // ============================================================
+    public async Task<IEnumerable<OrderDto>> GetOrdersByDriverIdAsync(int driverId, int? callerFactoryId, UserRole callerRole)
+    {
+        // التحقق من الصلاحيات: مدير أو موظف مصنع فقط
+        if (callerRole != UserRole.Admin && callerRole != UserRole.FactoryEmployee)
+        {
+            throw new ForbiddenException(Messages.NotAuthorizedToViewReport);
+        }
+
+        // موظف المصنع يرى سائقي مصنعه فقط
+        if (callerRole == UserRole.FactoryEmployee && callerFactoryId.HasValue)
+        {
+            var driver = await _userRepository.GetByIdAsync(driverId);
+            if (driver == null || driver.FactoryId != callerFactoryId.Value || driver.Role != UserRole.Driver)
+            {
+                throw new ForbiddenException(Messages.NotAuthorizedToViewReport);
+            }
+        }
+
+        // ملاحظة: نستدعي المخزن مباشرة بدل PaginationParams لأن PageSize فيه محدود بـ 100 —
+        //     والتقرير يحتاج جميع طلبات السائق دفعة واحدة.
+        var (items, _) = await _orderRepository.GetPagedAsync(
+            factoryId: callerRole == UserRole.FactoryEmployee ? callerFactoryId : null,
+            clientId: null,
+            driverId: driverId,
+            status: null,
+            search: null,
+            pageNumber: 1,
+            pageSize: 100_000);
+
+        return items
+            .OrderByDescending(o => o.CreatedAt)
+            .Select(o => MapToOrderDto(o, hidePricing: false));
     }
 
     // ============================================================
@@ -665,8 +708,13 @@ public class OrderService : IOrderService
         };
     }
 
-    private static OrderDetailsDto MapToDetailsDto(Order order, bool hidePricing)
+    private static OrderDetailsDto MapToDetailsDto(Order order, bool hidePricing, bool restrictDriverToActive = false)
     {
+        // ✅ بيانات السائق لا تُعرض لطلب لم يُسند له سائق بعد؛
+        //     وللعميل تُقصر على مرحلة التوصيل النشطة فقط (Approved / OnTheWay)
+        var showDriver = order.DriverId.HasValue &&
+            (!restrictDriverToActive || order.Status is OrderStatus.Approved or OrderStatus.OnTheWay);
+
         return new OrderDetailsDto
         {
             OrderId = order.OrderId,
@@ -691,9 +739,10 @@ public class OrderService : IOrderService
             TotalPrice = hidePricing ? null : order.TotalPrice,
             PouringDate = order.PouringDate,
             TransportMethod = order.TransportMethod,
-            DriverId = order.DriverId,
-            DriverName = order.Driver?.FullName,
-            TruckPlate = order.TruckPlate,
+            DriverId = showDriver ? order.DriverId : null,
+            DriverName = showDriver ? order.Driver?.FullName : null,
+            DriverPhone = showDriver ? YemeniPhoneHelper.Normalize(order.Driver?.Phone) : null,
+            TruckPlate = showDriver ? order.TruckPlate : null,
             Status = order.Status,
             Notes = order.Notes
         };

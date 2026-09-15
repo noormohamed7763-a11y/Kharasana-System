@@ -106,6 +106,40 @@ namespace Kharasana.Web.Services.Api
         }
 
         // ============================================================
+        // GET ORDERS BY DRIVER ID - طلبات سائق لتقرير الطباعة
+        // ============================================================
+        public async Task<IEnumerable<OrderDto>?> GetOrdersByDriverIdAsync(int driverId)
+        {
+            try
+            {
+                _logger.LogInformation("📋 Fetching all orders for driver {DriverId} (print report)", driverId);
+
+                var response = await _apiClient.GetAsync<ApiResponse<IEnumerable<OrderDto>>>($"Orders/by-driver/{driverId}");
+
+                if (response == null)
+                {
+                    _logger.LogWarning("❌ GetOrdersByDriverIdAsync: API returned null for driverId={DriverId}", driverId);
+                    return null;
+                }
+
+                if (!response.Success)
+                {
+                    _logger.LogWarning("❌ GetOrdersByDriverIdAsync: API returned success=false for driverId={DriverId}. Message: {Message}", driverId, response.Message);
+                    return null;
+                }
+
+                _logger.LogInformation("✅ GetOrdersByDriverIdAsync: Retrieved {Count} orders for driver {DriverId}", response.Data?.Count() ?? 0, driverId);
+                return response.Data;
+            }
+            catch (ApiServiceException) { throw; }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Exception in GetOrdersByDriverIdAsync for driverId={DriverId}: {Message}", driverId, ex.Message);
+                return null;
+            }
+        }
+
+        // ============================================================
         // CREATE PHONE ORDER - إنشاء طلب هاتفي
         // ============================================================
         public async Task<OrderDto?> CreatePhoneOrderAsync(CreatePhoneOrderViewModel model)

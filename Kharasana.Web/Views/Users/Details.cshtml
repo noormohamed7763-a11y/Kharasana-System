@@ -221,13 +221,25 @@
         </div>
     </div>
 
-    <!-- العودة إلى القائمة -->
+    <!-- العودة إلى القائمة + طباعة تقرير السائق -->
     <div class="d-flex gap-2 mt-3">
         <a asp-action="Index"
            class="btn btn-outline-secondary">
             <i class="bi bi-arrow-right"></i>
             العودة إلى القائمة
         </a>
+
+        @if (Model.Role == "Driver" &&
+           (ViewBag.UserRole == "Admin" || ViewBag.UserRole == "FactoryEmployee"))
+        {
+            <a asp-action="DriverReport"
+               asp-route-id="@Model.UserId"
+               class="btn btn-primary"
+               target="_blank">
+                <i class="bi bi-printer"></i>
+                طباعة تقرير
+            </a>
+        }
     </div>
 
 </div>

@@ -36,6 +36,13 @@ namespace Kharasana.Web.Services.Interfaces
         /// <returns>تفاصيل الطلب</returns>
         Task<OrderDto?> GetOrderByIdAsync(int id);
 
+        /// <summary>
+        /// جلب جميع طلبات سائق محدد لطباعة التقرير (بدون ترقيم، مرتبة تنازلياً بالتاريخ)
+        /// </summary>
+        /// <param name="driverId">معرف السائق</param>
+        /// <returns>قائمة طلبات السائق</returns>
+        Task<IEnumerable<OrderDto>?> GetOrdersByDriverIdAsync(int driverId);
+
 
         // ============================================================
         // 2. CREATE - عمليات الإنشاء
