@@ -32,3 +32,8 @@ TestResults/
 
 # AppleDouble — ملفات macOS metadata
 ._*
+
+# Factory uploads — صور المصانع المرفوعة (تُحفَظ محلياً فقط، لا تُرفع إلى المستودع)
+# نستثني .gitkeep لنبقى المجلد موجوداً فارغاً بعد أي استنساخ جديد
+Kharasana.API/wwwroot/Images/Factories/*
+!Kharasana.API/wwwroot/Images/Factories/.gitkeep
