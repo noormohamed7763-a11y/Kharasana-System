@@ -154,19 +154,19 @@
                                     @{
                                         var css = user.Role switch
                                         {
-                                            "Admin" => "status-danger",
-                                            "FactoryEmployee" => "status-primary",
-                                            "Driver" => "status-warning",
-                                            "Client" => "status-success",
+                                            Roles.Admin => "status-danger",
+                                            Roles.FactoryEmployee => "status-primary",
+                                            Roles.Driver => "status-warning",
+                                            Roles.Client => "status-success",
                                             _ => "status-secondary"
                                         };
 
                                         var roleName = user.Role switch
                                         {
-                                            "Admin" => "مدير النظام",
-                                            "FactoryEmployee" => "موظف مصنع",
-                                            "Driver" => "سائق",
-                                            "Client" => "عميل",
+                                            Roles.Admin => "مدير النظام",
+                                            Roles.FactoryEmployee => "موظف مصنع",
+                                            Roles.Driver => "سائق",
+                                            Roles.Client => "عميل",
                                             _ => user.Role
                                         };
                                     }

@@ -16,7 +16,7 @@
 <div class="dashboard-page">
 
     @{
-        var factoryInactive = (string?)ViewBag.UserRole == "FactoryEmployee" && ViewBag.FactoryIsActive == false;
+        var factoryInactive = (string?)ViewBag.UserRole == Roles.FactoryEmployee && ViewBag.FactoryIsActive == false;
     }
 
     @if (factoryInactive)

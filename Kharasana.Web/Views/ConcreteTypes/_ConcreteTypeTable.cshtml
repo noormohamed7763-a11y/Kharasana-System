@@ -1,7 +1,7 @@
 @model IEnumerable<Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeListItemViewModel>
 @using Kharasana.Web.Models.Components
 @{
-    var factoryInactive = (string?)ViewBag.UserRole == "FactoryEmployee" && ViewBag.FactoryIsActive == false;
+    var factoryInactive = (string?)ViewBag.UserRole == Roles.FactoryEmployee && ViewBag.FactoryIsActive == false;
 }
 
 <div class="form-card">

@@ -2,11 +2,11 @@
 @{
     ViewData["Title"] = "لوحة التحكم";
 }
-@if ((string?)ViewBag.UserRole == "Admin")
+@if ((string?)ViewBag.UserRole == Roles.Admin)
 {
     <partial name="_AdminDashboard" model="Model" />
 }
-else if ((string?)ViewBag.UserRole == "FactoryEmployee")
+else if ((string?)ViewBag.UserRole == Roles.FactoryEmployee)
 {
     <partial name="_FactoryDashboard" model="Model" />
 }
@@ -19,7 +19,7 @@ else
 }
 
 @section Scripts {
-    @if ((string?)ViewBag.UserRole == "Admin" || (string?)ViewBag.UserRole == "FactoryEmployee")
+    @if ((string?)ViewBag.UserRole == Roles.Admin || (string?)ViewBag.UserRole == Roles.FactoryEmployee)
     {
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.js" integrity="sha384-hfkuqrKeWFmnTMWN31VWyoe8xgdTADD11kgxmdpx2uyE6j5Az5uZq6u6AKYYmAOw" crossorigin="anonymous"></script>
         <script src="~/js/dashboard.js" asp-append-version="true"></script>

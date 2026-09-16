@@ -6,10 +6,10 @@
 
     var roleCss = Model.Role switch
     {
-        "Admin" => "status-danger",
-        "FactoryEmployee" => "status-primary",
-        "Driver" => "status-warning",
-        "Client" => "status-success",
+        Roles.Admin => "status-danger",
+        Roles.FactoryEmployee => "status-primary",
+        Roles.Driver => "status-warning",
+        Roles.Client => "status-success",
         _ => "status-secondary"
     };
 
@@ -130,7 +130,7 @@
                 </div>
 
                 <!-- معلومات السائق -->
-                @if (Model.Role == "Driver" &&
+                @if (Model.Role == Roles.Driver &&
                                 !string.IsNullOrWhiteSpace(Model.DriverStatus))
                 {
                     <div class="detail-divider"></div>
@@ -229,8 +229,8 @@
             العودة إلى القائمة
         </a>
 
-        @if (Model.Role == "Driver" &&
-           (ViewBag.UserRole == "Admin" || ViewBag.UserRole == "FactoryEmployee"))
+        @if (Model.Role == Roles.Driver &&
+           (ViewBag.UserRole == Roles.Admin || ViewBag.UserRole == Roles.FactoryEmployee))
         {
             <a asp-action="DriverReport"
                asp-route-id="@Model.UserId"

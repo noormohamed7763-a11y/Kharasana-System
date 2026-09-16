@@ -6,11 +6,11 @@
     var role = Context.Session.GetString("Role") ?? "";
 }
 
-@if (role == "Admin")
+@if (role == Roles.Admin)
 {
     @await Html.PartialAsync("_SidebarAdmin")
 }
-else if (role == "FactoryEmployee")
+else if (role == Roles.FactoryEmployee)
 {
     @await Html.PartialAsync("_SidebarFactoryEmployee")
 }

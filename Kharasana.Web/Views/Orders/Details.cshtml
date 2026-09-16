@@ -265,7 +265,7 @@
     <!-- ============================================================
     PRICING - التسعير
     ============================================================ -->
-    @if (((ViewBag.UserRole == "FactoryEmployee" && factoryId == Model.FactoryId) || ViewBag.UserRole == "Admin") &&
+    @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin) &&
          (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending))
     {
         <!-- متاح للتحرير فقط في حالتي "جديد" و"قيد الانتظار" -->
@@ -352,7 +352,7 @@
             <div class="action-buttons-container">
 
                 <!-- Primary Action - الإجراء الرئيسي -->
-                @if ((ViewBag.UserRole == "FactoryEmployee" && factoryId == Model.FactoryId) || ViewBag.UserRole == "Admin")
+                @if ((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin)
                 {
                     if (Model.Status == OrderStatus.Pending && Model.UnitPrice > 0)
                     {
@@ -386,7 +386,7 @@
                         </a>
                     }
 
-                    @if (ViewBag.UserRole == "Admin")
+                    @if (ViewBag.UserRole == Roles.Admin)
                     {
                         <form asp-action="Delete" method="post" class="d-inline" data-ajax-delete="true">
                             @Html.AntiForgeryToken()
@@ -399,11 +399,11 @@
                 </div>
 
                 <!-- Delivery Actions - إجراءات التوصيل (مجموعة منفصلة) -->
-                @if (((ViewBag.UserRole == "FactoryEmployee" && factoryId == Model.FactoryId) || ViewBag.UserRole == "Admin") ||
+                @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin) ||
                                 Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered)
                 {
                     <div class="action-delivery-group">
-                        @if (((ViewBag.UserRole == "FactoryEmployee" && factoryId == Model.FactoryId) || ViewBag.UserRole == "Admin") && Model.Status == OrderStatus.Approved && Model.DriverId == null && Model.TransportMethod == TransportMethod.FactoryTransport)
+                        @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin) && Model.Status == OrderStatus.Approved && Model.DriverId == null && Model.TransportMethod == TransportMethod.FactoryTransport)
                         {
                             <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#assignDriverModal">
                                 <i class="bi bi-truck"></i> تعيين سائق
