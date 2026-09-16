@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Kharasana.Application.Common;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
@@ -36,7 +37,7 @@ public class UsersController : BaseController
     {
         int? factoryId = null;
 
-        if (Role == "FactoryEmployee")
+        if (Role == Roles.FactoryEmployee)
         {
             factoryId = FactoryId;
         }
@@ -80,7 +81,7 @@ public class UsersController : BaseController
 
     // GET: Users/Create
     [HttpGet]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     public IActionResult Create()
     {
         return View(new CreateUserViewModel());
@@ -88,7 +89,7 @@ public class UsersController : BaseController
 
     // POST: Users/Create
     [HttpPost]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateUserViewModel model)
     {
@@ -152,10 +153,10 @@ public class UsersController : BaseController
             Role = user.Role,
             RoleName = user.Role switch
             {
-                "Admin" => "مدير النظام",
-                "FactoryEmployee" => "موظف مصنع",
-                "Driver" => "سائق",
-                "Client" => "عميل",
+                Roles.Admin => "مدير النظام",
+                Roles.FactoryEmployee => "موظف مصنع",
+                Roles.Driver => "سائق",
+                Roles.Client => "عميل",
                 _ => user.Role
             },
             FactoryId = user.FactoryId,
@@ -179,7 +180,7 @@ public class UsersController : BaseController
 
     // GET: Users/DriverReport/{id}
     [HttpGet]
-    [SessionAuthorize("Admin,FactoryEmployee")]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> DriverReport(int id)
     {
         var user = await _userApiService.GetUserByIdAsync(id);
@@ -190,7 +191,7 @@ public class UsersController : BaseController
             return RedirectToAction(nameof(Index));
         }
 
-        if (user.Role != "Driver")
+        if (user.Role != Roles.Driver)
         {
             TempData[TempDataError] = "التقرير متاح لبطاقة سائق فقط.";
             return RedirectToAction(nameof(Index));
@@ -215,7 +216,7 @@ public class UsersController : BaseController
 
     // GET: Users/Edit/{id}
     [HttpGet]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     public async Task<IActionResult> Edit(int id)
     {
         var user = await _userApiService.GetUserByIdAsync(id);
@@ -255,7 +256,7 @@ public class UsersController : BaseController
 
     // POST: Users/Edit/{id}
     [HttpPost]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, UpdateUserViewModel model)
     {
@@ -299,7 +300,7 @@ public class UsersController : BaseController
 
     // POST: Users/Delete/{id}
     [HttpPost]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {

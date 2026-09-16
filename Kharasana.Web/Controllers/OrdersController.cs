@@ -1,4 +1,5 @@
-﻿using Kharasana.Application.DTOs.Order;
+﻿using Kharasana.Application.Common;
+using Kharasana.Application.DTOs.Order;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
@@ -44,7 +45,7 @@ namespace Kharasana.Web.Controllers
             try
             {
                 int? factoryIdFilter = factoryId;
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     factoryIdFilter = FactoryId;
                 }
@@ -71,7 +72,7 @@ namespace Kharasana.Web.Controllers
                     ClosedCount = paged?.Items?.Count(o => o.Status == OrderStatus.Closed) ?? 0
                 };
 
-                if ((string?)Role == "Admin")
+                if (Role == Roles.Admin)
                 {
                     ViewBag.ShowFactoryFilter = true;
                     var factoryResult = await _factoryService.GetAllAsync();
@@ -123,7 +124,7 @@ namespace Kharasana.Web.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     if (order.FactoryId != FactoryId)
                     {
@@ -202,7 +203,7 @@ namespace Kharasana.Web.Controllers
 
                 var vm = new CreatePhoneOrderViewModel();
 
-                if ((string?)Role == "FactoryEmployee" && FactoryId.HasValue)
+                if (Role == Roles.FactoryEmployee && FactoryId.HasValue)
                 {
                     vm.FactoryId = FactoryId.Value;
                 }
@@ -298,7 +299,7 @@ namespace Kharasana.Web.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     if (order.FactoryId != FactoryId)
                     {
@@ -482,7 +483,7 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
                     if (order == null || order.FactoryId != FactoryId)
@@ -535,7 +536,7 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
                     if (order == null || order.FactoryId != FactoryId)
@@ -579,7 +580,7 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
                     if (order == null || order.FactoryId != FactoryId)
@@ -628,7 +629,7 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
                     if (order == null || order.FactoryId != FactoryId)
@@ -672,7 +673,7 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
                     if (order == null || order.FactoryId != FactoryId)
@@ -716,7 +717,7 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
                     if (order == null || order.FactoryId != FactoryId)
@@ -760,7 +761,7 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
                     if (order == null || order.FactoryId != FactoryId)
@@ -804,7 +805,7 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
                     if (order == null || order.FactoryId != FactoryId)
@@ -853,7 +854,7 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
                     if (order == null || order.FactoryId != FactoryId)
@@ -920,7 +921,7 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if ((string?)Role == "FactoryEmployee")
+                if (Role == Roles.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
                     if (order == null || order.FactoryId != FactoryId)

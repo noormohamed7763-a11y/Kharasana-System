@@ -1,3 +1,4 @@
+using Kharasana.Application.Common;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
@@ -33,7 +34,7 @@ public class ConcreteTypesController : BaseController
     /// موظفو المصنع الموقوف لا يمكنهم إضافة أو تعديل أنواع الخرسانة.
     /// </summary>
     private bool IsFactoryInactive() =>
-        Role == "FactoryEmployee" && FactoryIsActive == false;
+        Role == Roles.FactoryEmployee && FactoryIsActive == false;
 
     private void LoadConcreteStandards(CreateConcreteTypeViewModel model)
     {
@@ -94,7 +95,7 @@ public class ConcreteTypesController : BaseController
             LoadConcreteStandards(model);
 
             // ✅ التصحيح هنا: استخدام Role مباشرة بدون (string?)
-            if (Role == "Admin")
+            if (Role == Roles.Admin)
             {
                 var factoryResult = await _factoryService.GetAllAsync();
 
@@ -107,7 +108,7 @@ public class ConcreteTypesController : BaseController
                     })
                     .ToList();
             }
-            else if (Role == "FactoryEmployee" && FactoryId.HasValue)
+            else if (Role == Roles.FactoryEmployee && FactoryId.HasValue)
             {
                 model.FactoryId = FactoryId.Value;
             }
@@ -141,7 +142,7 @@ public class ConcreteTypesController : BaseController
             LoadConcreteStandards(model);
 
             // تحميل المصانع
-            if (Role == "Admin")
+            if (Role == Roles.Admin)
             {
                 var factoryResult = await _factoryService.GetAllAsync();
 
@@ -154,7 +155,7 @@ public class ConcreteTypesController : BaseController
                     })
                     .ToList();
             }
-            else if (Role == "FactoryEmployee" && FactoryId.HasValue)
+            else if (Role == Roles.FactoryEmployee && FactoryId.HasValue)
             {
                 model.FactoryId = FactoryId.Value;
             }

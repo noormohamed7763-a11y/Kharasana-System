@@ -1,4 +1,5 @@
-﻿using Kharasana.Web.Filters;
+﻿using Kharasana.Application.Common;
+using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Clients;
@@ -26,7 +27,7 @@ public class ClientsController : BaseController
         string? search = null)
     {
         int? factoryId =
-            Role == "FactoryEmployee"
+            Role == Roles.FactoryEmployee
                 ? FactoryId
                 : null;
 

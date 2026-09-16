@@ -1,10 +1,11 @@
-﻿using Kharasana.Web.Filters;
+﻿using Kharasana.Application.Common;
+using Kharasana.Web.Filters;
 using Kharasana.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Kharasana.Web.Controllers
 {
-    [SessionAuthorize("FactoryEmployee")]
+    [SessionAuthorize(Roles.FactoryEmployee)]
     public class SettingsController : BaseController
     {
         private readonly ISettingsApiService _settingsApiService;

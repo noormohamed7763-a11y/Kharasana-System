@@ -1,4 +1,5 @@
-﻿using Kharasana.Web.Filters;
+﻿using Kharasana.Application.Common;
+using Kharasana.Web.Filters;
 using Kharasana.Web.ViewModels.Dashboard;
 using Kharasana.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +20,11 @@ namespace Kharasana.Web.Controllers
         {
             DashboardViewModel? vm = null;
 
-            if (Role == "Admin")
+            if (Role == Roles.Admin)
             {
                 vm = await _dashboardApiService.GetAdminDashboardAsync();
             }
-            else if (Role == "FactoryEmployee")
+            else if (Role == Roles.FactoryEmployee)
             {
                 if (FactoryId.HasValue)
                 {

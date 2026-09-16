@@ -1,3 +1,4 @@
+using Kharasana.Application.Common;
 using Kharasana.Web.Common;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
@@ -41,7 +42,7 @@ public class FactoriesController : BaseController
     }
 
     [HttpGet]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     public async Task<IActionResult> Archived()
     {
         var result = await _factoryService.GetArchivedAsync();
@@ -53,14 +54,14 @@ public class FactoriesController : BaseController
     }
 
     [HttpGet]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     public IActionResult Create()
     {
         return View(new CreateFactoryViewModel());
     }
 
     [HttpPost]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateFactoryViewModel model)
     {
@@ -94,7 +95,7 @@ public class FactoriesController : BaseController
     }
 
     [HttpGet]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     public async Task<IActionResult> Edit(int id)
     {
         var result = await _factoryService.GetByIdAsync(id);
@@ -127,7 +128,7 @@ public class FactoriesController : BaseController
     }
 
     [HttpPost]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, UpdateFactoryViewModel model)
     {
@@ -150,7 +151,7 @@ public class FactoriesController : BaseController
     }
 
     [HttpGet]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     public async Task<IActionResult> Delete(int id)
     {
         var result = await _factoryService.GetByIdAsync(id);
@@ -166,7 +167,7 @@ public class FactoriesController : BaseController
 
     [HttpPost]
     [ActionName("Delete")]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
@@ -185,7 +186,7 @@ public class FactoriesController : BaseController
     // ===========================
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     public async Task<IActionResult> UploadLogo(int id, IFormFile logoFile)
     {
         var result = await _factoryService.UploadLogoAsync(id, logoFile);
@@ -200,7 +201,7 @@ public class FactoriesController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     public async Task<IActionResult> DeleteLogo(int id)
     {
         var result = await _factoryService.DeleteLogoAsync(id);
@@ -217,7 +218,7 @@ public class FactoriesController : BaseController
     // إنشاء حساب للمصنع
     // ===========================
     [HttpPost]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     public async Task<IActionResult> CreateFactoryAccount([FromBody] CreateUserViewModel model)
     {
         if (!ModelState.IsValid)
@@ -271,7 +272,7 @@ public class FactoriesController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [SessionAuthorize("Admin")]
+    [SessionAuthorize(Roles.Admin)]
     public async Task<IActionResult> Restore(int id)
     {
         var result = await _factoryService.RestoreAsync(id);

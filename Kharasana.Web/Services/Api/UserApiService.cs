@@ -60,9 +60,9 @@ public class UserApiService : IUserApiService
             + (string.IsNullOrWhiteSpace(search) ? "" : $"&Search={Uri.EscapeDataString(search)}")
             + (factoryId.HasValue ? $"&FactoryId={factoryId.Value}" : "");
 
-        var admins = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery("Admin"));
-        var employees = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery("FactoryEmployee"));
-        var drivers = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery("Driver"));
+        var admins = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(Roles.Admin));
+        var employees = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(Roles.FactoryEmployee));
+        var drivers = await _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(Roles.Driver));
 
         return (admins, employees, drivers);
     }

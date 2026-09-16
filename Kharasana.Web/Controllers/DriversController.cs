@@ -1,3 +1,4 @@
+using Kharasana.Application.Common;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
@@ -27,7 +28,7 @@ public class DriversController : BaseController
     {
         try
         {
-            int? factoryId = (string?)Role == "FactoryEmployee" ? FactoryId : null;
+            int? factoryId = Role == Roles.FactoryEmployee ? FactoryId : null;
 
             var pagedDrivers = await _driverApiService.GetDriversAsync(pageNumber, pageSize, search, factoryId);
 
@@ -80,7 +81,7 @@ public class DriversController : BaseController
     public async Task<IActionResult> Details(int id)
     {
         // ✅ التحقق من الصلاحية
-        if ((string?)Role != "Admin" && (string?)Role != "FactoryEmployee")
+        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
         {
             TempData[TempDataError] = "ليس لديك صلاحية لعرض بيانات السائقين.";
             return RedirectToAction(nameof(Index));
@@ -96,7 +97,7 @@ public class DriversController : BaseController
                 return RedirectToAction(nameof(Index));
             }
 
-            if ((string?)Role == "FactoryEmployee" && driver.FactoryId != FactoryId)
+            if (Role == Roles.FactoryEmployee && driver.FactoryId != FactoryId)
             {
                 TempData[TempDataError] = AppMessages.Common.Forbidden;
                 return RedirectToAction(nameof(Index));
@@ -124,7 +125,7 @@ public class DriversController : BaseController
     [HttpGet]
     public IActionResult Create()
     {
-        if ((string?)Role != "FactoryEmployee" || !FactoryId.HasValue)
+        if (Role != Roles.FactoryEmployee || !FactoryId.HasValue)
         {
             TempData[TempDataError] = "إضافة السائقين متاحة حاليًا لموظف المصنع فقط.";
             return RedirectToAction(nameof(Index));
@@ -145,7 +146,7 @@ public class DriversController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateDriverViewModel model)
     {
-        if ((string?)Role != "FactoryEmployee" || !FactoryId.HasValue)
+        if (Role != Roles.FactoryEmployee || !FactoryId.HasValue)
         {
             TempData[TempDataError] = "إضافة السائقين متاحة حاليًا لموظف المصنع فقط.";
             return RedirectToAction(nameof(Index));
@@ -190,7 +191,7 @@ public class DriversController : BaseController
     public async Task<IActionResult> Edit(int id)
     {
         // ✅ التحقق من الصلاحية
-        if ((string?)Role != "Admin" && (string?)Role != "FactoryEmployee")
+        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
         {
             TempData[TempDataError] = "ليس لديك صلاحية لتعديل السائقين.";
             return RedirectToAction(nameof(Index));
@@ -207,7 +208,7 @@ public class DriversController : BaseController
             }
 
             // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if ((string?)Role == "FactoryEmployee" && model.FactoryId != FactoryId)
+            if (Role == Roles.FactoryEmployee && model.FactoryId != FactoryId)
             {
                 TempData[TempDataError] = AppMessages.Common.Forbidden;
                 return RedirectToAction(nameof(Index));
@@ -240,7 +241,7 @@ public class DriversController : BaseController
             return BadRequest();
 
         // ✅ التحقق من الصلاحية
-        if ((string?)Role != "Admin" && (string?)Role != "FactoryEmployee")
+        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
         {
             TempData[TempDataError] = "ليس لديك صلاحية لتعديل السائقين.";
             return RedirectToAction(nameof(Index));
@@ -252,7 +253,7 @@ public class DriversController : BaseController
         try
         {
             // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if ((string?)Role == "FactoryEmployee")
+            if (Role == Roles.FactoryEmployee)
             {
                 var existingDriver = await _driverApiService.GetByIdAsync(id);
                 if (existingDriver == null || existingDriver.FactoryId != FactoryId)
@@ -295,7 +296,7 @@ public class DriversController : BaseController
     public async Task<IActionResult> Delete(int id)
     {
         // ✅ التحقق من الصلاحية
-        if ((string?)Role != "Admin" && (string?)Role != "FactoryEmployee")
+        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
         {
             TempData[TempDataError] = "ليس لديك صلاحية لحذف السائقين.";
             return RedirectToAction(nameof(Index));
@@ -304,7 +305,7 @@ public class DriversController : BaseController
         try
         {
             // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if ((string?)Role == "FactoryEmployee")
+            if (Role == Roles.FactoryEmployee)
             {
                 var driver = await _driverApiService.GetByIdAsync(id);
                 if (driver == null || driver.FactoryId != FactoryId)
@@ -349,7 +350,7 @@ public class DriversController : BaseController
     public async Task<IActionResult> UpdateStatus(int id, DriverStatus driverStatus)
     {
         // ✅ التحقق من الصلاحية
-        if ((string?)Role != "Admin" && (string?)Role != "FactoryEmployee")
+        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
@@ -407,7 +408,7 @@ public class DriversController : BaseController
     public async Task<IActionResult> ToggleActive(int id)
     {
         // ✅ التحقق من الصلاحية
-        if ((string?)Role != "Admin" && (string?)Role != "FactoryEmployee")
+        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
@@ -420,7 +421,7 @@ public class DriversController : BaseController
         try
         {
             // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if ((string?)Role == "FactoryEmployee")
+            if (Role == Roles.FactoryEmployee)
             {
                 var driver = await _driverApiService.GetByIdAsync(id);
                 if (driver == null || driver.FactoryId != FactoryId)
