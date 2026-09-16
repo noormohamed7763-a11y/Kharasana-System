@@ -53,6 +53,11 @@ namespace Kharasana.Web.Controllers
                 var paged = await _ordersApiService.GetOrdersAsync(
                     pageNumber, pageSize, search, factoryIdFilter, status);
 
+                // ✅ عدّ واحد عبر العناصر بدل 8 مسحات متكررة بواسطة Count(a => a.Status == ...)
+                var statusCounts = (paged?.Items ?? [])
+                    .GroupBy(o => o.Status)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
                 var vm = new OrdersIndexViewModel
                 {
                     PagedOrders = paged,
@@ -62,14 +67,14 @@ namespace Kharasana.Web.Controllers
                     StatusFilter = status,
                     FactoryIdFilter = factoryIdFilter,
 
-                    NewCount = paged?.Items?.Count(o => o.Status == OrderStatus.New) ?? 0,
-                    PendingCount = paged?.Items?.Count(o => o.Status == OrderStatus.Pending) ?? 0,
-                    ApprovedCount = paged?.Items?.Count(o => o.Status == OrderStatus.Approved) ?? 0,
-                    RejectedCount = paged?.Items?.Count(o => o.Status == OrderStatus.Rejected) ?? 0,
-                    CancelledCount = paged?.Items?.Count(o => o.Status == OrderStatus.Cancelled) ?? 0,
-                    OnTheWayCount = paged?.Items?.Count(o => o.Status == OrderStatus.OnTheWay) ?? 0,
-                    DeliveredCount = paged?.Items?.Count(o => o.Status == OrderStatus.Delivered) ?? 0,
-                    ClosedCount = paged?.Items?.Count(o => o.Status == OrderStatus.Closed) ?? 0
+                    NewCount = statusCounts.GetValueOrDefault(OrderStatus.New),
+                    PendingCount = statusCounts.GetValueOrDefault(OrderStatus.Pending),
+                    ApprovedCount = statusCounts.GetValueOrDefault(OrderStatus.Approved),
+                    RejectedCount = statusCounts.GetValueOrDefault(OrderStatus.Rejected),
+                    CancelledCount = statusCounts.GetValueOrDefault(OrderStatus.Cancelled),
+                    OnTheWayCount = statusCounts.GetValueOrDefault(OrderStatus.OnTheWay),
+                    DeliveredCount = statusCounts.GetValueOrDefault(OrderStatus.Delivered),
+                    ClosedCount = statusCounts.GetValueOrDefault(OrderStatus.Closed)
                 };
 
                 if (RoleValue == UserRole.Admin)
