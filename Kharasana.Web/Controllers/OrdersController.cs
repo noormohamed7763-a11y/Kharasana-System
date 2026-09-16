@@ -124,14 +124,11 @@ namespace Kharasana.Web.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                if (Role == Roles.FactoryEmployee)
+                if (IsFactoryIsolated(order.FactoryId))
                 {
-                    if (order.FactoryId != FactoryId)
-                    {
-                        _logger.LogWarning("Factory mismatch: order.FactoryId={OrderFactoryId}, user.FactoryId={UserFactoryId}", order.FactoryId, FactoryId);
-                        TempData[TempDataError] = AppMessages.Common.Forbidden;
-                        return RedirectToAction(nameof(Index));
-                    }
+                    _logger.LogWarning("Factory mismatch: order.FactoryId={OrderFactoryId}, user.FactoryId={UserFactoryId}", order.FactoryId, FactoryId);
+                    TempData[TempDataError] = AppMessages.Common.Forbidden;
+                    return RedirectToAction(nameof(Index));
                 }
 
                 // ✅ جلب جميع السائقين المتاحين ثم تصفيتهم حسب المصنع
@@ -299,13 +296,10 @@ namespace Kharasana.Web.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                if (Role == Roles.FactoryEmployee)
+                if (IsFactoryIsolated(order.FactoryId))
                 {
-                    if (order.FactoryId != FactoryId)
-                    {
-                        TempData[TempDataError] = AppMessages.Common.Forbidden;
-                        return RedirectToAction(nameof(Index));
-                    }
+                    TempData[TempDataError] = AppMessages.Common.Forbidden;
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (order.Status != OrderStatus.New && order.Status != OrderStatus.Pending)
@@ -483,10 +477,10 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || order.FactoryId != FactoryId)
+                    if (order == null || IsFactoryIsolated(order.FactoryId))
                     {
                         TempData[TempDataError] = AppMessages.Common.Forbidden;
                         return RedirectToAction(nameof(Index));
@@ -536,10 +530,10 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || order.FactoryId != FactoryId)
+                    if (order == null || IsFactoryIsolated(order.FactoryId))
                     {
                         return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
                     }
@@ -580,10 +574,10 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || order.FactoryId != FactoryId)
+                    if (order == null || IsFactoryIsolated(order.FactoryId))
                     {
                         return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
                     }
@@ -629,10 +623,10 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || order.FactoryId != FactoryId)
+                    if (order == null || IsFactoryIsolated(order.FactoryId))
                     {
                         return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
                     }
@@ -673,10 +667,10 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || order.FactoryId != FactoryId)
+                    if (order == null || IsFactoryIsolated(order.FactoryId))
                     {
                         return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
                     }
@@ -717,10 +711,10 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || order.FactoryId != FactoryId)
+                    if (order == null || IsFactoryIsolated(order.FactoryId))
                     {
                         return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
                     }
@@ -761,10 +755,10 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || order.FactoryId != FactoryId)
+                    if (order == null || IsFactoryIsolated(order.FactoryId))
                     {
                         return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
                     }
@@ -805,10 +799,10 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || order.FactoryId != FactoryId)
+                    if (order == null || IsFactoryIsolated(order.FactoryId))
                     {
                         return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
                     }
@@ -854,10 +848,10 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || order.FactoryId != FactoryId)
+                    if (order == null || IsFactoryIsolated(order.FactoryId))
                     {
                         return BadRequest(new { success = false, message = "لا تملك صلاحية تعيين سائق لهذا الطلب." });
                     }
@@ -921,10 +915,10 @@ namespace Kharasana.Web.Controllers
 
             try
             {
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || order.FactoryId != FactoryId)
+                    if (order == null || IsFactoryIsolated(order.FactoryId))
                     {
                         return BadRequest(new { success = false, message = "لا تملك صلاحية تغيير حالة هذا الطلب." });
                     }

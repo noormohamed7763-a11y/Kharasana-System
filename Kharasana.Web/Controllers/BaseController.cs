@@ -36,6 +36,14 @@ namespace Kharasana.Web.Controllers
             HttpContext.Session.GetInt32("FactoryId");
 
         /// <summary>
+        /// هل الكيان المطلوب معزول عن المستخدم الحالي؟
+        /// صحيح إذا كان المستخدم موظف مصنعٍ والكيان يتبع مصنعاً مختلفاً —
+        /// فعادةً يُقابَل برفض الوصول (Forbidden). للمدراء تعيد false دائماً.
+        /// </summary>
+        protected bool IsFactoryIsolated(int? entityFactoryId) =>
+            RoleValue == UserRole.FactoryEmployee && entityFactoryId != FactoryId;
+
+        /// <summary>
         /// حالة المصنع (نشط/موقوف) من الجلسة — null للحسابات غير المرتبطة بمصنع.
         /// تُخزَّن مرة واحدة عند تسجيل الدخول لتجنب نداء API إضافي في كل طلب.
         /// </summary>

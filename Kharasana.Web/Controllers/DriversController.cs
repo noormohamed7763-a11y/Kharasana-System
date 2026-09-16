@@ -97,7 +97,7 @@ public class DriversController : BaseController
                 return RedirectToAction(nameof(Index));
             }
 
-            if (Role == Roles.FactoryEmployee && driver.FactoryId != FactoryId)
+            if (IsFactoryIsolated(driver.FactoryId))
             {
                 TempData[TempDataError] = AppMessages.Common.Forbidden;
                 return RedirectToAction(nameof(Index));
@@ -208,7 +208,7 @@ public class DriversController : BaseController
             }
 
             // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if (Role == Roles.FactoryEmployee && model.FactoryId != FactoryId)
+            if (IsFactoryIsolated(model.FactoryId))
             {
                 TempData[TempDataError] = AppMessages.Common.Forbidden;
                 return RedirectToAction(nameof(Index));
@@ -253,10 +253,10 @@ public class DriversController : BaseController
         try
         {
             // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if (Role == Roles.FactoryEmployee)
+            if (RoleValue == UserRole.FactoryEmployee)
             {
                 var existingDriver = await _driverApiService.GetByIdAsync(id);
-                if (existingDriver == null || existingDriver.FactoryId != FactoryId)
+                if (existingDriver == null || IsFactoryIsolated(existingDriver.FactoryId))
                 {
                     TempData[TempDataError] = AppMessages.Common.Forbidden;
                     return RedirectToAction(nameof(Index));
@@ -305,10 +305,10 @@ public class DriversController : BaseController
         try
         {
             // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if (Role == Roles.FactoryEmployee)
+            if (RoleValue == UserRole.FactoryEmployee)
             {
                 var driver = await _driverApiService.GetByIdAsync(id);
-                if (driver == null || driver.FactoryId != FactoryId)
+                if (driver == null || IsFactoryIsolated(driver.FactoryId))
                 {
                     TempData[TempDataError] = AppMessages.Common.Forbidden;
                     return RedirectToAction(nameof(Index));
@@ -421,10 +421,10 @@ public class DriversController : BaseController
         try
         {
             // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if (Role == Roles.FactoryEmployee)
+            if (RoleValue == UserRole.FactoryEmployee)
             {
                 var driver = await _driverApiService.GetByIdAsync(id);
-                if (driver == null || driver.FactoryId != FactoryId)
+                if (driver == null || IsFactoryIsolated(driver.FactoryId))
                 {
                     if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                     {
