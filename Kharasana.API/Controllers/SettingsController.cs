@@ -1,5 +1,7 @@
-﻿using Kharasana.API.Extensions;
+﻿using Kharasana.API.Common;
+using Kharasana.API.Extensions;
 using Kharasana.Application.Common;
+using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Factory;
 using Kharasana.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -13,7 +15,7 @@ namespace Kharasana.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "FactoryEmployee")]
+[Authorize(Roles = Roles.FactoryEmployee)]
 public class SettingsController : ControllerBase
 {
     private readonly IFactoryService _factoryService;
@@ -32,17 +34,11 @@ public class SettingsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetMySettings()
     {
-        var factoryId = User.GetFactoryId();
-        if (factoryId == null)
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.FactoryNotFoundForUser
-            });
-        }
+        var caller = User.GetCallerContext();
+        if (caller.FactoryId is null)
+            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
 
-        var factory = await _factoryService.GetByIdAsync(factoryId.Value);
+        var factory = await _factoryService.GetByIdAsync(caller.FactoryId.Value);
 
         return Ok(new ApiResponse<FactoryDto>
         {
@@ -63,15 +59,9 @@ public class SettingsController : ControllerBase
     [HttpPost("logo")]
     public async Task<IActionResult> UploadLogo(IFormFile file)
     {
-        var factoryId = User.GetFactoryId();
-        if (factoryId == null)
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.FactoryNotFoundForUser
-            });
-        }
+        var caller = User.GetCallerContext();
+        if (caller.FactoryId is null)
+            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
 
         if (file == null || file.Length == 0)
         {
@@ -83,7 +73,7 @@ public class SettingsController : ControllerBase
         }
 
         await using var stream = file.OpenReadStream();
-        var logoPath = await _factoryService.UploadLogoAsync(factoryId.Value, stream, file.FileName, file.Length);
+        var logoPath = await _factoryService.UploadLogoAsync(caller.FactoryId.Value, stream, file.FileName, file.Length);
 
         return Ok(new ApiResponse<object>
         {
@@ -101,17 +91,11 @@ public class SettingsController : ControllerBase
     [HttpDelete("logo")]
     public async Task<IActionResult> DeleteLogo()
     {
-        var factoryId = User.GetFactoryId();
-        if (factoryId == null)
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.FactoryNotFoundForUser
-            });
-        }
+        var caller = User.GetCallerContext();
+        if (caller.FactoryId is null)
+            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
 
-        await _factoryService.DeleteLogoAsync(factoryId.Value);
+        await _factoryService.DeleteLogoAsync(caller.FactoryId.Value);
 
         return Ok(new ApiResponse<object>
         {

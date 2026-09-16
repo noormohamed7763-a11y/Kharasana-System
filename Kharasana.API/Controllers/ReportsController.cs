@@ -1,3 +1,4 @@
+using Kharasana.API.Common;
 using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Report;
 using Kharasana.Application.Interfaces.Services;
@@ -11,7 +12,7 @@ namespace Kharasana.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = Roles.Admin)]
 public class ReportsController : ControllerBase
 {
     private readonly IReportService _reportService;

@@ -1,5 +1,7 @@
-﻿using Kharasana.API.Extensions;
+using Kharasana.API.Common;
+using Kharasana.API.Extensions;
 using Kharasana.Application.Common;
+using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.ConcreteType;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Enums;
@@ -35,23 +37,15 @@ public class ConcreteTypesController : ControllerBase
     /// <response code="200">تم جلب الأنواع بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpGet]
-    [Authorize(Roles = "Admin,FactoryEmployee,Client")]  // ✅ إضافة Client
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]  // ✅ إضافة Client
     public async Task<IActionResult> GetAll()
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
         // ============================================================
         // ✅ Client - جميع أنواع الخرسانة النشطة
         // ============================================================
-        if (currentRole == UserRole.Client)
+        if (caller.Role == UserRole.Client)
         {
             var allTypes = await _concreteTypeService.GetAllAsync(null);
             var activeTypes = allTypes.Where(t => t.IsActive).ToList();
@@ -67,20 +61,12 @@ public class ConcreteTypesController : ControllerBase
         // ============================================================
         // ✅ FactoryEmployee - أنواع الخرسانة لمصنعه فقط
         // ============================================================
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            var factoryId = User.GetFactoryId();
-            if (factoryId == null)
-            {
-                return Unauthorized(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = Messages.FactoryNotFoundForUser,
-                    Data = null
-                });
-            }
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
 
-            var factoryTypes = await _concreteTypeService.GetAllAsync(factoryId);
+            var factoryTypes = await _concreteTypeService.GetAllAsync(caller.FactoryId);
             return Ok(new ApiResponse<IEnumerable<ConcreteTypeDto>>
             {
                 Success = true,
@@ -114,18 +100,10 @@ public class ConcreteTypesController : ControllerBase
     /// <response code="200">تم جلب النوع بنجاح.</response>
     /// <response code="404">النوع غير موجود، أو غير نشط، أو لا ينتمي لمصنع الموظف.</response>
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "Admin,FactoryEmployee,Client")]  // ✅ إضافة Client
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]  // ✅ إضافة Client
     public async Task<IActionResult> GetById(int id)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
         var concreteType = await _concreteTypeService.GetByIdAsync(id);
         if (concreteType == null)
@@ -141,7 +119,7 @@ public class ConcreteTypesController : ControllerBase
         // ============================================================
         // ✅ Client - يمكنه مشاهدة أي نوع خرسانة نشط
         // ============================================================
-        if (currentRole == UserRole.Client)
+        if (caller.Role == UserRole.Client)
         {
             if (!concreteType.IsActive)
             {
@@ -163,10 +141,9 @@ public class ConcreteTypesController : ControllerBase
         // ============================================================
         // ✅ FactoryEmployee - يمكنه مشاهدة أنواع خرسانة مصنعه فقط
         // ============================================================
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            var factoryId = User.GetFactoryId();
-            if (factoryId == null || concreteType.FactoryId != factoryId)
+            if (caller.FactoryId is null || concreteType.FactoryId != caller.FactoryId)
             {
                 return NotFound(new ApiResponse<object>
                 {
@@ -205,23 +182,17 @@ public class ConcreteTypesController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">الحساب لا يملك صلاحية الإنشاء.</response>
     [HttpPost]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Create([FromBody] CreateConcreteTypeDto dto)
     {
-        int? currentFactoryId = null;
+        var caller = User.GetCallerContext();
 
-        if (User.TryGetRole(out var currentRole) && currentRole == UserRole.FactoryEmployee)
+        int? currentFactoryId = null;
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            currentFactoryId = User.GetFactoryId();
-            if (currentFactoryId == null)
-            {
-                return Unauthorized(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = Messages.FactoryNotFoundForUser,
-                    Data = null
-                });
-            }
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            currentFactoryId = caller.FactoryId;
         }
 
         var concreteType = await _concreteTypeService.CreateAsync(dto, currentFactoryId);
@@ -250,33 +221,17 @@ public class ConcreteTypesController : ControllerBase
     /// <response code="403">النوع لا ينتمي لمصنع الموظف.</response>
     /// <response code="404">النوع غير موجود.</response>
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateConcreteTypeDto dto)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
         int? currentFactoryId = null;
-
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            currentFactoryId = User.GetFactoryId();
-            if (currentFactoryId == null)
-            {
-                return Unauthorized(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = Messages.FactoryNotFoundForUser,
-                    Data = null
-                });
-            }
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            currentFactoryId = caller.FactoryId;
         }
 
         await _concreteTypeService.UpdateAsync(id, dto, currentFactoryId);
@@ -299,7 +254,7 @@ public class ConcreteTypesController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(int id)
     {
         await _concreteTypeService.DeleteAsync(id);

@@ -1,5 +1,7 @@
-﻿using Kharasana.API.Extensions;
+using Kharasana.API.Common;
+using Kharasana.API.Extensions;
 using Kharasana.Application.Common;
+using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Dashboard;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Enums;
@@ -31,7 +33,7 @@ public class DashboardController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     [HttpGet("admin")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> GetAdminDashboard()
     {
         var result = await _dashboardService.GetAdminDashboardAsync();
@@ -55,34 +57,18 @@ public class DashboardController : ControllerBase
     /// <response code="400">factoryId غير مُرسل من مستخدم لا يتبع مصنعاً.</response>
     /// <response code="401">التوكن غير صالح أو لا يوجد مصنع مرتبط بالحساب.</response>
     [HttpGet("factory")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> GetFactoryDashboard([FromQuery] int? factoryId)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
         int targetFactoryId;
 
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            var callerFactoryId = User.GetFactoryId();
-            if (callerFactoryId == null)
-            {
-                return Unauthorized(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = Messages.FactoryNotFoundForUser,
-                    Data = null
-                });
-            }
-            targetFactoryId = callerFactoryId.Value;
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            targetFactoryId = caller.FactoryId.Value;
         }
         else
         {

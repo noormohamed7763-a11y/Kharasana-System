@@ -1,5 +1,7 @@
-﻿using Kharasana.API.Extensions;
+using Kharasana.API.Common;
+using Kharasana.API.Extensions;
 using Kharasana.Application.Common;
+using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.User;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Enums;
@@ -36,37 +38,21 @@ public class UsersController : ControllerBase
     /// <response code="200">تم جلب المستخدمين بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpGet]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> GetAll(
         [FromQuery] UserRole? role,
         [FromQuery] int? factoryId,
         [FromQuery] DriverStatus? driverStatus,
         [FromQuery] PaginationParams pagination)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
         // ✅ عزل إجباري: الموظف لا يرى إلا مصنعه
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            var callerFactoryId = User.GetFactoryId();
-            if (callerFactoryId == null)
-            {
-                return Unauthorized(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = Messages.FactoryNotFoundForUser,
-                    Data = null
-                });
-            }
-            factoryId = callerFactoryId;
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            factoryId = caller.FactoryId;
         }
 
         var result = await _userService.GetPagedAsync(role, factoryId, driverStatus, pagination);
@@ -89,21 +75,13 @@ public class UsersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">المستخدم غير موجود أو لا ينتمي لمصنع الموظف.</response>
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> GetById(int id)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
         // ✅ للمدير: يمكنه رؤية أي مستخدم
-        if (currentRole == UserRole.Admin)
+        if (caller.Role == UserRole.Admin)
         {
             var user = await _userService.GetByIdAsync(id);
             return Ok(new ApiResponse<UserDto>
@@ -115,18 +93,10 @@ public class UsersController : ControllerBase
         }
 
         // ✅ لموظف المصنع: يتحقق من أن المستخدم سائق ويتبع مصنعه
-        var factoryId = User.GetFactoryId();
-        if (factoryId == null)
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.FactoryNotFoundForUser,
-                Data = null
-            });
-        }
+        if (caller.FactoryId is null)
+            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
 
-        var driver = await GetDriverForCurrentFactoryAsync(id, factoryId.Value);
+        var driver = await GetDriverForCurrentFactoryAsync(id, caller.FactoryId.Value);
         if (driver == null)
         {
             return NotFound(new ApiResponse<object>
@@ -156,21 +126,13 @@ public class UsersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">موظف المصنع يحاول إنشاء دور غير السائق.</response>
     [HttpPost]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
         // ✅ للمدير: يمكنه إنشاء أي مستخدم
-        if (currentRole == UserRole.Admin)
+        if (caller.Role == UserRole.Admin)
         {
             var user = await _userService.CreateAsync(dto);
             return CreatedAtAction(
@@ -190,19 +152,11 @@ public class UsersController : ControllerBase
             return Forbid();
         }
 
-        var factoryId = User.GetFactoryId();
-        if (factoryId == null)
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.FactoryNotFoundForUser,
-                Data = null
-            });
-        }
+        if (caller.FactoryId is null)
+            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
 
         // ✅ فرض FactoryId من التوكن
-        dto.FactoryId = factoryId.Value;
+        dto.FactoryId = caller.FactoryId.Value;
 
         var newUser = await _userService.CreateAsync(dto);
         return CreatedAtAction(
@@ -228,21 +182,13 @@ public class UsersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">المستخدم غير موجود أو لا ينتمي لمصنع الموظف.</response>
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDto dto)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
         // ✅ للمدير: يمكنه تعديل أي مستخدم
-        if (currentRole == UserRole.Admin)
+        if (caller.Role == UserRole.Admin)
         {
             await _userService.UpdateAsync(id, dto);
             return Ok(new ApiResponse<object>
@@ -254,18 +200,10 @@ public class UsersController : ControllerBase
         }
 
         // ✅ لموظف المصنع: يتحقق من أن المستخدم سائق ويتبع مصنعه
-        var factoryId = User.GetFactoryId();
-        if (factoryId == null)
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.FactoryNotFoundForUser,
-                Data = null
-            });
-        }
+        if (caller.FactoryId is null)
+            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
 
-        var driver = await GetDriverForCurrentFactoryAsync(id, factoryId.Value);
+        var driver = await GetDriverForCurrentFactoryAsync(id, caller.FactoryId.Value);
         if (driver == null)
         {
             return NotFound(new ApiResponse<object>
@@ -282,7 +220,7 @@ public class UsersController : ControllerBase
             return Forbid();
         }
 
-        dto.FactoryId = factoryId.Value;
+        dto.FactoryId = caller.FactoryId.Value;
 
         await _userService.UpdateAsync(id, dto);
         return Ok(new ApiResponse<object>
@@ -305,18 +243,9 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
     {
-        var userId = User.GetUserId();
-        if (userId == null)
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserIdNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
-        await _userService.UpdateMyProfileAsync(userId.Value, dto);
+        await _userService.UpdateMyProfileAsync(caller.UserId, dto);
 
         return Ok(new ApiResponse<object>
         {
@@ -336,21 +265,13 @@ public class UsersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">المستخدم غير موجود أو لا ينتمي لمصنع الموظف.</response>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Delete(int id)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
         // ✅ للمدير: يمكنه حذف أي مستخدم
-        if (currentRole == UserRole.Admin)
+        if (caller.Role == UserRole.Admin)
         {
             await _userService.DeleteAsync(id);
             return Ok(new ApiResponse<object>
@@ -362,18 +283,10 @@ public class UsersController : ControllerBase
         }
 
         // ✅ لموظف المصنع: يتحقق من أن المستخدم سائق ويتبع مصنعه
-        var factoryId = User.GetFactoryId();
-        if (factoryId == null)
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.FactoryNotFoundForUser,
-                Data = null
-            });
-        }
+        if (caller.FactoryId is null)
+            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
 
-        var driver = await GetDriverForCurrentFactoryAsync(id, factoryId.Value);
+        var driver = await GetDriverForCurrentFactoryAsync(id, caller.FactoryId.Value);
         if (driver == null)
         {
             return NotFound(new ApiResponse<object>
@@ -405,23 +318,13 @@ public class UsersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">السائق غير موجود.</response>
     [HttpPut("{id:int}/driver-status")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> UpdateDriverStatus(int id, [FromBody] UpdateDriverStatusDto dto)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
-
-        var callerFactoryId = User.GetFactoryId();
+        var caller = User.GetCallerContext();
 
         // ✅ الخدمة ستتحقق من الصلاحيات (عند FactoryEmployee تتحقق من FactoryId)
-        await _userService.UpdateDriverStatusAsync(id, dto, currentRole, callerFactoryId);
+        await _userService.UpdateDriverStatusAsync(id, dto, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object>
         {
@@ -440,22 +343,12 @@ public class UsersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">السائق غير موجود.</response>
     [HttpPut("{id:int}/toggle-active")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> ToggleActive(int id)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserRoleNotFound,
-                Data = null
-            });
-        }
+        var caller = User.GetCallerContext();
 
-        var callerFactoryId = User.GetFactoryId();
-
-        var isActive = await _userService.ToggleDriverActiveAsync(id, currentRole, callerFactoryId);
+        var isActive = await _userService.ToggleDriverActiveAsync(id, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object>
         {

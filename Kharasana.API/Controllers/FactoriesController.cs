@@ -1,5 +1,7 @@
-﻿using Kharasana.API.Extensions;
+using Kharasana.API.Common;
+using Kharasana.API.Extensions;
 using Kharasana.Application.Common;
+using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Factory;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Enums;
@@ -35,18 +37,15 @@ public class FactoriesController : ControllerBase
     /// <response code="200">تم جلب المصانع بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpGet]
-    [Authorize(Roles = "Admin,FactoryEmployee,Client")]  // ✅ إضافة Client
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]  // ✅ إضافة Client
     public async Task<IActionResult> GetAll()
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object> { Success = false, Message = Messages.UserRoleNotFound });
-        }
+        var caller = User.GetCallerContext();
 
         // ============================================================
         // ✅ إذا كان المستخدم Client، أرجع جميع المصانع النشطة
         // ============================================================
-        if (currentRole == UserRole.Client)
+        if (caller.Role == UserRole.Client)
         {
             var allFactories = await _factoryService.GetAllAsync();
             var activeFactories = allFactories.Where(f => f.IsActive).ToList();
@@ -62,19 +61,12 @@ public class FactoriesController : ControllerBase
         // ============================================================
         // ✅ إذا كان FactoryEmployee، أرجع مصنعه فقط
         // ============================================================
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            var factoryId = User.GetFactoryId();
-            if (factoryId == null)
-            {
-                return Unauthorized(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = Messages.FactoryNotFoundForUser
-                });
-            }
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
 
-            var ownFactory = await _factoryService.GetByIdAsync(factoryId.Value);
+            var ownFactory = await _factoryService.GetByIdAsync(caller.FactoryId.Value);
             return Ok(new ApiResponse<IEnumerable<FactoryDto>>
             {
                 Success = true,
@@ -104,7 +96,7 @@ public class FactoriesController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     [HttpGet("archived")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> GetArchived()
     {
         var factories = await _factoryService.GetArchivedAsync();
@@ -130,18 +122,15 @@ public class FactoriesController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">المصنع غير موجود أو غير نشط (لعميل).</response>
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "Admin,FactoryEmployee,Client")]  // ✅ إضافة Client
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]  // ✅ إضافة Client
     public async Task<IActionResult> GetById(int id)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object> { Success = false, Message = Messages.UserRoleNotFound });
-        }
+        var caller = User.GetCallerContext();
 
         // ============================================================
         // ✅ Client يمكنه مشاهدة أي مصنع نشط
         // ============================================================
-        if (currentRole == UserRole.Client)
+        if (caller.Role == UserRole.Client)
         {
             var factory = await _factoryService.GetByIdAsync(id);
             if (factory == null || !factory.IsActive)
@@ -163,11 +152,10 @@ public class FactoriesController : ControllerBase
         // ============================================================
         // ✅ FactoryEmployee يمكنه مشاهدة مصنعه فقط
         // ============================================================
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            var factoryId = User.GetFactoryId();
-            if (factoryId == null || factoryId.Value != id)
-                throw new Application.Common.Exceptions.BusinessException(Messages.FactoryEmployeeFactoryMismatch);
+            if (caller.FactoryId is null || caller.FactoryId.Value != id)
+                throw new BusinessException(Messages.FactoryEmployeeFactoryMismatch);
         }
 
         var factoryResult = await _factoryService.GetByIdAsync(id);
@@ -190,7 +178,7 @@ public class FactoriesController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Create([FromBody] CreateFactoryDto dto)
     {
         var factory = await _factoryService.CreateAsync(dto);
@@ -215,7 +203,7 @@ public class FactoriesController : ControllerBase
     /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     /// <response code="404">المصنع غير موجود.</response>
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateFactoryDto dto)
     {
         await _factoryService.UpdateAsync(id, dto);
@@ -237,7 +225,7 @@ public class FactoriesController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(int id)
     {
         await _factoryService.DeleteAsync(id);
@@ -258,7 +246,7 @@ public class FactoriesController : ControllerBase
     /// <response code="200">تمت الاستعادة بنجاح.</response>
     /// <response code="404">المصنع غير موجود.</response>
     [HttpPost("restore/{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Restore(int id)
     {
         await _factoryService.RestoreAsync(id);
@@ -282,19 +270,15 @@ public class FactoriesController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">غير مسموح لموظف المصنع برفع شعار مصنع آخر.</response>
     [HttpPost("{id:int}/logo")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> UploadLogo(int id, IFormFile file)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object> { Success = false, Message = Messages.UserRoleNotFound });
-        }
+        var caller = User.GetCallerContext();
 
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            var factoryId = User.GetFactoryId();
-            if (factoryId == null || factoryId.Value != id)
-                throw new Application.Common.Exceptions.BusinessException(Messages.FactoryEmployeeFactoryMismatch);
+            if (caller.FactoryId is null || caller.FactoryId.Value != id)
+                throw new BusinessException(Messages.FactoryEmployeeFactoryMismatch);
         }
 
         if (file == null || file.Length == 0)
@@ -323,19 +307,15 @@ public class FactoriesController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">غير مسموح لموظف المصنع بحذف شعار مصنع آخر.</response>
     [HttpDelete("{id:int}/logo")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> DeleteLogo(int id)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object> { Success = false, Message = Messages.UserRoleNotFound });
-        }
+        var caller = User.GetCallerContext();
 
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            var factoryId = User.GetFactoryId();
-            if (factoryId == null || factoryId.Value != id)
-                throw new Application.Common.Exceptions.BusinessException(Messages.FactoryEmployeeFactoryMismatch);
+            if (caller.FactoryId is null || caller.FactoryId.Value != id)
+                throw new BusinessException(Messages.FactoryEmployeeFactoryMismatch);
         }
 
         await _factoryService.DeleteLogoAsync(id);

@@ -49,6 +49,13 @@ public class ExceptionMiddleware
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.BadRequest);
         }
+        catch (UnauthorizedException ex)
+        {
+            _logger.LogWarning(ex,
+                "Unauthorized: {Message} TraceId={TraceId} Path={Path}",
+                ex.Message, context.TraceIdentifier, context.Request.Path);
+            await HandleExceptionAsync(context, ex, HttpStatusCode.Unauthorized);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex,

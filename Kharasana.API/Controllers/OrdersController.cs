@@ -1,11 +1,13 @@
-﻿using Kharasana.API.Extensions;
+using Kharasana.API.Common;
+using Kharasana.API.Extensions;
 using Kharasana.Application.Common;
+using Kharasana.Application.Common.Exceptions;
+using Kharasana.Application.DTOs.Customer;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Kharasana.Application.DTOs.Customer;
 
 namespace Kharasana.API.Controllers;
 
@@ -25,34 +27,6 @@ public class OrdersController : ControllerBase
         _orderService = orderService;
     }
 
-    // ------------------------------------------------------------
-    // Helper مشترك: استخراج هوية المستدعي
-    // ------------------------------------------------------------
-    private bool TryGetCallerContext(out int callerId, out UserRole callerRole, out int? callerFactoryId, out IActionResult? error)
-    {
-        callerId = 0;
-        callerRole = default;
-        callerFactoryId = null;
-        error = null;
-
-        if (!User.TryGetRole(out callerRole))
-        {
-            error = Unauthorized(new ApiResponse<object> { Success = false, Message = Messages.UserRoleNotFound, Data = null });
-            return false;
-        }
-
-        var uid = User.GetUserId();
-        if (uid == null)
-        {
-            error = Unauthorized(new ApiResponse<object> { Success = false, Message = Messages.UserIdNotFound, Data = null });
-            return false;
-        }
-
-        callerId = uid.Value;
-        callerFactoryId = User.GetFactoryId();
-        return true;
-    }
-
     // ============================================================
     // 1. GET ALL
     // ============================================================
@@ -67,31 +41,27 @@ public class OrdersController : ControllerBase
     /// <response code="200">تم جلب الطلبات بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح أو لا يوجد مصنع مرتبط.</response>
     [HttpGet]
-    [Authorize(Roles = "Admin,FactoryEmployee,Client,Driver")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClientOrDriver)]
     public async Task<IActionResult> GetAll([FromQuery] PaginationParams pagination)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
         int? factoryId = null, clientId = null, driverId = null;
 
-        switch (callerRole)
+        switch (caller.Role)
         {
             case UserRole.FactoryEmployee:
-                if (callerFactoryId == null)
-                {
-                    return Unauthorized(new ApiResponse<object>
-                    { Success = false, Message = Messages.FactoryNotFoundForUser, Data = null });
-                }
-                factoryId = callerFactoryId;
+                if (caller.FactoryId is null)
+                    throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+                factoryId = caller.FactoryId;
                 break;
 
             case UserRole.Client:
-                clientId = callerId;
+                clientId = caller.UserId;
                 break;
 
             case UserRole.Driver:
-                driverId = callerId;
+                driverId = caller.UserId;
                 break;
 
             case UserRole.Admin:
@@ -100,7 +70,7 @@ public class OrdersController : ControllerBase
                 break;
         }
 
-        var result = await _orderService.GetPagedAsync(factoryId, clientId, driverId, callerRole, pagination);
+        var result = await _orderService.GetPagedAsync(factoryId, clientId, driverId, caller.Role, pagination);
 
         return Ok(new ApiResponse<PagedResult<OrderDto>>
         {
@@ -123,13 +93,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">المتصل لا يملك صلاحية، أو السائق خارج نطاق مصنع موظف المصنع.</response>
     [HttpGet("by-driver/{driverId:int}")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> GetByDriver(int driverId)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        var orders = await _orderService.GetOrdersByDriverIdAsync(driverId, callerFactoryId, callerRole);
+        var orders = await _orderService.GetOrdersByDriverIdAsync(driverId, caller.FactoryId, caller.Role);
 
         return Ok(new ApiResponse<IEnumerable<OrderDto>>
         {
@@ -152,23 +121,16 @@ public class OrdersController : ControllerBase
     /// <response code="200">تم جلب العملاء بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpGet("customers")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> GetCustomers([FromQuery] int? factoryId, [FromQuery] PaginationParams pagination)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object> { Success = false, Message = Messages.UserRoleNotFound, Data = null });
-        }
+        var caller = User.GetCallerContext();
 
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            var callerFactoryId = User.GetFactoryId();
-            if (callerFactoryId == null)
-            {
-                return Unauthorized(new ApiResponse<object>
-                { Success = false, Message = Messages.FactoryNotFoundForUser, Data = null });
-            }
-            factoryId = callerFactoryId;
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            factoryId = caller.FactoryId;
         }
 
         var result = await _orderService.GetCustomersAsync(factoryId, pagination);
@@ -190,13 +152,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">الطلب غير موجود أو لا يخص المتصل.</response>
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "Admin,FactoryEmployee,Client,Driver")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClientOrDriver)]
     public async Task<IActionResult> GetById(int id)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        var order = await _orderService.GetByIdAsync(id, callerId, callerRole, callerFactoryId);
+        var order = await _orderService.GetByIdAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<OrderDetailsDto>
         {
@@ -215,13 +176,12 @@ public class OrdersController : ControllerBase
     /// <response code="400">بيانات غير صالحة.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPost]
-    [Authorize(Roles = "Client,Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]
     public async Task<IActionResult> Create([FromBody] CreateOrderDto dto)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        var result = await _orderService.CreateAsync(dto, callerId, callerRole, callerFactoryId);
+        var result = await _orderService.CreateAsync(dto, caller.UserId, caller.Role, caller.FactoryId);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -245,13 +205,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateOrderDto dto)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        var result = await _orderService.UpdateOrderAsync(id, dto, callerId, callerRole, callerFactoryId);
+        var result = await _orderService.UpdateOrderAsync(id, dto, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<OrderDto>
         {
@@ -271,25 +230,18 @@ public class OrdersController : ControllerBase
     /// <response code="400">بيانات غير صالحة.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPost("phone-order")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> CreatePhoneOrder([FromBody] PhoneOrderDto dto)
     {
-        if (!User.TryGetRole(out var currentRole))
-        {
-            return Unauthorized(new ApiResponse<object> { Success = false, Message = Messages.UserRoleNotFound, Data = null });
-        }
+        var caller = User.GetCallerContext();
 
         int employeeFactoryId;
 
-        if (currentRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            var factoryId = User.GetFactoryId();
-            if (factoryId == null)
-            {
-                return Unauthorized(new ApiResponse<object>
-                { Success = false, Message = Messages.FactoryNotFoundForUser, Data = null });
-            }
-            employeeFactoryId = factoryId.Value;
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            employeeFactoryId = caller.FactoryId.Value;
         }
         else
         {
@@ -319,13 +271,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/price")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> SetPrice(int id, [FromBody] SetPriceDto dto)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        await _orderService.SetPriceAsync(id, dto.UnitPrice, callerId, callerRole, callerFactoryId);
+        await _orderService.SetPriceAsync(id, dto.UnitPrice, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object> { Success = true, Message = Messages.PriceSavedSuccessfully, Data = null });
     }
@@ -339,13 +290,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/approve")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Approve(int id)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        await _orderService.ApproveOrderAsync(id, callerId, callerRole, callerFactoryId);
+        await _orderService.ApproveOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderApprovedSuccessfully, Data = null });
     }
@@ -361,13 +311,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     [HttpPut("{id:int}/status")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        await _orderService.UpdateStatusAsync(id, dto, callerId, callerRole, callerFactoryId);
+        await _orderService.UpdateStatusAsync(id, dto, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderStatusUpdated, Data = null });
     }
@@ -383,13 +332,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">الطلب أو السائق غير موجود.</response>
     [HttpPut("{id:int}/assign-driver")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> AssignDriver(int id, [FromBody] AssignDriverDto dto)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        await _orderService.AssignDriverAsync(id, dto, callerId, callerRole, callerFactoryId);
+        await _orderService.AssignDriverAsync(id, dto, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object> { Success = true, Message = Messages.DriverAssignedSuccessfully, Data = null });
     }
@@ -403,13 +351,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">الطلب غير موجود أو غير مسند لهذا السائق.</response>
     [HttpPut("{id:int}/start-delivery")]
-    [Authorize(Roles = "Admin,FactoryEmployee,Driver")]  // ✅ Driver مُضاف
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrDriver)]  // ✅ Driver مُضاف
     public async Task<IActionResult> StartDelivery(int id)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        await _orderService.StartDeliveryAsync(id, callerId, callerRole, callerFactoryId);
+        await _orderService.StartDeliveryAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object> { Success = true, Message = Messages.DeliveryStartedSuccessfully, Data = null });
     }
@@ -423,13 +370,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/deliver")]
-    [Authorize(Roles = "Admin,FactoryEmployee,Driver")]  // ✅ Driver مُضاف
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrDriver)]  // ✅ Driver مُضاف
     public async Task<IActionResult> Deliver(int id)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        await _orderService.DeliverOrderAsync(id, callerId, callerRole, callerFactoryId);
+        await _orderService.DeliverOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderDeliveredSuccessfully, Data = null });
     }
@@ -443,13 +389,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/close")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Close(int id)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        await _orderService.CloseOrderAsync(id, callerId, callerRole, callerFactoryId);
+        await _orderService.CloseOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderClosedSuccessfully, Data = null });
     }
@@ -464,13 +409,12 @@ public class OrdersController : ControllerBase
     /// <response code="400">بيانات غير صالحة.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPut("{id:int}/reject")]
-    [Authorize(Roles = "Admin,FactoryEmployee")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Reject(int id, [FromBody] RejectOrderDto dto)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        await _orderService.RejectOrderAsync(id, dto.Reason, callerId, callerRole, callerFactoryId);
+        await _orderService.RejectOrderAsync(id, dto.Reason, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderRejectedSuccessfully, Data = null });
     }
@@ -484,13 +428,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/cancel")]
-    [Authorize(Roles = "Admin,FactoryEmployee,Client,Driver")]  // ✅ Driver مُضاف
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClientOrDriver)]  // ✅ Driver مُضاف
     public async Task<IActionResult> Cancel(int id)
     {
-        if (!TryGetCallerContext(out var callerId, out var callerRole, out var callerFactoryId, out var err))
-            return err!;
+        var caller = User.GetCallerContext();
 
-        await _orderService.CancelOrderAsync(id, callerId, callerRole, callerFactoryId);
+        await _orderService.CancelOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderCancelledSuccessfully, Data = null });
     }
