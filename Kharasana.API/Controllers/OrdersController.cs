@@ -279,7 +279,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.SetPriceAsync(id, dto.UnitPrice, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = Messages.PriceSavedSuccessfully, Data = null });
+        return Ok(ApiResponse.Ok(Messages.PriceSavedSuccessfully));
     }
 
     // ============================================================
@@ -298,7 +298,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.ApproveOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderApprovedSuccessfully, Data = null });
+        return Ok(ApiResponse.Ok(Messages.OrderApprovedSuccessfully));
     }
 
     // ============================================================
@@ -319,7 +319,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.UpdateStatusAsync(id, dto, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderStatusUpdated, Data = null });
+        return Ok(ApiResponse.Ok(Messages.OrderStatusUpdated));
     }
 
     // ============================================================
@@ -340,7 +340,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.AssignDriverAsync(id, dto, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = Messages.DriverAssignedSuccessfully, Data = null });
+        return Ok(ApiResponse.Ok(Messages.DriverAssignedSuccessfully));
     }
 
     // ============================================================
@@ -359,7 +359,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.StartDeliveryAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = Messages.DeliveryStartedSuccessfully, Data = null });
+        return Ok(ApiResponse.Ok(Messages.DeliveryStartedSuccessfully));
     }
 
     // ============================================================
@@ -378,7 +378,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.DeliverOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderDeliveredSuccessfully, Data = null });
+        return Ok(ApiResponse.Ok(Messages.OrderDeliveredSuccessfully));
     }
 
     // ============================================================
@@ -397,7 +397,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.CloseOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderClosedSuccessfully, Data = null });
+        return Ok(ApiResponse.Ok(Messages.OrderClosedSuccessfully));
     }
 
     // ============================================================
@@ -417,7 +417,7 @@ public class OrdersController : ControllerBase
 
         await _orderService.RejectOrderAsync(id, dto.Reason, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderRejectedSuccessfully, Data = null });
+        return Ok(ApiResponse.Ok(Messages.OrderRejectedSuccessfully));
     }
 
     // ============================================================
@@ -436,6 +436,6 @@ public class OrdersController : ControllerBase
 
         await _orderService.CancelOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object> { Success = true, Message = Messages.OrderCancelledSuccessfully, Data = null });
+        return Ok(ApiResponse.Ok(Messages.OrderCancelledSuccessfully));
     }
 }

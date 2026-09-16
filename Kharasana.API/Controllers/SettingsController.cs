@@ -65,22 +65,13 @@ public class SettingsController : ControllerBase
 
         if (file == null || file.Length == 0)
         {
-            return BadRequest(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.InvalidLogoFile
-            });
+            return BadRequest(ApiResponse.Fail(Messages.InvalidLogoFile));
         }
 
         await using var stream = file.OpenReadStream();
         var logoPath = await _factoryService.UploadLogoAsync(caller.FactoryId.Value, stream, file.FileName, file.Length);
 
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.FactoryLogoUploadedSuccessfully,
-            Data = new { logo = this.ToAbsoluteLogoUrl(logoPath) }
-        });
+        return Ok(ApiResponse.Ok(new { logo = this.ToAbsoluteLogoUrl(logoPath) }, Messages.FactoryLogoUploadedSuccessfully));
     }
 
     /// <summary>
@@ -97,11 +88,6 @@ public class SettingsController : ControllerBase
 
         await _factoryService.DeleteLogoAsync(caller.FactoryId.Value);
 
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.FactoryLogoDeletedSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.FactoryLogoDeletedSuccessfully));
     }
 }

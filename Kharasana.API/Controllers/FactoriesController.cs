@@ -135,11 +135,7 @@ public class FactoriesController : ControllerBase
             var factory = await _factoryService.GetByIdAsync(id);
             if (factory == null || !factory.IsActive)
             {
-                return NotFound(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = Messages.FactoryNotFoundOrInactive
-                });
+                return NotFound(ApiResponse.Fail(Messages.FactoryNotFoundOrInactive));
             }
             return Ok(new ApiResponse<FactoryDto>
             {
@@ -207,12 +203,7 @@ public class FactoriesController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] UpdateFactoryDto dto)
     {
         await _factoryService.UpdateAsync(id, dto);
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.UpdatedSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.UpdatedSuccessfully));
     }
 
     // ============================================================
@@ -229,12 +220,7 @@ public class FactoriesController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         await _factoryService.DeleteAsync(id);
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.DeletedSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.DeletedSuccessfully));
     }
 
     // ============================================================
@@ -250,12 +236,7 @@ public class FactoriesController : ControllerBase
     public async Task<IActionResult> Restore(int id)
     {
         await _factoryService.RestoreAsync(id);
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.FactoryRestoredSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.FactoryRestoredSuccessfully));
     }
 
     // ============================================================
@@ -283,18 +264,13 @@ public class FactoriesController : ControllerBase
 
         if (file == null || file.Length == 0)
         {
-            return BadRequest(new ApiResponse<object> { Success = false, Message = Messages.InvalidLogoFile });
+            return BadRequest(ApiResponse.Fail(Messages.InvalidLogoFile));
         }
 
         await using var stream = file.OpenReadStream();
         var logoPath = await _factoryService.UploadLogoAsync(id, stream, file.FileName, file.Length);
 
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.FactoryLogoUploadedSuccessfully,
-            Data = new { logo = this.ToAbsoluteLogoUrl(logoPath) }
-        });
+        return Ok(ApiResponse.Ok(new { logo = this.ToAbsoluteLogoUrl(logoPath) }, Messages.FactoryLogoUploadedSuccessfully));
     }
 
     // ============================================================
@@ -320,11 +296,6 @@ public class FactoriesController : ControllerBase
 
         await _factoryService.DeleteLogoAsync(id);
 
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.FactoryLogoDeletedSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.FactoryLogoDeletedSuccessfully));
     }
 }

@@ -102,12 +102,7 @@ public class ExceptionMiddleware
         context.Response.StatusCode = (int)statusCode;
         context.Response.ContentType = "application/json; charset=utf-8";
 
-        var response = new ApiResponse<object>
-        {
-            Success = false,
-            Message = message,
-            Data = null
-        };
+        var response = ApiResponse.Fail(message);
 
         // ربط خطأ العميل بالسجل عبر TraceIdentifier — يُطابق نفس المعرف في رسائل الـ log أعلاه
         context.Response.Headers["X-Trace-Id"] = context.TraceIdentifier;

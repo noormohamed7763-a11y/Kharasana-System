@@ -108,12 +108,7 @@ public class ConcreteTypesController : ControllerBase
         var concreteType = await _concreteTypeService.GetByIdAsync(id);
         if (concreteType == null)
         {
-            return NotFound(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.ConcreteTypeNotFoundShort,
-                Data = null
-            });
+            return NotFound(ApiResponse.Fail(Messages.ConcreteTypeNotFoundShort));
         }
 
         // ============================================================
@@ -123,12 +118,7 @@ public class ConcreteTypesController : ControllerBase
         {
             if (!concreteType.IsActive)
             {
-                return NotFound(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = Messages.ConcreteTypeNotActiveForClient,
-                    Data = null
-                });
+                return NotFound(ApiResponse.Fail(Messages.ConcreteTypeNotActiveForClient));
             }
             return Ok(new ApiResponse<ConcreteTypeDto>
             {
@@ -145,12 +135,7 @@ public class ConcreteTypesController : ControllerBase
         {
             if (caller.FactoryId is null || concreteType.FactoryId != caller.FactoryId)
             {
-                return NotFound(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = Messages.ConcreteTypeNotFoundOrNotForFactory,
-                    Data = null
-                });
+                return NotFound(ApiResponse.Fail(Messages.ConcreteTypeNotFoundOrNotForFactory));
             }
             return Ok(new ApiResponse<ConcreteTypeDto>
             {
@@ -236,12 +221,7 @@ public class ConcreteTypesController : ControllerBase
 
         await _concreteTypeService.UpdateAsync(id, dto, currentFactoryId);
 
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.UpdatedSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.UpdatedSuccessfully));
     }
 
     // ============================================================
@@ -259,11 +239,6 @@ public class ConcreteTypesController : ControllerBase
     {
         await _concreteTypeService.DeleteAsync(id);
 
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.DeletedSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.DeletedSuccessfully));
     }
 }

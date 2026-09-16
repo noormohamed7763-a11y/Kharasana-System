@@ -131,12 +131,7 @@ public class Program
                         context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                         context.Response.ContentType = "application/json; charset=utf-8";
 
-                        var payload = JsonSerializer.Serialize(new ApiResponse<object>
-                        {
-                            Success = false,
-                            Message = Messages.InvalidOrExpiredToken,
-                            Data = null
-                        }, ApiJsonOptions);
+                        var payload = JsonSerializer.Serialize(ApiResponse.Fail(Messages.InvalidOrExpiredToken), ApiJsonOptions);
 
                         return context.Response.WriteAsync(payload);
                     },
@@ -147,12 +142,7 @@ public class Program
                         context.Response.StatusCode = StatusCodes.Status403Forbidden;
                         context.Response.ContentType = "application/json; charset=utf-8";
 
-                        var payload = JsonSerializer.Serialize(new ApiResponse<object>
-                        {
-                            Success = false,
-                            Message = Messages.Unauthorized,
-                            Data = null
-                        }, ApiJsonOptions);
+                        var payload = JsonSerializer.Serialize(ApiResponse.Fail(Messages.Unauthorized), ApiJsonOptions);
 
                         return context.Response.WriteAsync(payload);
                     }

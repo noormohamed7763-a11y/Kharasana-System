@@ -99,12 +99,7 @@ public class UsersController : ControllerBase
         var driver = await GetDriverForCurrentFactoryAsync(id, caller.FactoryId.Value);
         if (driver == null)
         {
-            return NotFound(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserNotFound,
-                Data = null
-            });
+            return NotFound(ApiResponse.Fail(Messages.UserNotFound));
         }
 
         return Ok(new ApiResponse<UserDto>
@@ -191,12 +186,7 @@ public class UsersController : ControllerBase
         if (caller.Role == UserRole.Admin)
         {
             await _userService.UpdateAsync(id, dto);
-            return Ok(new ApiResponse<object>
-            {
-                Success = true,
-                Message = Messages.UpdatedSuccessfully,
-                Data = null
-            });
+            return Ok(ApiResponse.Ok(Messages.UpdatedSuccessfully));
         }
 
         // ✅ لموظف المصنع: يتحقق من أن المستخدم سائق ويتبع مصنعه
@@ -206,12 +196,7 @@ public class UsersController : ControllerBase
         var driver = await GetDriverForCurrentFactoryAsync(id, caller.FactoryId.Value);
         if (driver == null)
         {
-            return NotFound(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserNotFound,
-                Data = null
-            });
+            return NotFound(ApiResponse.Fail(Messages.UserNotFound));
         }
 
         // ✅ موظف المصنع يسمح فقط بتعديل السائقين
@@ -223,12 +208,7 @@ public class UsersController : ControllerBase
         dto.FactoryId = caller.FactoryId.Value;
 
         await _userService.UpdateAsync(id, dto);
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.UpdatedSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.UpdatedSuccessfully));
     }
 
     // ============================================================
@@ -247,12 +227,7 @@ public class UsersController : ControllerBase
 
         await _userService.UpdateMyProfileAsync(caller.UserId, dto);
 
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.UpdatedSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.UpdatedSuccessfully));
     }
 
     // ============================================================
@@ -274,12 +249,7 @@ public class UsersController : ControllerBase
         if (caller.Role == UserRole.Admin)
         {
             await _userService.DeleteAsync(id);
-            return Ok(new ApiResponse<object>
-            {
-                Success = true,
-                Message = Messages.DeletedSuccessfully,
-                Data = null
-            });
+            return Ok(ApiResponse.Ok(Messages.DeletedSuccessfully));
         }
 
         // ✅ لموظف المصنع: يتحقق من أن المستخدم سائق ويتبع مصنعه
@@ -289,21 +259,11 @@ public class UsersController : ControllerBase
         var driver = await GetDriverForCurrentFactoryAsync(id, caller.FactoryId.Value);
         if (driver == null)
         {
-            return NotFound(new ApiResponse<object>
-            {
-                Success = false,
-                Message = Messages.UserNotFound,
-                Data = null
-            });
+            return NotFound(ApiResponse.Fail(Messages.UserNotFound));
         }
 
         await _userService.DeleteAsync(id);
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.DeletedSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.DeletedSuccessfully));
     }
 
     // ============================================================
@@ -326,12 +286,7 @@ public class UsersController : ControllerBase
         // ✅ الخدمة ستتحقق من الصلاحيات (عند FactoryEmployee تتحقق من FactoryId)
         await _userService.UpdateDriverStatusAsync(id, dto, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = Messages.DriverStatusUpdatedSuccessfully,
-            Data = null
-        });
+        return Ok(ApiResponse.Ok(Messages.DriverStatusUpdatedSuccessfully));
     }
 
     // ============================================================
@@ -350,12 +305,7 @@ public class UsersController : ControllerBase
 
         var isActive = await _userService.ToggleDriverActiveAsync(id, caller.Role, caller.FactoryId);
 
-        return Ok(new ApiResponse<object>
-        {
-            Success = true,
-            Message = isActive ? Messages.DriverActivatedSuccessfully : Messages.DriverDeactivatedSuccessfully,
-            Data = isActive
-        });
+        return Ok(ApiResponse.Ok(isActive, isActive ? Messages.DriverActivatedSuccessfully : Messages.DriverDeactivatedSuccessfully));
     }
 
     // ============================================================

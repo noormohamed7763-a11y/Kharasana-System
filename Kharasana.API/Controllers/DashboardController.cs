@@ -74,12 +74,7 @@ public class DashboardController : ControllerBase
         {
             if (!factoryId.HasValue)
             {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = Messages.FactoryNotFound,
-                    Data = null
-                });
+                return BadRequest(ApiResponse.Fail(Messages.FactoryNotFound));
             }
             targetFactoryId = factoryId.Value;
         }
