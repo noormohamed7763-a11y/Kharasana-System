@@ -1,4 +1,5 @@
-﻿using Kharasana.Application.DTOs.Customer;
+﻿using Kharasana.Application.Common;
+using Kharasana.Application.DTOs.Customer;
 using Kharasana.Application.DTOs.Report;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Domain.Common;
@@ -32,7 +33,7 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .FirstOrDefaultAsync(o => o.OrderId == id);
     }
 
-    public async Task<(IEnumerable<Order> Items, int TotalCount)> GetPagedAsync(
+    public async Task<PagedResult<Order>> GetPagedAsync(
         int? factoryId, int? clientId, int? driverId, OrderStatus? status, string? search, int pageNumber, int pageSize)
     {
         var query = OrdersWithDetails();
@@ -56,13 +57,12 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             var phoneDigits = YemeniPhoneHelper.NormalizeForSearch(term);
             var hasPhoneDigits = !string.IsNullOrEmpty(phoneDigits);
 
-            query = query.Where(o =>
-                o.OrderNumber.Contains(term)
-                || o.Client.FullName
-                    .Replace("أ", "ا").Replace("إ", "ا").Replace("آ", "ا")
-                    .Replace("ى", "ي").Replace("ة", "ه")
-                    .Contains(normalizedNameTerm)
-                || (hasPhoneDigits && o.Client.Phone != null && o.Client.Phone.Contains(phoneDigits)));
+            // تطبيع الاسم يُبنى تعبيرياً بدل تكرار سلسلة Replace يدوياً (انظر ArabicTextNormalization)
+            var clientNameMatch = ArabicTextNormalization.Contains<Order>(o => o.Client.FullName, normalizedNameTerm);
+            var numberOrNameMatch = ArabicTextNormalization.Or(clientNameMatch, o => o.OrderNumber.Contains(term));
+
+            query = query.Where(
+                ArabicTextNormalization.Or(numberOrNameMatch, o => hasPhoneDigits && o.Client.Phone != null && o.Client.Phone.Contains(phoneDigits)));
         }
 
         var totalCount = await query.CountAsync();
@@ -73,10 +73,16 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .Take(pageSize)
             .ToListAsync();
 
-        return (items, totalCount);
+        return new PagedResult<Order>
+        {
+            Items = items,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 
-    public async Task<(IEnumerable<CustomerSummaryDto> Items, int TotalCount)> GetFactoryCustomersAsync(
+    public async Task<PagedResult<CustomerSummaryDto>> GetFactoryCustomersAsync(
         int? factoryId, string? search, int pageNumber, int pageSize)
     {
         var query = OrdersWithDetails();
@@ -108,17 +114,11 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             var phoneDigits = YemeniPhoneHelper.NormalizeForSearch(term);
             var hasPhoneDigits = !string.IsNullOrEmpty(phoneDigits);
 
-            grouped = grouped.Where(c =>
-                c.FullName
-                    .Replace("أ", "ا")
-                    .Replace("إ", "ا")
-                    .Replace("آ", "ا")
-                    .Replace("ى", "ي")
-                    .Replace("ة", "ه")
-                    .Contains(normalizedNameTerm)
-                || (hasPhoneDigits &&
-                    c.Phone != null &&
-                    c.Phone.Contains(phoneDigits)));
+            var customerNameMatch = ArabicTextNormalization.Contains<CustomerSummaryDto>(
+                c => c.FullName, normalizedNameTerm);
+
+            grouped = grouped.Where(
+                ArabicTextNormalization.Or(customerNameMatch, c => hasPhoneDigits && c.Phone != null && c.Phone.Contains(phoneDigits)));
         }
 
         var totalCount = await grouped.CountAsync();
@@ -129,7 +129,13 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .Take(pageSize)
             .ToListAsync();
 
-        return (items, totalCount);
+        return new PagedResult<CustomerSummaryDto>
+        {
+            Items = items,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 
     // ============================================================

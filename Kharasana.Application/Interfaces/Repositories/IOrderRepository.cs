@@ -1,4 +1,5 @@
-﻿using Kharasana.Application.DTOs.Customer;
+﻿using Kharasana.Application.Common;
+using Kharasana.Application.DTOs.Customer;
 using Kharasana.Application.DTOs.Report;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
@@ -9,10 +10,10 @@ public interface IOrderRepository : IGenericRepository<Order>
 {
     Task<Order?> GetByIdWithDetailsAsync(int id);
 
-    Task<(IEnumerable<Order> Items, int TotalCount)> GetPagedAsync(
+    Task<PagedResult<Order>> GetPagedAsync(
         int? factoryId, int? clientId, int? driverId, OrderStatus? status, string? search, int pageNumber, int pageSize);
 
-    Task<(IEnumerable<CustomerSummaryDto> Items, int TotalCount)> GetFactoryCustomersAsync(
+    Task<PagedResult<CustomerSummaryDto>> GetFactoryCustomersAsync(
         int? factoryId, string? search, int pageNumber, int pageSize);
 
     /// <summary>Reports: order count grouped by status.</summary>

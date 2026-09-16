@@ -29,15 +29,15 @@ public class UserService : IUserService
     public async Task<PagedResult<UserDto>> GetPagedAsync(
         UserRole? role, int? factoryId, DriverStatus? driverStatus, PaginationParams pagination)
     {
-        var (items, totalCount) = await _unitOfWork.Users.GetPagedAsync(
+        var result = await _unitOfWork.Users.GetPagedAsync(
             role, factoryId, driverStatus, pagination.Search, pagination.PageNumber, pagination.PageSize);
 
         return new PagedResult<UserDto>
         {
-            Items = items.Select(MapToDto),
-            PageNumber = pagination.PageNumber,
-            PageSize = pagination.PageSize,
-            TotalCount = totalCount
+            Items = result.Items.Select(MapToDto),
+            PageNumber = result.PageNumber,
+            PageSize = result.PageSize,
+            TotalCount = result.TotalCount
         };
     }
 

@@ -38,16 +38,8 @@ public class OrderService : IOrderService
     // ============================================================
     public async Task<PagedResult<CustomerSummaryDto>> GetCustomersAsync(int? factoryId, PaginationParams pagination)
     {
-        var (items, totalCount) = await _unitOfWork.Orders.GetFactoryCustomersAsync(
+        return await _unitOfWork.Orders.GetFactoryCustomersAsync(
             factoryId, pagination.Search, pagination.PageNumber, pagination.PageSize);
-
-        return new PagedResult<CustomerSummaryDto>
-        {
-            Items = items,
-            PageNumber = pagination.PageNumber,
-            PageSize = pagination.PageSize,
-            TotalCount = totalCount
-        };
     }
 
     // ============================================================
@@ -281,17 +273,17 @@ public class OrderService : IOrderService
     public async Task<PagedResult<OrderDto>> GetPagedAsync(
         int? factoryId, int? clientId, int? driverId, UserRole callerRole, PaginationParams pagination)
     {
-        var (items, totalCount) = await _orderRepository.GetPagedAsync(
+        var result = await _orderRepository.GetPagedAsync(
             factoryId, clientId, driverId, pagination.Status, pagination.Search, pagination.PageNumber, pagination.PageSize);
 
         var hidePricing = callerRole == UserRole.Driver;
 
         return new PagedResult<OrderDto>
         {
-            Items = items.Select(o => MapToOrderDto(o, hidePricing)),
-            PageNumber = pagination.PageNumber,
-            PageSize = pagination.PageSize,
-            TotalCount = totalCount
+            Items = result.Items.Select(o => MapToOrderDto(o, hidePricing)),
+            PageNumber = result.PageNumber,
+            PageSize = result.PageSize,
+            TotalCount = result.TotalCount
         };
     }
 
@@ -318,7 +310,7 @@ public class OrderService : IOrderService
 
         // ملاحظة: نستدعي المخزن مباشرة بدل PaginationParams لأن PageSize فيه محدود بـ 100 —
         //     والتقرير يحتاج جميع طلبات السائق دفعة واحدة.
-        var (items, _) = await _orderRepository.GetPagedAsync(
+        var result = await _orderRepository.GetPagedAsync(
             factoryId: callerRole == UserRole.FactoryEmployee ? callerFactoryId : null,
             clientId: null,
             driverId: driverId,
@@ -327,7 +319,7 @@ public class OrderService : IOrderService
             pageNumber: 1,
             pageSize: 100_000);
 
-        return items
+        return result.Items
             .OrderByDescending(o => o.CreatedAt)
             .Select(o => MapToOrderDto(o, hidePricing: false));
     }

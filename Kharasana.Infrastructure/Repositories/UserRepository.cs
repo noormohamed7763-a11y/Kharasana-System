@@ -1,4 +1,5 @@
-﻿using Kharasana.Application.Interfaces.Repositories;
+﻿using Kharasana.Application.Common;
+using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
@@ -60,7 +61,7 @@ public class UserRepository : GenericRepository<User>, IUserRepository
         return await query.AnyAsync();
     }
 
-    public async Task<(IEnumerable<User> Items, int TotalCount)> GetPagedAsync(
+    public async Task<PagedResult<User>> GetPagedAsync(
         UserRole? role, int? factoryId, DriverStatus? driverStatus, string? search,
         int pageNumber, int pageSize)
     {
@@ -82,13 +83,13 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             var phoneDigits = YemeniPhoneHelper.NormalizeForSearch(term);
             var hasPhoneDigits = !string.IsNullOrEmpty(phoneDigits);
 
-            query = query.Where(u =>
-                u.FullName
-                    .Replace("أ", "ا").Replace("إ", "ا").Replace("آ", "ا")
-                    .Replace("ى", "ي").Replace("ة", "ه")
-                    .Contains(normalizedNameTerm)
-                || (u.Email != null && u.Email.Contains(term))
-                || (hasPhoneDigits && u.Phone != null && u.Phone.Contains(phoneDigits)));
+            // تطبيع الاسم يُبنى تعبيرياً (Expression.Call) بدل تكرار سلسلة Replace يدوياً —
+            // الاستدعاء المباشر للدالة الثابتة لا يُترجم داخل Expression Tree في EF.
+            var nameMatch = ArabicTextNormalization.Contains<User>(u => u.FullName, normalizedNameTerm);
+            var emailMatch = ArabicTextNormalization.Or(nameMatch, u => u.Email != null && u.Email.Contains(term));
+
+            query = query.Where(
+                ArabicTextNormalization.Or(emailMatch, u => hasPhoneDigits && u.Phone != null && u.Phone.Contains(phoneDigits)));
         }
 
         var totalCount = await query.CountAsync();
@@ -99,6 +100,12 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             .Take(pageSize)
             .ToListAsync();
 
-        return (items, totalCount);
+        return new PagedResult<User>
+        {
+            Items = items,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 }

@@ -1,4 +1,5 @@
-﻿using Kharasana.Domain.Entities;
+﻿using Kharasana.Application.Common;
+using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 
 namespace Kharasana.Application.Interfaces.Repositories;
@@ -18,7 +19,7 @@ public interface IUserRepository : IGenericRepository<User>
     /// </summary>
     Task<HashSet<int>> GetFactoryIdsWithEmployeeAsync();
 
-    Task<(IEnumerable<User> Items, int TotalCount)> GetPagedAsync(
+    Task<PagedResult<User>> GetPagedAsync(
         UserRole? role, int? factoryId, DriverStatus? driverStatus, string? search,
         int pageNumber, int pageSize);
 }
