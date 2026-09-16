@@ -1,3 +1,4 @@
+using Kharasana.API.Common;
 using Kharasana.API.Middlewares;
 using Kharasana.Application;
 using Kharasana.Application.Common;
@@ -201,6 +202,10 @@ public class Program
 
         // Controllers
         builder.Services.AddControllers();
+
+        // تسجيل الفلتر العام للتحقق كخدمة مفتوحة النوع —
+        // يُحقن IValidator<T> تلقائياً عند الاستخدام عبر [ServiceFilter(typeof(ValidationFilter<T>))]
+        builder.Services.AddScoped(typeof(ValidationFilter<>));
 
         // API Explorer
         builder.Services.AddEndpointsApiExplorer();

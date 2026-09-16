@@ -1,4 +1,5 @@
 using System.Net;
+using FluentValidation;
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 
@@ -56,6 +57,18 @@ public class ExceptionMiddleware
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.Unauthorized);
         }
+        catch (ValidationException ex)
+        {
+            // فحص FluentValidation المُشغَّل عبر ValidationFilter — يُردّ بخطأٍ واحد فقط
+            // (الأول) ليطابق سلوك الخدمة القديم الذي يتوقف عند أول فحص فاشل
+            var firstError = ex.Errors.FirstOrDefault()?.ErrorMessage ?? ex.Message;
+
+            _logger.LogWarning(ex,
+                "Validation failed: {Message} TraceId={TraceId} Path={Path}",
+                firstError, context.TraceIdentifier, context.Request.Path);
+
+            await HandleMessageAsync(context, firstError, HttpStatusCode.BadRequest);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex,
@@ -69,6 +82,15 @@ public class ExceptionMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception, HttpStatusCode statusCode)
     {
+        var message = statusCode == HttpStatusCode.InternalServerError
+            ? Messages.UnexpectedError
+            : exception.Message;
+
+        await HandleMessageAsync(context, message, statusCode);
+    }
+
+    private async Task HandleMessageAsync(HttpContext context, string message, HttpStatusCode statusCode)
+    {
         if (context.Response.HasStarted)
         {
             _logger.LogWarning(
@@ -79,10 +101,6 @@ public class ExceptionMiddleware
 
         context.Response.StatusCode = (int)statusCode;
         context.Response.ContentType = "application/json; charset=utf-8";
-
-        var message = statusCode == HttpStatusCode.InternalServerError
-            ? Messages.UnexpectedError
-            : exception.Message;
 
         var response = new ApiResponse<object>
         {

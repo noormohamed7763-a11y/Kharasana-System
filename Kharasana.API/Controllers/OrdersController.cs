@@ -206,6 +206,7 @@ public class OrdersController : ControllerBase
     /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<UpdateOrderDto>))]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateOrderDto dto)
     {
         var caller = User.GetCallerContext();

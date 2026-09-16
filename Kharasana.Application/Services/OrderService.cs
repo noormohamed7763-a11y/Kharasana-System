@@ -219,20 +219,8 @@ public class OrderService : IOrderService
             order.ConcreteTypeId = dto.ConcreteTypeId;
         }
 
-        if (dto.Quantity <= 0)
-            throw new BusinessException(Messages.QuantityMustBePositive);
-
-        if (dto.Quantity > 1000)
-            throw new BusinessException(Messages.QuantityTooLarge);
-
-        if (dto.PouringDate.HasValue && dto.PouringDate.Value.Date < DateTime.UtcNow.Date)
-            throw new BusinessException(Messages.PouringDateCannotBeInPast);
-
-        if (dto.NeedPump && !dto.FloorNumber.HasValue)
-            throw new BusinessException(Messages.PumpRequiresFloorNumber);
-
-        if (dto.NeedPump && dto.FloorNumber.HasValue && dto.FloorNumber.Value < 0)
-            throw new BusinessException(Messages.FloorNumberMustBeNonNegative);
+        // التحقق من الحقول (الكمية، التاريخ، المضخة والطابق) أصبح مسؤولية
+        // FluentValidation عبر ValidationFilter — مصدر التحقق الوحيد قبل الوصول للخدمة.
 
         order.ProjectName = dto.ProjectName;
         order.ProjectOwnerName = dto.ProjectOwnerName;
