@@ -116,8 +116,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     btnCustom?.addEventListener("click", () => {
 
-        standardSection.style.display = "none";
-        customSection.style.display = "block";
+        standardSection.classList.add("d-none");
+        customSection.classList.remove("d-none");
 
         if (hiddenIsCustom)
             hiddenIsCustom.value = "true";
@@ -132,8 +132,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     btnStandard?.addEventListener("click", () => {
 
-        customSection.style.display = "none";
-        standardSection.style.display = "block";
+        standardSection.classList.remove("d-none");
+        customSection.classList.add("d-none");
 
         if (hiddenIsCustom)
             hiddenIsCustom.value = "false";
@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .getElementById("createConcreteTypeForm")
         ?.addEventListener("submit", () => {
 
-            if (hiddenIsCustom?.value === "true") {
+            if (hiddenIsCustom?.value.toLowerCase() === "true") {
 
                 hiddenName.value = customName.value.trim();
                 hiddenStrength.value = customStrength.value;
@@ -194,10 +194,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initial Load
     // ==========================
 
-    if (hiddenIsCustom)
-        hiddenIsCustom.value = "false";
+    // استعادة حالة النوع عند إعادة عرض الصفحة بعد خطأ تحقق
+    const isCustomOnLoad = hiddenIsCustom?.value.toLowerCase() === "true";
 
-    updateStandardPreview();
+    if (isCustomOnLoad) {
+        standardSection.classList.add("d-none");
+        customSection.classList.remove("d-none");
+        updateCustomPreview();
+    } else {
+        if (hiddenIsCustom)
+            hiddenIsCustom.value = "false";
+        updateStandardPreview();
+    }
+
     updatePrice();
     updateImage();
 
