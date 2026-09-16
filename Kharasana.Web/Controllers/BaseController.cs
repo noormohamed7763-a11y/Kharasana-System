@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Kharasana.Domain.Enums;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Kharasana.Web.Controllers
@@ -22,6 +23,14 @@ namespace Kharasana.Web.Controllers
 
         protected string? Role =>
             HttpContext.Session.GetString("Role");
+
+        /// <summary>
+        /// الدور الحالي قيمةً من UserRole بدل مقارنة النصوص مباشرة —
+        /// يُحلَّل من نص الجلسة عند كل قراءة (الأقل تعديلاً على نقاط التخزين).
+        /// null إذا كانت القيمة غير معروفة (جلسة قديمة أو قيمة غير متوقعة).
+        /// </summary>
+        protected UserRole? RoleValue =>
+            Enum.TryParse(Role, ignoreCase: false, out UserRole role) ? role : null;
 
         protected int? FactoryId =>
             HttpContext.Session.GetInt32("FactoryId");

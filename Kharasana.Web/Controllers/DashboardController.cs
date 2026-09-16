@@ -1,4 +1,5 @@
 ﻿using Kharasana.Application.Common;
+using Kharasana.Domain.Enums;
 using Kharasana.Web.Filters;
 using Kharasana.Web.ViewModels.Dashboard;
 using Kharasana.Web.Services.Interfaces;
@@ -20,11 +21,11 @@ namespace Kharasana.Web.Controllers
         {
             DashboardViewModel? vm = null;
 
-            if (Role == Roles.Admin)
+            if (RoleValue == UserRole.Admin)
             {
                 vm = await _dashboardApiService.GetAdminDashboardAsync();
             }
-            else if (Role == Roles.FactoryEmployee)
+            else if (RoleValue == UserRole.FactoryEmployee)
             {
                 if (FactoryId.HasValue)
                 {

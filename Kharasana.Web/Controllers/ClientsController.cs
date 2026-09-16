@@ -1,4 +1,5 @@
 ﻿using Kharasana.Application.Common;
+using Kharasana.Domain.Enums;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Interfaces;
@@ -27,7 +28,7 @@ public class ClientsController : BaseController
         string? search = null)
     {
         int? factoryId =
-            Role == Roles.FactoryEmployee
+            RoleValue == UserRole.FactoryEmployee
                 ? FactoryId
                 : null;
 

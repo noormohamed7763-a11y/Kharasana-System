@@ -37,7 +37,7 @@ public class UsersController : BaseController
     {
         int? factoryId = null;
 
-        if (Role == Roles.FactoryEmployee)
+        if (RoleValue == UserRole.FactoryEmployee)
         {
             factoryId = FactoryId;
         }

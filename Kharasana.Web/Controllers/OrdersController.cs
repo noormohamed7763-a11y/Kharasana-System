@@ -45,7 +45,7 @@ namespace Kharasana.Web.Controllers
             try
             {
                 int? factoryIdFilter = factoryId;
-                if (Role == Roles.FactoryEmployee)
+                if (RoleValue == UserRole.FactoryEmployee)
                 {
                     factoryIdFilter = FactoryId;
                 }
@@ -72,7 +72,7 @@ namespace Kharasana.Web.Controllers
                     ClosedCount = paged?.Items?.Count(o => o.Status == OrderStatus.Closed) ?? 0
                 };
 
-                if (Role == Roles.Admin)
+                if (RoleValue == UserRole.Admin)
                 {
                     ViewBag.ShowFactoryFilter = true;
                     var factoryResult = await _factoryService.GetAllAsync();
@@ -203,7 +203,7 @@ namespace Kharasana.Web.Controllers
 
                 var vm = new CreatePhoneOrderViewModel();
 
-                if (Role == Roles.FactoryEmployee && FactoryId.HasValue)
+                if (RoleValue == UserRole.FactoryEmployee && FactoryId.HasValue)
                 {
                     vm.FactoryId = FactoryId.Value;
                 }

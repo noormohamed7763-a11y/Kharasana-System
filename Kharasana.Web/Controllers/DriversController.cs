@@ -28,7 +28,7 @@ public class DriversController : BaseController
     {
         try
         {
-            int? factoryId = Role == Roles.FactoryEmployee ? FactoryId : null;
+            int? factoryId = RoleValue == UserRole.FactoryEmployee ? FactoryId : null;
 
             var pagedDrivers = await _driverApiService.GetDriversAsync(pageNumber, pageSize, search, factoryId);
 
@@ -81,7 +81,7 @@ public class DriversController : BaseController
     public async Task<IActionResult> Details(int id)
     {
         // ✅ التحقق من الصلاحية
-        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
+        if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             TempData[TempDataError] = "ليس لديك صلاحية لعرض بيانات السائقين.";
             return RedirectToAction(nameof(Index));
@@ -125,7 +125,7 @@ public class DriversController : BaseController
     [HttpGet]
     public IActionResult Create()
     {
-        if (Role != Roles.FactoryEmployee || !FactoryId.HasValue)
+        if (RoleValue != UserRole.FactoryEmployee || !FactoryId.HasValue)
         {
             TempData[TempDataError] = "إضافة السائقين متاحة حاليًا لموظف المصنع فقط.";
             return RedirectToAction(nameof(Index));
@@ -146,7 +146,7 @@ public class DriversController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateDriverViewModel model)
     {
-        if (Role != Roles.FactoryEmployee || !FactoryId.HasValue)
+        if (RoleValue != UserRole.FactoryEmployee || !FactoryId.HasValue)
         {
             TempData[TempDataError] = "إضافة السائقين متاحة حاليًا لموظف المصنع فقط.";
             return RedirectToAction(nameof(Index));
@@ -191,7 +191,7 @@ public class DriversController : BaseController
     public async Task<IActionResult> Edit(int id)
     {
         // ✅ التحقق من الصلاحية
-        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
+        if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             TempData[TempDataError] = "ليس لديك صلاحية لتعديل السائقين.";
             return RedirectToAction(nameof(Index));
@@ -241,7 +241,7 @@ public class DriversController : BaseController
             return BadRequest();
 
         // ✅ التحقق من الصلاحية
-        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
+        if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             TempData[TempDataError] = "ليس لديك صلاحية لتعديل السائقين.";
             return RedirectToAction(nameof(Index));
@@ -296,7 +296,7 @@ public class DriversController : BaseController
     public async Task<IActionResult> Delete(int id)
     {
         // ✅ التحقق من الصلاحية
-        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
+        if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             TempData[TempDataError] = "ليس لديك صلاحية لحذف السائقين.";
             return RedirectToAction(nameof(Index));
@@ -350,7 +350,7 @@ public class DriversController : BaseController
     public async Task<IActionResult> UpdateStatus(int id, DriverStatus driverStatus)
     {
         // ✅ التحقق من الصلاحية
-        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
+        if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
@@ -408,7 +408,7 @@ public class DriversController : BaseController
     public async Task<IActionResult> ToggleActive(int id)
     {
         // ✅ التحقق من الصلاحية
-        if (Role != Roles.Admin && Role != Roles.FactoryEmployee)
+        if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
