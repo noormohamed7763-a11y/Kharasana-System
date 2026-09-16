@@ -153,7 +153,7 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .GroupBy(o => o.Status)
             .Select(g => new OrderStatusCountDto
             {
-                Status = (int)g.Key,
+                Status = g.Key,
                 Count = g.Count()
             })
             .OrderBy(x => x.Status)
@@ -161,7 +161,7 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
 
         // Set Arabic names (EF Core can't translate static methods)
         foreach (var item in grouped)
-            item.StatusName = OrderStatusHelper.GetArabicName((OrderStatus)item.Status);
+            item.StatusName = OrderStatusHelper.GetArabicName(item.Status);
 
         return grouped;
     }

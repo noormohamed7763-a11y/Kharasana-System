@@ -1,4 +1,4 @@
-﻿namespace Kharasana.Application.Common;
+namespace Kharasana.Application.Common;
 
 public static class Messages
 {
@@ -10,7 +10,6 @@ public static class Messages
     public const string UpdatedSuccessfully = "تم تحديث البيانات بنجاح.";
     public const string DeletedSuccessfully = "تم حذف البيانات بنجاح.";
     public const string DriverAssignedSuccessfully = "تم تعيين السائق بنجاح.";
-    public const string OrderStatusUpdatedSuccessfully = "تم تحديث حالة الطلب بنجاح.";
     public const string OrderCreatedSuccess = "تم إنشاء الطلب بنجاح.";
 
     public const string UsersRetrievedSuccessfully = "تم جلب المستخدمين بنجاح.";

@@ -1,4 +1,5 @@
 @model Kharasana.Web.ViewModels.Reports.ReportsViewModel
+@using Kharasana.Domain.Enums
 @using Kharasana.Web.Models.Components
 
 @{
@@ -11,16 +12,16 @@
     var concreteJson = System.Text.Json.JsonSerializer.Serialize(
         Model.OrdersByConcreteType.Select(c => new { label = c.ConcreteTypeName, count = c.Count, quantity = c.TotalQuantity }));
 
-    string StatusSuffix(int status) => status switch
+    string StatusSuffix(OrderStatus status) => status switch
     {
-        0 => "new",
-        1 => "pending",
-        2 => "approved",
-        3 => "rejected",
-        4 => "cancelled",
-        5 => "ontheway",
-        6 => "delivered",
-        7 => "closed",
+        OrderStatus.New => "new",
+        OrderStatus.Pending => "pending",
+        OrderStatus.Approved => "approved",
+        OrderStatus.Rejected => "rejected",
+        OrderStatus.Cancelled => "cancelled",
+        OrderStatus.OnTheWay => "ontheway",
+        OrderStatus.Delivered => "delivered",
+        OrderStatus.Closed => "closed",
         _ => "new"
     };
 

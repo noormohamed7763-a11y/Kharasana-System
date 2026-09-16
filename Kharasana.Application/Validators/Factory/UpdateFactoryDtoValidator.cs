@@ -1,7 +1,6 @@
 using FluentValidation;
-using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Factory;
-using Kharasana.Domain.Common;
+using Kharasana.Application.Validators.Common;
 
 namespace Kharasana.Application.Validators.Factory;
 
@@ -14,13 +13,9 @@ public class UpdateFactoryDtoValidator : AbstractValidator<UpdateFactoryDto>
         RuleFor(x => x.Address).NotEmpty().WithMessage("العنوان مطلوب.").MaximumLength(300);
         RuleFor(x => x.OwnerName).MaximumLength(200);
 
-        RuleFor(x => x.Phone)
-            .Must(phone => string.IsNullOrWhiteSpace(phone) || YemeniPhoneHelper.IsValid(phone))
-            .WithMessage(Messages.InvalidYemeniPhone);
+        RuleFor(x => x.Phone).YemeniPhone();
 
-        RuleFor(x => x.WhatsApp)
-            .Must(whatsApp => string.IsNullOrWhiteSpace(whatsApp) || YemeniPhoneHelper.IsValid(whatsApp))
-            .WithMessage(Messages.InvalidWhatsAppNumber);
+        RuleFor(x => x.WhatsApp).YemeniWhatsApp();
 
         RuleFor(x => x.Email)
             .EmailAddress()

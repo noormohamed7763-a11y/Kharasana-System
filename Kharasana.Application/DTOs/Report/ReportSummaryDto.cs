@@ -1,3 +1,5 @@
+using Kharasana.Domain.Enums;
+
 namespace Kharasana.Application.DTOs.Report;
 
 public sealed class ReportSummaryDto
@@ -9,7 +11,7 @@ public sealed class ReportSummaryDto
 
 public sealed class OrderStatusCountDto
 {
-    public int Status { get; set; }
+    public OrderStatus Status { get; set; }
     public string StatusName { get; set; } = string.Empty;
     public int Count { get; set; }
 }

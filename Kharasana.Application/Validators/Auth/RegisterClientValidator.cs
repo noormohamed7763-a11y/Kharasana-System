@@ -1,7 +1,6 @@
-﻿using FluentValidation;
-using Kharasana.Application.Common;
+using FluentValidation;
 using Kharasana.Application.DTOs.Auth;
-using Kharasana.Domain.Common;
+using Kharasana.Application.Validators.Common;
 
 namespace Kharasana.Application.Validators.Auth;
 
@@ -9,30 +8,20 @@ public class RegisterClientValidator : AbstractValidator<RegisterUserDto>
 {
     public RegisterClientValidator()
     {
-        RuleFor(x => x.FullName)
-            .NotEmpty().WithMessage("الاسم الكامل مطلوب.")
-            .MaximumLength(200).WithMessage(Messages.NameMaxLength);
+        RuleFor(x => x.FullName).FullName();
 
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("البريد الإلكتروني مطلوب.")
             .EmailAddress().WithMessage("البريد الإلكتروني غير صالح.");
 
-        RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("كلمة المرور مطلوبة.")
-            .MinimumLength(6).WithMessage(Messages.PasswordMinLength);
+        RuleFor(x => x.Password).Password();
 
         RuleFor(x => x.ConfirmPassword)
             .NotEmpty().WithMessage("تأكيد كلمة المرور مطلوب.")
             .Equal(x => x.Password).WithMessage("كلمتا المرور غير متطابقتين.");
 
-        RuleFor(x => x.Phone)
-            .Must(YemeniPhoneHelper.IsValid)
-            .When(x => !string.IsNullOrWhiteSpace(x.Phone))
-            .WithMessage(Messages.InvalidYemeniPhone);
+        RuleFor(x => x.Phone).YemeniPhone();
 
-        RuleFor(x => x.WhatsApp)
-            .Must(YemeniPhoneHelper.IsValid)
-            .When(x => !string.IsNullOrWhiteSpace(x.WhatsApp))
-            .WithMessage(Messages.InvalidWhatsAppNumber);
+        RuleFor(x => x.WhatsApp).YemeniWhatsApp();
     }
 }
