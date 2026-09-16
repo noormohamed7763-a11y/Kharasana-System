@@ -12,6 +12,9 @@ namespace Kharasana.Tests.TestData;
 /// </summary>
 internal static class TestDataSeeder
 {
+    /// <summary>كلمة المرور الموحدة لجميع بيانات الاختبار — مشفرة في BCrypt عند إنشاء المستخدمين.</summary>
+    public const string TestPassword = "Test@1234";
+
     public static KharasanaDbContext CreateContext(string? dbName = null)
     {
         var options = new DbContextOptionsBuilder<KharasanaDbContext>()
@@ -51,7 +54,7 @@ internal static class TestDataSeeder
             // نخزّن الرقم مُطبيعًا (كما يخزّنه RegisterAsync) حتى يتطابق مع عمليات البحث في AuthService
             Phone = YemeniPhoneHelper.Normalize(phone ?? $"77{userId:D7}"),
             Email = email ?? $"user{userId}@test.local",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Test@1234"),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(TestPassword),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -66,7 +69,7 @@ internal static class TestDataSeeder
             IsActive = isActive,
             Phone = YemeniPhoneHelper.Normalize($"77{userId:D7}"),
             DriverStatus = status,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Test@1234"),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(TestPassword),
             CreatedAt = DateTime.UtcNow
         };
 

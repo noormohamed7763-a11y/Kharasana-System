@@ -42,6 +42,9 @@ public class AuthServiceTests : IDisposable
         _authService = new AuthService(unitOfWork, passwordHasher, tokenService);
     }
 
+    private static LoginRequestDto MakeLogin(string emailOrPhone, string? password = null)
+        => new() { EmailOrPhone = emailOrPhone, Password = password ?? TestDataSeeder.TestPassword };
+
     // ─────────────────────────────────────────────
     // ①  مصنع مؤرشف (IsDeleted) يمنع الدخول
     // ─────────────────────────────────────────────
@@ -57,11 +60,7 @@ public class AuthServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var act = () => _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = employee.Email!,
-            Password = "Test@1234"
-        });
+        var act = () => _authService.LoginAsync(MakeLogin(employee.Email!));
 
         // Assert
         await act.Should().ThrowAsync<BusinessException>()
@@ -79,11 +78,7 @@ public class AuthServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var act = () => _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = driver.Phone!,
-            Password = "Test@1234"
-        });
+        var act = () => _authService.LoginAsync(MakeLogin(driver.Phone!));
 
         // Assert
         await act.Should().ThrowAsync<BusinessException>()
@@ -105,11 +100,7 @@ public class AuthServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = employee.Email!,
-            Password = "Test@1234"
-        });
+        var result = await _authService.LoginAsync(MakeLogin(employee.Email!));
 
         // Assert — نجاح الدخول + تحذير موجود + IsActive = false
         result.Success.Should().BeTrue();
@@ -119,7 +110,7 @@ public class AuthServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Login_ActiveFactory_Employee_HasNoNotification()
+    public async Task Login_ActiveFactory_Employee_SucceedsWithoutNotification()
     {
         // Arrange
         var factory = TestDataSeeder.CreateFactory(3, "نشيطة", isActive: true);
@@ -129,11 +120,7 @@ public class AuthServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = employee.Email!,
-            Password = "Test@1234"
-        });
+        var result = await _authService.LoginAsync(MakeLogin(employee.Email!));
 
         // Assert
         result.Success.Should().BeTrue();
@@ -154,11 +141,7 @@ public class AuthServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var act = () => _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = driver.Phone!,
-            Password = "Test@1234"
-        });
+        var act = () => _authService.LoginAsync(MakeLogin(driver.Phone!));
 
         // Assert
         await act.Should().ThrowAsync<BusinessException>()
@@ -174,11 +157,7 @@ public class AuthServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var act = () => _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = client.Phone!,
-            Password = "Test@1234"
-        });
+        var act = () => _authService.LoginAsync(MakeLogin(client.Phone!));
 
         // Assert
         await act.Should().ThrowAsync<BusinessException>()
@@ -198,11 +177,7 @@ public class AuthServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act — محاولة خاطئة واحدة
-        await Assert.ThrowsAsync<BusinessException>(() => _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = user.Phone!,
-            Password = " WRONG "
-        }));
+        await Assert.ThrowsAsync<BusinessException>(() => _authService.LoginAsync(MakeLogin(user.Phone!, " WRONG ")));
 
         // Assert
         var updated = await _context.Users.FindAsync(60);
@@ -214,17 +189,13 @@ public class AuthServiceTests : IDisposable
     public async Task Login_FailedAttempts_ReachesLockout()
     {
         // Arrange — مستخدم مع 4 محاولات فاشلة سابقة
-        var user = TestDataSeeder.CreateUser(61, "濒临 قفل", UserRole.Client, phone: "770000061");
+        var user = TestDataSeeder.CreateUser(61, "على وشك القفل", UserRole.Client, phone: "770000061");
         user.FailedLoginAttempts = 4;
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
         // Act — المحاولة الخامسة الفاشلة تُفعّل القفل
-        await Assert.ThrowsAsync<BusinessException>(() => _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = user.Phone!,
-            Password = " WRONG "
-        }));
+        await Assert.ThrowsAsync<BusinessException>(() => _authService.LoginAsync(MakeLogin(user.Phone!, " WRONG ")));
 
         // Assert
         var updated = await _context.Users.FindAsync(61);
@@ -243,12 +214,8 @@ public class AuthServiceTests : IDisposable
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        // Act
-        var act = () => _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = user.Phone!,
-            Password = "Test@1234" // كلمة المرور صحيحة لكن الحساب مقفل
-        });
+        // Act — كلمة المرور صحيحة لكن الحساب مقفل
+        var act = () => _authService.LoginAsync(MakeLogin(user.Phone!));
 
         // Assert
         await act.Should().ThrowAsync<BusinessException>()
@@ -263,17 +230,13 @@ public class AuthServiceTests : IDisposable
     public async Task Login_Success_ResetsFailedAttempts()
     {
         // Arrange — مستخدم مع محاولات فاشلة سابقة
-        var user = TestDataSeeder.CreateUser(70, "يعود لل Leben", UserRole.Client, phone: "770000070");
+        var user = TestDataSeeder.CreateUser(70, "يعود للعمل", UserRole.Client, phone: "770000070");
         user.FailedLoginAttempts = 3;
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
         // Act
-        await _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = user.Phone!,
-            Password = "Test@1234"
-        });
+        await _authService.LoginAsync(MakeLogin(user.Phone!));
 
         // Assert
         var updated = await _context.Users.FindAsync(70);
@@ -286,11 +249,7 @@ public class AuthServiceTests : IDisposable
     public async Task Login_WrongPhone_ThrowsInvalidCredentials()
     {
         // Act
-        var act = () => _authService.LoginAsync(new LoginRequestDto
-        {
-            EmailOrPhone = "050000000",
-            Password = "any"
-        });
+        var act = () => _authService.LoginAsync(MakeLogin("050000000", "any"));
 
         // Assert
         await act.Should().ThrowAsync<BusinessException>()
