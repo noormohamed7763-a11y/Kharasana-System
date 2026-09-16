@@ -65,25 +65,9 @@ public class UserService : IUserService
                 throw new ConflictException(Messages.EmailAlreadyExists);
         }
 
-        string? normalizedPhone = null;
-        if (!string.IsNullOrWhiteSpace(dto.Phone))
-        {
-            normalizedPhone = YemeniPhoneHelper.Normalize(dto.Phone);
-            if (normalizedPhone == null)
-                throw new BusinessException(Messages.InvalidYemeniPhone);
-
-            var phoneExists = await _unitOfWork.Users.PhoneExistsAsync(normalizedPhone);
-            if (phoneExists)
-                throw new ConflictException(Messages.PhoneAlreadyExists);
-        }
-
-        string? normalizedWhatsApp = null;
-        if (!string.IsNullOrWhiteSpace(dto.WhatsApp))
-        {
-            normalizedWhatsApp = YemeniPhoneHelper.Normalize(dto.WhatsApp);
-            if (normalizedWhatsApp == null)
-                throw new BusinessException(Messages.InvalidYemeniPhone);
-        }
+        var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
+            _unitOfWork, dto.Phone);
+        var normalizedWhatsApp = PhoneValidationHelper.NormalizeOrThrow(dto.WhatsApp);
 
         await ValidateUserRoleAsync(
             dto.Role,
@@ -122,28 +106,9 @@ public class UserService : IUserService
         if (user == null)
             throw new NotFoundException(Messages.UserNotFound);
 
-        string? normalizedPhone = user.Phone;
-        if (!string.IsNullOrWhiteSpace(dto.Phone))
-        {
-            normalizedPhone = YemeniPhoneHelper.Normalize(dto.Phone);
-            if (normalizedPhone == null)
-                throw new BusinessException(Messages.InvalidYemeniPhone);
-
-            if (normalizedPhone != user.Phone)
-            {
-                var phoneExists = await _unitOfWork.Users.PhoneExistsAsync(normalizedPhone);
-                if (phoneExists)
-                    throw new ConflictException(Messages.PhoneAlreadyExists);
-            }
-        }
-
-        string? normalizedWhatsApp = user.WhatsApp;
-        if (!string.IsNullOrWhiteSpace(dto.WhatsApp))
-        {
-            normalizedWhatsApp = YemeniPhoneHelper.Normalize(dto.WhatsApp);
-            if (normalizedWhatsApp == null)
-                throw new BusinessException(Messages.InvalidYemeniPhone);
-        }
+        var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
+            _unitOfWork, dto.Phone, currentPhone: user.Phone);
+        var normalizedWhatsApp = PhoneValidationHelper.NormalizeOrThrow(dto.WhatsApp) ?? user.WhatsApp;
 
         user.FullName = dto.FullName;
         user.Phone = normalizedPhone;
@@ -177,28 +142,9 @@ public class UserService : IUserService
             dto.LicenseNumber,
             id);
 
-        string? normalizedPhone = user.Phone;
-        if (!string.IsNullOrWhiteSpace(dto.Phone))
-        {
-            normalizedPhone = YemeniPhoneHelper.Normalize(dto.Phone);
-            if (normalizedPhone == null)
-                throw new BusinessException(Messages.InvalidYemeniPhone);
-
-            if (normalizedPhone != user.Phone)
-            {
-                var phoneExists = await _unitOfWork.Users.PhoneExistsAsync(normalizedPhone);
-                if (phoneExists)
-                    throw new ConflictException(Messages.PhoneAlreadyExists);
-            }
-        }
-
-        string? normalizedWhatsApp = user.WhatsApp;
-        if (!string.IsNullOrWhiteSpace(dto.WhatsApp))
-        {
-            normalizedWhatsApp = YemeniPhoneHelper.Normalize(dto.WhatsApp);
-            if (normalizedWhatsApp == null)
-                throw new BusinessException(Messages.InvalidYemeniPhone);
-        }
+        var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
+            _unitOfWork, dto.Phone, currentPhone: user.Phone);
+        var normalizedWhatsApp = PhoneValidationHelper.NormalizeOrThrow(dto.WhatsApp) ?? user.WhatsApp;
 
         user.FullName = dto.FullName;
         user.Phone = normalizedPhone;

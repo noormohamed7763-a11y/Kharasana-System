@@ -42,25 +42,9 @@ public class AuthService : IAuthService
                 throw new ConflictException(Messages.EmailAlreadyExists);
         }
 
-        string? normalizedPhone = null;
-        if (!string.IsNullOrWhiteSpace(request.Phone))
-        {
-            normalizedPhone = YemeniPhoneHelper.Normalize(request.Phone);
-            if (normalizedPhone == null)
-                throw new BusinessException(Messages.InvalidYemeniPhone);
-
-            var phoneExists = await _unitOfWork.Users.PhoneExistsAsync(normalizedPhone);
-            if (phoneExists)
-                throw new ConflictException(Messages.PhoneAlreadyExists);
-        }
-
-        string? normalizedWhatsApp = null;
-        if (!string.IsNullOrWhiteSpace(request.WhatsApp))
-        {
-            normalizedWhatsApp = YemeniPhoneHelper.Normalize(request.WhatsApp);
-            if (normalizedWhatsApp == null)
-                throw new BusinessException(Messages.InvalidYemeniPhone);
-        }
+        var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
+            _unitOfWork, request.Phone);
+        var normalizedWhatsApp = PhoneValidationHelper.NormalizeOrThrow(request.WhatsApp);
 
         var user = new User
         {
