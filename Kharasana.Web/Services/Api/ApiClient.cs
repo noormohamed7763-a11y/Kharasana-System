@@ -212,14 +212,21 @@ public class ApiClient
         throw new ApiServiceException(statusCode, userMessage, traceId: CurrentTraceId, innerException: ex);
     }
 
-    public async Task<T?> GetAsync<T>(string url, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// ينفّذ طلب HTTP عبر المفوض send ويوحّد معالجة الأخطاء لكل الأفعال
+    /// (GET/POST/PUT/DELETE/ملفات): يعيد طرح ApiServiceException كما هي،
+    /// ويحوّل انتهاء المهلة والإلغاء وأخطاء النقل إلى رسائل مستخدم عربية.
+    /// </summary>
+    private async Task<T?> SendAsync<T>(
+        string method,
+        string url,
+        Func<Task<HttpResponseMessage>> send,
+        CancellationToken cancellationToken)
     {
-        AddAuthorizationHeader();
-
         try
         {
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
-            return await HandleResponseAsync<T>(response, "GET", url);
+            using var response = await send();
+            return await HandleResponseAsync<T>(response, method, url);
         }
         catch (ApiServiceException) { throw; }
         catch (OperationCanceledException ex)
@@ -227,7 +234,7 @@ public class ApiClient
             if (cancellationToken.IsCancellationRequested)
                 throw; // إلغاء خارجي (غادر المستخدم الصفحة) — لا حاجة لرسالة
 
-            _logger.LogWarning("GET {Url} timed out. TraceId={TraceId}", url, CurrentTraceId);
+            _logger.LogWarning("{Method} {Url} timed out. TraceId={TraceId}", method, url, CurrentTraceId);
             throw new ApiServiceException(
                 HttpStatusCode.GatewayTimeout,
                 "استغرق الاتصال بالنظام وقتاً طويلاً. حاول مرة أخرى.",
@@ -236,10 +243,21 @@ public class ApiClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while GET {Url}. TraceId={TraceId}", url, CurrentTraceId);
-            ThrowTransportException("GET", url, ex);
+            _logger.LogError(ex, "Exception while {Method} {Url}. TraceId={TraceId}", method, url, CurrentTraceId);
+            ThrowTransportException(method, url, ex);
             return default;
         }
+    }
+
+    public async Task<T?> GetAsync<T>(string url, CancellationToken cancellationToken = default)
+    {
+        AddAuthorizationHeader();
+
+        return await SendAsync<T>(
+            "GET",
+            url,
+            () => _httpClient.GetAsync(url, cancellationToken),
+            cancellationToken);
     }
 
     public async Task<T?> PostAsync<T>(string url, object data, CancellationToken cancellationToken = default)
@@ -253,30 +271,11 @@ public class ApiClient
 
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        try
-        {
-            using var response = await _httpClient.PostAsync(url, content, cancellationToken);
-            return await HandleResponseAsync<T>(response, "POST", url);
-        }
-        catch (ApiServiceException) { throw; }
-        catch (OperationCanceledException ex)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                throw;
-
-            _logger.LogWarning("POST {Url} timed out. TraceId={TraceId}", url, CurrentTraceId);
-            throw new ApiServiceException(
-                HttpStatusCode.GatewayTimeout,
-                "استغرق الاتصال بالنظام وقتاً طويلاً. حاول مرة أخرى.",
-                traceId: CurrentTraceId,
-                innerException: ex);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while POST {Url}. TraceId={TraceId}", url, CurrentTraceId);
-            ThrowTransportException("POST", url, ex);
-            return default;
-        }
+        return await SendAsync<T>(
+            "POST",
+            url,
+            () => _httpClient.PostAsync(url, content, cancellationToken),
+            cancellationToken);
     }
 
     public async Task<T?> PutAsync<T>(string url, object data, CancellationToken cancellationToken = default)
@@ -290,30 +289,11 @@ public class ApiClient
 
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        try
-        {
-            using var response = await _httpClient.PutAsync(url, content, cancellationToken);
-            return await HandleResponseAsync<T>(response, "PUT", url);
-        }
-        catch (ApiServiceException) { throw; }
-        catch (OperationCanceledException ex)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                throw;
-
-            _logger.LogWarning("PUT {Url} timed out. TraceId={TraceId}", url, CurrentTraceId);
-            throw new ApiServiceException(
-                HttpStatusCode.GatewayTimeout,
-                "استغرق الاتصال بالنظام وقتاً طويلاً. حاول مرة أخرى.",
-                traceId: CurrentTraceId,
-                innerException: ex);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while PUT {Url}. TraceId={TraceId}", url, CurrentTraceId);
-            ThrowTransportException("PUT", url, ex);
-            return default;
-        }
+        return await SendAsync<T>(
+            "PUT",
+            url,
+            () => _httpClient.PutAsync(url, content, cancellationToken),
+            cancellationToken);
     }
 
     /// <summary>
@@ -327,95 +307,38 @@ public class ApiClient
 
         using var content = new StringContent("{ }", Encoding.UTF8, "application/json");
 
-        try
-        {
-            using var response = await _httpClient.PutAsync(url, content, cancellationToken);
-            return await HandleResponseAsync<T>(response, "PUT", url);
-        }
-        catch (ApiServiceException) { throw; }
-        catch (OperationCanceledException ex)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                throw;
-
-            _logger.LogWarning("PUT {Url} timed out. TraceId={TraceId}", url, CurrentTraceId);
-            throw new ApiServiceException(
-                HttpStatusCode.GatewayTimeout,
-                "استغرق الاتصال بالنظام وقتاً طويلاً. حاول مرة أخرى.",
-                traceId: CurrentTraceId,
-                innerException: ex);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while PUT {Url}. TraceId={TraceId}", url, CurrentTraceId);
-            ThrowTransportException("PUT", url, ex);
-            return default;
-        }
+        return await SendAsync<T>(
+            "PUT",
+            url,
+            () => _httpClient.PutAsync(url, content, cancellationToken),
+            cancellationToken);
     }
 
     public async Task<T?> DeleteAsync<T>(string url, CancellationToken cancellationToken = default)
     {
         AddAuthorizationHeader();
 
-        try
-        {
-            using var response = await _httpClient.DeleteAsync(url, cancellationToken);
-            return await HandleResponseAsync<T>(response, "DELETE", url);
-        }
-        catch (ApiServiceException) { throw; }
-        catch (OperationCanceledException ex)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                throw;
-
-            _logger.LogWarning("DELETE {Url} timed out. TraceId={TraceId}", url, CurrentTraceId);
-            throw new ApiServiceException(
-                HttpStatusCode.GatewayTimeout,
-                "استغرق الاتصال بالنظام وقتاً طويلاً. حاول مرة أخرى.",
-                traceId: CurrentTraceId,
-                innerException: ex);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while DELETE {Url}. TraceId={TraceId}", url, CurrentTraceId);
-            ThrowTransportException("DELETE", url, ex);
-            return default;
-        }
+        return await SendAsync<T>(
+            "DELETE",
+            url,
+            () => _httpClient.DeleteAsync(url, cancellationToken),
+            cancellationToken);
     }
 
     public async Task<T?> PostFileAsync<T>(string url, Stream fileStream, string fileName, string parameterName = "file", CancellationToken cancellationToken = default)
     {
         AddAuthorizationHeader();
 
-        try
-        {
-            using var content = new MultipartFormDataContent();
-            using var streamContent = new StreamContent(fileStream);
-            content.Add(streamContent, parameterName, fileName);
+        using var content = new MultipartFormDataContent();
+        using var streamContent = new StreamContent(fileStream);
+        content.Add(streamContent, parameterName, fileName);
 
-            _logger.LogInformation("📤 Sending Multipart POST to {Url} with file {FileName}", url, fileName);
+        _logger.LogInformation("📤 Sending Multipart POST to {Url} with file {FileName}", url, fileName);
 
-            using var response = await _httpClient.PostAsync(url, content, cancellationToken);
-            return await HandleResponseAsync<T>(response, "POST-FILE", url);
-        }
-        catch (ApiServiceException) { throw; }
-        catch (OperationCanceledException ex)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                throw;
-
-            _logger.LogWarning("Multipart POST {Url} timed out. TraceId={TraceId}", url, CurrentTraceId);
-            throw new ApiServiceException(
-                HttpStatusCode.GatewayTimeout,
-                "استغرق الاتصال بالنظام وقتاً طويلاً. حاول مرة أخرى.",
-                traceId: CurrentTraceId,
-                innerException: ex);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while Multipart POST {Url}. TraceId={TraceId}", url, CurrentTraceId);
-            ThrowTransportException("POST-FILE", url, ex);
-            return default;
-        }
+        return await SendAsync<T>(
+            "POST-FILE",
+            url,
+            () => _httpClient.PostAsync(url, content, cancellationToken),
+            cancellationToken);
     }
 }
