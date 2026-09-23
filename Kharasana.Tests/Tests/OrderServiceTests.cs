@@ -1,12 +1,16 @@
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Order;
+using Kharasana.Application.Interfaces;
+using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Application.Services;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
+using Kharasana.Infrastructure.Repositories;
 using Kharasana.Tests.TestData;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Kharasana.Tests.Tests;
@@ -33,8 +37,7 @@ public class OrderServiceTests : IDisposable
         // نحتاج IPasswordHasher لـ CreatePhoneOrder — نستخدم BCrypt الحقيقي
         var passwordHasher = new PasswordHasher();
         _orderService = new OrderService(
-            _unitOfWork.Orders, _unitOfWork.ConcreteTypes,
-            _unitOfWork.Users, passwordHasher, _unitOfWork);
+            passwordHasher, _unitOfWork);
     }
 
     // ─────────────────────────────────────────────
@@ -107,17 +110,17 @@ public class OrderServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task SetPrice_NewOrder_ChangesStatusToPending()
+    public async Task SetPrice_PendingOrder_Succeeds_AndUpdatesPrice()
     {
-        // Arrange
+        // Arrange — OrderStatus.New لم تعد حالة إنشاء؛ الطلبات تُنشأ كـ Pending
         await SeedOrderEnvironmentAsync();
-        var order = CreateAndSeedOrder(status: OrderStatus.New);
+        var order = CreateAndSeedOrder(status: OrderStatus.Pending);
 
-        // Act — تحديد السعر على طلب جديد يحوّله إلى Pending تلقائياً
+        // Act
         await _orderService.SetPriceAsync(
             order.OrderId, unitPrice: 150m, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
 
-        // Assert
+        // Assert — السعر محدّث والحالة تبقى Pending (لم نعد نستخدم New→Pending)
         var updated = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
         updated!.Status.Should().Be(OrderStatus.Pending);
         updated.UnitPrice.Should().Be(150m);
@@ -564,5 +567,131 @@ public class OrderServiceTests : IDisposable
 
         // Assert
         orders.Should().BeEmpty();
+    }
+
+    // ─────────────────────────────────────────────
+    // ⑧  OrderStatus.New — لم تعد حالة إنشاء؛ الطلبات تبدأ بـ Pending
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateOrder_PendingOrder_Succeeds()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(status: OrderStatus.Pending);
+
+        // Act
+        var result = await _orderService.UpdateOrderAsync(
+            order.OrderId, new UpdateOrderDto
+            {
+                ConcreteTypeId = order.ConcreteTypeId,
+                Quantity = 75m,
+                SlabType = order.SlabType,
+                TransportMethod = order.TransportMethod,
+                FloorNumber = 2,
+                PouringDate = DateTime.UtcNow.AddDays(1)
+            },
+            callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Quantity.Should().Be(75m);
+    }
+
+    [Fact]
+    public async Task UpdateOrder_ApprovedOrder_Throws()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(status: OrderStatus.Approved, unitPrice: 150m);
+
+        // Act
+        var act = () => _orderService.UpdateOrderAsync(
+            order.OrderId, new UpdateOrderDto
+            {
+                ConcreteTypeId = order.ConcreteTypeId,
+                Quantity = 75m
+            },
+            callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage("*يُسمح بالتعديل فقط للطلبات قيد الانتظار.*");
+    }
+
+    [Fact]
+    public async Task RejectOrder_PendingOrder_Succeeds()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(status: OrderStatus.Pending);
+
+        // Act
+        var result = await _orderService.RejectOrderAsync(
+            order.OrderId, "سبب الرفض",
+            callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert
+        result.Should().BeTrue();
+        var updated = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
+        updated!.Status.Should().Be(OrderStatus.Rejected);
+    }
+
+    [Fact]
+    public async Task RejectOrder_ApprovedOrder_Throws()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(status: OrderStatus.Approved, unitPrice: 150m);
+
+        // Act — طلب معتمد لا يمكن رفضه
+        var act = () => _orderService.RejectOrderAsync(
+            order.OrderId, "سبب",
+            callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.OrderCannotBeRejectedInStatus);
+    }
+
+    // ─────────────────────────────────────────────
+    // ⑨  معالجة تعارض التواريع (Concurrency)
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task ApproveOrder_ConcurrencyConflict_ThrowsConflictException()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(status: OrderStatus.Pending, unitPrice: 150m);
+
+        // استخدام UnitOfWork الذي يرمي DbUpdateConcurrencyException لمحاكاة التعارض
+        var concurrencyUoW = new ConcurrencyTestingUnitOfWork(_context);
+        var orderService = new OrderService(
+            new PasswordHasher(), concurrencyUoW);
+
+        // Act — محاكاة تعارض RowVersion عند حفظ الطلب
+        var act = () => orderService.ApproveOrderAsync(
+            order.OrderId, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert — يُحوّل DbUpdateConcurrencyException إلى ConflictException (HTTP 409)
+        await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage(Messages.ConcurrencyConflict);
+    }
+
+    /// <summary>
+    /// UnitOfWork اختباري يرمي DbUpdateConcurrencyException عند الحفظ الفعلي
+    /// — يُستخدم لاختبار معالجة تعارض التواريع في UnitOfWork وتحويلها إلى ConflictException.
+    /// </summary>
+    private class ConcurrencyTestingUnitOfWork : UnitOfWork
+    {
+        public ConcurrencyTestingUnitOfWork(KharasanaDbContext context) : base(context)
+        {
+        }
+
+        protected override Task<int> SaveChangesInternalAsync()
+        {
+            throw new DbUpdateConcurrencyException("RowVersion conflict simulated in test.");
+        }
     }
 }

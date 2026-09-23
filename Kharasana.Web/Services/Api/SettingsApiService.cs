@@ -1,6 +1,6 @@
 using Kharasana.Web.Configuration;
 using Kharasana.Application.Common;
-using Kharasana.Web.Models.Settings;
+using Kharasana.Web.ViewModels.Settings;
 using Kharasana.Web.ViewModels.Factories;
 using Kharasana.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Http;

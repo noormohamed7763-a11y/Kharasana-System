@@ -1,8 +1,13 @@
-﻿namespace Kharasana.Domain.Entities;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Kharasana.Domain.Entities;
 
 public class ConcreteType
 {
     public int ConcreteTypeId { get; set; }
+
+    [Timestamp]
+    public byte[] RowVersion { get; set; } = [];
 
     public int FactoryId { get; set; }
 

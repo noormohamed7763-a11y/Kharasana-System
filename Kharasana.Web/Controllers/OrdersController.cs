@@ -1,17 +1,21 @@
 ﻿using Kharasana.Application.Common;
-using Kharasana.Application.DTOs.Order;
+using Kharasana.Domain.Enums;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Orders;
 using Kharasana.Web.ViewModels.Shared;
-using Kharasana.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Kharasana.Web.Controllers
 {
+    /// <summary>
+    /// عرض وإدارة الطلبات: قائمة، تفاصيل، إنشاء، تعديل، حذف.
+    /// العمليات المنبثقة (تسعير، موافقة، رفض، إلغاء، توصيل، إغلاق، تعيين سائق، تغيير حالة)
+    /// نُقلت إلى <see cref="OrderWorkflowController"/> بينما تبقى هنا العمليات CRUD الأساسية.
+    /// </summary>
     [SessionAuthorize]
     public class OrdersController : BaseController
     {
@@ -249,17 +253,22 @@ namespace Kharasana.Web.Controllers
 
             try
             {
+                if (RoleValue == UserRole.FactoryEmployee && FactoryId.HasValue)
+                {
+                    model.FactoryId = FactoryId.Value;
+                }
+
                 var created = await _ordersApiService.CreatePhoneOrderAsync(model);
 
                 if (created == null)
                 {
-                    TempData[TempDataError] = "فشل إنشاء الطلب. يرجى المحاولة مرة أخرى.";
+                    TempData[TempDataError] = AppMessages.Common.OperationFailed;
                     var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
                     ViewBag.ConcreteTypes = concreteTypes;
                     return View(model);
                 }
 
-                TempData[TempDataSuccess] = "تم إنشاء الطلب بنجاح.";
+                TempData[TempDataSuccess] = AppMessages.Success.Created;
                 return RedirectToAction(nameof(Index));
             }
             catch (ApiServiceException ex)
@@ -309,7 +318,7 @@ namespace Kharasana.Web.Controllers
 
                 if (order.Status != OrderStatus.New && order.Status != OrderStatus.Pending)
                 {
-                    TempData[TempDataError] = "لا يمكن تعديل الطلب في حالته الحالية.";
+                    TempData[TempDataError] = AppMessages.Common.OrderCannotUpdateInStatus;
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
@@ -330,7 +339,7 @@ namespace Kharasana.Web.Controllers
                 {
                     OrderId = order.OrderId,
                     ConcreteTypeId = order.ConcreteTypeId,
-                    Quantity = (double)order.Quantity,
+                    Quantity = order.Quantity,
                     PouringDate = order.PouringDate,
                     SlabType = (SlabType)order.SlabType,
                     TransportMethod = order.TransportMethod,
@@ -413,7 +422,7 @@ namespace Kharasana.Web.Controllers
 
                 if (updated == null)
                 {
-                    TempData[TempDataError] = "فشل تعديل الطلب. يرجى المحاولة مرة أخرى.";
+                    TempData[TempDataError] = AppMessages.Common.OperationFailed;
                     var clients = await _lookupApiService.GetClientsAsync();
                     var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
                     ViewBag.Clients = clients;
@@ -426,7 +435,7 @@ namespace Kharasana.Web.Controllers
                 }
 
                 _logger.LogInformation("Order {OrderId} updated successfully", id);
-                TempData[TempDataSuccess] = "تم تعديل الطلب بنجاح.";
+                TempData[TempDataSuccess] = AppMessages.Success.Updated;
                 return RedirectToAction(nameof(Details), new { id });
             }
             catch (ApiServiceException ex)
@@ -495,11 +504,11 @@ namespace Kharasana.Web.Controllers
                 var ok = await _ordersApiService.DeleteOrderAsync(id);
                 if (!ok)
                 {
-                    TempData[TempDataError] = "فشل حذف الطلب.";
+                    TempData[TempDataError] = AppMessages.Error.Deleted;
                 }
                 else
                 {
-                    TempData[TempDataSuccess] = "تم حذف الطلب بنجاح.";
+                    TempData[TempDataSuccess] = AppMessages.Success.Deleted;
                 }
             }
             catch (ApiServiceException ex)
@@ -515,448 +524,5 @@ namespace Kharasana.Web.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
-        // ============================================================
-        // SAVE PRICE - حفظ سعر المتر (AJAX)
-        // ============================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SavePrice(int id, [FromBody] SavePriceDto dto)
-        {
-            if (id <= 0)
-            {
-                return BadRequest(new { success = false, message = "رقم الطلب غير صحيح." });
-            }
-
-            if (dto == null)
-            {
-                return BadRequest(new { success = false, message = "بيانات السعر مطلوبة." });
-            }
-
-            try
-            {
-                if (RoleValue == UserRole.FactoryEmployee)
-                {
-                    var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || IsFactoryIsolated(order.FactoryId))
-                    {
-                        return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
-                    }
-                }
-
-                var result = await _ordersApiService.SavePriceAsync(id, dto.UnitPrice);
-
-                if (result)
-                {
-                    return Ok(new { success = true, message = "تم حفظ السعر بنجاح" });
-                }
-
-                return BadRequest(new { success = false, message = "فشل حفظ السعر" });
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في حفظ سعر الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في حفظ سعر الطلب {OrderId}", id);
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-        }
-
-        // ============================================================
-        // APPROVE - موافقة العميل (AJAX)
-        // ============================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Approve(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest(new { success = false, message = "رقم الطلب غير صحيح." });
-            }
-
-            try
-            {
-                if (RoleValue == UserRole.FactoryEmployee)
-                {
-                    var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || IsFactoryIsolated(order.FactoryId))
-                    {
-                        return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
-                    }
-                }
-
-                var result = await _ordersApiService.ApproveOrderAsync(id);
-
-                if (result)
-                {
-                    return Ok(new { success = true, message = "تمت موافقة العميل بنجاح" });
-                }
-
-                return BadRequest(new { success = false, message = "فشلت الموافقة" });
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في الموافقة على الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في الموافقة على الطلب {OrderId}", id);
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-        }
-
-        // ============================================================
-        // REJECT - رفض الطلب (AJAX)
-        // ============================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Reject(int id, [FromBody] RejectOrderDto dto)
-        {
-            if (id <= 0)
-            {
-                return BadRequest(new { success = false, message = "رقم الطلب غير صحيح." });
-            }
-
-            if (dto == null)
-            {
-                return BadRequest(new { success = false, message = "بيانات الرفض مطلوبة." });
-            }
-
-            try
-            {
-                if (RoleValue == UserRole.FactoryEmployee)
-                {
-                    var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || IsFactoryIsolated(order.FactoryId))
-                    {
-                        return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
-                    }
-                }
-
-                var result = await _ordersApiService.RejectOrderAsync(id, dto.Reason ?? string.Empty);
-
-                if (result)
-                {
-                    return Ok(new { success = true, message = "تم رفض الطلب بنجاح" });
-                }
-
-                return BadRequest(new { success = false, message = "فشل رفض الطلب" });
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في رفض الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في رفض الطلب {OrderId}", id);
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-        }
-
-        // ============================================================
-        // CANCEL - إلغاء الطلب (AJAX)
-        // ============================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Cancel(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest(new { success = false, message = "رقم الطلب غير صحيح." });
-            }
-
-            try
-            {
-                if (RoleValue == UserRole.FactoryEmployee)
-                {
-                    var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || IsFactoryIsolated(order.FactoryId))
-                    {
-                        return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
-                    }
-                }
-
-                var result = await _ordersApiService.CancelOrderAsync(id);
-
-                if (result)
-                {
-                    return Ok(new { success = true, message = "تم إلغاء الطلب بنجاح" });
-                }
-
-                return BadRequest(new { success = false, message = "فشل إلغاء الطلب" });
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في إلغاء الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في إلغاء الطلب {OrderId}", id);
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-        }
-
-        // ============================================================
-        // START DELIVERY - بدء التوصيل (AJAX)
-        // ============================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> StartDelivery(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest(new { success = false, message = "رقم الطلب غير صحيح." });
-            }
-
-            try
-            {
-                if (RoleValue == UserRole.FactoryEmployee)
-                {
-                    var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || IsFactoryIsolated(order.FactoryId))
-                    {
-                        return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
-                    }
-                }
-
-                var result = await _ordersApiService.StartDeliveryAsync(id);
-
-                if (result)
-                {
-                    return Ok(new { success = true, message = "تم بدء التوصيل بنجاح" });
-                }
-
-                return BadRequest(new { success = false, message = "فشل بدء التوصيل" });
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في بدء توصيل الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في بدء توصيل الطلب {OrderId}", id);
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-        }
-
-        // ============================================================
-        // DELIVER - تم التسليم (AJAX)
-        // ============================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Deliver(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest(new { success = false, message = "رقم الطلب غير صحيح." });
-            }
-
-            try
-            {
-                if (RoleValue == UserRole.FactoryEmployee)
-                {
-                    var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || IsFactoryIsolated(order.FactoryId))
-                    {
-                        return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
-                    }
-                }
-
-                var result = await _ordersApiService.DeliverOrderAsync(id);
-
-                if (result)
-                {
-                    return Ok(new { success = true, message = "تم تسليم الطلب بنجاح" });
-                }
-
-                return BadRequest(new { success = false, message = "فشل تسليم الطلب" });
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في تسليم الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في تسليم الطلب {OrderId}", id);
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-        }
-
-        // ============================================================
-        // CLOSE - إغلاق الطلب (AJAX)
-        // ============================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Close(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest(new { success = false, message = "رقم الطلب غير صحيح." });
-            }
-
-            try
-            {
-                if (RoleValue == UserRole.FactoryEmployee)
-                {
-                    var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || IsFactoryIsolated(order.FactoryId))
-                    {
-                        return BadRequest(new { success = false, message = "لا تملك صلاحية تعديل هذا الطلب." });
-                    }
-                }
-
-                var result = await _ordersApiService.CloseOrderAsync(id);
-
-                if (result)
-                {
-                    return Ok(new { success = true, message = "تم إغلاق الطلب بنجاح" });
-                }
-
-                return BadRequest(new { success = false, message = "فشل إغلاق الطلب" });
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في إغلاق الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في إغلاق الطلب {OrderId}", id);
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-        }
-
-        // ============================================================
-        // ASSIGN DRIVER - تعيين سائق (POST)
-        // ============================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignDriver(int id, [FromBody] AssignDriverViewModel model)
-        {
-            if (id <= 0)
-            {
-                return BadRequest(new { success = false, message = "رقم الطلب غير صحيح." });
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { success = false, message = "البيانات غير صحيحة" });
-            }
-
-            try
-            {
-                if (RoleValue == UserRole.FactoryEmployee)
-                {
-                    var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || IsFactoryIsolated(order.FactoryId))
-                    {
-                        return BadRequest(new { success = false, message = "لا تملك صلاحية تعيين سائق لهذا الطلب." });
-                    }
-
-                    // ✅ التحقق من أن السائق في نفس المصنع
-                    var allDrivers = await _lookupApiService.GetAvailableDriversAsync();
-                    var factoryDrivers = allDrivers
-                        .Where(d => d.FactoryId == FactoryId)
-                        .ToList();
-
-                    var driverExists = factoryDrivers.Any(d => d.Id == model.DriverId);
-
-                    if (!driverExists)
-                    {
-                        return BadRequest(new { success = false, message = "السائق المحدد لا يعمل في مصنعك أو غير متاح." });
-                    }
-                }
-
-                var ok = await _ordersApiService.AssignDriverAsync(id, model);
-
-                if (!ok)
-                {
-                    return BadRequest(new { success = false, message = "فشل تعيين السائق." });
-                }
-
-                return Ok(new { success = true, message = "تم تعيين السائق بنجاح." });
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في تعيين سائق للطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في تعيين سائق للطلب {OrderId}", id);
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-        }
-
-        // ============================================================
-        // CHANGE STATUS - تغيير حالة الطلب (POST)
-        // ============================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangeStatus(int id, [FromBody] UpdateOrderStatusViewModel model)
-        {
-            if (id <= 0)
-            {
-                return BadRequest(new { success = false, message = "رقم الطلب غير صحيح." });
-            }
-
-            if (model == null)
-            {
-                return BadRequest(new { success = false, message = "بيانات تغيير الحالة مطلوبة." });
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { success = false, message = "البيانات غير صحيحة" });
-            }
-
-            try
-            {
-                if (RoleValue == UserRole.FactoryEmployee)
-                {
-                    var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || IsFactoryIsolated(order.FactoryId))
-                    {
-                        return BadRequest(new { success = false, message = "لا تملك صلاحية تغيير حالة هذا الطلب." });
-                    }
-                }
-
-                var ok = await _ordersApiService.UpdateOrderStatusAsync(id, model);
-
-                if (!ok)
-                {
-                    return BadRequest(new { success = false, message = "فشل تحديث حالة الطلب." });
-                }
-
-                return Ok(new { success = true, message = "تم تحديث حالة الطلب بنجاح." });
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في تغيير حالة الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في تغيير حالة الطلب {OrderId}", id);
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-        }
     }
-
-    // ============================================================
-    // DTOs
-    // ============================================================
-    public class SavePriceDto
-    {
-        public decimal UnitPrice { get; set; }
-    }
-
-    }
+}

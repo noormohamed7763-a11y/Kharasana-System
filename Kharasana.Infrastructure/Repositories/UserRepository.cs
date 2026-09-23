@@ -79,7 +79,7 @@ public class UserRepository : GenericRepository<User>, IUserRepository
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
-            var normalizedNameTerm = ArabicTextNormalizer.Normalize(term);
+            var normalizedNameTerm = ArabicTextNormalization.Normalize(term);
             var phoneDigits = YemeniPhoneHelper.NormalizeForSearch(term);
             var hasPhoneDigits = !string.IsNullOrEmpty(phoneDigits);
 

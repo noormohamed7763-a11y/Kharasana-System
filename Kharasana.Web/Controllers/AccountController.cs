@@ -4,6 +4,7 @@ using Kharasana.Web.Services.Api;
 using Kharasana.Web.Models;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Auth;
+using Kharasana.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -86,6 +87,11 @@ namespace Kharasana.Web.Controllers
                 // ✅ تحذير بعد تسجيل الدخول (مثل: المصنع غير نشط) — يُعرض عبر _Alerts في الصفحة التالية
                 if (!string.IsNullOrWhiteSpace(result.Notification))
                     TempData[TempDataWarning] = result.Notification;
+
+                if (result.Role == UserRole.FactoryEmployee.ToString())
+                {
+                    return RedirectToAction("Factory", "Dashboard");
+                }
 
                 return RedirectToAction("Index", "Dashboard");
             }

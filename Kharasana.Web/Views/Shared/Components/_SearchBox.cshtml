@@ -12,5 +12,5 @@
            class="form-control ps-5"
            placeholder="@Model.Placeholder"
            value="@Model.Value"
-           oninput="@(string.IsNullOrEmpty(Model.OnInputScript) ? null : Model.OnInputScript)" />
+           data-input-fn="@(string.IsNullOrEmpty(Model.OnInputScript) ? null : Model.OnInputScript)" />
 </div>

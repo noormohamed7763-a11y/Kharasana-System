@@ -1,4 +1,4 @@
-﻿@model Kharasana.Web.ViewModels.Orders.OrderDto
+@model Kharasana.Web.ViewModels.Orders.OrderDto
 @using Kharasana.Domain.Enums
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.ViewModels.Shared
@@ -32,51 +32,17 @@
         _ => "bg-info"
     };
 
-    var statusArabic = Model.Status switch
-    {
-        OrderStatus.New => "جديد",
-        OrderStatus.Pending => "بانتظار موافقة المصنع",
-        OrderStatus.Approved => "معتمد من المصنع",
-        OrderStatus.Rejected => "مرفوض من المصنع",
-        OrderStatus.Cancelled => "ملغي",
-        OrderStatus.OnTheWay => "في الطريق",
-        OrderStatus.Delivered => "تم التسليم",
-        OrderStatus.Closed => "مغلق",
-        _ => "غير معروف"
-    };
-
-    var statusCssClass = Model.Status switch
-    {
-        OrderStatus.New => "status-new",
-        OrderStatus.Pending => "status-pending",
-        OrderStatus.Approved => "status-approved",
-        OrderStatus.Rejected => "status-rejected",
-        OrderStatus.Cancelled => "status-cancelled",
-        OrderStatus.OnTheWay => "status-ontheway",
-        OrderStatus.Delivered => "status-delivered",
-        OrderStatus.Closed => "status-closed",
-        _ => "status-default"
-    };
+    var statusArabic = Model.Status.GetArabicName();
+    var statusCssClass = Model.Status.GetCssClass();
 
     var availableDrivers = ViewBag.AvailableDrivers as List<LookupDto> ?? new List<LookupDto>();
     var factoryId = ViewBag.FactoryId ?? 0;
 
-    var transportName = Model.TransportMethod switch
-    {
-        TransportMethod.FactoryTransport => "نقل بواسطة المصنع",
-        TransportMethod.ClientOwnTransport => "نقل ذاتي (العميل)",
-        _ => "غير محدد"
-    };
+    var transportName = Model.TransportMethod.GetDisplayName();
 
-    var slabName = Model.SlabType switch
-    {
-        0 => "أساسات",
-        1 => "أعمدة",
-        2 => "كمرات",
-        3 => "سقف",
-        4 => "أخرى",
-        _ => "غير محدد"
-    };
+    var slabName = Enum.IsDefined(typeof(SlabType), Model.SlabType)
+        ? ((SlabType)Model.SlabType).GetDisplayName()
+        : "غير محدد";
 }
 
 <div class="dashboard-page">
@@ -112,7 +78,7 @@
         </span>
         <span class="text-muted ms-3">
             <i class="bi bi-clock"></i>
-            آخر تحديث: @(Model.UpdatedAt?.ToString("yyyy-MM-dd HH:mm") ?? Model.CreatedAt.ToString("yyyy-MM-dd HH:mm"))
+            آخر تحديث: @((Model.UpdatedAt ?? Model.CreatedAt).FormatDateTime())
         </span>
     </div>
 
@@ -221,10 +187,10 @@
                         <dd class="col-sm-8">@Model.Quantity م³</dd>
 
                         <dt class="col-sm-4 text-muted">سعر المتر</dt>
-                        <dd class="col-sm-8">@(Model.UnitPrice?.ToString("N0") ?? "-") ر.ي</dd>
+                        <dd class="col-sm-8">@Model.UnitPrice.FormatPrice()</dd>
 
                         <dt class="col-sm-4 text-muted">الإجمالي</dt>
-                        <dd class="col-sm-8 fw-bold text-primary">@(Model.TotalPrice?.ToString("N0") ?? "-") ر.ي</dd>
+                        <dd class="col-sm-8 fw-bold text-primary">@Model.TotalPrice.FormatPrice()</dd>
                     </dl>
                 </div>
             </div>
@@ -283,8 +249,7 @@
                                class="form-control form-control-lg"
                                value="@(Model.UnitPrice ?? 0)"
                                step="0.01"
-                               min="0.01"
-                               oninput="calculateTotal()" />
+                               min="0.01" />
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold" for="quantityDisplay">الكمية (م³)</label>
@@ -399,7 +364,7 @@
                 </div>
 
                 <!-- Delivery Actions - إجراءات التوصيل (مجموعة منفصلة) -->
-                @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin) ||
+                @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin || ViewBag.UserRole == Roles.Driver) ||
                                 Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered)
                 {
                     <div class="action-delivery-group">
@@ -410,14 +375,14 @@
                             </button>
                         }
 
-                        @if (Model.Status == OrderStatus.Approved && Model.DriverId != null)
+                        @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin || ViewBag.UserRole == Roles.Driver) && Model.Status == OrderStatus.Approved && Model.DriverId != null)
                         {
                             <button class="btn btn-primary" data-action="start-delivery" data-order-id="@Model.OrderId">
                                 <i class="bi bi-play-circle"></i> بدء التوصيل
                             </button>
                         }
 
-                        @if (Model.Status == OrderStatus.OnTheWay)
+                        @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin || ViewBag.UserRole == Roles.Driver) && Model.Status == OrderStatus.OnTheWay)
                         {
                             <button class="btn btn-success" data-action="deliver" data-order-id="@Model.OrderId">
                                 <i class="bi bi-check2-circle"></i> تم التسليم
@@ -549,7 +514,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form data-ajax-assign="true" action="/Orders/AssignDriver/@Model.OrderId" method="post">
+                    <form data-ajax-assign="true" asp-controller="OrderWorkflow" asp-action="AssignDriver" asp-route-id="@Model.OrderId" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.OrderId" />
                         <div class="mb-3">
@@ -599,7 +564,7 @@ SCRIPTS
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/orders.js" asp-append-version="true"></script>
 
-    <script>
+    <script nonce="@ViewBag.CspNonce">
         function calculateTotal() {
             const unitPrice = parseFloat(document.getElementById('unitPriceInput')?.value) || 0;
             const quantity = Number('@Model.Quantity') || 0;

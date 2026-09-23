@@ -181,7 +181,7 @@
                                         <td>
                                             <partial name="Components/_StatusBadge" model="badgeModel" />
                                         </td>
-                                        <td class="text-muted">@order.OrderDate.ToString("yyyy/MM/dd")</td>
+                                        <td class="text-muted">@order.OrderDate.FormatDate()</td>
                                         <td>
                                             <a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id"
                                                class="btn btn-sm btn-light text-muted rounded-circle"

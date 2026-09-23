@@ -19,6 +19,7 @@ public class OrderDetailsDto
 
     // ✅ معلومات نوع الخرسانة
     public int ConcreteTypeId { get; set; }
+    public int ConcreteStrength { get; set; }
     public string ConcreteTypeName { get; set; } = string.Empty;
 
     // ✅ معلومات المشروع

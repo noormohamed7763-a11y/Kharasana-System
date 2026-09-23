@@ -130,7 +130,7 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
-    <script>
+    <script nonce="@ViewBag.CspNonce">
         $(document).ready(function () {
             function toggleFields(role) {
                 var isDriver = role === '@UserRole.Driver.ToString()';

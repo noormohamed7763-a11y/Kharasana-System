@@ -1,10 +1,9 @@
-﻿using Kharasana.Domain.Enums;
+using Kharasana.Domain.Enums;
 
 namespace Kharasana.Application.DTOs.Order;
 
 public class UpdateOrderDto
 {
-    public int OrderId { get; set; }
     public int ConcreteTypeId { get; set; }
     public string? ProjectName { get; set; }
     public string? ProjectOwnerName { get; set; }

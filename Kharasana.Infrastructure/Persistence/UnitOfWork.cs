@@ -1,6 +1,9 @@
-﻿using Kharasana.Application.Interfaces;
+using Kharasana.Application.Common;
+using Kharasana.Application.Common.Exceptions;
+using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kharasana.Infrastructure.Persistence;
 
@@ -26,13 +29,25 @@ public class UnitOfWork : IUnitOfWork
         Orders = new OrderRepository(context);
     }
 
-    public async Task<int> SaveChangesAsync()
+    public virtual async Task<int> SaveChangesAsync()
+    {
+        try
+        {
+            return await SaveChangesInternalAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConflictException(Messages.ConcurrencyConflict);
+        }
+    }
+
+    protected virtual async Task<int> SaveChangesInternalAsync()
     {
         return await _context.SaveChangesAsync();
     }
 
     public void Dispose()
     {
-        _context.Dispose();
+        // تُدار دورة حياة KharasanaDbContext عبر حاوية الـ DI لتجنب ObjectDisposedException
     }
 }

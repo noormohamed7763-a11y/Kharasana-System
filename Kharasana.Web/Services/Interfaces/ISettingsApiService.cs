@@ -1,4 +1,4 @@
-﻿using Kharasana.Web.Models.Settings;
+using Kharasana.Web.ViewModels.Settings;
 using Microsoft.AspNetCore.Http;
 
 namespace Kharasana.Web.Services.Interfaces

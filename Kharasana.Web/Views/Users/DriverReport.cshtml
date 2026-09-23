@@ -88,7 +88,7 @@
 
         <button type="button"
                 class="btn btn-primary btn-sm"
-                onclick="window.print()">
+                id="printReportBtn">
             <i class="bi bi-printer"></i>
             طباعة التقرير
         </button>
@@ -116,7 +116,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="detail-label">تاريخ التقرير</div>
-                    <div class="detail-value">@Model.ReportDate.ToString("yyyy-MM-dd")</div>
+                    <div class="detail-value">@Model.ReportDate.FormatDate()</div>
                 </div>
                 <div class="col-md-4">
                     <div class="detail-label">رقم الهاتف</div>
@@ -170,7 +170,7 @@
                                     <td class="text-muted fw-bold">@(rowIndex++)</td>
                                     <td>@order.OrderNumber</td>
                                     <td>@order.ClientName</td>
-                                    <td>@order.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                    <td>@order.CreatedAt.FormatDate()</td>
                                     <td>
                                         <span class="status-badge @order.Status.GetCssClass()">
                                             @order.Status.GetArabicName()

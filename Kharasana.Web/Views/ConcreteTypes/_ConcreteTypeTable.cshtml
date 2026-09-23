@@ -143,11 +143,13 @@
 
                                     </a>
 
+                                    @if (User.IsInRole(Roles.Admin))
+                                    {
                                     <form asp-action="Delete"
                                       asp-route-id="@item.ConcreteTypeId"
                                       method="post"
                                       class="d-inline"
-                                      onsubmit="return confirm('هل أنت متأكد من حذف نوع الخرسانة؟');">
+                                       data-confirm="هل أنت متأكد من حذف نوع الخرسانة؟">
 
                                     @Html.AntiForgeryToken()
 
@@ -160,6 +162,7 @@
                                     </button>
 
                                     </form>
+                                    }
                                 }
 
                             </td>

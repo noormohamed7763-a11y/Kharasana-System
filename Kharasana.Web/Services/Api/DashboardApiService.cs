@@ -116,6 +116,7 @@ namespace Kharasana.Web.Services.Api
                     OrderNumber = o.OrderNumber,
                     ClientName = o.ClientName,
                     DriverName = o.DriverName,
+                    Status = o.Status,
                     StatusDisplay = o.StatusArabic,
                     StatusCssClass = GetStatusCssSuffix(o.Status),
                     OrderDate = o.CreatedAt

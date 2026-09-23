@@ -1,35 +1,12 @@
-﻿@model Kharasana.Web.ViewModels.Orders.EditOrderViewModel
+@model Kharasana.Web.ViewModels.Orders.EditOrderViewModel
 @using Kharasana.Web.Models.Components
 @using Kharasana.Domain.Enums
 
 @{
     ViewData["Title"] = "تعديل الطلب";
 
-    var statusArabic = ViewBag.Status != null ? ((OrderStatus)ViewBag.Status) switch
-    {
-        OrderStatus.New => "جديد",
-        OrderStatus.Pending => "قيد الانتظار",
-        OrderStatus.Approved => "معتمد",
-        OrderStatus.Rejected => "مرفوض",
-        OrderStatus.Cancelled => "ملغي",
-        OrderStatus.OnTheWay => "في الطريق",
-        OrderStatus.Delivered => "تم التسليم",
-        OrderStatus.Closed => "مغلق",
-        _ => "غير معروف"
-    } : "غير معروف";
-
-    var statusCssClass = ViewBag.Status != null ? ((OrderStatus)ViewBag.Status) switch
-    {
-        OrderStatus.New => "status-new",
-        OrderStatus.Pending => "status-pending",
-        OrderStatus.Approved => "status-approved",
-        OrderStatus.Rejected => "status-rejected",
-        OrderStatus.Cancelled => "status-cancelled",
-        OrderStatus.OnTheWay => "status-ontheway",
-        OrderStatus.Delivered => "status-delivered",
-        OrderStatus.Closed => "status-closed",
-        _ => "status-default"
-    } : "status-default";
+    var statusArabic = ViewBag.Status != null ? ((OrderStatus)ViewBag.Status).GetArabicName() : "غير معروف";
+    var statusCssClass = ViewBag.Status != null ? ((OrderStatus)ViewBag.Status).GetCssClass() : "status-default";
 
     var unitPriceValue = ViewBag.UnitPrice?.ToString() ?? "0";
 }
@@ -166,10 +143,7 @@
                         <i class="bi bi-truck"></i> طريقة النقل
                         <span class="text-danger">*</span>
                     </label>
-                    <select asp-for="TransportMethod" class="form-select form-select-lg">
-                        <option value="">-- اختر طريقة النقل --</option>
-                        <option value="@((int)TransportMethod.FactoryTransport)">نقل من المصنع</option>
-                        <option value="@((int)TransportMethod.ClientOwnTransport)">نقل العميل</option>
+                    <select asp-for="TransportMethod" class="form-select form-select-lg" asp-items="EnumHelper.GetTransportMethodSelectList()">
                     </select>
                     <span asp-validation-for="TransportMethod" class="text-danger"></span>
                 </div>
@@ -245,13 +219,7 @@
                         <i class="bi bi-grid"></i> نوع البلاطة
                         <span class="text-danger">*</span>
                     </label>
-                    <select asp-for="SlabType" class="form-select form-select-lg">
-                        <option value="">-- اختر نوع البلاطة --</option>
-                        <option value="@((int)SlabType.Foundation)">أساسات</option>
-                        <option value="@((int)SlabType.Columns)">أعمدة</option>
-                        <option value="@((int)SlabType.Beams)">كمرات</option>
-                        <option value="@((int)SlabType.Roof)">سقف</option>
-                        <option value="@((int)SlabType.Other)">أخرى</option>
+                    <select asp-for="SlabType" class="form-select form-select-lg" asp-items="EnumHelper.GetSlabTypeSelectList()">
                     </select>
                     <span asp-validation-for="SlabType" class="text-danger"></span>
                 </div>
@@ -336,7 +304,7 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/orders.js" asp-append-version="true"></script>
 
-    <script>
+    <script nonce="@ViewBag.CspNonce">
         document.addEventListener('DOMContentLoaded', function () {
 
             const quantityInput = document.getElementById('@Html.IdFor(m => m.Quantity)');

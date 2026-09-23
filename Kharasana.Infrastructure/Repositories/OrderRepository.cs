@@ -53,7 +53,7 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
-            var normalizedNameTerm = ArabicTextNormalizer.Normalize(term);
+            var normalizedNameTerm = ArabicTextNormalization.Normalize(term);
             var phoneDigits = YemeniPhoneHelper.NormalizeForSearch(term);
             var hasPhoneDigits = !string.IsNullOrEmpty(phoneDigits);
 
@@ -110,7 +110,7 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
-            var normalizedNameTerm = ArabicTextNormalizer.Normalize(term);
+            var normalizedNameTerm = ArabicTextNormalization.Normalize(term);
             var phoneDigits = YemeniPhoneHelper.NormalizeForSearch(term);
             var hasPhoneDigits = !string.IsNullOrEmpty(phoneDigits);
 

@@ -36,6 +36,19 @@
         background: var(--surface-alt);
     }
 
+.navbar-page-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    max-width: min(60%, 500px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .navbar-user {
     display: flex;
     align-items: center;
@@ -174,5 +187,11 @@
 @media (max-width: 992px) {
     .navbar-user-info {
         display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar-page-title {
+        display: none; /* إخفاء اسم الصفحة في الجوال لتوفير المساحة */
     }
 }

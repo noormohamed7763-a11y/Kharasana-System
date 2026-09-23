@@ -37,3 +37,8 @@ TestResults/
 # نستثني .gitkeep لنبقى المجلد موجوداً فارغاً بعد أي استنساخ جديد
 Kharasana.API/wwwroot/Images/Factories/*
 !Kharasana.API/wwwroot/Images/Factories/.gitkeep
+
+# Temporary Agent & Review files
+.claude/
+.ua/
+WEB_LAYER_CODE_REVIEW.md

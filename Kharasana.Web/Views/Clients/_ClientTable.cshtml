@@ -63,10 +63,8 @@
 
                     <!-- آخر طلب -->
                     <td>
-                        @(client.LastOrderDate.HasValue
-                                                ? client.LastOrderDate.Value.ToString("yyyy-MM-dd")
-                                                : "-")
-                        </td>
+                        @client.LastOrderDate.FormatDate()
+                    </td>
 
                         <!-- الإجراءات -->
                         <td class="text-center">

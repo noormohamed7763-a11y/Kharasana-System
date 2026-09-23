@@ -1,88 +1,48 @@
-﻿@model Kharasana.Web.Models.Components.ActionButtonsViewModel
+@model Kharasana.Web.Models.Components.ActionButtonsViewModel
+
+@{
+    // يُمرَّر اسم الـ Controller إن وُجد — وإلا يُستنتج تلقائياً من الـ Route الحالي
+    string? ctrl = string.IsNullOrEmpty(Model.ControllerName) ? null : Model.ControllerName;
+}
 
 @if (Model.ShowDetails)
 {
-    if (!string.IsNullOrEmpty(Model.ControllerName))
-    {
-        <a asp-controller="@Model.ControllerName"
-           asp-action="@Model.DetailsAction"
-           asp-route-id="@Model.Id"
-           class="btn btn-light border text-info"
-           aria-label="@Model.DetailsTooltip"
-           data-bs-toggle="tooltip">
-            <i class="bi bi-eye"></i>
-        </a>
-    }
-    else
-    {
-        <a asp-action="@Model.DetailsAction"
-           asp-route-id="@Model.Id"
-           class="btn btn-light border text-info"
-           aria-label="@Model.DetailsTooltip"
-           data-bs-toggle="tooltip">
-            <i class="bi bi-eye"></i>
-        </a>
-    }
+    <a asp-action="@Model.DetailsAction"
+       asp-controller="@ctrl"
+       asp-route-id="@Model.Id"
+       class="btn-action btn-action--view"
+       title="@Model.DetailsTooltip"
+       aria-label="@Model.DetailsTooltip">
+        <i class="bi bi-eye"></i>
+    </a>
 }
 
 @if (Model.ShowEdit)
 {
-    if (!string.IsNullOrEmpty(Model.ControllerName))
-    {
-        <a asp-controller="@Model.ControllerName"
-           asp-action="@Model.EditAction"
-           asp-route-id="@Model.Id"
-           class="btn btn-light border text-primary"
-           aria-label="@Model.EditTooltip"
-           data-bs-toggle="tooltip">
-            <i class="bi bi-pencil"></i>
-        </a>
-    }
-    else
-    {
-        <a asp-action="@Model.EditAction"
-           asp-route-id="@Model.Id"
-           class="btn btn-light border text-primary"
-           aria-label="@Model.EditTooltip"
-           data-bs-toggle="tooltip">
-            <i class="bi bi-pencil"></i>
-        </a>
-    }
+    <a asp-action="@Model.EditAction"
+       asp-controller="@ctrl"
+       asp-route-id="@Model.Id"
+       class="btn-action btn-action--edit"
+       title="@Model.EditTooltip"
+       aria-label="@Model.EditTooltip">
+        <i class="bi bi-pencil"></i>
+    </a>
 }
 
 @if (Model.ShowDelete)
 {
-    if (!string.IsNullOrEmpty(Model.ControllerName))
-    {
-        <form method="post"
-              asp-controller="@Model.ControllerName"
-              asp-action="@Model.DeleteAction"
-              asp-route-id="@Model.Id"
-              class="d-inline"
-              onsubmit="return confirm('هل أنت متأكد من الحذف؟');">
-            @Html.AntiForgeryToken()
-            <button type="submit"
-                    class="btn btn-light border text-danger"
-                    aria-label="@Model.DeleteTooltip"
-                    data-bs-toggle="tooltip">
-                <i class="bi bi-trash"></i>
-            </button>
-        </form>
-    }
-    else
-    {
-        <form method="post"
-              asp-action="@Model.DeleteAction"
-              asp-route-id="@Model.Id"
-              class="d-inline"
-              onsubmit="return confirm('هل أنت متأكد من الحذف؟');">
-            @Html.AntiForgeryToken()
-            <button type="submit"
-                    class="btn btn-light border text-danger"
-                    aria-label="@Model.DeleteTooltip"
-                    data-bs-toggle="tooltip">
-                <i class="bi bi-trash"></i>
-            </button>
-        </form>
-    }
+    <form method="post"
+          asp-action="@Model.DeleteAction"
+          asp-controller="@ctrl"
+          asp-route-id="@Model.Id"
+          class="d-inline"
+          data-confirm="هل أنت متأكد من حذف هذا العنصر؟">
+        @Html.AntiForgeryToken()
+        <button type="submit"
+                class="btn-action btn-action--delete"
+                title="@Model.DeleteTooltip"
+                aria-label="@Model.DeleteTooltip">
+            <i class="bi bi-trash"></i>
+        </button>
+    </form>
 }

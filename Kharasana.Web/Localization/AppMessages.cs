@@ -21,6 +21,10 @@ public static class AppMessages
         public const string InvalidData = "البيانات المدخلة غير صحيحة.";
         public const string NoItems = "لا توجد عناصر لعرضها.";
         public const string TooManyAttempts = "محاولات كثيرة. حاول مرة أخرى بعد قليل.";
+        public const string OrderCannotModify = "لا تملك صلاحية تعديل هذا الطلب.";
+        public const string OrderCannotChangeStatus = "لا تملك صلاحية تغيير حالة هذا الطلب.";
+        public const string DriverNotInFactory = "السائق المحدد لا يعمل في مصنعك أو غير متاح.";
+        public const string OrderCannotUpdateInStatus = "لا يمكن تعديل الطلب في حالته الحالية.";
     }
 
     /// <summary>رسائل النجاح.</summary>
@@ -38,6 +42,12 @@ public static class AppMessages
         public const string StatusUpdated = "تم تحديث الحالة بنجاح.";
         public const string DriverAssigned = "تم تعيين السائق بنجاح.";
         public const string PriceSaved = "تم حفظ السعر بنجاح.";
+        public const string Approved = "تم اعتماد الطلب بنجاح.";
+        public const string Rejected = "تم رفض الطلب بنجاح.";
+        public const string Cancelled = "تم إلغاء الطلب بنجاح.";
+        public const string DeliveryStarted = "تم بدء التوصيل بنجاح.";
+        public const string Delivered = "تم تسليم الطلب بنجاح.";
+        public const string Closed = "تم إغلاق الطلب بنجاح.";
     }
 
     /// <summary>رسائل الأخطاء.</summary>
@@ -55,6 +65,12 @@ public static class AppMessages
         public const string StatusUpdate = "تعذر تحديث الحالة.";
         public const string DriverAssign = "تعذر تعيين السائق.";
         public const string PriceSave = "تعذر حفظ السعر.";
+        public const string Approved = "تعذر اعتماد الطلب. حاول مرة أخرى.";
+        public const string Rejected = "تعذر رفض الطلب. حاول مرة أخرى.";
+        public const string Cancelled = "تعذر إلغاء الطلب. حاول مرة أخرى.";
+        public const string DeliveryStarted = "تعذر بدء التوصيل. حاول مرة أخرى.";
+        public const string Delivered = "تعذر تسجيل التسليم. حاول مرة أخرى.";
+        public const string Closed = "تعذر إغلاق الطلب. حاول مرة أخرة.";
         public const string InvalidLogin = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
         public const string InvalidLogo = "يرجى اختيار صورة صالحة.";
         public const string InvalidId = "المعرّف المطلوب غير صحيح.";

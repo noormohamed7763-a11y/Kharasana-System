@@ -54,28 +54,26 @@ public class ApiClient
     internal HttpClient HttpClient => _httpClient;
 
     /// <summary>
-    /// معرّف الطلب الحالي — يُضمَّن في السجلات لربط فشل واجهة برمجية
+    /// معرّف الطلب الحالي — يُضمّن في السجلات لربط فشل واجهة برمجية
     /// بالرقم المرجعي الذي يراه المستخدم في صفحة الخطأ.
     /// </summary>
     private string? CurrentTraceId => _httpContextAccessor.HttpContext?.TraceIdentifier;
 
-    private void AddAuthorizationHeader()
+    /// <summary>
+    /// يقرأ JWT من الجلسة الحالية. يُستخدم لضبط Authorization على
+    /// HttpRequestMessage الفردي بدلاً من DefaultRequestHeaders المشترك —
+    /// مما يمنع تداخل الرموز بين الجلسات المتزامنة (race condition).
+    /// </summary>
+    private string? GetToken()
     {
         try
         {
-            var token = _httpContextAccessor.HttpContext?.Session.GetString("Token");
-
-            _httpClient.DefaultRequestHeaders.Authorization = null;
-
-            if (!string.IsNullOrWhiteSpace(token))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", token);
-            }
+            return _httpContextAccessor.HttpContext?.Session.GetString("Token");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to set Authorization header. TraceId={TraceId}", CurrentTraceId);
+            _logger.LogError(ex, "Failed to read session token. TraceId={TraceId}", CurrentTraceId);
+            return null;
         }
     }
 
@@ -216,16 +214,24 @@ public class ApiClient
     /// ينفّذ طلب HTTP عبر المفوض send ويوحّد معالجة الأخطاء لكل الأفعال
     /// (GET/POST/PUT/DELETE/ملفات): يعيد طرح ApiServiceException كما هي،
     /// ويحوّل انتهاء المهلة والإلغاء وأخطاء النقل إلى رسائل مستخدم عربية.
+    /// يُضاف هنا Authorization على الطلب الفردي — ليس على DefaultRequestHeaders.
     /// </summary>
     private async Task<T?> SendAsync<T>(
         string method,
         string url,
-        Func<Task<HttpResponseMessage>> send,
+        HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
         try
         {
-            using var response = await send();
+            var token = GetToken();
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                request.Headers.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             return await HandleResponseAsync<T>(response, method, url);
         }
         catch (ApiServiceException) { throw; }
@@ -251,48 +257,50 @@ public class ApiClient
 
     public async Task<T?> GetAsync<T>(string url, CancellationToken cancellationToken = default)
     {
-        AddAuthorizationHeader();
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
         return await SendAsync<T>(
             "GET",
             url,
-            () => _httpClient.GetAsync(url, cancellationToken),
+            request,
             cancellationToken);
     }
 
     public async Task<T?> PostAsync<T>(string url, object data, CancellationToken cancellationToken = default)
     {
-        AddAuthorizationHeader();
-
         var json = JsonSerializer.Serialize(data);
 
         // ✅ تسجيل معلومات الطلب بدون المحتوى
         _logger.LogInformation("📤 Sending POST request to {Url}", url);
 
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
 
         return await SendAsync<T>(
             "POST",
             url,
-            () => _httpClient.PostAsync(url, content, cancellationToken),
+            request,
             cancellationToken);
     }
 
     public async Task<T?> PutAsync<T>(string url, object data, CancellationToken cancellationToken = default)
     {
-        AddAuthorizationHeader();
-
         var json = JsonSerializer.Serialize(data);
 
         // ✅ تسجيل معلومات الطلب بدون المحتوى
         _logger.LogInformation("📤 Sending PUT request to {Url}", url);
 
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
 
         return await SendAsync<T>(
             "PUT",
             url,
-            () => _httpClient.PutAsync(url, content, cancellationToken),
+            request,
             cancellationToken);
     }
 
@@ -301,44 +309,48 @@ public class ApiClient
     /// </summary>
     public async Task<T?> PutAsync<T>(string url, CancellationToken cancellationToken = default)
     {
-        AddAuthorizationHeader();
-
         _logger.LogInformation("📤 Sending PUT request to {Url} (no body)", url);
 
-        using var content = new StringContent("{ }", Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
+        {
+            Content = new StringContent("{ }", Encoding.UTF8, "application/json")
+        };
 
         return await SendAsync<T>(
             "PUT",
             url,
-            () => _httpClient.PutAsync(url, content, cancellationToken),
+            request,
             cancellationToken);
     }
 
     public async Task<T?> DeleteAsync<T>(string url, CancellationToken cancellationToken = default)
     {
-        AddAuthorizationHeader();
+        using var request = new HttpRequestMessage(HttpMethod.Delete, url);
 
         return await SendAsync<T>(
             "DELETE",
             url,
-            () => _httpClient.DeleteAsync(url, cancellationToken),
+            request,
             cancellationToken);
     }
 
     public async Task<T?> PostFileAsync<T>(string url, Stream fileStream, string fileName, string parameterName = "file", CancellationToken cancellationToken = default)
     {
-        AddAuthorizationHeader();
-
         using var content = new MultipartFormDataContent();
         using var streamContent = new StreamContent(fileStream);
         content.Add(streamContent, parameterName, fileName);
 
         _logger.LogInformation("📤 Sending Multipart POST to {Url} with file {FileName}", url, fileName);
 
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = content
+        };
+
         return await SendAsync<T>(
             "POST-FILE",
             url,
-            () => _httpClient.PostAsync(url, content, cancellationToken),
+            request,
             cancellationToken);
     }
 }

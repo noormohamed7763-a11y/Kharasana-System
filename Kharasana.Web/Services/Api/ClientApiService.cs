@@ -283,8 +283,7 @@ public class ClientApiService : IClientApiService
                 FactoryId = (int?)null,
 
                 // ليس سائقًا
-                LicenseNumber = (string?)null,
-                DriverStatus = (int?)null
+                LicenseNumber = (string?)null
             };
 
             var response =

@@ -1,4 +1,4 @@
-﻿using Kharasana.Domain.Enums;
+using Kharasana.Domain.Enums;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ public static class EnumHelper
     /// <summary>
     /// الحصول على النص المعروض للقيمة (يدعم DisplayAttribute)
     /// </summary>
-    public static string GetDisplayName(Enum? value)  // ✅ إضافة ? لجعلها Nullable
+    public static string GetDisplayName(this Enum? value)
     {
         if (value == null) return string.Empty;
 
@@ -27,7 +27,7 @@ public static class EnumHelper
     /// <summary>
     /// الحصول على وصف القيمة (يدعم DisplayAttribute)
     /// </summary>
-    public static string GetDescription(Enum? value)  // ✅ إضافة ? لجعلها Nullable
+    public static string GetDescription(this Enum? value)
     {
         if (value == null) return string.Empty;
 
@@ -41,7 +41,7 @@ public static class EnumHelper
     /// <summary>
     /// الحصول على قائمة SelectListItems مع خيار افتراضي
     /// </summary>
-    public static List<SelectListItem> GetSelectList<TEnum>(bool addDefaultOption = true, string? defaultText = null) where TEnum : Enum  // ✅ إضافة ? لـ defaultText
+    public static List<SelectListItem> GetSelectList<TEnum>(bool addDefaultOption = true, string? defaultText = null) where TEnum : Enum
     {
         var items = Enum.GetValues(typeof(TEnum))
             .Cast<TEnum>()
@@ -68,7 +68,7 @@ public static class EnumHelper
     /// <summary>
     /// الحصول على أيقونة Bootstrap لكل قيمة (ما عدا OrderStatus)
     /// </summary>
-    public static string GetIcon(Enum? value)  // ✅ إضافة ? لجعلها Nullable
+    public static string GetIcon(this Enum? value)
     {
         if (value == null) return "bi-question-circle";
 
@@ -92,7 +92,7 @@ public static class EnumHelper
     /// <summary>
     /// الحصول على كلاس Bootstrap للشارة (ما عدا OrderStatus)
     /// </summary>
-    public static string GetBadgeClass(Enum? value)  // ✅ إضافة ? لجعلها Nullable
+    public static string GetBadgeClass(this Enum? value)
     {
         if (value == null) return "bg-secondary";
 
@@ -116,7 +116,7 @@ public static class EnumHelper
     /// <summary>
     /// الحصول على كلاس CSS إضافي (ما عدا OrderStatus)
     /// </summary>
-    public static string GetCssClass(Enum? value)  // ✅ إضافة ? لجعلها Nullable
+    public static string GetCssClass(this Enum? value)
     {
         if (value == null) return "default";
 

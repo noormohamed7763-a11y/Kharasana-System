@@ -88,7 +88,7 @@
                     var filterModel = new Kharasana.Web.Models.Components.FilterDropdownViewModel
                     {
                         Id = "factoryStatusFilter",
-                        OnChangeFunction = "filterByStatus(this.value)",
+                        OnChangeFunction = "filterByStatus",
                         Options = new List<Kharasana.Web.Models.Components.FilterOptionViewModel>
                                 {
                                 new() { Text = "جميع الحالات", Value = "all" },
@@ -118,6 +118,7 @@
             </div>
             <div class="modal-body">
                 <form id="createAccountForm">
+                    @Html.AntiForgeryToken()
                     <input type="hidden" id="modalFactoryId" name="FactoryId" />
 
                     <div class="mb-3">

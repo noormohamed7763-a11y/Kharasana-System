@@ -1,4 +1,412 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿// ==========================
+// Confirmation Modal — يُستخدم بدل confirm() في كل الصفحات
+// ==========================
+(function () {
+    let pendingForm = null;
+    let confirmModal = null;
 
-// Write your JavaScript code.
+    function ensureModal() {
+        if (confirmModal) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = 'confirmActionModal';
+        modal.tabIndex = -1;
+        modal.innerHTML =
+            '<div class="modal-dialog">' +
+                '<div class="modal-content">' +
+                    '<div class="modal-header">' +
+                        '<h5 class="modal-title">تأكيد</h5>' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>' +
+                    '</div>' +
+                    '<div class="modal-body" id="confirmModalBody"></div>' +
+                    '<div class="modal-footer">' +
+                        '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>' +
+                        '<button type="button" class="btn btn-danger" id="confirmModalYes">تأكيد</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+
+        confirmModal = new bootstrap.Modal(modal);
+
+        modal.addEventListener('hidden.bs.modal', function () {
+            pendingForm = null;
+        });
+
+        document.getElementById('confirmModalYes').addEventListener('click', function () {
+            confirmModal.hide();
+            if (pendingForm) {
+                pendingForm.submit();
+                pendingForm = null;
+            }
+        });
+    }
+
+    document.addEventListener('submit', function (e) {
+        const form = e.target.closest ? e.target.closest('form[data-confirm]') : null;
+        if (!form) return;
+
+        e.preventDefault();
+        const message = form.getAttribute('data-confirm');
+        pendingForm = form;
+        ensureModal();
+        document.getElementById('confirmModalBody').textContent = message || 'هل أنت متأكد؟';
+        confirmModal.show();
+    }, true);
+})();
+
+// ==========================
+// Toast — إشعارات فورية
+// ==========================
+function showToast(title, message, type) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    type = type || 'success';
+    const id = 'toast-' + Date.now();
+    const toastEl = document.createElement('div');
+    toastEl.className = 'toast align-items-center text-white bg-' + type + ' border-0 m-2';
+    toastEl.id = id;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+
+    const dFlex = document.createElement('div');
+    dFlex.className = 'd-flex';
+
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'toast-body';
+
+    const titleEl = document.createElement('strong');
+    titleEl.textContent = title;
+    bodyDiv.appendChild(titleEl);
+    bodyDiv.appendChild(document.createElement('br'));
+
+    const messageEl = document.createElement('span');
+    messageEl.textContent = message;
+    bodyDiv.appendChild(messageEl);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
+    closeBtn.setAttribute('data-bs-dismiss', 'toast');
+    closeBtn.setAttribute('aria-label', 'إغلاق');
+
+    dFlex.appendChild(bodyDiv);
+    dFlex.appendChild(closeBtn);
+    toastEl.appendChild(dFlex);
+
+    container.appendChild(toastEl);
+    const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    toast.show();
+    toastEl.addEventListener('hidden.bs.toast', function () {
+        toastEl.remove();
+    });
+}
+
+// ==========================
+// Tooltips — تفعيل تلقائي لجميع الأدوات
+// ==========================
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new bootstrap.Tooltip(el);
+    });
+});
+
+// ==========================
+// Keyboard Shortcuts
+// ==========================
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmActionModal'));
+        if (modal) modal.hide();
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        const search = document.querySelector('#search, #tableSearch, input[type="search"]');
+        if (search) { search.focus(); search.select(); }
+    }
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        const search = document.querySelector('#search, #tableSearch, input[type="search"]');
+        if (search) { search.focus(); search.select(); }
+    }
+});
+
+// ==========================
+// Empty Table State — إظهار رسالة عند عدم وجود نتائج
+// ==========================
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('table.erp-table').forEach(function (table) {
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            const observer = new MutationObserver(function () {
+                checkEmpty(tbody, table);
+            });
+            observer.observe(tbody, { childList: true, attributes: true, subtree: true });
+            checkEmpty(tbody, table);
+        });
+    });
+
+    function checkEmpty(tbody, table) {
+        const rows = tbody.querySelectorAll('tr');
+        let visibleCount = 0;
+        rows.forEach(function (row) {
+            if (row.style.display !== 'none') visibleCount++;
+        });
+
+        let noResults = tbody.querySelector('.no-results-row');
+        if (visibleCount === 0 && rows.length > 0) {
+            if (!noResults) {
+                const colCount = table.querySelector('thead th') ? table.querySelectorAll('thead th').length : 10;
+                noResults = document.createElement('tr');
+                noResults.className = 'no-results-row';
+                noResults.innerHTML = '<td colspan="' + colCount + '" class="text-center text-muted py-4">' +
+                    '<i class="bi bi-search" style="font-size: 2rem; opacity: 0.4;"></i>' +
+                    '<p class="mt-2 mb-0">لم يتم العثور على نتائج</p>' +
+                    '</td>';
+                tbody.appendChild(noResults);
+            }
+        } else if (noResults) {
+            noResults.remove();
+        }
+    }
+})();
+
+// ==========================
+// Driver Status Quick Filters — فلاتر سريعة للسائقين
+// ==========================
+(function () {
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest ? e.target.closest('.driver-filter-btn') : null;
+        if (!btn) return;
+
+        const filter = btn.dataset.filter;
+
+        document.querySelectorAll('#driverTableBody tr[data-status]').forEach(function (row) {
+            if (filter === 'All' || row.dataset.status === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        document.querySelectorAll('.driver-filter-btn').forEach(function (b) {
+            b.classList.remove('active');
+        });
+        btn.classList.add('active');
+    });
+})();
+
+// ==========================
+// Order Status Quick Filters — فلاتر سريعة لطلبات المصنع
+// ==========================
+(function () {
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest ? e.target.closest('.order-filter-btn') : null;
+        if (!btn) return;
+
+        const filter = btn.dataset.filter;
+
+        document.querySelectorAll('#factoryOrdersTableBody tr[data-status]').forEach(function (row) {
+            if (filter === 'All' || row.dataset.status === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        document.querySelectorAll('.order-filter-btn').forEach(function (b) {
+            b.classList.remove('active', 'btn-primary');
+            b.classList.add('btn-outline-primary');
+        });
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('active', 'btn-primary');
+    });
+})();
+
+// ==========================
+// Driver Toggle — تحديث فوري بدون Modal
+// ==========================
+(function () {
+    document.addEventListener('click', async function (e) {
+        const btn = e.target.closest('.btn-toggle-active');
+        if (!btn) return;
+
+        const driverId = btn.dataset.driverId;
+        const isActive = btn.dataset.isActive === 'true';
+        const icon = btn.querySelector('i');
+        const newIsActive = !isActive;
+
+        // تحديث فوري — لا تنتظر الاستجابة
+        btn.dataset.isActive = newIsActive;
+        btn.classList.remove(isActive ? 'text-danger' : 'text-success');
+        btn.classList.add(newIsActive ? 'text-danger' : 'text-success');
+        if (icon) icon.className = 'bi ' + (newIsActive ? 'bi-stop-circle' : 'bi-play-circle');
+
+        // إرسال الطلب في الخلفية
+        try {
+            const tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
+            const response = await fetch('/Drivers/ToggleActive?id=' + driverId, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'RequestVerificationToken': tokenEl ? tokenEl.value : ''
+                }
+            });
+
+            if (!response.ok) throw new Error('Request failed');
+
+            showToast('تم التحديث',
+                newIsActive ? 'تم تفعيل حساب السائق.' : 'تم إيقاف حساب السائق.',
+                'success');
+        } catch (err) {
+            // التراجع عند الفشل
+            btn.dataset.isActive = isActive;
+            btn.classList.remove(newIsActive ? 'text-danger' : 'text-success');
+            btn.classList.add(isActive ? 'text-danger' : 'text-success');
+            if (icon) icon.className = 'bi ' + (isActive ? 'bi-stop-circle' : 'bi-play-circle');
+            showToast('خطأ', 'تعذر تحديث حالة السائق. حاول مرة أخرى.', 'danger');
+        }
+    });
+})();
+
+// ==========================
+// Inline Event Handler Replacement — data-* delegation
+// Replaces all onclick/onchange/oninput inline handlers for CSP compliance
+// ==========================
+(function () {
+    'use strict';
+
+    // data-click-fn: calls window[fn]() on button click
+    document.addEventListener('click', function (e) {
+        var el = e.target.closest('[data-click-fn]');
+        if (!el) return;
+        var fn = el.getAttribute('data-click-fn');
+        if (fn && typeof window[fn] === 'function') window[fn]();
+    });
+
+    // data-change-fn: calls window[fn](element.value) on change
+    document.addEventListener('change', function (e) {
+        var el = e.target.closest('[data-change-fn]');
+        if (!el) return;
+        var fn = el.getAttribute('data-change-fn');
+        if (fn && typeof window[fn] === 'function') window[fn](el.value);
+    });
+
+    // data-input-fn: calls window[fn](element.value) on input
+    document.addEventListener('input', function (e) {
+        var el = e.target.closest('[data-input-fn]');
+        if (!el) return;
+        var fn = el.getAttribute('data-input-fn');
+        if (fn && typeof window[fn] === 'function') window[fn](el.value);
+    });
+
+    // data-factory-id: calls openCreateAccountModal(id, name) on button click
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-factory-id]');
+        if (!btn) return;
+        if (typeof window.openCreateAccountModal === 'function') {
+            window.openCreateAccountModal(
+                btn.getAttribute('data-factory-id'),
+                btn.getAttribute('data-factory-name'));
+        }
+    });
+
+    // #retryButton: reload the page
+    document.addEventListener('click', function (e) {
+        if (e.target.id === 'retryButton') {
+            e.preventDefault();
+            location.reload();
+        }
+    });
+
+    // #printReportBtn: print the report
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('#printReportBtn')) {
+            e.preventDefault();
+            window.print();
+        }
+    });
+})();
+
+// ==========================
+// Image Error Handling — CSP-safe fallback for img onerror
+// Replaces inline onerror="handleLogoError(this)" / onerror="this.remove()" etc.
+// ==========================
+(function () {
+    document.addEventListener('error', function (e) {
+        if (e.target.tagName !== 'IMG') return;
+
+        var img = e.target;
+        var mode = img.dataset.imgError;
+        if (!mode) return;
+
+        img.onerror = null; // prevent infinite loop
+
+        switch (mode) {
+            case 'logo':
+                if (typeof window.handleLogoError === 'function') {
+                    window.handleLogoError(img);
+                }
+                break;
+            case 'remove':
+                img.remove();
+                break;
+            case 'hide-next':
+                img.classList.add('d-none');
+                if (img.nextElementSibling) {
+                    img.nextElementSibling.classList.remove('d-none');
+                }
+                break;
+        }
+    }, true);
+})();
+
+// ==========================
+// Prefetch on Hover — تحميل مسبق عند التمرير
+// ==========================
+(function () {
+    const prefetched = new Set();
+
+    document.addEventListener('mouseover', function (e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+
+        const url = link.href;
+        if (!url || url === location.href) return;
+
+        if (prefetched.has(url)) return;
+        prefetched.add(url);
+
+        setTimeout(function () {
+            fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                priority: 'low'
+            }).catch(function () {});
+        }, 100);
+    });
+})();
+
+// ==========================
+// Request Deduplication — تجنب طلبات مكررة
+// ==========================
+(function () {
+    const pending = new Map();
+
+    window.kharasanaFetch = function (url, options) {
+        const key = url + (options?.method || 'GET');
+        if (pending.has(key)) return pending.get(key);
+
+        const promise = fetch(url, options).finally(function () {
+            pending.delete(key);
+        });
+
+        pending.set(key, promise);
+        return promise;
+    };
+})();

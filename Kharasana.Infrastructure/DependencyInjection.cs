@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Interfaces;
+using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Infrastructure.Authentication;
@@ -33,12 +33,6 @@ public static class DependencyInjection
 
         // Unit Of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-        // Repositories
-        services.AddScoped<IFactoryRepository, FactoryRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IConcreteTypeRepository, ConcreteTypeRepository>();
-        services.AddScoped<IOrderRepository, OrderRepository>();
 
         // Authentication Services
         services.AddScoped<IPasswordHasher, PasswordHasher>();

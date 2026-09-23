@@ -16,12 +16,14 @@
 }
 
     .erp-table thead th {
-        background: var(--surface-alt);
+        background: var(--table-header-bg, #F1F5F9);
         color: var(--text-muted);
         font-weight: 700;
         font-size: var(--text-xs);
         padding: 16px 24px;
         border-bottom: 2px solid var(--border-main);
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
     }
 
     .erp-table tbody td {
@@ -33,11 +35,20 @@
     }
 
     .erp-table tbody tr {
-        transition: background var(--transition);
+        transition: background 0.12s ease;
     }
 
         .erp-table tbody tr:hover {
             background: var(--surface-alt);
+        }
+
+    /* stripe خفيف على الصفوف الزوجية */
+    .erp-table tbody tr:nth-child(even) {
+        background-color: var(--table-stripe, #FAFBFC);
+    }
+
+        .erp-table tbody tr:nth-child(even):hover {
+            background-color: var(--surface-alt);
         }
 
 .table-avatar {
@@ -59,6 +70,7 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    background: var(--sticky-head-bg, var(--surface-alt));
 }
 
 /* Modifier: sticky first and last columns for wide tables (e.g. Orders list) */

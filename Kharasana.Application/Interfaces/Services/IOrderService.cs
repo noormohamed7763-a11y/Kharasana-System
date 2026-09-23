@@ -53,4 +53,6 @@ public interface IOrderService
     Task<bool> CloseOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
     Task<bool> UpdateStatusAsync(int id, UpdateOrderStatusDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
+
+    Task<bool> DeleteOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 }

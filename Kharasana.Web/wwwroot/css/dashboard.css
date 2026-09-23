@@ -37,7 +37,7 @@
 ========================================================== */
 .hero-banner {
     position: relative;
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background: linear-gradient(135deg, var(--hero-from, #1e293b) 0%, var(--hero-to, #0f172a) 100%);
     border-radius: var(--radius-lg);
     padding: var(--space-5) var(--space-6);
     overflow: hidden;
@@ -47,7 +47,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--overlay-10, rgba(255,255,255,0.1));
 }
 
 /* تراكب زخرفي محلي (بدون صور خارجية): توهّج بنقشة هندسية بدل صورة Unsplash */
@@ -83,10 +83,6 @@
 .hero-text {
     flex: 1 1 55%;
     min-width: min(100%, 440px);
-}
-
-.hero-meta {
-    flex: 0 0 auto;
 }
 
 .hero-text h1 {
@@ -155,8 +151,8 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    background: rgba(21, 128, 61, 0.2);
-    color: #4ade80;
+    background: var(--hero-status-bg, rgba(21, 128, 61, 0.2));
+    color: var(--hero-status-text, #4ade80);
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-pill);
     font-weight: 700;
@@ -174,17 +170,18 @@
     padding: var(--card-padding);
     gap: var(--space-4);
     height: 100%;
-    transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+    transition: box-shadow 0.16s ease, transform 0.16s ease, border-color 0.16s ease;
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    /* الخط السفلي الملوّن — يتغيّر لونه عبر كلاس kpi-accent-* */
+    border-bottom-width: 3px;
 }
 
     .kpi-card:hover {
         box-shadow: var(--shadow-md);
-        border-color: var(--primary);
-        transform: translateY(-3px);
+        transform: translateY(-2px);
     }
 
 /* نسخة قابلة للنقر — تنشأ من مكوّن _SummaryCard عند تمرير LinkUrl */
@@ -230,7 +227,6 @@ a.kpi-card--link {
     color: var(--primary-text);
 }
 
-
 .kpi-icon-info {
     background: var(--tertiary-soft);
     color: var(--tertiary-text);
@@ -255,6 +251,22 @@ a.kpi-card--link {
     background: var(--surface-low);
     color: var(--secondary);
 }
+
+/* Direct class approach for KPI accent colors — used alongside :has() for dynamic content */
+.kpi-card--primary   { border-bottom-color: var(--brand-cta); }
+.kpi-card--info      { border-bottom-color: var(--color-info); }
+.kpi-card--success   { border-bottom-color: var(--color-success); }
+.kpi-card--warning   { border-bottom-color: var(--color-warning); }
+.kpi-card--danger    { border-bottom-color: var(--color-danger); }
+.kpi-card--neutral   { border-bottom-color: var(--color-slate-300); }
+
+/* Dynamic accent via :has() — requires Chromium 105+ / Safari 15.4+ */
+.kpi-card:has(.kpi-icon-primary)  { border-bottom-color: var(--brand-cta); }
+.kpi-card:has(.kpi-icon-info)     { border-bottom-color: var(--color-info); }
+.kpi-card:has(.kpi-icon-success)  { border-bottom-color: var(--color-success); }
+.kpi-card:has(.kpi-icon-warning)  { border-bottom-color: var(--color-warning); }
+.kpi-card:has(.kpi-icon-danger)   { border-bottom-color: var(--color-danger); }
+.kpi-card:has(.kpi-icon-neutral)  { border-bottom-color: var(--color-slate-300); }
 
 .kpi-value {
     font-size: 1.95rem;
@@ -454,10 +466,10 @@ a.kpi-card--link {
     border: 1px solid var(--border-soft);
 }
 
-.bg-primary-soft { background: rgba(194, 75, 23, 0.15) !important; }
-.bg-warning-soft { background: rgba(180, 83, 9, 0.15) !important; }
-.bg-success-soft { background: rgba(21, 128, 61, 0.15) !important; }
-.bg-info-soft { background: rgba(29, 78, 216, 0.15) !important; }
+.bg-primary-soft { background: var(--bg-primary-soft, rgba(194, 75, 23, 0.15)) !important; }
+.bg-warning-soft { background: var(--bg-warning-soft, rgba(180, 83, 9, 0.15)) !important; }
+.bg-success-soft { background: var(--bg-success-soft, rgba(21, 128, 61, 0.15)) !important; }
+.bg-info-soft { background: var(--bg-info-soft, rgba(29, 78, 216, 0.15)) !important; }
 
 .timeline-content {
     flex-grow: 1;
@@ -602,4 +614,27 @@ a.kpi-card--link {
 .progress-bar {
     background: var(--primary);
     border-radius: var(--radius-pill);
+}
+
+/* Order Status Visual Bar — شريط توزيع الطلبات حسب الحالة */
+.order-status-bar {
+    display: flex;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    background: var(--surface-low);
+}
+
+.order-status-segment {
+    min-width: 2px;
+    transition: opacity 0.2s;
+}
+
+.order-status-segment:hover {
+    opacity: 0.8;
+}
+
+/* Order Filter Buttons */
+.order-filter-buttons .order-filter-btn.active {
+    color: #fff;
 }

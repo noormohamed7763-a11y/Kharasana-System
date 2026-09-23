@@ -1,4 +1,4 @@
-﻿using Kharasana.Domain.Enums;
+using Kharasana.Domain.Enums;
 using System;
 
 namespace Kharasana.Web.Helpers
@@ -39,6 +39,11 @@ namespace Kharasana.Web.Helpers
         }
 
         /// <summary>
+        /// تنسيق التاريخ (غير nullable)
+        /// </summary>
+        public static string FormatDate(this DateTime date) => ((DateTime?)date).FormatDate();
+
+        /// <summary>
         /// تنسيق التاريخ مع الوقت
         /// </summary>
         public static string FormatDateTime(this DateTime? date)
@@ -47,5 +52,10 @@ namespace Kharasana.Web.Helpers
                 return "-";
             return date.Value.ToString("yyyy-MM-dd HH:mm");
         }
+
+        /// <summary>
+        /// تنسيق التاريخ مع الوقت (غير nullable)
+        /// </summary>
+        public static string FormatDateTime(this DateTime date) => ((DateTime?)date).FormatDateTime();
     }
 }

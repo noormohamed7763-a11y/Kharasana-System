@@ -1,6 +1,6 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Kharasana.Domain.Enums;
-using Kharasana.Infrastructure.Authentication;
+using Kharasana.Application.Common;
 
 namespace Kharasana.API.Extensions;
 

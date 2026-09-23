@@ -146,32 +146,32 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                // ✅ تحويل البيانات إلى PhoneOrderDto
-                var phoneOrderDto = new
+                // ✅ تحويل البيانات إلى PhoneOrderDto (strongly-typed بدلاً من anonymous object)
+                var phoneOrderDto = new Kharasana.Application.DTOs.Order.PhoneOrderDto
                 {
-                    clientPhone = model.ClientPhone,
-                    clientFullName = model.ClientFullName,
-                    factoryId = model.FactoryId,
-                    concreteTypeId = model.ConcreteTypeId,
-                    projectName = model.ProjectName,
-                    projectOwnerName = model.ProjectOwnerName,
-                    siteArea = model.SiteArea,
-                    siteDescription = model.SiteDescription,
-                    slabType = (int)model.SlabType,
-                    quantity = model.Quantity,
-                    needPump = model.NeedPump,
-                    floorNumber = model.FloorNumber,
-                    pouringDate = model.PouringDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-                    transportMethod = (int)model.TransportMethod,
-                    notes = model.Notes
+                    ClientPhone = model.ClientPhone,
+                    ClientFullName = model.ClientFullName,
+                    FactoryId = model.FactoryId,
+                    ConcreteTypeId = model.ConcreteTypeId,
+                    ProjectName = model.ProjectName,
+                    ProjectOwnerName = model.ProjectOwnerName,
+                    SiteArea = model.SiteArea,
+                    SiteDescription = model.SiteDescription,
+                    SlabType = model.SlabType,
+                    Quantity = model.Quantity,
+                    NeedPump = model.NeedPump,
+                    FloorNumber = model.FloorNumber,
+                    PouringDate = model.PouringDate,
+                    TransportMethod = model.TransportMethod,
+                    Notes = model.Notes
                 };
 
                 // ✅ سجل معلومات مختصرة فقط
                 _logger.LogInformation(
                     "📤 Sending PhoneOrder: Client={ClientFullName}, Factory={FactoryId}, Project={ProjectName}",
-                    phoneOrderDto.clientFullName,
-                    phoneOrderDto.factoryId,
-                    phoneOrderDto.projectName);
+                    phoneOrderDto.ClientFullName,
+                    phoneOrderDto.FactoryId,
+                    phoneOrderDto.ProjectName);
 
                 var response = await _apiClient.PostAsync<ApiResponse<OrderDto>>("Orders/phone-order", phoneOrderDto);
 
@@ -213,7 +213,24 @@ namespace Kharasana.Web.Services.Api
             {
                 _logger.LogInformation("📋 Updating order {Id}", id);
 
-                var response = await _apiClient.PutAsync<ApiResponse<OrderDto>>($"Orders/{id}", model);
+                // ✅ تحويل صريح ViewModel → DTO
+                var dto = new Kharasana.Application.DTOs.Order.UpdateOrderDto
+                {
+                    ConcreteTypeId = model.ConcreteTypeId,
+                    ProjectName = model.ProjectName,
+                    ProjectOwnerName = model.ProjectOwnerName,
+                    SiteArea = model.SiteArea,
+                    SiteDescription = model.SiteDescription,
+                    SlabType = model.SlabType,
+                    Quantity = model.Quantity,
+                    NeedPump = model.NeedPump,
+                    FloorNumber = model.FloorNumber,
+                    PouringDate = model.PouringDate,
+                    TransportMethod = model.TransportMethod,
+                    Notes = model.Notes
+                };
+
+                var response = await _apiClient.PutAsync<ApiResponse<OrderDto>>($"Orders/{id}", dto);
 
                 if (response == null || !response.Success)
                 {

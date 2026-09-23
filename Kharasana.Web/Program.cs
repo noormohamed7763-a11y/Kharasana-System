@@ -26,11 +26,7 @@ namespace Kharasana.Web
             builder.Services.AddControllersWithViews(options =>
                 options.Filters.Add<UnhandledExceptionFilter>());
 
-            // المصادقة في هذا المشروع تعمل عبر Session + SessionAuthorizeAttribute،
-            // ولا يوجد أي استخدام لـ SignInAsync — لذا لا نُسجّل Cookie Authentication (كود ميت)
-            builder.Services.AddAuthentication();
-
-            // Session
+            // المصادقة في هذا المشروع تعمل عبر Session + SessionAuthorizeAttribute
             builder.Services.AddDistributedMemoryCache();
 
             builder.Services.AddSession(options =>

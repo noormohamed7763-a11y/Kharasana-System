@@ -10,6 +10,7 @@ public class OrderDto
     public string DriverName { get; set; } = string.Empty;
     public string FactoryName { get; set; } = string.Empty;
     public string ConcreteTypeName { get; set; } = string.Empty;
+    public int? DriverId { get; set; }
     public decimal Quantity { get; set; }
     public decimal? TotalPrice { get; set; }
     public TransportMethod TransportMethod { get; set; }

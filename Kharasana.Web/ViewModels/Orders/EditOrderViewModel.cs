@@ -20,8 +20,8 @@ namespace Kharasana.Web.ViewModels.Orders
         public SlabType SlabType { get; set; }  // ✅ تغيير من int? إلى SlabType
 
         [Required(ErrorMessage = "الكمية مطلوبة")]
-        [Range(0.1, double.MaxValue, ErrorMessage = "الكمية يجب أن تكون أكبر من صفر")]
-        public double Quantity { get; set; }
+        [Range(typeof(decimal), "0.1", "100000", ErrorMessage = "الكمية يجب أن تكون بين 0.1 و 100,000 م³")]
+        public decimal Quantity { get; set; }
 
         public bool NeedPump { get; set; }
         public int? FloorNumber { get; set; }

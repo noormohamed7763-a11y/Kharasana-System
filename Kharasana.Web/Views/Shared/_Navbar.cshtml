@@ -3,8 +3,8 @@
     var userRole = ViewBag.UserRole as string ?? "";
     var initial = userName.Length > 0 ? userName.Substring(0, 1).ToUpper() : "م";
 
-    // شعار المصنع (يُخزَّن في الجلسة عند تسجيل الدخول ويتحدَّث عند رفع/حذف الشعار)
-    var factoryLogo = Context.Session.GetString("FactoryLogo");
+    // شعار المصنع (يُمرَّر من الـ Controller عبر ViewBag — يتحدَّث عند رفع/حذف الشعار)
+    var factoryLogo = ViewBag.FactoryLogo as string;
     var hasFactoryLogo = !string.IsNullOrWhiteSpace(factoryLogo);
 }
 
@@ -13,6 +13,11 @@
     <button class="navbar-toggle-btn" id="sidebarToggle" type="button" aria-label="طي القائمة الجانبية" aria-expanded="false">
         <i class="bi bi-list"></i>
     </button>
+
+    @if (ViewData["Title"] != null)
+    {
+        <div class="navbar-page-title">@ViewData["Title"]</div>
+    }
 
     <div class="navbar-user">
 
@@ -33,7 +38,7 @@
                      class="navbar-avatar-img"
                      alt="شعار المصنع"
                      loading="lazy"
-                     onerror="this.remove();" />
+                     data-img-error="remove" />
             }
         </div>
 

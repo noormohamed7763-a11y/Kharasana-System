@@ -7,8 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const standardSection = document.getElementById("standardConcreteSection");
     const customSection = document.getElementById("customConcreteSection");
 
-    const btnCustom = document.getElementById("btnCustomType");
-    const btnStandard = document.getElementById("btnStandardType");
+    const typeSwitchToggle = document.getElementById("typeSwitchToggle");
 
     const select = document.getElementById("concreteTypeSelect");
 
@@ -111,35 +110,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================
-    // Switch To Custom
+    // Switch Toggle Logic
     // ==========================
 
-    btnCustom?.addEventListener("click", () => {
+    typeSwitchToggle?.addEventListener("change", (e) => {
+        if (e.target.checked) {
+            // Switch To Custom
+            standardSection.classList.add("d-none");
+            customSection.classList.remove("d-none");
 
-        standardSection.classList.add("d-none");
-        customSection.classList.remove("d-none");
+            if (hiddenIsCustom)
+                hiddenIsCustom.value = "true";
 
-        if (hiddenIsCustom)
-            hiddenIsCustom.value = "true";
+            updateCustomPreview();
+        } else {
+            // Switch To Standard
+            standardSection.classList.remove("d-none");
+            customSection.classList.add("d-none");
 
-        updateCustomPreview();
+            if (hiddenIsCustom)
+                hiddenIsCustom.value = "false";
 
-    });
-
-    // ==========================
-    // Switch To Standard
-    // ==========================
-
-    btnStandard?.addEventListener("click", () => {
-
-        standardSection.classList.remove("d-none");
-        customSection.classList.add("d-none");
-
-        if (hiddenIsCustom)
-            hiddenIsCustom.value = "false";
-
-        updateStandardPreview();
-
+            updateStandardPreview();
+        }
     });
 
     // ==========================
@@ -197,6 +190,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // استعادة حالة النوع عند إعادة عرض الصفحة بعد خطأ تحقق
     const isCustomOnLoad = hiddenIsCustom?.value.toLowerCase() === "true";
 
+    if (typeSwitchToggle) {
+        typeSwitchToggle.checked = isCustomOnLoad;
+    }
+
     if (isCustomOnLoad) {
         standardSection.classList.add("d-none");
         customSection.classList.remove("d-none");
@@ -253,13 +250,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // Index Page: Filter Rows by Search (if present)
     // ==========================
     // فلترة جدول قائمة الأنواع حسب نص البحث (متوافقة مع صفحة Index فقط)
+    // debounce: 250ms لتجنب التأخر في الجداول الكبيرة
+    let searchTimeout;
     const tableSearch = document.getElementById("tableSearch");
 
     tableSearch?.addEventListener("keyup", function () {
-        const value = this.value.toLowerCase();
-        document.querySelectorAll("tbody tr").forEach(function (row) {
-            row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
-        });
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const value = this.value.toLowerCase();
+            document.querySelectorAll("tbody tr").forEach(function (row) {
+                row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
+            });
+        }, 250);
     });
 
 });

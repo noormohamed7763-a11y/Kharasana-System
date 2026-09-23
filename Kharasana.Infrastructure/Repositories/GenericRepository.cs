@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Collections.Concurrent;
+using System.Linq.Expressions;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -23,28 +24,31 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         return await _dbSet.AsNoTracking().ToListAsync();
     }
 
+    private static readonly ConcurrentDictionary<Type, string> _pkNames = new();
+
     public async Task<T?> GetByIdAsync(int id)
     {
-        // ✅ Use LINQ instead of FindAsync to respect global query filters (e.g., IsDeleted)
-        var pk = _context.Model.FindEntityType(typeof(T))!.FindPrimaryKey()!;
-        var param = Expression.Parameter(typeof(T), "e");
-        var property = Expression.Property(param, pk.Properties[0].Name);
-        var constant = Expression.Constant(id);
-        var equal = Expression.Equal(property, constant);
-        var lambda = Expression.Lambda<Func<T, bool>>(equal, param);
-        return await _dbSet.FirstOrDefaultAsync(lambda);
+        return await _dbSet.FirstOrDefaultAsync(BuildKeyPredicate(id));
     }
 
     public async Task<T?> GetByIdIncludingDeletedAsync(int id)
     {
-        // ✅ يتجاوز فلاتر الاستعلام العامة عبر IgnoreQueryFilters — للقراءة المتعمّدة للكيانات المؤرشفة
-        var pk = _context.Model.FindEntityType(typeof(T))!.FindPrimaryKey()!;
+        return await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(BuildKeyPredicate(id));
+    }
+
+    private Expression<Func<T, bool>> BuildKeyPredicate(int id)
+    {
+        var pkName = _pkNames.GetOrAdd(typeof(T), type =>
+        {
+            var pk = _context.Model.FindEntityType(type)!.FindPrimaryKey()!;
+            return pk.Properties[0].Name;
+        });
+
         var param = Expression.Parameter(typeof(T), "e");
-        var property = Expression.Property(param, pk.Properties[0].Name);
+        var property = Expression.Property(param, pkName);
         var constant = Expression.Constant(id);
         var equal = Expression.Equal(property, constant);
-        var lambda = Expression.Lambda<Func<T, bool>>(equal, param);
-        return await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(lambda);
+        return Expression.Lambda<Func<T, bool>>(equal, param);
     }
 
     public async Task AddAsync(T entity)

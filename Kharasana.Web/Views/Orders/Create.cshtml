@@ -1,4 +1,4 @@
-﻿@model Kharasana.Web.ViewModels.Orders.CreatePhoneOrderViewModel
+@model Kharasana.Web.ViewModels.Orders.CreatePhoneOrderViewModel
 @using Kharasana.Web.ViewModels.Shared
 @using Kharasana.Web.Models.Components
 @using Kharasana.Domain.Enums
@@ -128,13 +128,7 @@
                         <i class="bi bi-grid"></i> نوع البلاطة
                         <span class="text-danger">*</span>
                     </label>
-                    <select asp-for="SlabType" class="form-select form-select-lg">
-                        <option value="">-- اختر نوع البلاطة --</option>
-                        <option value="@((int)SlabType.Foundation)">أساسات</option>
-                        <option value="@((int)SlabType.Columns)">أعمدة</option>
-                        <option value="@((int)SlabType.Beams)">كمرات</option>
-                        <option value="@((int)SlabType.Roof)">سقف</option>
-                        <option value="@((int)SlabType.Other)">أخرى</option>
+                    <select asp-for="SlabType" class="form-select form-select-lg" asp-items="EnumHelper.GetSlabTypeSelectList()">
                     </select>
                     <span asp-validation-for="SlabType" class="text-danger"></span>
                     <small class="text-muted">اختر نوع البلاطة المناسب</small>
@@ -351,7 +345,7 @@ MODAL - إنشاء نوع خرسانة مخصص
 
 <!-- تم نقل تنسيقات هذه الصفحة إلى wwwroot/css/orders.css (ملف مركزي موحّد) -->
 @section Scripts {
-    <script>
+    <script nonce="@ViewBag.CspNonce">
         (function(){
             const concreteSelect = document.getElementById('concreteTypeSelect');
             const qtyInput = document.querySelector('input[name="Quantity"]');

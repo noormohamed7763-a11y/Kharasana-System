@@ -1,4 +1,4 @@
-﻿namespace Kharasana.Web.Models.Settings
+namespace Kharasana.Web.ViewModels.Settings
 {
     /// <summary>
     /// عرض بيانات مصنع موظف المصنع الحالي (للقراءة فقط) + شعار المصنع القابل للتعديل.

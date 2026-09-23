@@ -197,6 +197,12 @@ public class Program
         // يُحقن IValidator<T> تلقائياً عند الاستخدام عبر [ServiceFilter(typeof(ValidationFilter<T>))]
         builder.Services.AddScoped(typeof(ValidationFilter<>));
 
+        // Response Compression — تقليل حجم الاستجابات
+        builder.Services.AddResponseCompression(options =>
+        {
+            options.EnableForHttps = true;
+        });
+
         // API Explorer
         builder.Services.AddEndpointsApiExplorer();
 
@@ -287,10 +293,15 @@ public class Program
         app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                               ForwardedHeaders.XForwardedProto
+                               ForwardedHeaders.XForwardedProto,
+            // تقييد قبول X-Forwarded-* من الـ Proxy المحلي فقط.
+            // في الإنتاج: استبدل IPAddress.Loopback بعنوان IP الفعلي للـ reverse proxy (nginx/Caddy/...).
+            KnownProxies = { System.Net.IPAddress.Loopback, System.Net.IPAddress.IPv6Loopback }
         });
 
         app.UseRateLimiter();
+
+        app.UseResponseCompression();
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();

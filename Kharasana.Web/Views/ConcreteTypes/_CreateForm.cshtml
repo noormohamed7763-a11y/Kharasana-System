@@ -1,4 +1,4 @@
-﻿@model Kharasana.Web.ViewModels.ConcreteTypes.CreateConcreteTypeViewModel
+@model Kharasana.Web.ViewModels.ConcreteTypes.CreateConcreteTypeViewModel
 
 <div class="row g-3">
 
@@ -27,7 +27,7 @@
 
     <!-- المعلومات الأساسية -->
     <div class="col-12">
-        <div class="form-section-title">
+        <div class="erp-section-title">
             <i class="bi bi-box-seam"></i>
             <span>المعلومات الأساسية</span>
         </div>
@@ -47,6 +47,15 @@
             <span asp-validation-for="FactoryId" class="text-danger"></span>
         </div>
     }
+
+    <!-- خيار التبديل (Switch) -->
+    <div class="col-12 mb-3">
+        <div class="form-check form-switch form-switch-lg d-flex align-items-center gap-2">
+            <input class="form-check-input" type="checkbox" role="switch" id="typeSwitchToggle">
+            <label class="form-check-label fw-bold" for="typeSwitchToggle" style="margin-top: 2px;">إنشاء نوع خرسانة مخصص</label>
+        </div>
+        <small class="text-muted ms-5">قم بتفعيل هذا الخيار لإدخال نوع خرسانة جديد غير موجود في القائمة القياسية.</small>
+    </div>
 
     <!-- النوع القياسي -->
     <div id="standardConcreteSection">
@@ -79,20 +88,6 @@
 
                 <span asp-validation-for="SelectedConcreteCode"
                       class="text-danger"></span>
-
-            </div>
-
-            <div class="col-md-6 d-flex align-items-end">
-
-                <button type="button"
-                        id="btnCustomType"
-                        class="btn btn-outline-primary w-100">
-
-                    <i class="bi bi-plus-circle"></i>
-
-                    إنشاء نوع خرسانة مخصص
-
-                </button>
 
             </div>
         </div>
@@ -189,19 +184,6 @@
 
             </div>
 
-            <div class="col-12 mt-3">
-
-                <button type="button"
-                        id="btnStandardType"
-                        class="btn btn-outline-secondary">
-
-                    <i class="bi bi-arrow-right"></i>
-
-                    الرجوع إلى الأنواع القياسية
-
-                </button>
-
-            </div>
         </div>
     </div>
 
@@ -215,13 +197,13 @@
     <!-- بيانات السعر -->
     <div class="col-12 mt-3">
 
-        <div class="form-section-title">
+        <div class="erp-section-title">
 
-            <i class="bi bi-cash-stack"></i>
+                            <i class="bi bi-cash-stack"></i>
 
-            <span>بيانات السعر</span>
+                            <span>بيانات السعر</span>
 
-        </div>
+                        </div>
 
     </div>
 
@@ -256,13 +238,13 @@
     <!-- الصورة -->
     <div class="col-12 mt-3">
 
-        <div class="form-section-title">
+        <div class="erp-section-title">
 
-            <i class="bi bi-image"></i>
+                            <i class="bi bi-image"></i>
 
-            <span>الصورة والوصف</span>
+                            <span>الصورة والوصف</span>
 
-        </div>
+                        </div>
 
     </div>
 

@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Domain.Enums;
 using Kharasana.Web.Filters;
 using Kharasana.Web.ViewModels.Dashboard;
@@ -27,15 +27,21 @@ namespace Kharasana.Web.Controllers
             }
             else if (RoleValue == UserRole.FactoryEmployee)
             {
-                if (FactoryId.HasValue)
+                if (!FactoryId.HasValue)
                 {
-                    vm = await _dashboardApiService.GetFactoryDashboardAsync(FactoryId.Value);
+                    return RedirectToAction("AccessDenied", "Account");
                 }
+                vm = await _dashboardApiService.GetFactoryDashboardAsync(FactoryId.Value);
             }
 
             vm ??= new DashboardViewModel();
 
             return View(vm);
+        }
+
+        public async Task<IActionResult> Factory()
+        {
+            return RedirectToAction(nameof(Index));
         }
     }
 }

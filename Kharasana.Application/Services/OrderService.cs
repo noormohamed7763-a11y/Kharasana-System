@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Interfaces;
@@ -9,26 +9,18 @@ using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 using Kharasana.Application.DTOs.Customer;
 
+
 namespace Kharasana.Application.Services;
 
 public class OrderService : IOrderService
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IConcreteTypeRepository _concreteTypeRepository;
-    private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IUnitOfWork _unitOfWork;
 
     public OrderService(
-        IOrderRepository orderRepository,
-        IConcreteTypeRepository concreteTypeRepository,
-        IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IUnitOfWork unitOfWork)
     {
-        _orderRepository = orderRepository;
-        _concreteTypeRepository = concreteTypeRepository;
-        _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _unitOfWork = unitOfWork;
     }
@@ -56,7 +48,7 @@ public class OrderService : IOrderService
         if (factory.IsDeleted)
             throw new BusinessException(Messages.FactoryArchived);
 
-        var concreteType = await _concreteTypeRepository.GetByIdAsync(dto.ConcreteTypeId);
+        var concreteType = await _unitOfWork.ConcreteTypes.GetByIdAsync(dto.ConcreteTypeId);
         if (concreteType == null)
             throw new NotFoundException(Messages.ConcreteTypeNotFound);
 
@@ -81,7 +73,7 @@ public class OrderService : IOrderService
         }
         else if (currentRole == UserRole.Client)
         {
-            var client = await _userRepository.GetByIdAsync(currentUserId);
+            var client = await _unitOfWork.Users.GetByIdAsync(currentUserId);
             if (client == null)
                 throw new NotFoundException(Messages.UserNotFound);
 
@@ -97,7 +89,7 @@ public class OrderService : IOrderService
 
         var order = BuildOrder(dto, clientId, concreteType.UnitPrice);
 
-        await _orderRepository.AddAsync(order);
+        await _unitOfWork.Orders.AddAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
         return MapToDetailsDto(order, hidePricing: false);
@@ -123,7 +115,7 @@ public class OrderService : IOrderService
         if (factory.IsDeleted)
             throw new BusinessException(Messages.FactoryArchived);
 
-        var concreteType = await _concreteTypeRepository.GetByIdAsync(dto.ConcreteTypeId);
+        var concreteType = await _unitOfWork.ConcreteTypes.GetByIdAsync(dto.ConcreteTypeId);
         if (concreteType == null)
             throw new NotFoundException(Messages.ConcreteTypeNotFound);
 
@@ -133,7 +125,7 @@ public class OrderService : IOrderService
         if (!concreteType.IsActive)
             throw new BusinessException(Messages.ConcreteTypeInactive);
 
-        var client = await _userRepository.GetByPhoneAsync(normalizedPhone);
+        var client = await _unitOfWork.Users.GetByPhoneAsync(normalizedPhone);
 
         if (client == null)
         {
@@ -152,7 +144,7 @@ public class OrderService : IOrderService
                 CreatedAt = DateTime.UtcNow
             };
 
-            await _userRepository.AddAsync(client);
+            await _unitOfWork.Users.AddAsync(client);
             await _unitOfWork.SaveChangesAsync();
         }
         else if (client.Role == UserRole.Client)
@@ -185,7 +177,7 @@ public class OrderService : IOrderService
 
         var order = BuildOrder(createDto, client.UserId, concreteType.UnitPrice);
 
-        await _orderRepository.AddAsync(order);
+        await _unitOfWork.Orders.AddAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
         return MapToDetailsDto(order, hidePricing: false);
@@ -198,7 +190,7 @@ public class OrderService : IOrderService
     {
         var order = await GetOrderOrThrowAsync(id, callerId, callerRole, callerFactoryId);
 
-        if (order.Status != OrderStatus.New && order.Status != OrderStatus.Pending)
+        if (order.Status != OrderStatus.Pending)
         {
             var statusName = OrderStatusHelper.GetArabicName(order.Status);
             throw new BusinessException(string.Format(Messages.OrderCannotBeUpdatedInStatus, statusName));
@@ -206,7 +198,7 @@ public class OrderService : IOrderService
 
         if (order.ConcreteTypeId != dto.ConcreteTypeId)
         {
-            var concreteType = await _concreteTypeRepository.GetByIdAsync(dto.ConcreteTypeId);
+        var concreteType = await _unitOfWork.ConcreteTypes.GetByIdAsync(dto.ConcreteTypeId);
             if (concreteType == null)
                 throw new BusinessException(string.Format(Messages.ConcreteTypeNotFoundById, dto.ConcreteTypeId));
 
@@ -217,6 +209,7 @@ public class OrderService : IOrderService
                 throw new BusinessException(string.Format(Messages.ConcreteTypeInactiveForOrder, concreteType.Name));
 
             order.ConcreteTypeId = dto.ConcreteTypeId;
+            _unitOfWork.ConcreteTypes.Update(concreteType);
         }
 
         // التحقق من الحقول (الكمية، التاريخ، المضخة والطابق) أصبح مسؤولية
@@ -237,7 +230,7 @@ public class OrderService : IOrderService
 
         order.TotalPrice = order.Quantity * order.UnitPrice;
 
-        _orderRepository.Update(order);
+        _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
         return MapToOrderDto(order, false);
@@ -261,7 +254,7 @@ public class OrderService : IOrderService
     public async Task<PagedResult<OrderDto>> GetPagedAsync(
         int? factoryId, int? clientId, int? driverId, UserRole callerRole, PaginationParams pagination)
     {
-        var result = await _orderRepository.GetPagedAsync(
+        var result = await _unitOfWork.Orders.GetPagedAsync(
             factoryId, clientId, driverId, pagination.Status, pagination.Search, pagination.PageNumber, pagination.PageSize);
 
         var hidePricing = callerRole == UserRole.Driver;
@@ -289,7 +282,7 @@ public class OrderService : IOrderService
         // موظف المصنع يرى سائقي مصنعه فقط
         if (callerRole == UserRole.FactoryEmployee && callerFactoryId.HasValue)
         {
-            var driver = await _userRepository.GetByIdAsync(driverId);
+            var driver = await _unitOfWork.Users.GetByIdAsync(driverId);
             if (driver == null || driver.FactoryId != callerFactoryId.Value || driver.Role != UserRole.Driver)
             {
                 throw new ForbiddenException(Messages.NotAuthorizedToViewReport);
@@ -298,7 +291,7 @@ public class OrderService : IOrderService
 
         // ملاحظة: نستدعي المخزن مباشرة بدل PaginationParams لأن PageSize فيه محدود بـ 100 —
         //     والتقرير يحتاج جميع طلبات السائق دفعة واحدة.
-        var result = await _orderRepository.GetPagedAsync(
+        var result = await _unitOfWork.Orders.GetPagedAsync(
             factoryId: callerRole == UserRole.FactoryEmployee ? callerFactoryId : null,
             clientId: null,
             driverId: driverId,
@@ -322,17 +315,14 @@ public class OrderService : IOrderService
 
         var order = await GetOrderOrThrowAsync(id, callerId, callerRole, callerFactoryId);
 
-        if (order.Status != OrderStatus.New && order.Status != OrderStatus.Pending)
+        if (order.Status != OrderStatus.Pending)
             throw new BusinessException(Messages.CannotUpdatePriceAtThisStage);
 
         order.UnitPrice = unitPrice;
         order.TotalPrice = unitPrice * order.Quantity;
         order.UpdatedAt = DateTime.UtcNow;
 
-        if (order.Status == OrderStatus.New)
-            order.Status = OrderStatus.Pending;
-
-        _orderRepository.Update(order);
+        _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
         return true;
@@ -357,7 +347,7 @@ public class OrderService : IOrderService
         order.Status = OrderStatus.Approved;
         order.UpdatedAt = DateTime.UtcNow;
 
-        _orderRepository.Update(order);
+        _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
         return true;
@@ -385,7 +375,7 @@ public class OrderService : IOrderService
         order.Status = OrderStatus.OnTheWay;
         order.UpdatedAt = DateTime.UtcNow;
 
-        _orderRepository.Update(order);
+        _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
         return true;
@@ -413,7 +403,7 @@ public class OrderService : IOrderService
 
         await ReleaseDriverAsync(order);
 
-        _orderRepository.Update(order);
+        _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
         return true;
@@ -433,7 +423,7 @@ public class OrderService : IOrderService
         order.ClosedAt = DateTime.UtcNow;
         order.UpdatedAt = DateTime.UtcNow;
 
-        _orderRepository.Update(order);
+        _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
         return true;
@@ -461,7 +451,7 @@ public class OrderService : IOrderService
         if (dto.Status is OrderStatus.Delivered or OrderStatus.Rejected or OrderStatus.Cancelled)
             await ReleaseDriverAsync(order);
 
-        _orderRepository.Update(order);
+        _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
         return true;
@@ -480,7 +470,7 @@ public class OrderService : IOrderService
         if (order.TransportMethod == TransportMethod.ClientOwnTransport)
             throw new BusinessException(Messages.CannotAssignDriverForClientTransport);
 
-        var driver = await _userRepository.GetByIdAsync(dto.DriverId);
+        var driver = await _unitOfWork.Users.GetByIdAsync(dto.DriverId);
         if (driver == null)
             throw new NotFoundException(Messages.DriverNotFound);
 
@@ -495,12 +485,12 @@ public class OrderService : IOrderService
 
         if (order.DriverId.HasValue && order.DriverId.Value != dto.DriverId)
         {
-            var previousDriver = await _userRepository.GetByIdAsync(order.DriverId.Value);
+            var previousDriver = await _unitOfWork.Users.GetByIdAsync(order.DriverId.Value);
             if (previousDriver != null && previousDriver.Role == UserRole.Driver)
             {
                 previousDriver.DriverStatus = DriverStatus.Available;
                 previousDriver.UpdatedAt = DateTime.UtcNow;
-                _userRepository.Update(previousDriver);
+                _unitOfWork.Users.Update(previousDriver);
             }
         }
 
@@ -511,8 +501,8 @@ public class OrderService : IOrderService
         driver.DriverStatus = DriverStatus.Busy;
         driver.UpdatedAt = DateTime.UtcNow;
 
-        _orderRepository.Update(order);
-        _userRepository.Update(driver);
+        _unitOfWork.Orders.Update(order);
+        _unitOfWork.Users.Update(driver);
         await _unitOfWork.SaveChangesAsync();
 
         return true;
@@ -525,7 +515,7 @@ public class OrderService : IOrderService
     {
         var order = await GetOrderOrThrowAsync(id, callerId, callerRole, callerFactoryId);
 
-        if (order.Status != OrderStatus.New && order.Status != OrderStatus.Pending)
+        if (order.Status != OrderStatus.Pending)
             throw new BusinessException(Messages.OrderCannotBeRejectedInStatus);
 
         order.Status = OrderStatus.Rejected;
@@ -536,7 +526,7 @@ public class OrderService : IOrderService
 
         await ReleaseDriverAsync(order);
 
-        _orderRepository.Update(order);
+        _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
         return true;
@@ -566,7 +556,29 @@ public class OrderService : IOrderService
 
         await ReleaseDriverAsync(order);
 
-        _orderRepository.Update(order);
+        _unitOfWork.Orders.Update(order);
+        await _unitOfWork.SaveChangesAsync();
+
+        return true;
+    }
+
+    // ============================================================
+    // DELETE - حذف ناعم (Soft Delete) للطلب
+    // ============================================================
+    public async Task<bool> DeleteOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId)
+    {
+        var order = await GetOrderOrThrowAsync(id, callerId, callerRole, callerFactoryId);
+
+        if (callerRole != UserRole.Admin && callerRole != UserRole.FactoryEmployee)
+            throw new ForbiddenException(Messages.Unauthorized);
+
+        if (order.Status is OrderStatus.Delivered or OrderStatus.Closed)
+            throw new BusinessException(Messages.CannotCancelDeliveredOrClosedOrder);
+
+        order.IsDeleted = true;
+        order.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
         return true;
@@ -578,7 +590,7 @@ public class OrderService : IOrderService
 
     private async Task<Order> GetOrderOrThrowAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId)
     {
-        var order = await _orderRepository.GetByIdWithDetailsAsync(id);
+        var order = await _unitOfWork.Orders.GetByIdWithDetailsAsync(id);
         if (order == null)
             throw new NotFoundException(Messages.OrderNotFound);
 
@@ -619,7 +631,7 @@ public class OrderService : IOrderService
         {
             driver.DriverStatus = DriverStatus.Available;
             driver.UpdatedAt = DateTime.UtcNow;
-            _userRepository.Update(driver); // ✅ حفظ تحرير السائق فعلياً في قاعدة البيانات
+            _unitOfWork.Users.Update(driver); // ✅ حفظ تحرير السائق فعلياً في قاعدة البيانات
         }
     }
 
@@ -628,7 +640,7 @@ public class OrderService : IOrderService
         if (clientId <= 0)
             throw new BusinessException(Messages.ClientRequiredForAdminOrder);
 
-        var client = await _userRepository.GetByIdAsync(clientId);
+        var client = await _unitOfWork.Users.GetByIdAsync(clientId);
         if (client == null)
             throw new NotFoundException(Messages.UserNotFound);
 
@@ -677,6 +689,7 @@ public class OrderService : IOrderService
             OrderId = o.OrderId,
             OrderNumber = o.OrderNumber,
             ClientName = o.Client?.FullName ?? string.Format(Messages.ClientFallback, o.ClientId),
+            DriverId = o.DriverId,
             DriverName = o.Driver?.FullName ?? string.Empty,
             FactoryName = o.Factory?.FactoryName ?? string.Format(Messages.FactoryFallback, o.FactoryId),
             ConcreteTypeName = o.ConcreteType?.Name ?? string.Format(Messages.ConcreteTypeFallback, o.ConcreteTypeId),
@@ -706,6 +719,7 @@ public class OrderService : IOrderService
             FactoryId = order.FactoryId,
             FactoryName = order.Factory?.FactoryName ?? string.Format(Messages.FactoryFallback, order.FactoryId),
             ConcreteTypeId = order.ConcreteTypeId,
+            ConcreteStrength = order.ConcreteType?.Strength ?? 0,
             ConcreteTypeName = order.ConcreteType?.Name ?? string.Format(Messages.ConcreteTypeFallback, order.ConcreteTypeId),
             ProjectName = order.ProjectName,
             ProjectOwnerName = order.ProjectOwnerName,

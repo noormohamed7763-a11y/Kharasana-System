@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
         toastDuration: 5000,
         reloadDelay: 1000,
         statusMessages: {
-            approve: '✅ تمت موافقة العميل بنجاح',
+            approve: '✅ تم اعتماد الطلب بنجاح',
             reject: '❌ تم رفض الطلب بنجاح',
             cancel: '🚫 تم إلغاء الطلب بنجاح',
             'start-delivery': '🚚 تم بدء التوصيل بنجاح',
@@ -326,7 +326,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
                 const orderId = this.querySelector('input[name="id"]')?.value;
-                const url = this.action || `/Orders/ChangeStatus/${orderId}`;
+                const url = this.action || `/OrderWorkflow/ChangeStatus/${orderId}`;
                 const token = getRequestVerificationToken();
 
                 const formData = new FormData(this);
@@ -412,7 +412,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (action === 'reject') {
                 const reason = prompt('يرجى كتابة سبب الرفض (اختياري):');
                 if (reason === null) return;
-                this.dataset.reason = reason || '';
+                if (!(reason && reason.trim())) return;
+                this.dataset.reason = reason.trim();
             }
 
             const originalText = this.innerHTML;
@@ -420,12 +421,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
                 const actionMap = {
-                    approve: `/Orders/Approve/${orderId}`,
-                    reject: `/Orders/Reject/${orderId}`,
-                    cancel: `/Orders/Cancel/${orderId}`,
-                    'start-delivery': `/Orders/StartDelivery/${orderId}`,
-                    deliver: `/Orders/Deliver/${orderId}`,
-                    close: `/Orders/Close/${orderId}`
+                    approve: `/OrderWorkflow/Approve/${orderId}`,
+                    reject: `/OrderWorkflow/Reject/${orderId}`,
+                    cancel: `/OrderWorkflow/Cancel/${orderId}`,
+                    'start-delivery': `/OrderWorkflow/StartDelivery/${orderId}`,
+                    deliver: `/OrderWorkflow/Deliver/${orderId}`,
+                    close: `/OrderWorkflow/Close/${orderId}`
                 };
 
                 const url = actionMap[action];
@@ -517,7 +518,7 @@ document.addEventListener("DOMContentLoaded", function () {
             setButtonState(this, true, getLoadingText('جاري الحفظ...'));
 
             try {
-                const response = await fetch(`/Orders/SavePrice/${orderId}`, {
+                const response = await fetch(`/OrderWorkflow/SavePrice/${orderId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -617,3 +618,10 @@ function applyFilters() {
     const searchForm = document.getElementById('searchForm');
     if (searchForm) searchForm.submit();
 }
+
+// ==============================
+// CSP-safe filter event listeners
+// (replaces inline onchange="applyFilters()")
+// ==============================
+document.getElementById('statusFilter')?.addEventListener('change', applyFilters);
+document.getElementById('factoryFilter')?.addEventListener('change', applyFilters);

@@ -21,7 +21,7 @@ public static class Messages
 
     public const string FactoriesRetrievedSuccessfully = "تم جلب المصانع بنجاح.";
     public const string FactoryRetrievedSuccessfully = "تم جلب المصنع بنجاح.";
-    public const string ArchivedFactoriesRetrievedSuccessfully = "تم جلب المصانع المؤرشفة بنجاح";
+    public const string ArchivedFactoriesRetrievedSuccessfully = "تم جلب المصانع المؤرشفة بنجاح.";
     public const string FactoryRestoredSuccessfully = "تم استعادة المصنع بنجاح.";
     public const string FactoryLogoUploadedSuccessfully = "تم رفع شعار المصنع بنجاح.";
     public const string FactoryLogoDeletedSuccessfully = "تم حذف شعار المصنع بنجاح.";
@@ -31,7 +31,7 @@ public static class Messages
 
     public const string OrderUpdatedSuccessfully = "تم تحديث الطلب بنجاح.";
     public const string PriceSavedSuccessfully = "تم حفظ السعر بنجاح.";
-    public const string OrderApprovedSuccessfully = "تمت موافقة العميل بنجاح.";
+    public const string OrderApprovedSuccessfully = "تم اعتماد الطلب بنجاح.";
     public const string DeliveryStartedSuccessfully = "تم بدء التوصيل بنجاح.";
     public const string OrderDeliveredSuccessfully = "تم تسليم الطلب بنجاح.";
     public const string OrderClosedSuccessfully = "تم إغلاق الطلب بنجاح.";
@@ -108,8 +108,10 @@ public static class Messages
 
     public const string InvalidYemeniPhone = "رقم الهاتف غير صالح. يجب أن يكون رقم يمني صحيح (مثال: 7XXXXXXXX).";
     public const string InvalidWhatsAppNumber = "رقم الواتساب غير صالح. يجب أن يكون رقم يمني صحيح (مثال: 7XXXXXXXX).";
-    public const string PasswordMinLength = "كلمة المرور يجب أن تكون 6 أحرف على الأقل.";
+    public const string PasswordMinLength = "كلمة المرور يجب أن تكون 8 أحرف على الأقل.";
     public const string NameMaxLength = "الاسم الكامل يجب ألا يزيد عن 200 حرف.";
+    public const string FullNameRequired = "الاسم الكامل مطلوب.";
+    public const string PasswordRequired = "كلمة المرور مطلوبة.";
 
     #endregion
 
@@ -122,12 +124,17 @@ public static class Messages
 
     #region Order Validation Messages
 
-    public const string OrderCannotBeUpdatedInStatus = "لا يمكن تعديل الطلب في حالته الحالية \"{0}\". يُسمح بالتعديل فقط للطلبات الجديدة أو قيد الانتظار.";
+    public const string ConcurrencyConflict = "تم تعديل هذا الطلب من قبل مستخدم آخر. الرجاء إعادة تحميل الصفحة والمحاولة مرة أخرى.";
+    public const string OrderCannotBeUpdatedInStatus = "لا يمكن تعديل الطلب في حالته الحالية \"{0}\". يُسمح بالتعديل فقط للطلبات قيد الانتظار.";
     public const string OrderCannotBeRejectedInStatus = "لا يمكن رفض هذا الطلب في حالته الحالية.";
     public const string ConcreteTypeNotFoundById = "نوع الخرسانة المحدد (ID: {0}) غير موجود في النظام.";
     public const string ConcreteTypeNotBelongsToFactory = "نوع الخرسانة المحدد لا ينتمي إلى مصنعك الحالي. يرجى اختيار نوع خرسانة تابع للمصنع.";
     public const string ConcreteTypeInactiveForOrder = "نوع الخرسانة \"{0}\" غير نشط حالياً. يرجى اختيار نوع خرسانة نشط.";
     public const string ConcreteTypeInactive = "نوع الخرسانة غير نشط. يرجى اختيار نوع آخر.";
+    public const string ConcreteTypeRequired = "يجب تحديد نوع الخرسانة.";
+    public const string FactoryRequired = "يجب تحديد المصنع.";
+    public const string TransportMethodInvalid = "طريقة النقل غير صالحة.";
+    public const string SlabTypeInvalid = "نوع الصبة غير صالح.";
     public const string QuantityMustBePositive = "الكمية يجب أن تكون أكبر من صفر.";
     public const string QuantityTooLarge = "الكمية كبيرة جداً (أقصى حد هو 1000 متر مكعب). يرجى التواصل مع الدعم إذا كانت الكمية أكبر.";
     public const string PouringDateCannotBeInPast = "تاريخ الصب لا يمكن أن يكون في الماضي. يرجى اختيار تاريخ اليوم أو تاريخ مستقبلي.";
@@ -158,7 +165,7 @@ public static class Messages
 
     public const string UnexpectedError = "حدث خطأ غير متوقع.";
 
-    public const string CustomersRetrievedSuccessfully = "تم جلب العملاء بنجاح";
+    public const string CustomersRetrievedSuccessfully = "تم جلب العملاء بنجاح.";
 
     #endregion
 

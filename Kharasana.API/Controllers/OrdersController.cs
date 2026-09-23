@@ -177,6 +177,7 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPost]
     [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]
+    [ServiceFilter(typeof(ValidationFilter<CreateOrderDto>))]
     public async Task<IActionResult> Create([FromBody] CreateOrderDto dto)
     {
         var caller = User.GetCallerContext();
@@ -232,6 +233,7 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPost("phone-order")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<PhoneOrderDto>))]
     public async Task<IActionResult> CreatePhoneOrder([FromBody] PhoneOrderDto dto)
     {
         var caller = User.GetCallerContext();
@@ -273,6 +275,7 @@ public class OrdersController : ControllerBase
     /// <response code="404">الطلب غير موجود.</response>
     [HttpPut("{id:int}/price")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<SetPriceDto>))]
     public async Task<IActionResult> SetPrice(int id, [FromBody] SetPriceDto dto)
     {
         var caller = User.GetCallerContext();
@@ -313,6 +316,7 @@ public class OrdersController : ControllerBase
     /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     [HttpPut("{id:int}/status")]
     [Authorize(Roles = Roles.Admin)]
+    [ServiceFilter(typeof(ValidationFilter<UpdateOrderStatusDto>))]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto)
     {
         var caller = User.GetCallerContext();
@@ -334,6 +338,7 @@ public class OrdersController : ControllerBase
     /// <response code="404">الطلب أو السائق غير موجود.</response>
     [HttpPut("{id:int}/assign-driver")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<AssignDriverDto>))]
     public async Task<IActionResult> AssignDriver(int id, [FromBody] AssignDriverDto dto)
     {
         var caller = User.GetCallerContext();
@@ -411,6 +416,7 @@ public class OrdersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPut("{id:int}/reject")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<RejectOrderDto>))]
     public async Task<IActionResult> Reject(int id, [FromBody] RejectOrderDto dto)
     {
         var caller = User.GetCallerContext();
@@ -435,6 +441,27 @@ public class OrdersController : ControllerBase
         var caller = User.GetCallerContext();
 
         await _orderService.CancelOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
+
+        return Ok(ApiResponse.Ok(Messages.OrderCancelledSuccessfully));
+    }
+
+    // ============================================================
+    // 16. DELETE (Soft Delete)
+    // ============================================================
+    /// <summary>
+    /// حذف ناعم (أرشفة) للطلب.
+    /// </summary>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <response code="200">تم أرشفة الطلب بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="403">الحساب لا يملك صلاحية المدير أو موظف المصنع.</response>
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var caller = User.GetCallerContext();
+
+        await _orderService.DeleteOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
         return Ok(ApiResponse.Ok(Messages.OrderCancelledSuccessfully));
     }

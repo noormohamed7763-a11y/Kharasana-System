@@ -40,7 +40,7 @@
                                          loading="lazy"
                                          data-name="@item.FactoryName"
                                          style="width:40px; height:40px; object-fit:cover; border-radius:50%; border:2px solid #e9ecef; background:#f8f9fa;"
-                                         onerror="handleLogoError(this);" />
+                                         data-img-error="logo" />
                                 }
                                 else
                                 {
@@ -84,7 +84,8 @@
                                 {
                                     <button type="button"
                                             class="btn btn-sm btn-outline-primary"
-                                            onclick="openCreateAccountModal(@item.FactoryId,'@item.FactoryName')">
+                                            data-factory-id="@item.FactoryId"
+                                            data-factory-name="@item.FactoryName">
                                         <i class="bi bi-person-plus"></i>
                                         إنشاء حساب
                                     </button>

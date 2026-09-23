@@ -19,8 +19,8 @@ namespace Kharasana.Web.ViewModels.Orders
         /// <summary>
         /// الحالة الجديدة للطلب (قيمة رقمية من enum OrderStatus)
         /// </summary>
-        [Required(ErrorMessage = "الحالة مطلوبة")]
-        [Range(0, 7, ErrorMessage = "الحالة غير صالحة")]
+         [Required(ErrorMessage = "الحالة مطلوبة")]
+        [EnumDataType(typeof(OrderStatus), ErrorMessage = "الحالة غير صالحة")]
         [Display(Name = "الحالة")]
         public int Status { get; set; }
 

@@ -1,13 +1,10 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Shared;
 using Kharasana.Application.DTOs.ConcreteType;
-using Kharasana.Application.DTOs.User;  // ✅ أضف هذا
-using Kharasana.Domain.Enums;           // ✅ أضف هذا
+using Kharasana.Application.DTOs.User;
+using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Kharasana.Web.Services.Api
 {
@@ -23,48 +20,60 @@ namespace Kharasana.Web.Services.Api
         }
 
         /// <summary>
+        /// تنفيذ طلب API موحّد مع معالجة الأخطاء والتسجيل.
+        /// </summary>
+        private async Task<(bool Success, List<LookupDto> Items)> FetchLookupAsync(
+            string operation,
+            string url,
+            Func<ApiResponse<PagedResult<UserDto>>, List<LookupDto>> mapper)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching {Operation}...", operation);
+
+                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(url);
+
+                if (response != null && response.Success && response.Data?.Items != null)
+                {
+                    var items = mapper(response);
+                    _logger.LogInformation("Found {Count} {Operation}", items.Count, operation);
+                    return (true, items);
+                }
+
+                _logger.LogWarning("No {Operation} found.", operation);
+            }
+            catch (ApiServiceException ex)
+            {
+                _logger.LogError(ex, "API error in {Operation}", operation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching {Operation}", operation);
+            }
+
+            return (false, new List<LookupDto>());
+        }
+
+        /// <summary>
         /// جلب جميع السائقين المتاحين في النظام
         /// </summary>
         public async Task<List<LookupDto>> GetAvailableDriversAsync()
         {
-            try
-            {
-                _logger.LogInformation("🔍 جلب السائقين المتاحين...");
-
-                // ✅ استخدام PagedResult<UserDto> لأن الـ API يعيد بهذا الشكل
-                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(
-                    "Users?role=2&driverStatus=0&PageSize=100");
-
-                if (response != null && response.Success && response.Data?.Items != null)
-                {
-                    var drivers = response.Data.Items
-                        .Where(u => u.IsActive)  // فقط السائقين النشطين
-                        .Select(u => new LookupDto
-                        {
-                            Id = u.UserId,
-                            Name = u.FullName,
-                            FactoryId = u.FactoryId
-                        })
-                        .ToList();
-
-                    _logger.LogInformation("✅ تم العثور على {Count} سائقين متاحين", drivers.Count);
-
-                    foreach (var driver in drivers)
+            var (Success, Items) = await FetchLookupAsync(
+                "available drivers",
+                $"Users?role={(int)UserRole.Driver}&driverStatus={(int)DriverStatus.Available}&PageSize=100",
+                response => response.Data!.Items
+                    .Where(u => u.IsActive)
+                    .Select(u => new LookupDto
                     {
-                        _logger.LogInformation("   السائق: معرف={Id}, الاسم={Name}, المصنع={FactoryId}", driver.Id, driver.Name, driver.FactoryId);
-                    }
+                        Id = u.UserId,
+                        Name = u.FullName,
+                        FactoryId = u.FactoryId
+                    })
+                    .ToList()
+            );
 
-                    return drivers;
-                }
-
-                _logger.LogWarning("⚠️ لم يتم العثور على سائقين متاحين.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ خطأ أثناء جلب السائقين المتاحين");
-            }
-
-            return new List<LookupDto>();
+            return Success ? Items : new List<LookupDto>();
         }
 
         /// <summary>
@@ -72,44 +81,21 @@ namespace Kharasana.Web.Services.Api
         /// </summary>
         public async Task<List<LookupDto>> GetAvailableDriversByFactoryAsync(int factoryId)
         {
-            try
-            {
-                _logger.LogInformation("🔍 جلب السائقين المتاحين للمصنع {FactoryId}", factoryId);
-
-                // ✅ استخدام PagedResult<UserDto> مع فلتر المصنع
-                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(
-                    $"Users?role=2&driverStatus=0&factoryId={factoryId}&PageSize=100");
-
-                if (response != null && response.Success && response.Data?.Items != null)
-                {
-                    var drivers = response.Data.Items
-                        .Where(u => u.IsActive && u.FactoryId == factoryId)
-                        .Select(u => new LookupDto
-                        {
-                            Id = u.UserId,
-                            Name = u.FullName,
-                            FactoryId = u.FactoryId
-                        })
-                        .ToList();
-
-                    _logger.LogInformation("✅ تم العثور على {Count} سائقين للمصنع {FactoryId}", drivers.Count, factoryId);
-
-                    foreach (var driver in drivers)
+            var (Success, Items) = await FetchLookupAsync(
+                $"available drivers for factory {factoryId}",
+                $"Users?role={(int)UserRole.Driver}&driverStatus={(int)DriverStatus.Available}&factoryId={factoryId}&PageSize=100",
+                response => response.Data!.Items
+                    .Where(u => u.IsActive && u.FactoryId == factoryId)
+                    .Select(u => new LookupDto
                     {
-                        _logger.LogInformation("   السائق: معرف={Id}, الاسم={Name}, المصنع={FactoryId}", driver.Id, driver.Name, driver.FactoryId);
-                    }
+                        Id = u.UserId,
+                        Name = u.FullName,
+                        FactoryId = u.FactoryId
+                    })
+                    .ToList()
+            );
 
-                    return drivers;
-                }
-
-                _logger.LogWarning("⚠️ لم يتم العثور على سائقين للمصنع {FactoryId}", factoryId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ خطأ أثناء جلب السائقين للمصنع {FactoryId}", factoryId);
-            }
-
-            return new List<LookupDto>();
+            return Success ? Items : new List<LookupDto>();
         }
 
         /// <summary>
@@ -117,38 +103,21 @@ namespace Kharasana.Web.Services.Api
         /// </summary>
         public async Task<List<LookupDto>> GetClientsAsync()
         {
-            try
-            {
-                _logger.LogInformation("🔍 جلب العملاء...");
+            var (Success, Items) = await FetchLookupAsync(
+                "clients",
+                $"Users?role={(int)UserRole.Client}&PageSize=100",
+                response => response.Data!.Items
+                    .Where(u => u.IsActive)
+                    .Select(u => new LookupDto
+                    {
+                        Id = u.UserId,
+                        Name = u.FullName,
+                        FactoryId = u.FactoryId
+                    })
+                    .ToList()
+            );
 
-                // ✅ Client = 3 في الـ Enum
-                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(
-                    "Users?role=3&PageSize=100");
-
-                if (response != null && response.Success && response.Data?.Items != null)
-                {
-                    var clients = response.Data.Items
-                        .Where(u => u.IsActive)
-                        .Select(u => new LookupDto
-                        {
-                            Id = u.UserId,
-                            Name = u.FullName,
-                            FactoryId = u.FactoryId
-                        })
-                        .ToList();
-
-                    _logger.LogInformation("✅ تم العثور على {Count} عملاء", clients.Count);
-                    return clients;
-                }
-
-                _logger.LogWarning("⚠️ لم يتم العثور على عملاء.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ خطأ أثناء جلب العملاء");
-            }
-
-            return new List<LookupDto>();
+            return Success ? Items : new List<LookupDto>();
         }
 
         /// <summary>
@@ -156,38 +125,21 @@ namespace Kharasana.Web.Services.Api
         /// </summary>
         public async Task<List<LookupDto>> GetDriversAsync()
         {
-            try
-            {
-                _logger.LogInformation("🔍 جلب جميع السائقين...");
+            var (Success, Items) = await FetchLookupAsync(
+                "drivers",
+                $"Users?role={(int)UserRole.Driver}&PageSize=100",
+                response => response.Data!.Items
+                    .Where(u => u.IsActive)
+                    .Select(u => new LookupDto
+                    {
+                        Id = u.UserId,
+                        Name = u.FullName,
+                        FactoryId = u.FactoryId
+                    })
+                    .ToList()
+            );
 
-                // ✅ Driver = 2 في الـ Enum
-                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(
-                    "Users?role=2&PageSize=100");
-
-                if (response != null && response.Success && response.Data?.Items != null)
-                {
-                    var drivers = response.Data.Items
-                        .Where(u => u.IsActive)
-                        .Select(u => new LookupDto
-                        {
-                            Id = u.UserId,
-                            Name = u.FullName,
-                            FactoryId = u.FactoryId
-                        })
-                        .ToList();
-
-                    _logger.LogInformation("✅ تم العثور على {Count} سائقين", drivers.Count);
-                    return drivers;
-                }
-
-                _logger.LogWarning("⚠️ لم يتم العثور على سائقين.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ خطأ أثناء جلب السائقين");
-            }
-
-            return new List<LookupDto>();
+            return Success ? Items : new List<LookupDto>();
         }
 
         /// <summary>
@@ -197,30 +149,31 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                _logger.LogInformation("🔍 جلب أنواع الخرسانة...");
+                _logger.LogInformation("Fetching concrete types...");
 
                 var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeDto>>>("ConcreteTypes");
 
                 if (response != null && response.Success && response.Data != null)
                 {
                     var types = response.Data
+                        .Where(x => x.IsActive)
                         .Select(x => new LookupDto
                         {
                             Id = x.ConcreteTypeId,
-                            Name = x.Name
-,UnitPrice = x.UnitPrice
+                            Name = x.Name,
+                            UnitPrice = x.UnitPrice
                         })
                         .ToList();
 
-                    _logger.LogInformation("✅ تم العثور على {Count} أنواع خرسانة", types.Count);
+                    _logger.LogInformation("Found {Count} concrete types", types.Count);
                     return types;
                 }
 
-                _logger.LogWarning("⚠️ لم يتم العثور على أنواع الخرسانة.");
+                _logger.LogWarning("No concrete types found.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ خطأ أثناء جلب أنواع الخرسانة");
+                _logger.LogError(ex, "Error fetching concrete types");
             }
 
             return new List<LookupDto>();

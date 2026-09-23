@@ -1,4 +1,4 @@
-﻿@model Kharasana.Web.ViewModels.Dashboard.DashboardViewModel
+@model Kharasana.Web.ViewModels.Dashboard.DashboardViewModel
 @using Kharasana.Web.Models.Components
 @using Kharasana.Domain.Enums
 
@@ -170,6 +170,31 @@
             </a>
         </div>
 
+        @{
+            var totalOps = activeOrdersCount;
+            var pNew = totalOps > 0 ? (double)Model.TodayOrdersCount / totalOps * 100 : 0;
+            var pPending = totalOps > 0 ? (double)Model.InProgressOrdersCount / totalOps * 100 : 0;
+            var pApproved = totalOps > 0 ? (double)Model.ReadyOrdersCount / totalOps * 100 : 0;
+            var pOnWay = totalOps > 0 ? (double)Model.OnTheWayOrders / totalOps * 100 : 0;
+        }
+
+        <!-- حالة الطلبات — شريط بصري -->
+        <div class="order-status-bar mb-3" title="توزيع الطلبات حسب الحالة">
+            <div class="order-status-segment" style="width: @pNew.ToString("0")%; background: var(--primary);"></div>
+            <div class="order-status-segment" style="width: @pPending.ToString("0")%; background: var(--warning);"></div>
+            <div class="order-status-segment" style="width: @pApproved.ToString("0")%; background: var(--success);"></div>
+            <div class="order-status-segment" style="width: @pOnWay.ToString("0")%; background: var(--info);"></div>
+        </div>
+
+        <!-- فلاتر سريعة للحالة -->
+        <div class="d-flex gap-2 mb-3 flex-wrap order-filter-buttons">
+            <button type="button" class="btn btn-sm btn-primary order-filter-btn active" data-filter="All">الكل</button>
+            <button type="button" class="btn btn-sm btn-outline-primary order-filter-btn" data-filter="New">جديدة</button>
+            <button type="button" class="btn btn-sm btn-outline-warning order-filter-btn" data-filter="Pending">قيد التنفيذ</button>
+            <button type="button" class="btn btn-sm btn-outline-success order-filter-btn" data-filter="Approved">جاهزة للتسليم</button>
+            <button type="button" class="btn btn-sm btn-outline-info order-filter-btn" data-filter="OnTheWay">قيد النقل</button>
+        </div>
+
         <div class="table-responsive">
             <table class="table erp-table align-middle mb-0">
                 <thead>
@@ -183,13 +208,13 @@
                     </tr>
                 </thead>
 
-                <tbody>
+                <tbody id="factoryOrdersTableBody">
 
                     @if (Model.RecentOrders != null && Model.RecentOrders.Any())
                     {
                         @foreach (var order in Model.RecentOrders)
                         {
-                            <tr>
+                            <tr data-status="@order.Status">
 
                                 <td class="fw-bold">
                                     <a asp-controller="Orders"
@@ -222,7 +247,7 @@
                                 </td>
 
                                 <td class="text-muted small">
-                                    @order.OrderDate.ToString("yyyy-MM-dd HH:mm")
+                                    @order.OrderDate.FormatDateTime()
                                 </td>
 
                                 <td>

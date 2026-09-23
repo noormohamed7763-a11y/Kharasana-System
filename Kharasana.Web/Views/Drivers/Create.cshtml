@@ -18,6 +18,7 @@
 
     <div class="form-card">
         <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
             <div asp-validation-summary="All" class="alert alert-danger"></div>
 
             @* FactoryId يُرسَل دائمًا كحقل مخفي، ويُعاد فرضه من الجلسة في الـ Controller أيضًا كحماية إضافية *@

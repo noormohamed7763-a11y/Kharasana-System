@@ -17,7 +17,7 @@
                     <th class="text-center">الإجراءات</th>
                 </tr>
             </thead>
-            <tbody>
+                    <tbody id="driverTableBody">
                 @{
                     // ترقيم متصل عبر الصفحات — يبدأ من ((صفحة-1) × حجم الصفحة) + 1
                     var index = ((int)(ViewData["RowOffset"] ?? 0)) + 1;
@@ -39,7 +39,7 @@
                         _ => "status-secondary"
                     };
 
-                    <tr>
+                    <tr data-status="@driver.DriverStatus">
                         <td class="text-muted fw-bold">@(index++)</td>
                         <td><strong class="text-primary">@driver.FullName</strong></td>
                         <td>@(driver.Phone ?? "-")</td>
@@ -95,23 +95,22 @@
                                                 new ActionButtonsViewModel
                                                 {
                                                     Id = driver.UserId,
+                                                    ControllerName = "Drivers",
                                                     ShowDetails = true,
                                                     ShowEdit = true,
                                                     ShowDelete = true
                                                 })
 
-                            @* إيقاف/تفعيل حساب السائق *@
-                            <form asp-action="ToggleActive" method="post" class="d-inline"
-                                  onsubmit="return confirm('@(driver.IsActive ? "هل تريد إيقاف هذا السائق؟" : "هل تريد تفعيل هذا السائق؟")')">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@driver.UserId" />
-                                <button type="submit"
-                                        class="btn btn-light border @(driver.IsActive ? "text-danger" : "text-success")"
-                                        aria-label="@(driver.IsActive ? "إيقاف السائق" : "تفعيل السائق")"
-                                        data-bs-toggle="tooltip">
-                                    <i class="bi @(driver.IsActive ? "bi-stop-circle" : "bi-play-circle")"></i>
-                                </button>
-                            </form>
+                            @* إيقاف/تفعيل حساب السائق — تحديث فوري بدون Modal *@
+                            <button type="button"
+                                    class="btn btn-light border btn-toggle-active @(driver.IsActive ? "text-danger" : "text-success")"
+                                    title="@(driver.IsActive ? "إيقاف السائق" : "تفعيل السائق")"
+                                    aria-label="@(driver.IsActive ? "إيقاف السائق" : "تفعيل السائق")"
+                                    data-driver-id="@driver.UserId"
+                                    data-is-active="@driver.IsActive"
+                                    data-bs-toggle="tooltip">
+                                <i class="bi @(driver.IsActive ? "bi-stop-circle" : "bi-play-circle")"></i>
+                            </button>
                         </td>
                 </tr>
                                 }

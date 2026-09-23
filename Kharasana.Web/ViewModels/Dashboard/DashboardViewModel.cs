@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using Kharasana.Domain.Enums;
 
 namespace Kharasana.Web.ViewModels.Dashboard
 {
@@ -39,6 +40,7 @@ namespace Kharasana.Web.ViewModels.Dashboard
         public string OrderNumber { get; set; } = string.Empty;
         public string ClientName { get; set; } = string.Empty;
         public string DriverName { get; set; } = string.Empty;
+        public OrderStatus Status { get; set; }
         public string StatusDisplay { get; set; } = string.Empty;
         public string StatusCssClass { get; set; } = string.Empty;
         public DateTime OrderDate { get; set; }

@@ -1,4 +1,4 @@
-@model Kharasana.Web.Models.Settings.FactorySettingsViewModel
+@model Kharasana.Web.ViewModels.Settings.FactorySettingsViewModel
 @using Kharasana.Web.Models.Components
 
 @{
@@ -87,7 +87,7 @@
                              data-name="@Model.FactoryName"
                              id="logoPreview"
                              style="width:120px; height:120px; object-fit:cover; border-radius:50%; border:3px solid #dee2e6; background:#f8f9fa;"
-                             onerror="handleLogoError(this);" />
+                             data-img-error="logo" />
                     }
                     else
                     {
@@ -124,9 +124,9 @@
                 <div class="col-md-4 text-md-end">
                     @if (!string.IsNullOrWhiteSpace(Model.Logo))
                     {
-                        <form asp-action="DeleteLogo" method="post" id="deleteLogoForm">
+                        <form asp-action="DeleteLogo" method="post" id="deleteLogoForm" data-confirm="هل أنت متأكد من حذف شعار المصنع؟">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-outline-danger" onclick="return confirmDeleteLogo();">
+                            <button type="submit" class="btn btn-outline-danger">
                                 <i class="bi bi-trash me-1"></i>
                                 حذف الشعار الحالي
                             </button>

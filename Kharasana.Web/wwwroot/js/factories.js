@@ -80,6 +80,8 @@ async function submitCreateAccount(e) {
 
     try {
 
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
         const response = await fetch("/Factories/CreateFactoryAccount", {
 
             method: "POST",
@@ -88,7 +90,8 @@ async function submitCreateAccount(e) {
 
             headers: {
                 "Content-Type": "application/json",
-                "X-Requested-With": "XMLHttpRequest"
+                "X-Requested-With": "XMLHttpRequest",
+                "RequestVerificationToken": token || ""
             },
 
             body: JSON.stringify(formData)

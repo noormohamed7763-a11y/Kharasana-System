@@ -218,6 +218,7 @@ public class FactoriesController : BaseController
     // إنشاء حساب للمصنع
     // ===========================
     [HttpPost]
+    [ValidateAntiForgeryToken]
     [SessionAuthorize(Roles.Admin)]
     public async Task<IActionResult> CreateFactoryAccount([FromBody] CreateUserViewModel model)
     {

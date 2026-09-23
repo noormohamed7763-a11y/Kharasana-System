@@ -1,4 +1,4 @@
-﻿@model Kharasana.Web.ViewModels.Orders.OrdersIndexViewModel
+@model Kharasana.Web.ViewModels.Orders.OrdersIndexViewModel
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.Models.Components.Search
 @using Kharasana.Domain.Enums
@@ -76,7 +76,7 @@
         <div class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap">
             <!-- فلتر الحالة -->
             <div style="min-width: 160px;">
-                <select class="form-select form-select-sm" id="statusFilter" onchange="applyFilters()">
+                <select class="form-select form-select-sm" id="statusFilter">
                     <option value="">جميع الحالات</option>
                     @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
                     {
@@ -113,7 +113,7 @@
             @if (ViewBag.ShowFactoryFilter == true)
             {
                 <div style="min-width: 160px;">
-                    <select class="form-select form-select-sm" id="factoryFilter" onchange="applyFilters()">
+                    <select class="form-select form-select-sm" id="factoryFilter">
                         <option value="">جميع المصانع</option>
                         @if (ViewBag.Factories != null)
                         {
@@ -187,6 +187,7 @@
     {
         <div class="form-card">
             <div class="table-responsive">
+                @Html.AntiForgeryToken()
                 <table class="erp-table erp-table--sticky-head" id="ordersTable">
                     <thead>
                         <tr>
@@ -224,7 +225,7 @@
                                 <td>@order.ClientName</td>
                                 <td>@order.ConcreteTypeName</td>
                                 <td>@order.Quantity م³</td>
-                                <td>@(order.TotalPrice?.ToString("N0") ?? "-") ر.ي</td>
+                                <td>@order.TotalPrice.FormatPrice()</td>
                                 <td>
                                     <span class="status-badge @statusClass">
                                         @statusText
