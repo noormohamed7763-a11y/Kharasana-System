@@ -42,3 +42,9 @@ Kharasana.API/wwwroot/Images/Factories/*
 .claude/
 .ua/
 WEB_LAYER_CODE_REVIEW.md
+
+# Documents folder
+Documents/
+
+# Test project
+Kharasana.Tests/
