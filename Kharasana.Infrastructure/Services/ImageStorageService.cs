@@ -39,14 +39,10 @@ public class ImageStorageService : IImageStorageService
         if (!IsValidMimeType(fileStream, extension))
             throw new BusinessException("نوع محتوى الملف غير صالح أو لا يتطابق مع الامتداد.");
 
-        // ✅ استخدام Directory.GetCurrentDirectory() كحل احتياطي
-        var basePath = _env.WebRootPath;
-
-        if (string.IsNullOrEmpty(basePath))
-        {
-            // إذا كان WebRootPath فارغاً، استخدم مسار المشروع + wwwroot
-            basePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-        }
+        // ✅ مسار wwwroot موحّد بين الحفظ والحذف — كان الحفظ يستخدم GetCurrentDirectory()
+        //    والحذف ContentRootPath، فيختلف المسار المُحلَّل بينهما عند غياب WebRootPath
+        //    (يُحفظ الملف في مكان ويُبحث عنه في آخر).
+        var basePath = ResolveWebRootPath();
 
         // ✅ تأكد من وجود المجلد
         var folderPath = Path.Combine(basePath, "Images", folderName);
@@ -97,18 +93,34 @@ public class ImageStorageService : IImageStorageService
         if (string.IsNullOrWhiteSpace(relativePath))
             return;
 
-        var webRootPath = _env.WebRootPath;
-        if (string.IsNullOrEmpty(webRootPath))
-        {
-            webRootPath = Path.Combine(_env.ContentRootPath, "wwwroot");
-        }
+        var webRootPath = ResolveWebRootPath();
+
+        // ✅ حارس اجتياز المسار (path traversal): المسار المحلَّل يجب أن يبقى داخل
+        //    wwwroot/Images. المصدر غير موثوق — factory.Logo يأتي من حقل يُدخله المستخدم
+        //    عند إنشاء المصنع، ومسار مثل "../../appsettings.json" كان يحذف ملفًا خارج المجلد.
+        var imagesRoot = Path.GetFullPath(Path.Combine(webRootPath, "Images"));
+        var imagesRootPrefix = imagesRoot.EndsWith(Path.DirectorySeparatorChar)
+            ? imagesRoot
+            : imagesRoot + Path.DirectorySeparatorChar;
 
         var trimmedPath = relativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var fullPath = Path.Combine(webRootPath, trimmedPath);
+        var fullPath = Path.GetFullPath(Path.Combine(webRootPath, trimmedPath));
+
+        // خارج مجلد الصور (اجتياز بـ .. أو مسار مطلق) — نتجاهل بدل الحذف.
+        if (!fullPath.StartsWith(imagesRootPrefix, StringComparison.OrdinalIgnoreCase))
+            return;
 
         if (File.Exists(fullPath))
         {
             File.Delete(fullPath);
         }
     }
+
+    /// <summary>
+    /// مسار wwwroot الموحّد لعمليتي الحفظ والحذف.
+    /// </summary>
+    private string ResolveWebRootPath()
+        => string.IsNullOrEmpty(_env.WebRootPath)
+            ? Path.Combine(_env.ContentRootPath, "wwwroot")
+            : _env.WebRootPath;
 }

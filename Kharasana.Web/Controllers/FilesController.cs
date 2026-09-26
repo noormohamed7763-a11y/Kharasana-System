@@ -17,6 +17,11 @@ public class FilesController : BaseController
     private readonly ApiClient _apiClient;
     private readonly ApiSettings _apiSettings;
 
+    /// <summary>البادئة الوحيدة المسموح بتمريرها عبر هذا الوسيط.</summary>
+    private const string FactoryLogoPrefix = "Images/Factories/";
+
+    private static readonly string[] AllowedLogoExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
+
     public FilesController(
         ApiClient apiClient,
         IOptions<ApiSettings> apiSettings)
@@ -36,12 +41,27 @@ public class FilesController : BaseController
         if (string.IsNullOrWhiteSpace(relativePath))
             return NotFound();
 
+        // ✅ لا يخدم هذا الوسيط إلا شعارات المصانع: فحص البادئة وخلوّ المسار من أي مقطع
+        //    اجتياز، والامتداد ضمن قائمة الصور المسموحة. بدونها يعمل الوسيط كوكيل مفتوح
+        //    لأي مسار على مضيف API (بما فيه ملفات الإعدادات) بصلاحية جلسة أي مستخدم مُصادَق.
+        var normalized = relativePath.Replace('\\', '/').TrimStart('/');
+
+        if (!normalized.StartsWith(FactoryLogoPrefix, StringComparison.OrdinalIgnoreCase))
+            return NotFound();
+
+        var segments = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Any(segment => segment is "." or ".."))
+            return NotFound();
+
+        if (!AllowedLogoExtensions.Contains(Path.GetExtension(normalized).ToLowerInvariant()))
+            return NotFound();
+
         // الملفات الثابتة على API تُخدم من جذر المضيف (ليس تحت /api/)
         var origin = _apiSettings.FilesOrigin;
         if (string.IsNullOrWhiteSpace(origin))
             return StatusCode(StatusCodes.Status500InternalServerError);
 
-        var apiUrl = $"{origin}/{relativePath.TrimStart('/')}";
+        var apiUrl = $"{origin}/{normalized}";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
 
@@ -49,9 +69,9 @@ public class FilesController : BaseController
         if (!string.IsNullOrWhiteSpace(token))
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        // ResponseHeadersRead: نuelaq streaming بدون حجز الذاكرة للملفات الكبيرة
-        // نellyا نUse using للاستجابة لأن FileResult يُنفّذ بعد انتهاء الدالة — استخدام using
-        // يؤدي لإغلاق الدفق قبل نسخه، لذا ننسخ مباشرة إلى Response.Body داخل الدالة.
+        // ResponseHeadersRead: تمرير مباشر (streaming) دون حجز الذاكرة للملفات الكبيرة.
+        // ولا نستخدم using على الاستجابة لأن FileResult يُنفَّذ بعد انتهاء الدالة — استخدام
+        // using يغلق الدفق قبل نسخه، لذا ننسخ مباشرة إلى Response.Body داخل الدالة.
         using var response = await _apiClient.HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
         if (!response.IsSuccessStatusCode)
@@ -64,8 +84,10 @@ public class FilesController : BaseController
 
         var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
 
+        // ✅ ETag مُرمَّز بدل المسار الخام: اسم الملف يأتي من المسار، وترويسة HTTP لا تقبل
+        //    محارف التحكّم (CR/LF) ولا علامات التنصيص غير المُرمَّزة.
         Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
-        Response.Headers["ETag"] = $"\"{relativePath}\"";
+        Response.Headers["ETag"] = $"\"{Uri.EscapeDataString(normalized)}\"";
         Response.ContentType = contentType;
 
         // نسخ مباشر من دفق API إلى جسم استجابة الويب (streaming فعلي بدون ملف ناتج)
