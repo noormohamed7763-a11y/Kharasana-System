@@ -72,7 +72,7 @@ namespace Kharasana.Web.Services.Api
                 // تعيين البيانات القادمة من الـ API إلى الأسماء النظيفة الجديدة في الـ ViewModel
                 var vm = new DashboardViewModel
                 {
-                    TodayOrdersCount = response.Data.NewOrders,
+                    TodayOrdersCount = response.Data.TodayOrders,
                     InProgressOrdersCount = response.Data.PendingOrders,
                     ReadyOrdersCount = response.Data.ApprovedOrders,
                     OnTheWayOrders = response.Data.OnTheWayOrders,

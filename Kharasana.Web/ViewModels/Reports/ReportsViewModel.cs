@@ -15,8 +15,9 @@ public class ReportsViewModel
     public bool HasData => TotalOrders > 0;
 
     // اختصارات ملائمة للعرض
+    // ⚠️ لا تُضِف اختصاراً لـ OrderStatus.New: حالة لا تُسنَد لأي طلب في النظام
+    //    (الطلبات تُنشأ Pending)، فأي مقياس مبني عليها يعرض صفراً دائماً.
 
-    public OrderStatusCountDto? NewOrders => OrdersByStatus.FirstOrDefault(s => s.Status == OrderStatus.New);
     public OrderStatusCountDto? PendingOrders => OrdersByStatus.FirstOrDefault(s => s.Status == OrderStatus.Pending);
     public OrderStatusCountDto? ApprovedOrders => OrdersByStatus.FirstOrDefault(s => s.Status == OrderStatus.Approved);
     public OrderStatusCountDto? RejectedOrders => OrdersByStatus.FirstOrDefault(s => s.Status == OrderStatus.Rejected);

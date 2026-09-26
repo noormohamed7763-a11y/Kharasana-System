@@ -58,11 +58,15 @@
             "~/Views/Shared/Components/_SummaryCard.cshtml",
             new SummaryCardViewModel
             {
-                Title = "طلبات جديدة",
-                Value = (Model.NewOrders?.Count ?? 0).ToString(),
-                Icon = "bi-plus-circle",
+                // ✅ كانت «طلبات جديدة» تُحتسب من OrderStatus.New — وهي حالة لا تُسنَد
+                //    لأي طلب في النظام (الطلبات تُنشأ Pending)، فكانت البطاقة تعرض صفراً
+                //    دائماً ورابطها (status = 0) يعود بقائمة فارغة. استُبدلت بـ«قيد الانتظار»
+                //    وهي الحالة الفعلية التي تنتظر إجراءً من المصنع.
+                Title = "قيد الانتظار",
+                Value = (Model.PendingOrders?.Count ?? 0).ToString(),
+                Icon = "bi-hourglass-split",
                 IconClass = "kpi-icon-primary",
-                LinkUrl = Url.Action("Index", "Orders", new { status = 0 })
+                LinkUrl = Url.Action("Index", "Orders", new { status = 1 })
             })
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
