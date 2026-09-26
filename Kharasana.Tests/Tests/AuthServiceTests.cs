@@ -299,6 +299,112 @@ public class AuthServiceTests : IDisposable
     }
 
     // ─────────────────────────────────────────────
+    // كشف حالة الحساب — محصور بمن يعرف كلمة المرور
+    //
+    // كانت فحوص النشاط وأرشفة المصنع والقفل تُنفَّذ قبل التحقق من كلمة المرور،
+    // فيكشف نصّ الردّ — لمن لا يعرف كلمة المرور — أن الحساب موجود وأنه سائق
+    // موقوف أو أن مصنعه مؤرشف. الاختبارات أعلاه (Login_DeactivatedDriver …
+    // Login_ArchivedFactory_…) تستدعي MakeLogin بلا وسيط كلمة مرور، أي بكلمة
+    // المرور الصحيحة — فهي تُثبت أن الرسائل المخصّصة باقية لمن يستحقّها،
+    // وهذه تُثبت أن غير المالك لا يحصل عليها.
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Login_DeactivatedDriver_WrongPassword_DoesNotRevealAccountState()
+    {
+        // Arrange
+        var driver = TestDataSeeder.CreateDriver(90, "سائق موقوف", factoryId: 1, isActive: false);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _authService.LoginAsync(MakeLogin(driver.Phone!, " WRONG "));
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+    }
+
+    [Fact]
+    public async Task Login_InactiveClient_WrongPassword_DoesNotRevealAccountState()
+    {
+        // Arrange
+        var client = TestDataSeeder.CreateUser(91, "عميل موقوف", UserRole.Client, isActive: false, phone: "770000091");
+        _context.Users.Add(client);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _authService.LoginAsync(MakeLogin(client.Phone!, " WRONG "));
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+    }
+
+    [Fact]
+    public async Task Login_ArchivedFactory_WrongPassword_DoesNotRevealAccountState()
+    {
+        // Arrange — مصنع مؤرشف + موظف مرتبط به (بنية اختبار FactoryArchived أعلاه)
+        var factory = TestDataSeeder.CreateFactory(4, "مؤرشفة", isActive: false, isDeleted: true);
+        var employee = TestDataSeeder.CreateUser(92, "موظف مصنع مؤرشف", UserRole.FactoryEmployee, factoryId: 4);
+        _context.Factories.Add(factory);
+        _context.Users.Add(employee);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _authService.LoginAsync(MakeLogin(employee.Email!, " WRONG "));
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+    }
+
+    /// <summary>
+    /// حساب مقفل + كلمة مرور خاطئة ← رسالة الاعتماد العامة لا رسالة القفل: القفل
+    /// لا يُكشف إلا لمن أثبت كلمة مروره. ومع ذلك لا يُمَدّ القفل — المحاولة الفاشلة
+    /// على حساب مقفل لا تُسجَّل، فلا يُطيل أحد قفل غيره، ولا يُطيل صاحب الحساب قفله
+    /// بخطأ مطبعي أثناء انتهاء المدة.
+    /// </summary>
+    [Fact]
+    public async Task Login_LockedAccount_WrongPassword_StaysGenericAndKeepsLockUnchanged()
+    {
+        // Arrange
+        var user = TestDataSeeder.CreateUser(93, "حساب مقفل", UserRole.Client, phone: "770000093");
+        user.FailedLoginAttempts = 5;
+        var lockoutEnd = DateTime.UtcNow.AddMinutes(10);
+        user.LockoutEnd = lockoutEnd;
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _authService.LoginAsync(MakeLogin(user.Phone!, " WRONG "));
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+
+        var updated = await _context.Users.FindAsync(93);
+        updated!.FailedLoginAttempts.Should().Be(5, "المحاولة على حساب مقفل أصلاً لا تُسجَّل");
+        updated.LockoutEnd.Should().Be(lockoutEnd, "القفل لا يُمَدّ بمحاولة فاشلة إضافية");
+    }
+
+    /// <summary>
+    /// بريد غير مسجَّل يمرّ بمسار التجزئة الصورية (VerifyDummy) — ويجب أن يرمي
+    /// BusinessException لا استثناء BCrypt. لو كُتبت التجزئة الصورية بصيغة غير
+    /// صالحة لـ BCrypt لرمى Verify استثناءً، فيتحوّل كل دخول بمعرّف غير مسجَّل إلى 500.
+    /// </summary>
+    [Fact]
+    public async Task Login_UnknownEmail_ThrowsInvalidCredentialsNotBcryptError()
+    {
+        // Act
+        var act = () => _authService.LoginAsync(MakeLogin("no-such-user@example.com", "any"));
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+    }
+
+    // ─────────────────────────────────────────────
     // ⑥  RegisterAsync — التسجيل الذاتي (نقطة عامة بلا توكن)
     // ─────────────────────────────────────────────
 

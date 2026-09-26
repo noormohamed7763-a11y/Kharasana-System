@@ -28,10 +28,11 @@ public class UserService : IUserService
     }
 
     public async Task<PagedResult<UserDto>> GetPagedAsync(
-        UserRole? role, int? factoryId, DriverStatus? driverStatus, PaginationParams pagination)
+        UserRole? role, int? factoryId, DriverStatus? driverStatus, PaginationParams pagination,
+        bool? isActive = null)
     {
         var result = await _unitOfWork.Users.GetPagedAsync(
-            role, factoryId, driverStatus, pagination.Search, pagination.PageNumber, pagination.PageSize);
+            role, factoryId, driverStatus, pagination.Search, pagination.PageNumber, pagination.PageSize, isActive);
 
         return new PagedResult<UserDto>
         {
@@ -150,11 +151,23 @@ public class UserService : IUserService
             dto.LicenseNumber,
             id);
 
+        // ✅ البريد: غيابه (null/فراغ) يعني «أبقِ الحالي». كان UpdateUserDto بلا حقل
+        //    Email أصلاً فيُهمَل ما يرسله الويب صامتاً مع رسالة نجاح. والفحص يستثني
+        //    المستخدم نفسه، وإلا اصطدم ببريده الحالي وفشل أي تعديل آخر.
+        if (!string.IsNullOrWhiteSpace(dto.Email))
+        {
+            var emailTaken = await _unitOfWork.Users.EmailExistsAsync(dto.Email, excludeUserId: id);
+            if (emailTaken)
+                throw new ConflictException(Messages.EmailAlreadyExists);
+        }
+
         var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
             _unitOfWork, dto.Phone, currentPhone: user.Phone);
         var normalizedWhatsApp = PhoneValidationHelper.NormalizeOrThrow(dto.WhatsApp) ?? user.WhatsApp;
 
         user.FullName = dto.FullName;
+        if (!string.IsNullOrWhiteSpace(dto.Email))
+            user.Email = dto.Email;
         user.Phone = normalizedPhone;
         user.WhatsApp = normalizedWhatsApp;
         user.ProfileImage = dto.ProfileImage;

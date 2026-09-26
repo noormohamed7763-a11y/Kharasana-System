@@ -33,10 +33,17 @@ public class OrderStatusMapTests
     private static readonly Regex ArabicMapLine =
         new(@"OrderStatus\.\w+\s*=>\s*""[^""]*\p{IsArabic}", RegexOptions.Compiled);
 
-    /// <summary>سطر خريطة يُرجع صنف CSS للحالة — اللاحقة المجرّدة أو الصيغة الكاملة <c>status-*</c>.</summary>
+    /// <summary>
+    /// سطر خريطة يُرجع صنف CSS للحالة — اللاحقة المجرّدة، أو الصيغة الكاملة <c>status-*</c>،
+    /// أو صنف خلفية Bootstrap <c>bg-*</c> (خريطة شريط التقدّم في صفحة التفاصيل).
+    /// </summary>
     private static readonly Regex CssMapLine =
-        new(@"OrderStatus\.\w+\s*=>\s*""(status-[a-z]+|new|pending|approved|rejected|cancelled|ontheway|delivered|closed)""",
+        new(@"OrderStatus\.\w+\s*=>\s*""(status-[a-z]+|bg-[a-z]+|new|pending|approved|rejected|cancelled|ontheway|delivered|closed)""",
             RegexOptions.Compiled);
+
+    /// <summary>سطر خريطة يُرجع نسبة تقدّم رقمية لحالة، مثل <c>OrderStatus.Pending => 25,</c>.</summary>
+    private static readonly Regex ProgressMapLine =
+        new(@"OrderStatus\.(\w+)\s*=>\s*(\d+)", RegexOptions.Compiled);
 
     /// <summary>
     /// المشاريع الإنتاجية التي يُفحص مصدرها. مشروع الاختبارات مستثنى عن قصد: الثابت
@@ -124,13 +131,13 @@ public class OrderStatusMapTests
 
         cssHits.Keys.Should().BeEquivalentTo(
             [CssMapFile],
-            "لواحق أصناف CSS تُكتب في {0} وحده؛ أي ملف آخر فيه OrderStatus.X => \"ontheway\" هو نسخة ثانية مكرّرة",
+            "أصناف CSS للحالة (لواحق status- وأصناف bg- لشريط التقدّم) تُكتب في {0} وحده؛ أي ملف آخر فيه OrderStatus.X => \"ontheway\" أو \"bg-warning\" هو نسخة ثانية مكرّرة",
             CssMapFile);
 
         // حماية من النجاح الكاذب: لو تغيّر نمط السطر أو أُعيدت تسمية الملف يتوقف
         // المسح عن إيجاد أي شيء ويمرّ الاختبار بلا معنى. هذان الحدّان يجعلانه يفشل بصوت عالٍ.
         arabicHits[ArabicMapFile].Should().BeGreaterThanOrEqualTo(8, "الحالات الثماني لها ثمانية أسماء");
-        cssHits[CssMapFile].Should().BeGreaterThanOrEqualTo(8, "الحالات الثماني لها ثماني لواحق CSS");
+        cssHits[CssMapFile].Should().BeGreaterThanOrEqualTo(8, "الحالات الثماني لها ثماني لواحق CSS وأصناف تقدّم");
     }
 
     /// <summary>
@@ -142,6 +149,8 @@ public class OrderStatusMapTests
     [InlineData("Kharasana.Web/ViewModels/Orders/OrderDto.cs", "GetArabicName()")]
     [InlineData("Kharasana.Web/Services/Api/DashboardApiService.cs", "GetCssSuffix()")]
     [InlineData("Kharasana.Web/Views/Reports/Index.cshtml", "GetCssSuffix()")]
+    [InlineData("Kharasana.Web/Views/Orders/Details.cshtml", "GetProgressPercent()")]
+    [InlineData("Kharasana.Web/Views/Orders/Details.cshtml", "GetProgressMotionClasses()")]
     public void DisplayPaths_DelegateToTheSingleSource(string relativePath, string expectedCall)
     {
         var file = Path.Combine(RepoRoot(), relativePath.Replace('/', Path.DirectorySeparatorChar));
@@ -184,6 +193,91 @@ public class OrderStatusMapTests
                 $".status-{suffix}",
                 $"الحالة {status} تُعرض بالصنف status-{suffix} فيجب أن يكون معرّفاً في components.css");
         }
+    }
+
+    // ─────────────────────────────────────────────
+    // 4. خرائط شريط التقدّم — المدى والاتجاه
+    // ─────────────────────────────────────────────
+
+    /// <summary>
+    /// نِسَب شريط التقدّم: واحدة لكل حالة، وداخل المدى المعروض (0–100)،
+    /// وأصناف الخلفية أصناف Bootstrap، والمسار السليم غير تنازلي.
+    ///
+    /// <para>كانت الخريطتان محليّتين في <c>Views/Orders/Details.cshtml</c> — خارج
+    /// نطاق المسح (فالمسح يتعرّف على النصوص العربية ولواحق <c>status-</c> فقط،
+    /// ولا الخريطة الرقمية ولا <c>bg-*</c> تظهر فيهما) فأي تعديل عليهما كان يمرّ
+    /// بلا حارس. نُقلتا إلى المصدر الواحد ووُسِّع المسح ليغطّي <c>bg-*</c>،
+    /// ويبقى هذا الاختبار يتحقق من المدى والاتجاه — وهما ما لا يلتقطه المسح.</para>
+    /// </summary>
+    [Fact]
+    public void ProgressMaps_CoverEveryStatusWithinRangeAndAscend()
+    {
+        var source = File.ReadAllText(
+            Path.Combine(RepoRoot(), CssMapFile.Replace('/', Path.DirectorySeparatorChar)));
+
+        // النسب: OrderStatus.X => <رقم>
+        var percents = ProgressMapLine.Matches(source)
+            .ToDictionary(m => m.Groups[1].Value, m => int.Parse(m.Groups[2].Value));
+
+        // أصناف الخلفية: OrderStatus.X => "bg-..."
+        var bgClasses = Regex.Matches(source, @"OrderStatus\.(\w+)\s*=>\s*""(bg-[\w-]+)""")
+            .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value);
+
+        var expected = Enum.GetNames<OrderStatus>();
+
+        percents.Keys.Should().BeEquivalentTo(expected, "لكل حالة نسبة تقدّم واحدة");
+        bgClasses.Keys.Should().BeEquivalentTo(expected, "لكل حالة صنف خلفية واحد");
+
+        percents.Values.Should().OnlyContain(p => p >= 0 && p <= 100,
+            "شريط Bootstrap يقصّ ما خرج عن 0–100، فيظهر الشريط ممتلئاً أو فارغاً بغير الحقيقة");
+
+        bgClasses.Values.Should().OnlyContain(c => c.StartsWith("bg-"),
+            "الصنف يوضع في class=\"progress-bar {الصنف} …\" فيجب أن يكون صنف خلفية Bootstrap");
+
+        // المسار السليم تصاعدي: تراجعه يعني شريطاً ينقص كلما تقدّم الطلب
+        string[] happyPath =
+            [nameof(OrderStatus.New), nameof(OrderStatus.Pending), nameof(OrderStatus.Approved),
+             nameof(OrderStatus.OnTheWay), nameof(OrderStatus.Delivered), nameof(OrderStatus.Closed)];
+
+        happyPath.Select(s => percents[s]).Should().BeInAscendingOrder(
+            "تقدّم الطلب لا يتراجع في المسار السليم");
+    }
+
+    // ─────────────────────────────────────────────
+    // 5. الحالات الجارية — مؤشّر الحركة
+    // ─────────────────────────────────────────────
+
+    /// <summary>
+    /// مؤشّر الحركة (شريط التقدّم المتحرك) يُمنح للحالات التي فيها عمل جارٍ فقط.
+    /// الشريط المتحرك المخطَّط يقول «يجري الآن»، ومنحه لحالة انتهى فيها العمل يجعل
+    /// صفحة التفاصيل تناقض شريطها الزمني: مراحل الطلب المرفوض كلها فارغة (○) بينما
+    /// شريط التقدّم ينبض.
+    ///
+    /// <para><b>القيمة الحقيقية لهذا الاختبار</b> في سطره الأخير: يثبّت أن «جارية»
+    /// و«نهائية» علاقتان مختلفتان عمداً. «تم التسليم» تنتقل إلى «مغلق» فليست نهائية،
+    /// ومع ذلك لا عمل جارٍ فيها. فلو أضاف أحدهم حالة نهائية جديدة ونسي تحديث
+    /// <c>IsInFlight</c>، أو «بسّط» الدالة باشتقاقها من جدول الانتقالات، يفشل هنا.</para>
+    /// </summary>
+    [Fact]
+    public void IsInFlight_CoversExactlyTheStatusesWithWorkUnderway()
+    {
+        var statuses = Enum.GetValues<OrderStatus>();
+
+        statuses.Where(OrderStatusHelper.IsInFlight).Should().BeEquivalentTo(
+            [OrderStatus.New, OrderStatus.Pending, OrderStatus.Approved, OrderStatus.OnTheWay],
+            "هذه الأربع وحدها ينتظر فيها الطلب إجراءً");
+
+        // كل حالة نهائية (بلا انتقالات مسموحة) لا يمكن أن تكون جارية
+        statuses
+            .Where(s => OrderStatusHelper.GetAllowedTransitions(s).Length == 0)
+            .Should().OnlyContain(s => !OrderStatusHelper.IsInFlight(s),
+                "الحالة النهائية لا عمل فيها، فلا يُمنح شريطها مؤشّر حركة");
+
+        // «تم التسليم» ليست نهائية لكنها ليست جارية — برهان أن القاعدتين مختلفتان
+        OrderStatusHelper.GetAllowedTransitions(OrderStatus.Delivered).Should().NotBeEmpty(
+            "«تم التسليم» تنتقل إلى «مغلق» فهي ليست نهائية في جدول الانتقالات");
+        OrderStatusHelper.IsInFlight(OrderStatus.Delivered).Should().BeFalse(
+            "لا عمل جارٍ في طلب سُلِّم — هو في انتظار الإغلاق فقط");
     }
 
     // ─────────────────────────────────────────────

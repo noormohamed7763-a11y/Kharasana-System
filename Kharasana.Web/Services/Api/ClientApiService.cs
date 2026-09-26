@@ -4,6 +4,7 @@ using Kharasana.Web.ViewModels.Clients;
 using Kharasana.Application.DTOs.Customer;
 using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace Kharasana.Web.Services.Api;
 
@@ -100,40 +101,29 @@ public class ClientApiService : IClientApiService
     {
         try
         {
-            // نستخدم نفس مصدر قائمة العملاء.
-            // لا نستخدم Users/{id} لأن العميل هنا
-            // مستخرج من تعاملاته مع المصنع.
+            // ✅ نقطة عميل واحد على الخادم.
+            //    كان يجلب أول 100 عميل (PageSize=100) ثم يبحث فيهم محلياً، فيُبلَّغ عن
+            //    كل عميل يقع بعد العنصر المئة أنه «غير موجود» وهو موجود فعلاً.
+            //    ونفس النداء يعيد Email/WhatsApp/IsActive فتُعرض بدل «-» و«موقوف».
             var response =
                 await _apiClient.GetAsync<
-                    ApiResponse<PagedResult<CustomerSummaryDto>>
+                    ApiResponse<CustomerSummaryDto>
                 >(
-                    "Orders/customers?PageNumber=1&PageSize=100"
+                    $"Orders/customers/{clientId}"
                 );
 
             if (response == null ||
                 !response.Success ||
-                response.Data == null ||
-                response.Data.Items == null)
+                response.Data == null)
             {
                 _logger.LogWarning(
-                    "GetDetailsAsync: Could not load customers.");
-
-                return null;
-            }
-
-            // البحث عن العميل المطلوب
-            var customer =
-                response.Data.Items
-                    .FirstOrDefault(c => c.UserId == clientId);
-
-            if (customer == null)
-            {
-                _logger.LogWarning(
-                    "GetDetailsAsync: Customer {ClientId} not found.",
+                    "GetDetailsAsync: Could not load customer {ClientId}.",
                     clientId);
 
                 return null;
             }
+
+            var customer = response.Data;
 
             // بناء بيانات صفحة التفاصيل
             return new ClientDetailsViewModel
@@ -141,11 +131,24 @@ public class ClientApiService : IClientApiService
                 UserId = customer.UserId,
                 FullName = customer.FullName,
                 Phone = customer.Phone,
+                Email = customer.Email,
+                WhatsApp = customer.WhatsApp,
+                IsActive = customer.IsActive,
 
                 OrdersCount = customer.OrdersCount,
                 TotalQuantity = customer.TotalQuantity,
                 LastOrderDate = customer.LastOrderDate
             };
+        }
+        catch (ApiServiceException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            // 404 = لا توجد طلبات لهذا العميل: حالة متوقعة يعالجها
+            // ClientsController.Details بإعادة توجيه ورسالة، لا خطأ نظام.
+            _logger.LogWarning(
+                "GetDetailsAsync: Customer {ClientId} has no orders.",
+                clientId);
+
+            return null;
         }
         catch (ApiServiceException) { throw; }
         catch (Exception ex)

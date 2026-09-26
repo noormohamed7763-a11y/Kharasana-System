@@ -1025,6 +1025,83 @@ public class OrderServiceTests : IDisposable
     }
 
     // ─────────────────────────────────────────────
+    // ⑧  ملخص عميل واحد (GetCustomerSummaryAsync)
+    //
+    // سبب الوجود: صفحة تفاصيل العميل كانت تجلب أول 100 عميل من قائمة مُصفّحة
+    // ثم تبحث فيهم محلياً، فتُبلّغ «غير موجود» عن كل عميل يقع بعد الصفحة الأولى.
+    // الآن هناك قراءة مباشرة لعميل واحد بنفس استعلام القائمة (ونفس عزل المصنع).
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetCustomerSummary_ReturnsAccountFieldsAndAggregates()
+    {
+        // Arrange
+        _context.Factories.Add(TestDataSeeder.CreateFactory(1, "مصنع_أ"));
+        var client = TestDataSeeder.CreateUser(
+            400, "عميل_ملخص", UserRole.Client,
+            email: "summary@test.local", phone: "777400400");
+        client.WhatsApp = YemeniPhoneHelper.Normalize("777400401");
+        _context.Users.Add(client);
+        _context.Orders.AddRange(
+            TestDataSeeder.CreateOrder(1, 400, 1, 1, quantity: 10, unitPrice: 100m),
+            TestDataSeeder.CreateOrder(2, 400, 1, 1, quantity: 5, unitPrice: 100m));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var summary = await _orderService.GetCustomerSummaryAsync(400, factoryId: null);
+
+        // Assert — بيانات الحساب (كانت كلها غائبة عن الاستعلام: بريد/واتساب/حالة)
+        summary.Should().NotBeNull();
+        summary!.UserId.Should().Be(400);
+        summary.FullName.Should().Be("عميل_ملخص");
+        summary.Email.Should().Be("summary@test.local",
+            "صفحة التفاصيل كانت تعرض «-» للبريد دائماً لأن الحقل لم يكن في المشروع");
+        summary.WhatsApp.Should().Be(YemeniPhoneHelper.Normalize("777400401"));
+        summary.IsActive.Should().BeTrue(
+            "كانت تُقرأ false دائماً فتظهر حالة الحساب «موقوف» لعميل نشط");
+
+        // Assert — التجميعات
+        summary.OrdersCount.Should().Be(2);
+        summary.TotalQuantity.Should().Be(15);
+        summary.LastOrderDate.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetCustomerSummary_HonoursFactoryScope()
+    {
+        // Arrange — للعميل طلب في المصنع ١ فقط
+        _context.Factories.AddRange(
+            TestDataSeeder.CreateFactory(1, "مصنع_أ"),
+            TestDataSeeder.CreateFactory(2, "مصنع_ب"));
+        _context.Users.Add(TestDataSeeder.CreateUser(401, "عميل_ب", UserRole.Client));
+        _context.Orders.Add(TestDataSeeder.CreateOrder(1, 401, 1, 1));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var insideOwnFactory = await _orderService.GetCustomerSummaryAsync(401, factoryId: 1);
+        var insideOtherFactory = await _orderService.GetCustomerSummaryAsync(401, factoryId: 2);
+
+        // Assert — نفس العزل الذي تفرضه قائمة العملاء (لا تسريب عميل مصنع آخر)
+        insideOwnFactory.Should().NotBeNull();
+        insideOtherFactory.Should().BeNull(
+            "لا طلبات لهذا العميل في المصنع ٢، فلا يجوز أن يظهر لموظفه");
+    }
+
+    [Fact]
+    public async Task GetCustomerSummary_CustomerWithoutOrders_ReturnsNull()
+    {
+        // Arrange — مستخدم بدور عميل بلا أي طلب (الحالة التي تُترجم إلى 404)
+        _context.Users.Add(TestDataSeeder.CreateUser(402, "عميل_بلا_طلبات", UserRole.Client));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var summary = await _orderService.GetCustomerSummaryAsync(402, factoryId: null);
+
+        // Assert
+        summary.Should().BeNull("الملخص مبني على الطلبات، فلا وجود لعميل بلا طلبات");
+    }
+
+    // ─────────────────────────────────────────────
     // ⑨  معالجة تعارض التواريع (Concurrency)
     // ─────────────────────────────────────────────
 

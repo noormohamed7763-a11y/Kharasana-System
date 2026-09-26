@@ -7,6 +7,7 @@ using Kharasana.Infrastructure;
 using Kharasana.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -192,6 +193,17 @@ public class Program
 
         // Controllers
         builder.Services.AddControllers();
+
+        // توحيد شكل خطأ 400: فلتر [ApiController] المدمج يعمل بترتيب -2000 (قبل فلتر
+        // FluentValidation) فيردّ ValidationProblemDetails بصيغة RFC 7807 بلا حقل message،
+        // بينما FluentValidation يمرّ عبر ExceptionMiddleware فيردّ ApiResponse.Fail.
+        // الشكلان المختلفان يجعلان ApiClient في الويب يسقط إلى رسالة عامة ويفقد نصّ
+        // الخطأ العربي. هنا يُبنى الردّان من مصدر واحد.
+        builder.Services.Configure<ApiBehaviorOptions>(options =>
+        {
+            options.InvalidModelStateResponseFactory =
+                context => ApiErrorResponseFactory.FromModelState(context.ModelState);
+        });
 
         // تسجيل الفلتر العام للتحقق كخدمة مفتوحة النوع —
         // يُحقن IValidator<T> تلقائياً عند الاستخدام عبر [ServiceFilter(typeof(ValidationFilter<T>))]

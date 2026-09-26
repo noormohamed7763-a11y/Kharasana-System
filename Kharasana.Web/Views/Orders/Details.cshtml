@@ -6,31 +6,12 @@
 @{
     ViewData["Title"] = $"تفاصيل الطلب - {Model.OrderNumber}";
 
-    var progressPercentage = Model.Status switch
-    {
-        OrderStatus.New => 10,
-        OrderStatus.Pending => 25,
-        OrderStatus.Approved => 50,
-        OrderStatus.Rejected => 30,
-        OrderStatus.Cancelled => 20,
-        OrderStatus.OnTheWay => 65,
-        OrderStatus.Delivered => 85,
-        OrderStatus.Closed => 100,
-        _ => 10
-    };
-
-    var progressColor = Model.Status switch
-    {
-        OrderStatus.New => "bg-info",
-        OrderStatus.Pending => "bg-warning",
-        OrderStatus.Approved => "bg-primary",
-        OrderStatus.Rejected => "bg-danger",
-        OrderStatus.Cancelled => "bg-secondary",
-        OrderStatus.OnTheWay => "bg-warning",
-        OrderStatus.Delivered => "bg-success",
-        OrderStatus.Closed => "bg-secondary",
-        _ => "bg-info"
-    };
+    // نِسَب شريط التقدّم وألوانه من طبقة العرض الوحيدة OrderStatusExtensions
+    // (كانت هنا خريطتا switch محليّتان مكرّرتان — أُلغيتا)
+    var progressPercentage = Model.Status.GetProgressPercent();
+    var progressColor = Model.Status.GetProgressBgClass();
+    // الحركة والتخطيط للطلبات الجارية فقط — الحالات المنتهية شريط ساكن
+    var progressMotion = Model.Status.GetProgressMotionClasses();
 
     var statusArabic = Model.Status.GetArabicName();
     var statusCssClass = Model.Status.GetCssClass();
@@ -96,7 +77,7 @@
                 <span class="fw-bold">@progressPercentage%</span>
             </div>
             <div class="progress" style="height: 12px;">
-                <div class="progress-bar @progressColor progress-bar-striped progress-bar-animated"
+                <div class="progress-bar @progressColor @progressMotion"
                      role="progressbar"
                      style="width: @progressPercentage%;"
                      aria-valuenow="@progressPercentage"

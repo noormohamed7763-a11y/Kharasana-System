@@ -3,6 +3,7 @@ using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Dashboard;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Application.Services;
+using Kharasana.Domain.Common;
 using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Tests.TestData;
@@ -105,6 +106,111 @@ public class DashboardServiceTests : IDisposable
         // Assert — «طلبات اليوم» تُفلتر بالزمن (واحد فقط)، بينما PendingOrders تُعدّ بالحالة (الثلاثة)
         result.TodayOrders.Should().Be(1);
         result.PendingOrders.Should().Be(3);
+    }
+
+    /// <summary>
+    /// حدود اليوم: منتصف الليل بتوقيت اليمن (UTC+3) لا منتصف الليل UTC.
+    ///
+    /// <para>كان <c>DateTime.UtcNow.Date</c> يُسقط أول ثلاث ساعات من اليوم المحلي في
+    /// «أمس»، فتظهر «طلبات اليوم» و«تم التسليم اليوم» ناقصة بلا أي خطأ ظاهر. هذا
+    /// الاختبار يثبّت الثوابت الأربعة التي يقوم عليها النطاق — وهو حتمي بخلاف اختبار
+    /// الخدمة أدناه الذي يعتمد على ساعة الجدار.</para>
+    /// </summary>
+    [Fact]
+    public void YemenTime_TodayUtcRange_IsTheLocalDayExpressedInUtc()
+    {
+        var (start, end) = YemenTime.TodayUtcRange();
+
+        (end - start).Should().Be(TimeSpan.FromDays(1), "اليوم نطاق نصف مفتوح طوله 24 ساعة");
+
+        start.Should().Be(
+            YemenTime.Today - YemenTime.Offset,
+            "البداية هي منتصف الليل بتوقيت اليمن معبَّراً عنه بـ UTC");
+
+        // منتصف الليل المحلي يقع في اليوم الميلادي السابق بتوقيت UTC — وهذه الساعات
+        // الثلاث الأولى هي بالضبط ما كان DateTime.UtcNow.Date يُسقطه في «أمس».
+        start.Date.Should().Be(
+            YemenTime.Today.AddDays(-1),
+            "منتصف الليل المحلي يقع مساء اليوم السابق بتوقيت UTC");
+
+        // وسط النهار المحلي لا بد أن يكون داخل النطاق، وكذلك اللحظة الحالية
+        DateTime.UtcNow.Should().BeOnOrAfter(start).And.BeBefore(end);
+
+        // الطرفان منتصف الليل المحلي بالضبط، لا منتصف ليل UTC:
+        (start + YemenTime.Offset).TimeOfDay.Should().Be(
+            TimeSpan.Zero, "بداية النطاق هي منتصف الليل بتوقيت اليمن");
+        (end + YemenTime.Offset).TimeOfDay.Should().Be(
+            TimeSpan.Zero, "ونهايته منتصف الليل التالي بالتوقيت نفسه");
+
+        // وهذا الفرق هو العطل نفسه: نافذة العطل القديمة كانت تبدأ عند
+        // DateTime.UtcNow.Date (00:00 UTC = الثالثة فجراً بتوقيت اليمن)، فتُسقط
+        // أول ثلاث ساعات من اليوم المحلي في «أمس» بلا أي خطأ ظاهر. البداية الصحيحة
+        // تقع دائماً في الساعة 21:00 UTC من اليوم الميلادي السابق.
+        start.TimeOfDay.Should().NotBe(
+            TimeSpan.Zero, "بداية اليوم المحلي ليست منتصف ليل UTC ما دامت الإزاحة غير صفرية");
+        start.Should().NotBe(
+            DateTime.UtcNow.Date, "بداية النافذة القديمة هي DateTime.UtcNow.Date — وهي مختلفة دائماً");
+    }
+
+    /// <summary>
+    /// طلب أُنشئ في الساعة الأولى من اليوم المحلي يُحتسب ضمن «طلبات اليوم».
+    ///
+    /// <para><b>حدّ هذا الاختبار:</b> يعتمد على ساعة الجدار. يُميّز الإصلاح عن العطل
+    /// في 21 ساعة من 24 (حين تكون الساعة الحالية UTC بين 00:00 و21:00)؛ وفي الساعات
+    /// الثلاث الأخيرة من اليوم UTC يقع الطلب داخل اليومين معاً فيمرّ على الحالتين.
+    /// لا يفشل زوراً في أي وقت — الحارس الحتمي هو الاختبار أعلاه.</para>
+    /// </summary>
+    [Fact]
+    public async Task GetFactoryDashboardAsync_TodayOrders_UsesYemenDayBoundary()
+    {
+        // Arrange
+        var f1 = TestDataSeeder.CreateFactory(1, "مصنع أ");
+        _context.Factories.Add(f1);
+
+        var localMidnightUtc = YemenTime.TodayUtcRange().StartUtc;
+
+        // 01:00 بتوقيت اليمن = 22:00 UTC من اليوم السابق — «اليوم» محلياً
+        var afterLocalMidnight = TestDataSeeder.CreateOrder(1, 100, 1, 1);
+        afterLocalMidnight.CreatedAt = localMidnightUtc.AddHours(1);
+
+        // دقيقة واحدة قبل منتصف الليل المحلي — «أمس» محلياً
+        var beforeLocalMidnight = TestDataSeeder.CreateOrder(2, 101, 1, 1);
+        beforeLocalMidnight.CreatedAt = localMidnightUtc.AddMinutes(-1);
+
+        _context.Orders.AddRange(afterLocalMidnight, beforeLocalMidnight);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _service.GetFactoryDashboardAsync(1);
+
+        // Assert
+        result.TodayOrders.Should().Be(
+            1, "حدّ اليوم هو منتصف الليل بتوقيت اليمن: الأول داخل والثاني خارج");
+    }
+
+    /// <summary>
+    /// نطاقا العدّ مختلفان: «طلبات اليوم» زمني، وعدّادات الحالات تراكمية.
+    /// هذا الاختلاف هو أصل العلّة في لوحة المصنع — كان العرض يجمعهما فيُحصي
+    /// كل طلب أُنشئ اليوم وما زال مفتوحاً مرّتين.
+    /// </summary>
+    [Fact]
+    public async Task GetFactoryDashboardAsync_StatusCountsAreNotScopedToToday()
+    {
+        // Arrange — طلب قديم ما زال قيد الانتظار
+        var f1 = TestDataSeeder.CreateFactory(1, "مصنع أ");
+        _context.Factories.Add(f1);
+
+        var old = TestDataSeeder.CreateOrder(1, 100, 1, 1, status: OrderStatus.Pending);
+        old.CreatedAt = YemenTime.TodayUtcRange().StartUtc.AddDays(-30);
+        _context.Orders.Add(old);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _service.GetFactoryDashboardAsync(1);
+
+        // Assert
+        result.TodayOrders.Should().Be(0, "أُنشئ قبل ثلاثين يوماً");
+        result.PendingOrders.Should().Be(1, "تراكمي: ما زال في حالة الانتظار الآن");
     }
 
     [Fact]

@@ -31,6 +31,14 @@ public interface IOrderRepository : IGenericRepository<Order>
     Task<PagedResult<CustomerSummaryDto>> GetFactoryCustomersAsync(
         int? factoryId, string? search, int pageNumber, int pageSize);
 
+    /// <summary>
+    /// ملخص عميل واحد (إحصاءاته وبيانات حسابه) — <c>null</c> إن لم تكن له طلبات في النطاق.
+    ///
+    /// <para>بديل قراءة عميل واحد من الصفحة الأولى للقائمة: ذاك كان يجلب أول 100 عميل ثم
+    /// يبحث فيهم محلياً، فيُبلَّغ عن كل عميل بعد المئة أنه غير موجود.</para>
+    /// </summary>
+    Task<CustomerSummaryDto?> GetFactoryCustomerAsync(int customerId, int? factoryId);
+
     /// <summary>Reports: order count grouped by status.</summary>
     Task<List<OrderStatusCountDto>> GetCountByStatusAsync(int? factoryId);
 

@@ -34,6 +34,11 @@ public class OrderService : IOrderService
             factoryId, pagination.Search, pagination.PageNumber, pagination.PageSize);
     }
 
+    public async Task<CustomerSummaryDto?> GetCustomerSummaryAsync(int customerId, int? factoryId)
+    {
+        return await _unitOfWork.Orders.GetFactoryCustomerAsync(customerId, factoryId);
+    }
+
     // ============================================================
     // CREATE ORDER
     // ============================================================

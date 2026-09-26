@@ -8,7 +8,12 @@ public interface IUserRepository : IGenericRepository<User>
 {
     Task<User?> GetByEmailAsync(string email);
     Task<User?> GetByPhoneAsync(string phone);
-    Task<bool> EmailExistsAsync(string email);
+    /// <summary>
+    /// هل البريد الإلكتروني مستخدم؟ <paramref name="excludeUserId"/> يستثني المستخدم نفسه
+    /// عند التعديل — بنفس نمط <see cref="FactoryHasAccountAsync"/>، وبدونه يفشل حفظ أي
+    /// تعديل لمستخدم يملك بريداً لأنه يصطدم ببريده الحالي.
+    /// </summary>
+    Task<bool> EmailExistsAsync(string email, int? excludeUserId = null);
     Task<bool> PhoneExistsAsync(string phone);
 
     // ✅ التعديل هنا: إضافة المعامل الاختياري لتوافق التطبيق في Repository
@@ -19,7 +24,12 @@ public interface IUserRepository : IGenericRepository<User>
     /// </summary>
     Task<HashSet<int>> GetFactoryIdsWithEmployeeAsync();
 
+    /// <summary>
+    /// قائمة مستخدمين مرقّمة مع فلاتر. <paramref name="isActive"/> يُصفّي الحسابات
+    /// الموقوفة على الخادم — بدونه كانت قوائم الاختيار تجلبه ثم تُصفّيه في الويب،
+    /// فيتضخّم عدد الصفحات وقد لا يصل العنصر المطلوب ضمن الصفحة المجلوبة.
+    /// </summary>
     Task<PagedResult<User>> GetPagedAsync(
         UserRole? role, int? factoryId, DriverStatus? driverStatus, string? search,
-        int pageNumber, int pageSize);
+        int pageNumber, int pageSize, bool? isActive = null);
 }

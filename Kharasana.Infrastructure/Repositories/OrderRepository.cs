@@ -94,30 +94,53 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
         };
     }
 
-    public async Task<PagedResult<CustomerSummaryDto>> GetFactoryCustomersAsync(
-        int? factoryId, string? search, int pageNumber, int pageSize)
+    /// <summary>
+    /// استعلام «ملخص العميل» — تعريف واحد يخدم قائمة العملاء وقراءة عميل واحد،
+    /// فلا يفترق العدّادان بين الشاشتين.
+    /// </summary>
+    private IQueryable<CustomerSummaryDto> CustomerSummaryQuery(int? factoryId)
     {
         var query = OrdersWithDetails(trackChanges: false);
 
         if (factoryId.HasValue)
             query = query.Where(o => o.FactoryId == factoryId.Value);
 
-        var grouped = query
+        return query
             .GroupBy(o => new
             {
                 o.ClientId,
                 o.Client.FullName,
-                o.Client.Phone
+                o.Client.Phone,
+                // بيانات الحساب تُقرأ من الرسم نفسه: بديلها نداء Users/{id} وهو محجوز
+                // على موظف المصنع (يرى سائقي مصنعه فقط) فيفشل لصفحة عميل.
+                o.Client.Email,
+                o.Client.WhatsApp,
+                o.Client.IsActive
             })
             .Select(g => new CustomerSummaryDto
             {
                 UserId = g.Key.ClientId,
                 FullName = g.Key.FullName,
                 Phone = g.Key.Phone,
+                Email = g.Key.Email,
+                WhatsApp = g.Key.WhatsApp,
+                IsActive = g.Key.IsActive,
                 OrdersCount = g.Count(),
                 TotalQuantity = g.Sum(o => o.Quantity),
                 LastOrderDate = g.Max(o => (DateTime?)o.CreatedAt)
             });
+    }
+
+    public async Task<CustomerSummaryDto?> GetFactoryCustomerAsync(int customerId, int? factoryId)
+    {
+        return await CustomerSummaryQuery(factoryId)
+            .FirstOrDefaultAsync(c => c.UserId == customerId);
+    }
+
+    public async Task<PagedResult<CustomerSummaryDto>> GetFactoryCustomersAsync(
+        int? factoryId, string? search, int pageNumber, int pageSize)
+    {
+        var grouped = CustomerSummaryQuery(factoryId);
 
         if (!string.IsNullOrWhiteSpace(search))
         {

@@ -144,6 +144,46 @@ public class OrdersController : ControllerBase
     }
 
     // ============================================================
+    // 3.b GET CUSTOMER (عميل واحد)
+    // ============================================================
+    /// <summary>جلب ملخص عميل واحد: إحصاءات طلباته وبيانات حسابه.</summary>
+    /// <remarks>
+    /// - <b>Admin:</b> يحدّد المصنع عبر factoryId (اختياري — كل المصانع بدونه).
+    /// - <b>FactoryEmployee:</b> مصنعه تلقائياً ويُتجاهَل أي factoryId مرسل.
+    /// </remarks>
+    /// <param name="userId">معرّف العميل.</param>
+    /// <param name="factoryId">معرّف المصنع (اختياري للمدير).</param>
+    /// <response code="200">تم جلب ملخص العميل بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="404">لا توجد طلبات لهذا العميل في النطاق المطلوب.</response>
+    [HttpGet("customers/{userId:int}")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    public async Task<IActionResult> GetCustomer(int userId, [FromQuery] int? factoryId)
+    {
+        // ✅ نفس عزل GetCustomers: الموظف محصور في مصنعه بلا استثناء
+        var caller = User.GetCallerContext();
+
+        if (caller.Role == UserRole.FactoryEmployee)
+        {
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            factoryId = caller.FactoryId;
+        }
+
+        var customer = await _orderService.GetCustomerSummaryAsync(userId, factoryId);
+
+        if (customer == null)
+            throw new NotFoundException(Messages.CustomerNotFound);
+
+        return Ok(new ApiResponse<CustomerSummaryDto>
+        {
+            Success = true,
+            Message = Messages.CustomersRetrievedSuccessfully,
+            Data = customer
+        });
+    }
+
+    // ============================================================
     // 3. GET BY ID
     // ============================================================
     /// <summary>جلب تفاصيل طلب واحد مع التحقق من صلاحية المتصل لعرضه.</summary>

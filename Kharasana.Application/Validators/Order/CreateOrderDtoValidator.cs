@@ -15,6 +15,19 @@ public class CreateOrderDtoValidator : AbstractValidator<CreateOrderDto>
         RuleFor(x => x.TransportMethod).IsInEnum().WithMessage(Messages.TransportMethodInvalid);
         RuleFor(x => x.SlabType).IsInEnum().WithMessage(Messages.SlabTypeInvalid);
 
+        // ✅ سقوف النصوص الحرة = HasMaxLength للأعمدة في OrderConfiguration
+        //    (200/200/100/500/1000) — تمنع الخطأ 8152 وتحوّل الرد إلى 400.
+        RuleFor(x => x.ProjectName)
+            .MaximumLength(200).WithMessage(Messages.ProjectNameMaxLength);
+        RuleFor(x => x.ProjectOwnerName)
+            .MaximumLength(200).WithMessage(Messages.ProjectOwnerNameMaxLength);
+        RuleFor(x => x.SiteArea)
+            .MaximumLength(100).WithMessage(Messages.SiteAreaMaxLength);
+        RuleFor(x => x.SiteDescription)
+            .MaximumLength(500).WithMessage(Messages.SiteDescriptionMaxLength);
+        RuleFor(x => x.Notes)
+            .MaximumLength(1000).WithMessage(Messages.NotesMaxLength);
+
         RuleFor(x => x.PouringDate)
             .Must(date => date is null || date.Value.Date >= DateTime.UtcNow.Date)
             .WithMessage(Messages.PouringDateCannotBeInPast);
