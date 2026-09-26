@@ -11,7 +11,8 @@ public interface IUserService
     Task<bool> UpdateMyProfileAsync(int userId, UpdateMyProfileDto dto);
 
     Task<PagedResult<UserDto>> GetPagedAsync(
-        UserRole? role, int? factoryId, DriverStatus? driverStatus, PaginationParams pagination);
+        UserRole? role, int? factoryId, DriverStatus? driverStatus, PaginationParams pagination,
+        bool? isActive = null);
 
     Task<UserDto> GetByIdAsync(int id);
     Task<UserDto> CreateAsync(CreateUserDto dto);

@@ -42,6 +42,7 @@ public class UsersController : ControllerBase
     /// <param name="role">الدور لتصفية القائمة.</param>
     /// <param name="factoryId">المصنع لتصفية القائمة (للمدير فقط).</param>
     /// <param name="driverStatus">حالة السائق لتصفية القائمة.</param>
+    /// <param name="isActive">تصفية الحسابات النشطة/الموقوفة — تُصفّى على الخادم.</param>
     /// <param name="pagination">خيارات الترقيم.</param>
     /// <response code="200">تم جلب المستخدمين بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
@@ -51,6 +52,7 @@ public class UsersController : ControllerBase
         [FromQuery] UserRole? role,
         [FromQuery] int? factoryId,
         [FromQuery] DriverStatus? driverStatus,
+        [FromQuery] bool? isActive,
         [FromQuery] PaginationParams pagination)
     {
         var caller = User.GetCallerContext();
@@ -63,7 +65,7 @@ public class UsersController : ControllerBase
             factoryId = caller.FactoryId;
         }
 
-        var result = await _userService.GetPagedAsync(role, factoryId, driverStatus, pagination);
+        var result = await _userService.GetPagedAsync(role, factoryId, driverStatus, pagination, isActive);
 
         return Ok(new ApiResponse<PagedResult<UserDto>>
         {

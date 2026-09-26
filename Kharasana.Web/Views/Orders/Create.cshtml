@@ -345,6 +345,9 @@ MODAL - إنشاء نوع خرسانة مخصص
 
 <!-- تم نقل تنسيقات هذه الصفحة إلى wwwroot/css/orders.css (ملف مركزي موحّد) -->
 @section Scripts {
+    @* ✅ كانت غائبة عن هذه الصفحة وحدها (Edit/Details تستدعيها)، فلا يعمل التحقق
+       الفوري في المتصفح: كل خطأ إدخال يستلزم إرسال النموذج وانتظار إعادة تحميل الصفحة. *@
+    <partial name="_ValidationScriptsPartial" />
     <script nonce="@ViewBag.CspNonce">
         (function(){
             const concreteSelect = document.getElementById('concreteTypeSelect');

@@ -55,6 +55,8 @@ public static class Messages
     #region Validation Messages
 
     public const string EmailAlreadyExists = "البريد الإلكتروني مستخدم مسبقًا.";
+    public const string InvalidEmail = "البريد الإلكتروني غير صالح.";
+    public const string EmailMaxLength = "البريد الإلكتروني يجب ألا يزيد عن 256 حرفاً.";
     public const string PhoneAlreadyExists = "رقم الهاتف مستخدم مسبقًا.";
     public const string EmailOrPhoneRequired = "يجب إدخال بريد إلكتروني أو رقم هاتف على الأقل.";
     public const string FactoryAlreadyExists = "اسم المصنع مستخدم مسبقًا.";
@@ -143,6 +145,15 @@ public static class Messages
     public const string SlabTypeInvalid = "نوع الصبة غير صالح.";
     public const string QuantityMustBePositive = "الكمية يجب أن تكون أكبر من صفر.";
     public const string QuantityTooLarge = "الكمية كبيرة جداً (أقصى حد هو 1000 متر مكعب). يرجى التواصل مع الدعم إذا كانت الكمية أكبر.";
+
+    // ✅ سقوف النصوص الحرة — كل واحد يطابق HasMaxLength للعمود في قاعدة البيانات.
+    //    بدونها يمرّ النص الأطول إلى SQL Server فيرمي الخطأ 8152 (اقتطاع) فيصير
+    //    الرد 500 ويُفقد الطلب كاملاً بسبب حرف زائد في الملاحظات.
+    public const string ProjectNameMaxLength = "اسم المشروع يجب ألا يزيد عن 200 حرف.";
+    public const string ProjectOwnerNameMaxLength = "اسم صاحب المشروع يجب ألا يزيد عن 200 حرف.";
+    public const string SiteAreaMaxLength = "المنطقة يجب ألا تزيد عن 100 حرف.";
+    public const string SiteDescriptionMaxLength = "وصف الموقع يجب ألا يزيد عن 500 حرف.";
+    public const string NotesMaxLength = "الملاحظات يجب ألا تزيد عن 1000 حرف.";
     public const string PouringDateCannotBeInPast = "تاريخ الصب لا يمكن أن يكون في الماضي. يرجى اختيار تاريخ اليوم أو تاريخ مستقبلي.";
     public const string PumpRequiresFloorNumber = "عند اختيار مضخة، يجب تحديد رقم الطابق.";
     public const string FloorNumberMustBeNonNegative = "رقم الطابق يجب أن يكون صفر أو أكبر (الأرضي = 0).";
@@ -172,12 +183,22 @@ public static class Messages
     public const string UnexpectedError = "حدث خطأ غير متوقع.";
 
     /// <summary>
+    /// احتياط أخير لفشل ModelState لا يحمل رسالة عربية مكتوبة (جسم JSON مشوّه،
+    /// أو قيمة لا تُحوَّل إلى نوع الحقل). تُستخدم بدل تسريب رسالة المحلّل الإنجليزية
+    /// («The JSON value could not be converted to…») إلى المستخدم.
+    /// </summary>
+    public const string InvalidRequest = "البيانات المُرسَلة غير صالحة. تحقق من الحقول ثم أعد المحاولة.";
+
+    /// <summary>
     /// احتياط أخير لانتهاك قيد التفرّد على مستوى قاعدة البيانات (حالة سباق فاتت الفحص المسبق).
     /// قاعدة البيانات هي المرجع النهائي، لذا تُترجم هذه الحالة إلى 409 بدل 500.
     /// </summary>
     public const string DuplicateValueConflict = "لا يمكن حفظ البيانات: إحدى القيم المدخلة مستخدمة مسبقًا (اسم مكرر أو بريد إلكتروني أو رقم هاتف).";
 
     public const string CustomersRetrievedSuccessfully = "تم جلب العملاء بنجاح.";
+
+    /// <summary>لا توجد طلبات لهذا العميل في النطاق المطلوب (ومنها تُبنى إحصاءاته كلها).</summary>
+    public const string CustomerNotFound = "لا توجد طلبات لهذا العميل.";
 
     #endregion
 

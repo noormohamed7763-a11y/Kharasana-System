@@ -23,6 +23,9 @@ public interface IOrderService
 
     Task<PagedResult<CustomerSummaryDto>> GetCustomersAsync(int? factoryId, PaginationParams pagination);
 
+    /// <summary>ملخص عميل واحد — <c>null</c> إن لم تكن له طلبات في النطاق.</summary>
+    Task<CustomerSummaryDto?> GetCustomerSummaryAsync(int customerId, int? factoryId);
+
     // ============================================================
     // 2. CREATE
     // ============================================================

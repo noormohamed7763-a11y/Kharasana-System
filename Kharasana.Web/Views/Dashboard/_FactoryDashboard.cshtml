@@ -3,21 +3,29 @@
 @using Kharasana.Domain.Enums
 
 @{
-    // ===== بيانات رسم "حالة الطلبات النشطة" — قيم حقيقية من الـ ViewModel (بدون أي Backend) =====
-    // تغطي الحالات الأربع النشطة التي يحسبها الـ API فعلياً: جديدة / قيد التنفيذ / جاهزة للتسليم / قيد النقل
+    // ===== رسم "توزيع الطلبات النشطة" =====
+    // الحالات الثلاث التي يبقى فيها الطلب منتظراً إجراءً، ويُحصيها الـ API كعدّادات
+    // تراكمية. لا شريحة رابعة باسم "جديدة": كل مسارات الإنشاء تُنشئ بحالة Pending
+    // و OrderStatus.New لا يُسنَد أبداً — وكانت تُستعار لها قيمة «طلبات اليوم»
+    // (كل الحالات) فيظهر في الرسم ما لا وجود له في البيانات.
     var factoryOrdersJson = System.Text.Json.JsonSerializer.Serialize(new[]
     {
-        new { label = "جديدة", count = Model.TodayOrdersCount },
         new { label = "قيد التنفيذ", count = Model.InProgressOrdersCount },
         new { label = "جاهزة للتسليم", count = Model.ReadyOrdersCount },
         new { label = "قيد النقل", count = Model.OnTheWayOrders }
     });
 
-    // ===== حسابات بطاقة "تقدم تشغيل اليوم" — كلها من حقول حقيقية =====
-    // حجم العمل النشط (طلبات لم تُسلم بعد) + المنجز اليوم = إجمالي عبء عمل اليوم
-    var activeOrdersCount = Model.TodayOrdersCount + Model.InProgressOrdersCount + Model.ReadyOrdersCount + Model.OnTheWayOrders;
-    var totalLoadToday = activeOrdersCount + Model.DeliveredToday;
-    var progressPercent = totalLoadToday > 0 ? (int)Math.Round((double)Model.DeliveredToday / totalLoadToday * 100) : 0;
+    // ===== حسابات بطاقة "تقدم تشغيل اليوم" =====
+    // حجم العمل المفتوح الآن = الحالات الثلاث.
+    // ⚠️ لا يدخل فيه Model.TodayOrdersCount: ذاك عدّاد زمني (طلبات أُنشئت اليوم بأي
+    //    حالة) وهذه عدّادات حالة تراكمية بلا حدّ زمني، فجمعهما كان يُحصي مرتين كل
+    //    طلب أُنشئ اليوم وما زال مفتوحاً — فيتضخّم "قيد المعالجة" والنسبة والأشرطة.
+    var activeOrdersCount = Model.InProgressOrdersCount + Model.ReadyOrdersCount + Model.OnTheWayOrders;
+
+    // مقام النسبة: المفتوح الآن + ما سُلِّم اليوم. هذا مجموع «ما اشتغل عليه المصنع»،
+    // وليس «طلبات اليوم» — فلا يُعرض تحت ذلك العنوان.
+    var workloadToday = activeOrdersCount + Model.DeliveredToday;
+    var progressPercent = workloadToday > 0 ? (int)Math.Round((double)Model.DeliveredToday / workloadToday * 100) : 0;
 }
 
 <div class="dashboard-page">
@@ -44,7 +52,7 @@
                 <div class="chart-container d-flex align-items-center justify-content-center">
                     <canvas id="factoryOrdersChart"
                             role="img"
-                            aria-label="رسم بياني دائري لتوزيع الطلبات النشطة: جديدة وقيد التنفيذ وجاهزة للتسليم وقيد النقل"
+                            aria-label="رسم بياني دائري لتوزيع الطلبات النشطة: قيد التنفيذ وجاهزة للتسليم وقيد النقل"
                             aria-describedby="factoryOrdersDataTable"
                             data-chart-values='@Html.Raw(factoryOrdersJson)'></canvas>
                     @* جدول بديل لقارئات الشاشة *@
@@ -54,7 +62,6 @@
                             <tr><th scope="col">الحالة</th><th scope="col">العدد</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td>جديدة</td><td>@Model.TodayOrdersCount</td></tr>
                             <tr><td>قيد التنفيذ</td><td>@Model.InProgressOrdersCount</td></tr>
                             <tr><td>جاهزة للتسليم</td><td>@Model.ReadyOrdersCount</td></tr>
                             <tr><td>قيد النقل</td><td>@Model.OnTheWayOrders</td></tr>
@@ -86,7 +93,7 @@
                     <div class="progress-track">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="progress-percent">@progressPercent%</span>
-                            <span class="progress-caption">@Model.DeliveredToday من @totalLoadToday</span>
+                            <span class="progress-caption">@Model.DeliveredToday مُسلَّم من @workloadToday (مفتوح + مُسلَّم اليوم)</span>
                         </div>
                         <div class="progress" role="progressbar" aria-valuenow="@progressPercent" aria-valuemin="0" aria-valuemax="100">
                             <div class="progress-bar" style="width: @progressPercent%;"></div>
@@ -171,8 +178,8 @@
         </div>
 
         @{
+            // الشرائح هي الحالات الثلاث نفسها، فمجموعها 100% من الشريط بلا شريحة زائدة.
             var totalOps = activeOrdersCount;
-            var pNew = totalOps > 0 ? (double)Model.TodayOrdersCount / totalOps * 100 : 0;
             var pPending = totalOps > 0 ? (double)Model.InProgressOrdersCount / totalOps * 100 : 0;
             var pApproved = totalOps > 0 ? (double)Model.ReadyOrdersCount / totalOps * 100 : 0;
             var pOnWay = totalOps > 0 ? (double)Model.OnTheWayOrders / totalOps * 100 : 0;
@@ -180,7 +187,6 @@
 
         <!-- حالة الطلبات — شريط بصري -->
         <div class="order-status-bar mb-3" title="توزيع الطلبات حسب الحالة">
-            <div class="order-status-segment" style="width: @pNew.ToString("0")%; background: var(--primary);"></div>
             <div class="order-status-segment" style="width: @pPending.ToString("0")%; background: var(--warning);"></div>
             <div class="order-status-segment" style="width: @pApproved.ToString("0")%; background: var(--success);"></div>
             <div class="order-status-segment" style="width: @pOnWay.ToString("0")%; background: var(--info);"></div>

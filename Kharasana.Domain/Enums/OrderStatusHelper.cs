@@ -42,4 +42,22 @@ public static class OrderStatusHelper
     /// <summary>هل الانتقال من الحالة الحالية إلى الحالة الجديدة مسموح؟</summary>
     public static bool CanTransitionTo(OrderStatus current, OrderStatus next)
         => GetAllowedTransitions(current).Contains(next);
+
+    /// <summary>
+    /// هل ما زال في الطلب عمل جارٍ؟ تُستخدم لتمييز ما يستحق مؤشّر حركة:
+    /// «جديد، قيد الانتظار، معتمد، في الطريق» هي الحالات التي ينتظر فيها الطلب
+    /// إجراءً، وما عداها انتهى فيها العمل فلا شيء يتحرّك.
+    ///
+    /// <para><b>ملاحظة:</b> هذه ليست «الحالة النهائية» في جدول الانتقالات —
+    /// «تم التسليم» تنتقل إلى «مغلق» فليست نهائية هناك، لكن لا عمل جارٍ فيها
+    /// فهي ليست جارية هنا. ولذلك لا تُشتقّ هذه الدالة من
+    /// <see cref="GetAllowedTransitions"/>؛ العلاقتان مختلفتان عمداً، والاختبار
+    /// <c>OrderStatusMapTests</c> يثبّت العلاقة الوحيدة الصحيحة بينهما:
+    /// كل حالة نهائية (بلا انتقالات) ليست جارية.</para>
+    /// </summary>
+    public static bool IsInFlight(OrderStatus status) =>
+        status is OrderStatus.New
+            or OrderStatus.Pending
+            or OrderStatus.Approved
+            or OrderStatus.OnTheWay;
 }

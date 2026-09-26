@@ -19,83 +19,114 @@ namespace Kharasana.Web.Services.Api
             _logger = logger;
         }
 
+        /// <summary>حجم الصفحة عند الجلب — يطابق سقف الـ API (PaginationParams يقصّ كل طلب إلى 100).</summary>
+        private const int LookupPageSize = 100;
+
+        /// <summary>سقف أمان لعدد الصفحات (2000 عنصر) حتى لا يتحول خلل في TotalCount إلى حلقة لا تنتهي.</summary>
+        private const int MaxLookupPages = 20;
+
         /// <summary>
-        /// تنفيذ طلب API موحّد مع معالجة الأخطاء والتسجيل.
+        /// يجلب **كل** عناصر قائمة مرقّمة عبر صفحاتها المتتابعة.
+        ///
+        /// <para>الـ API يقيّد PageSize بسقف 100، فطلب صفحة واحدة كان يُسقط كل ما بعد
+        /// العنصر المئة صامتاً — فيغيب سائق متاح أو عميل موجود عن القائمة المنسدلة
+        /// بلا أي إشارة ويستحيل اختياره. هنا نقرأ TotalCount من الصفحة الأولى ثم نكمل
+        /// ما بقي.</para>
         /// </summary>
-        private async Task<(bool Success, List<LookupDto> Items)> FetchLookupAsync(
-            string operation,
-            string url,
-            Func<ApiResponse<PagedResult<UserDto>>, List<LookupDto>> mapper)
+        private async Task<List<UserDto>> FetchAllUsersAsync(string url)
         {
-            try
+            var items = new List<UserDto>();
+            var pageNumber = 1;
+            var totalCount = int.MaxValue;
+            var separator = url.Contains('?') ? '&' : '?';
+
+            while (items.Count < totalCount && pageNumber <= MaxLookupPages)
             {
-                _logger.LogInformation("Fetching {Operation}...", operation);
+                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(
+                    $"{url}{separator}PageNumber={pageNumber}&PageSize={LookupPageSize}");
 
-                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(url);
-
-                if (response != null && response.Success && response.Data?.Items != null)
+                if (response == null || !response.Success || response.Data?.Items == null)
                 {
-                    var items = mapper(response);
-                    _logger.LogInformation("Found {Count} {Operation}", items.Count, operation);
-                    return (true, items);
+                    _logger.LogWarning("No lookup data on page {Page} of {Url}", pageNumber, url);
+                    break;
                 }
 
-                _logger.LogWarning("No {Operation} found.", operation);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "API error in {Operation}", operation);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching {Operation}", operation);
+                items.AddRange(response.Data.Items);
+                totalCount = response.Data.TotalCount;
+                pageNumber++;
             }
 
-            return (false, new List<LookupDto>());
+            if (items.Count < totalCount)
+            {
+                _logger.LogWarning(
+                    "Lookup truncated: fetched {Fetched} of {Total} from {Url}",
+                    items.Count,
+                    totalCount,
+                    url);
+            }
+
+            return items;
+        }
+
+        /// <summary>
+        /// جلب قائمة اختيار (سائقون/عملاء) مع توحيد التسجيل.
+        ///
+        /// <para>⚠️ لا يُبتلع <see cref="ApiServiceException"/> هنا: تعذّر الوصول إلى الـ API
+        /// كان يُعيد قائمة فارغة، فتظهر المنسدلة وكأنه «لا يوجد سائقون متاحون» — نتيجة
+        /// خاطئة تدفع المستخدم لقرار خاطئ (يظن أن لا سائقين بينما الخدمة متوقفة).
+        /// يُطرح الاستثناء ليعرضه المتحكّم برسالة صريحة؛ وكل مواضع الاستدعاء تُحيط
+        /// النداء بـ try/catch يعالج ApiServiceException.</para>
+        /// </summary>
+        private async Task<List<LookupDto>> FetchUserLookupAsync(
+            string operation,
+            string url,
+            Func<UserDto, LookupDto> project)
+        {
+            _logger.LogInformation("Fetching {Operation}...", operation);
+
+            var users = await FetchAllUsersAsync(url);
+            var items = users.Select(project).ToList();
+
+            _logger.LogInformation("Found {Count} {Operation}", items.Count, operation);
+
+            return items;
         }
 
         /// <summary>
         /// جلب جميع السائقين المتاحين في النظام
+        ///
+        /// <para>التصفية على الخادم (<c>isActive=true</c>): كانت تُجلب الصفحة الأولى ثم
+        /// تُصفّى في الذاكرة، فيسقط سائق نشط وقع خارج تلك الصفحة.</para>
         /// </summary>
         public async Task<List<LookupDto>> GetAvailableDriversAsync()
         {
-            var (Success, Items) = await FetchLookupAsync(
+            return await FetchUserLookupAsync(
                 "available drivers",
-                $"Users?role={(int)UserRole.Driver}&driverStatus={(int)DriverStatus.Available}&PageSize=100",
-                response => response.Data!.Items
-                    .Where(u => u.IsActive)
-                    .Select(u => new LookupDto
-                    {
-                        Id = u.UserId,
-                        Name = u.FullName,
-                        FactoryId = u.FactoryId
-                    })
-                    .ToList()
-            );
-
-            return Success ? Items : new List<LookupDto>();
+                $"Users?role={(int)UserRole.Driver}&driverStatus={(int)DriverStatus.Available}&isActive=true",
+                u => new LookupDto
+                {
+                    Id = u.UserId,
+                    Name = u.FullName,
+                    FactoryId = u.FactoryId
+                });
         }
 
         /// <summary>
         /// جلب جميع العملاء
+        ///
+        /// <para>التصفية على الخادم (<c>isActive=true</c>) بدل تصفية صفحة واحدة في الذاكرة.</para>
         /// </summary>
         public async Task<List<LookupDto>> GetClientsAsync()
         {
-            var (Success, Items) = await FetchLookupAsync(
+            return await FetchUserLookupAsync(
                 "clients",
-                $"Users?role={(int)UserRole.Client}&PageSize=100",
-                response => response.Data!.Items
-                    .Where(u => u.IsActive)
-                    .Select(u => new LookupDto
-                    {
-                        Id = u.UserId,
-                        Name = u.FullName,
-                        FactoryId = u.FactoryId
-                    })
-                    .ToList()
-            );
-
-            return Success ? Items : new List<LookupDto>();
+                $"Users?role={(int)UserRole.Client}&isActive=true",
+                u => new LookupDto
+                {
+                    Id = u.UserId,
+                    Name = u.FullName,
+                    FactoryId = u.FactoryId
+                });
         }
 
         /// <summary>

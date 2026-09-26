@@ -19,7 +19,7 @@ public class RegisterClientValidator : AbstractValidator<RegisterUserDto>
         //    كانت هنا NotEmpty() فتتعارض مع قرار جعل البريد اختيارياً وتُفشل
         //    تسجيل أي عميل بلا بريد — صُحّحت لتطابق نية الـ DTO.
         RuleFor(x => x.Email)
-            .EmailAddress().WithMessage("البريد الإلكتروني غير صالح.")
+            .EmailAddress().WithMessage(Messages.InvalidEmail)
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x.Password).Password();

@@ -4,10 +4,12 @@ using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Auth;
 using Kharasana.Application.DTOs.ConcreteType;
 using Kharasana.Application.DTOs.Factory;
+using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.DTOs.User;
 using Kharasana.Application.Validators.Auth;
 using Kharasana.Application.Validators.ConcreteType;
 using Kharasana.Application.Validators.Factory;
+using Kharasana.Application.Validators.Order;
 using Kharasana.Application.Validators.User;
 using Kharasana.Domain.Enums;
 using Kharasana.Domain.Validation;
@@ -252,6 +254,38 @@ public class ValidatorRuleTests
         await AssertValidAsync(validator, dto, "بيانات صالحة");
     }
 
+    [Fact]
+    public async Task UpdateUser_EmailOptionalButMustBeWellFormedAndWithinColumn()
+    {
+        // ✅ حارس انحدار: UpdateUserDto كان بلا حقل Email أصلاً، فيُهمَل ما يرسله
+        //    الويب (تعديل العميل/السائق/المستخدم) صامتاً مع رسالة نجاح.
+        //    القاعدة الجديدة: الغياب يعني «أبقِ الحالي»، والصيغة والسقف يُفحصان إن وُجد.
+        var validator = new UpdateUserDtoValidator();
+
+        var withoutEmail = new UpdateUserDto { FullName = "مستخدم", Role = UserRole.Client };
+        await AssertValidAsync(validator, withoutEmail, "غياب البريد يعني «أبقِ الحالي» لا خطأ");
+
+        var emptyEmail = new UpdateUserDto { FullName = "مستخدم", Role = UserRole.Client, Email = "" };
+        await AssertValidAsync(validator, emptyEmail, "الفراغ يعني «أبقِ الحالي» أيضاً");
+
+        var badEmail = new UpdateUserDto { FullName = "مستخدم", Role = UserRole.Client, Email = "ليس-بريداً" };
+        var badResult = await validator.ValidateAsync(badEmail);
+        badResult.IsValid.Should().BeFalse("البريد إن وُجد يجب أن يكون صالحاً");
+        badResult.Errors.Select(e => e.ErrorMessage).Should().Contain(Messages.InvalidEmail);
+
+        // 250 + "@test.local" = 261 حرفاً — يتجاوز عمود البريد (256) فيرمي SQL Server
+        // الخطأ 8152 (اقتطاع) ويصير الرد 500 بدل 400
+        var longEmail = new UpdateUserDto
+        {
+            FullName = "مستخدم",
+            Role = UserRole.Client,
+            Email = new string('a', 250) + "@test.local"
+        };
+        var longResult = await validator.ValidateAsync(longEmail);
+        longResult.IsValid.Should().BeFalse("البريد الأطول من عموده (256) مرفوض");
+        longResult.Errors.Select(e => e.ErrorMessage).Should().Contain(Messages.EmailMaxLength);
+    }
+
     // ═══════════════════════════════════════════════════════════
     // ⑮ User — UpdateMyProfileDtoValidator
     // ═══════════════════════════════════════════════════════════
@@ -436,5 +470,117 @@ public class ValidatorRuleTests
         };
 
         await AssertValidAsync(validator, dto, "بيانات صالحة");
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // ⑲ Order — سقوف النصوص الحرة (كانت غائبة: 8152 → 500 بدل 400)
+    // ═══════════════════════════════════════════════════════════
+
+    private static PhoneOrderDto ValidPhoneOrder() => new()
+    {
+        ClientPhone = "771234567",
+        ClientFullName = "عميل هاتفي",
+        FactoryId = 1,
+        ConcreteTypeId = 1,
+        Quantity = 10,
+        SlabType = SlabType.Roof,
+        TransportMethod = TransportMethod.FactoryTransport
+    };
+
+    private static CreateOrderDto ValidCreateOrder() => new()
+    {
+        ClientId = 1,
+        FactoryId = 1,
+        ConcreteTypeId = 1,
+        Quantity = 10,
+        SlabType = SlabType.Roof,
+        TransportMethod = TransportMethod.FactoryTransport
+    };
+
+    private static UpdateOrderDto ValidUpdateOrder() => new()
+    {
+        ConcreteTypeId = 1,
+        Quantity = 10,
+        SlabType = SlabType.Roof,
+        TransportMethod = TransportMethod.FactoryTransport
+    };
+
+    [Fact]
+    public async Task OrderText_ExactlyAtColumnLength_IsValid()
+    {
+        // الحدّ نفسه مقبول — الخطأ يبدأ عند 201/101/501/1001 لا عند 200/100/500/1000
+        var phone = ValidPhoneOrder();
+        phone.ClientFullName = new string('م', 200);   // User.FullName = 200
+        phone.ProjectName = new string('م', 200);      // Order.ProjectName = 200
+        phone.ProjectOwnerName = new string('م', 200); // Order.ProjectOwnerName = 200
+        phone.SiteArea = new string('م', 100);         // Order.SiteArea = 100
+        phone.SiteDescription = new string('م', 500);  // Order.SiteDescription = 500
+        phone.Notes = new string('م', 1000);           // Order.Notes = 1000
+        await AssertValidAsync(new PhoneOrderDtoValidator(), phone, "الحد الأقصى بالضبط مقبول");
+
+        var create = ValidCreateOrder();
+        create.ProjectName = new string('م', 200);
+        create.Notes = new string('م', 1000);
+        await AssertValidAsync(new CreateOrderDtoValidator(), create, "الحد الأقصى بالضبط مقبول");
+
+        var update = ValidUpdateOrder();
+        update.SiteArea = new string('م', 100);
+        update.SiteDescription = new string('م', 500);
+        await AssertValidAsync(new UpdateOrderDtoValidator(), update, "الحد الأقصى بالضبط مقبول");
+    }
+
+    [Fact]
+    public async Task PhoneOrder_TextBeyondColumnLength_IsInvalid()
+    {
+        // ✅ حارس انحدار: بلا هذه السقوف يصل النص إلى SQL Server فيرمي الخطأ 8152
+        //    (اقتطاع) → 500 بدل 400، ويُفقد الطلب كاملاً بسبب حرف زائد في الملاحظات.
+        var validator = new PhoneOrderDtoValidator();
+
+        var longClientName = ValidPhoneOrder();
+        longClientName.ClientFullName = new string('م', 201);
+        await AssertInvalidAsync(validator, longClientName, "اسم العميل أطول من عمود 200");
+
+        var longProject = ValidPhoneOrder();
+        longProject.ProjectName = new string('م', 201);
+        await AssertInvalidAsync(validator, longProject, "اسم المشروع أطول من عمود 200");
+
+        var longOwner = ValidPhoneOrder();
+        longOwner.ProjectOwnerName = new string('م', 201);
+        await AssertInvalidAsync(validator, longOwner, "اسم صاحب المشروع أطول من عمود 200");
+
+        var longArea = ValidPhoneOrder();
+        longArea.SiteArea = new string('م', 101);
+        await AssertInvalidAsync(validator, longArea, "المنطقة أطول من عمود 100");
+
+        var longDescription = ValidPhoneOrder();
+        longDescription.SiteDescription = new string('م', 501);
+        await AssertInvalidAsync(validator, longDescription, "وصف الموقع أطول من عمود 500");
+
+        var longNotes = ValidPhoneOrder();
+        longNotes.Notes = new string('م', 1001);
+        await AssertInvalidAsync(validator, longNotes, "الملاحظات أطول من عمود 1000");
+    }
+
+    [Fact]
+    public async Task CreateAndUpdateOrder_TextBeyondColumnLength_IsInvalid()
+    {
+        // نفس السقوف على مساري الإنشاء والتعديل. مسار التعديل هو الأوسع تعرّضاً:
+        // EditOrderViewModel كان بلا [StringLength] أيضاً، فلا شيء يوقف النص قبله.
+        var create = ValidCreateOrder();
+        create.Notes = new string('م', 1001);
+        await AssertInvalidAsync(new CreateOrderDtoValidator(), create, "الملاحظات أطول من عمود 1000");
+
+        var update = ValidUpdateOrder();
+        update.SiteDescription = new string('م', 501);
+        await AssertInvalidAsync(new UpdateOrderDtoValidator(), update, "وصف الموقع أطول من عمود 500");
+
+        var updateNotes = ValidUpdateOrder();
+        updateNotes.Notes = new string('م', 1001);
+        var result = await new UpdateOrderDtoValidator().ValidateAsync(updateNotes);
+
+        result.IsValid.Should().BeFalse("الملاحظات أطول من عمود 1000");
+        result.Errors.Select(e => e.ErrorMessage).Should().Contain(
+            Messages.NotesMaxLength,
+            "الرسالة عربية من Messages وليست نصّ FluentValidation الإنجليزي الافتراضي");
     }
 }

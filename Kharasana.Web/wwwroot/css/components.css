@@ -137,8 +137,7 @@
 
 /* نبض خفيف على حالات "قيد التنفيذ" و"قيد النقل" — يوحي بالحيوية */
 .status-pending .status-dot,
-.status-ontheway .status-dot,
-.status-delivering .status-dot {
+.status-ontheway .status-dot {
     animation: status-pulse 1.6s ease-in-out infinite;
 }
 
@@ -183,8 +182,7 @@
     color: var(--tertiary-text);
 }
 
-.status-ontheway,
-.status-delivering {
+.status-ontheway {
     background: rgba(66, 66, 66, 0.12);
     color: var(--secondary);
 }

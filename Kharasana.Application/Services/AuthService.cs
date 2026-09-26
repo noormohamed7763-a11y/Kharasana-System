@@ -101,8 +101,35 @@ public class AuthService : IAuthService
             user = await _unitOfWork.Users.GetByPhoneAsync(normalizedPhone);
         }
 
+        // ✅ معادلة زمن الردّ: بدل الردّ الفوري عند غياب المستخدم نُنفّذ عملية تجزئة
+        //    كاملة ثم نرمي نفس الخطأ. بدونها يكلّف مسار «لا يوجد مستخدم» أجزاءً من
+        //    المللي ثانية بينما «المستخدم موجود وكلمة المرور خاطئة» يكلّف عملية BCrypt
+        //    كاملة — فيُستدلّ على وجود الحساب من الزمن مهما تطابقت نصوص الرسائل.
         if (user == null)
+        {
+            _passwordHasher.VerifyDummy(request.Password);
             throw new BusinessException(Messages.InvalidCredentials);
+        }
+
+        // ✅ حالة القفل تُحسب مرة واحدة: تُستخدم لعدم مدّ القفل عند محاولة فاشلة على
+        //    حساب مقفل أصلاً، ولإرجاع رسالة القفل بعد إثبات كلمة المرور.
+        var isLockedOut = user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow;
+
+        // ✅ التحقق من كلمة المرور **قبل** أي فحص لحالة الحساب. كانت الفحوص أدناه
+        //    (نشاط الحساب، أرشفة المصنع، القفل) تُنفَّذ أولاً، فيكشف نصّ الردّ لمن لا
+        //    يعرف كلمة المرور: هل هذا الحساب موجود؟ هل هو سائق موقوف؟ هل مصنعه مؤرشف؟
+        //    الآن لا يُكشف السبب إلا لمن أثبت معرفته بكلمة المرور — وهو من يحتاج
+        //    الرسالة فعلاً (السائق الموقوف يُخبَر أن يراجع موظف المصنع).
+        var validPassword = _passwordHasher.Verify(request.Password, user.PasswordHash);
+        if (!validPassword)
+        {
+            // ✅ حساب مقفل أصلاً: لا نُسجّل المحاولة فلا يُمَدّ قفله بمحاولة فاشلة
+            //    إضافية — يحافظ هذا على السلوك السابق الذي كان يرجع قبل تسجيل المحاولة
+            if (!isLockedOut)
+                await RecordFailedAttemptAsync(user);
+
+            throw new BusinessException(Messages.InvalidCredentials);
+        }
 
         if (!user.IsActive)
         {
@@ -138,16 +165,10 @@ public class AuthService : IAuthService
             }
         }
 
-        // ✅ الحماية من التخمين العنيف: التحقق من قفل الحساب قبل التحقق من كلمة المرور
-        if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow)
+        // ✅ الحماية من التخمين العنيف: قفل الحساب. يُفحص بعد إثبات كلمة المرور فلا
+        //    يكشف وجود الحساب لغيره — ومن نسي كلمة مروره يرى رسالة الاعتماد لا القفل.
+        if (isLockedOut)
             throw new BusinessException(Messages.AccountLocked);
-
-        var validPassword = _passwordHasher.Verify(request.Password, user.PasswordHash);
-        if (!validPassword)
-        {
-            await RecordFailedAttemptAsync(user);
-            throw new BusinessException(Messages.InvalidCredentials);
-        }
 
         // ✅ نجاح تسجيل الدخول: تصفير عدّاد المحاولات وإلغاء القفل
         user.FailedLoginAttempts = 0;

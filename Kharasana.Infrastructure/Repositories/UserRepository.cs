@@ -25,9 +25,16 @@ public class UserRepository : GenericRepository<User>, IUserRepository
         return await _context.Users.FirstOrDefaultAsync(x => x.Phone == phone);
     }
 
-    public async Task<bool> EmailExistsAsync(string email)
+    public async Task<bool> EmailExistsAsync(string email, int? excludeUserId = null)
     {
-        return await _context.Users.AnyAsync(x => x.Email == email);
+        var query = _context.Users.Where(x => x.Email == email);
+
+        if (excludeUserId.HasValue)
+        {
+            query = query.Where(x => x.UserId != excludeUserId.Value);
+        }
+
+        return await query.AnyAsync();
     }
 
     public async Task<bool> PhoneExistsAsync(string phone)
@@ -63,7 +70,7 @@ public class UserRepository : GenericRepository<User>, IUserRepository
 
     public async Task<PagedResult<User>> GetPagedAsync(
         UserRole? role, int? factoryId, DriverStatus? driverStatus, string? search,
-        int pageNumber, int pageSize)
+        int pageNumber, int pageSize, bool? isActive = null)
     {
         var query = _context.Users.AsNoTracking().AsQueryable();
 
@@ -75,6 +82,11 @@ public class UserRepository : GenericRepository<User>, IUserRepository
 
         if (driverStatus.HasValue)
             query = query.Where(u => u.DriverStatus == driverStatus.Value);
+
+        // ✅ على الخادم: التصفية في الذاكرة كانت تُجري على صفحة واحدة فقط،
+        //    فيغيب الحساب النشط إن سقط خارج الصفحة المجلوبة.
+        if (isActive.HasValue)
+            query = query.Where(u => u.IsActive == isActive.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
