@@ -22,7 +22,7 @@ public class Program
     // خيارات JSON مطابقة لافتراضيات Web API (camelCase) للردود الموحّدة في JwtBearerEvents
     private static readonly JsonSerializerOptions ApiJsonOptions = new(JsonSerializerDefaults.Web);
 
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -71,7 +71,7 @@ public class Program
         builder.Services.AddInfrastructure(builder.Configuration);
 
         // ============================================================
-        // 2. JWT Authentication — مع فحص صارم على المفتاح المُ졌ّر
+        // 2. JWT Authentication — مع فحص صارم على المفتاح المُعرَّف
         // ============================================================
         var jwtKey = builder.Configuration["Jwt:Key"];
         if (string.IsNullOrWhiteSpace(jwtKey))
@@ -311,6 +311,16 @@ public class Program
 
         app.MapControllers();
         app.MapHealthChecks("/health");
+
+        // ============================================================
+        // 7. تهيئة حساب المدير الأول — لا يوجد أي مسار آخر لإنشائه
+        //    مُتكرّرة بلا أثر: تتخطّى نفسها إن وُجد مدير، ولا تُعدّل كلمة مرور قائمة.
+        // ============================================================
+        var startupLogger = app.Services
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger(nameof(AdminAccountSeeder));
+
+        await AdminAccountSeeder.SeedAsync(app.Services, app.Configuration, startupLogger);
 
         app.Run();
     }
