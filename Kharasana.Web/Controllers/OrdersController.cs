@@ -171,25 +171,6 @@ namespace Kharasana.Web.Controllers
                 ViewBag.AvailableDrivers = factoryDrivers;
                 ViewBag.FactoryId = FactoryId ?? 0;
 
-                ViewBag.Statuses = Enum.GetValues<OrderStatus>()
-                    .Select(s => new SelectListItem
-                    {
-                        Value = ((int)s).ToString(),
-                        Text = s switch
-                        {
-                            OrderStatus.New => "جديد",
-                            OrderStatus.Pending => "⏳ قيد الانتظار",
-                            OrderStatus.Approved => "✅ معتمد",
-                            OrderStatus.Rejected => "❌ مرفوض",
-                            OrderStatus.Cancelled => "🚫 ملغي",
-                            OrderStatus.OnTheWay => "🚚 في الطريق",
-                            OrderStatus.Delivered => "📦 تم التسليم",
-                            OrderStatus.Closed => "🔒 مغلق",
-                            _ => s.ToString()
-                        }
-                    })
-                    .ToList();
-
                 return View(order);
             }
             catch (ApiServiceException ex)

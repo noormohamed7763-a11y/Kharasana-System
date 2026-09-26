@@ -37,19 +37,9 @@ public class ConcreteTypesController : BaseController
     private bool IsFactoryInactive() =>
         RoleValue == UserRole.FactoryEmployee && FactoryIsActive == false;
 
-    private void LoadConcreteStandards(CreateConcreteTypeViewModel model)
+    private void LoadConcreteCatalog(CreateConcreteTypeViewModel model)
     {
-        var concreteTypes = _catalogService.GetAll();
-
-        model.ConcreteStandards = concreteTypes
-            .Select(x => new SelectListItem
-            {
-                Value = x.Code,
-                Text = $"{x.Code} - {x.Usage}"
-            })
-            .ToList();
-
-        ViewBag.ConcreteCatalog = concreteTypes;
+        model.ConcreteCatalog = _catalogService.GetAll();
     }
 
     // ===========================
@@ -93,7 +83,7 @@ public class ConcreteTypesController : BaseController
         {
             var model = new CreateConcreteTypeViewModel();
 
-            LoadConcreteStandards(model);
+            LoadConcreteCatalog(model);
 
             // ✅ التصحيح هنا: استخدام Role مباشرة بدون (string?)
             if (RoleValue == UserRole.Admin)
@@ -140,7 +130,7 @@ public class ConcreteTypesController : BaseController
         try
         {
             // تحميل قائمة الأنواع القياسية دائماً
-            LoadConcreteStandards(model);
+            LoadConcreteCatalog(model);
 
             // تحميل المصانع
             if (RoleValue == UserRole.Admin)

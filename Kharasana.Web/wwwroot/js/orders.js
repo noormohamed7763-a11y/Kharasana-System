@@ -163,20 +163,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /**
-     * تحديث حالة الطلب في الجدول دون إعادة تحميل الصفحة
-     */
-    function updateOrderStatus(orderId, statusText, statusClass) {
-        const row = document.querySelector(`#order-${orderId}`);
-        if (row) {
-            const badge = row.querySelector('.status-badge');
-            if (badge) {
-                badge.textContent = statusText;
-                badge.className = `status-badge ${statusClass}`;
-            }
-        }
-    }
-
-    /**
      * تحديث اسم السائق في الجدول دون إعادة تحميل الصفحة
      */
     function updateDriverName(orderId, driverName) {
@@ -300,78 +286,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             } catch (error) {
                 console.error('Error in AssignDriver:', error);
-                showMessage('حدث خطأ أثناء الاتصال بالخادم', 'error');
-            } finally {
-                if (submitBtn) {
-                    setButtonState(submitBtn, false, originalText);
-                }
-            }
-        });
-    });
-
-
-    // ============================================================
-    // 4. CHANGE STATUS - تغيير حالة الطلب (باستخدام form)
-    // ============================================================
-
-    document.querySelectorAll('form[data-ajax-status="true"]').forEach(form => {
-        form.addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn?.innerHTML || 'تحديث';
-            if (submitBtn) {
-                setButtonState(submitBtn, true, getLoadingText('جاري التحديث...'));
-            }
-
-            try {
-                const orderId = this.querySelector('input[name="id"]')?.value;
-                const url = this.action || `/OrderWorkflow/ChangeStatus/${orderId}`;
-                const token = getRequestVerificationToken();
-
-                const formData = new FormData(this);
-                const json = {};
-                formData.forEach((value, key) => {
-                    if (key !== '__RequestVerificationToken') {
-                        json[key] = value;
-                    }
-                });
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'RequestVerificationToken': token || ''
-                    },
-                    body: JSON.stringify(json)
-                });
-
-                await handleAjaxResponse(
-                    response,
-                    (data) => {
-                        const statusSelect = this.querySelector('select[name="Status"]');
-                        if (statusSelect) {
-                            const selectedOption = statusSelect.options[statusSelect.selectedIndex];
-                            if (selectedOption && orderId) {
-                                const statusText = selectedOption.text;
-                                const statusClass = selectedOption.dataset.class || 'status-default';
-                                updateOrderStatus(orderId, statusText, statusClass);
-                            }
-                            statusSelect.value = '';
-                        }
-
-                        setTimeout(() => location.reload(), CONFIG.reloadDelay);
-                    },
-                    (error) => {
-                        const message = error.message || 'فشل تحديث الحالة';
-                        showInlineMessage('statusMessage', message, 'error');
-                        showMessage(message, 'error');
-                    }
-                );
-
-            } catch (error) {
-                console.error('Error in ChangeStatus:', error);
                 showMessage('حدث خطأ أثناء الاتصال بالخادم', 'error');
             } finally {
                 if (submitBtn) {

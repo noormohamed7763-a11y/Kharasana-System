@@ -330,43 +330,6 @@ namespace Kharasana.Web.Controllers
         }
 
         // ============================================================
-        // CHANGE STATUS - تغيير حالة الطلب (POST)
-        // ============================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangeStatus(int id, [FromBody] UpdateOrderStatusViewModel model)
-        {
-            if (!EnsureValidId(id))
-                return AjaxInvalidId();
-
-            if (model == null)
-                return AjaxFail(AppMessages.Validation.RequiredField);
-
-            try
-            {
-                var authResult = await EnsureCanChangeStatusAsync(id);
-                if (authResult != null) return authResult;
-
-                var ok = await _ordersApiService.UpdateOrderStatusAsync(id, model);
-
-                if (!ok)
-                    return AjaxFail(AppMessages.Error.StatusUpdate);
-
-                return AjaxSuccess(AppMessages.Success.StatusUpdated);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في تغيير حالة الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في تغيير حالة الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
-        }
-
-        // ============================================================
         // Helpers — تقليل التكرار عبر الأفعال
         // ============================================================
 
@@ -389,18 +352,6 @@ namespace Kharasana.Web.Controllers
                 var order = await _ordersApiService.GetOrderByIdAsync(id);
                 if (order == null || IsFactoryIsolated(order.FactoryId))
                     return BadRequest(new { success = false, message = AppMessages.Common.OrderCannotModify });
-            }
-            return null;
-        }
-
-        /// <summary>تحقق أن FactoryEmployee يملك صلاحية تغيير حالة الطلب.</summary>
-        private async Task<IActionResult?> EnsureCanChangeStatusAsync(int id)
-        {
-            if (RoleValue == UserRole.FactoryEmployee)
-            {
-                var order = await _ordersApiService.GetOrderByIdAsync(id);
-                if (order == null || IsFactoryIsolated(order.FactoryId))
-                    return BadRequest(new { success = false, message = AppMessages.Common.OrderCannotChangeStatus });
             }
             return null;
         }

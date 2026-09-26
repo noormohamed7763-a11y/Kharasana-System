@@ -164,18 +164,5 @@ namespace Kharasana.Web.Services.Interfaces
         /// <param name="model">بيانات السائق ورقم الشاحنة</param>
         /// <returns>true إذا تم التعيين بنجاح</returns>
         Task<bool> AssignDriverAsync(int id, AssignDriverViewModel model);
-
-
-        // ============================================================
-        // 8. STATUS - الحالة (عام)
-        // ============================================================
-
-        /// <summary>
-        /// تحديث حالة الطلب (استخدام عام)
-        /// </summary>
-        /// <param name="id">معرف الطلب</param>
-        /// <param name="model">الحالة الجديدة</param>
-        /// <returns>true إذا تم التحديث بنجاح</returns>
-        Task<bool> UpdateOrderStatusAsync(int id, UpdateOrderStatusViewModel model);
     }
 }
