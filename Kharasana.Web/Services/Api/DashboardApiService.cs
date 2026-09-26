@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kharasana.Application.Common;
+using Kharasana.Web.Helpers;
 using Kharasana.Web.ViewModels.Dashboard;
 using Kharasana.Web.ViewModels.Orders;
 using Kharasana.Web.Services.Interfaces;
-using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Kharasana.Web.Services.Api
@@ -118,30 +118,13 @@ namespace Kharasana.Web.Services.Api
                     DriverName = o.DriverName,
                     Status = o.Status,
                     StatusDisplay = o.StatusArabic,
-                    StatusCssClass = GetStatusCssSuffix(o.Status),
+                    // ✅ اللاحقة من طبقة العرض الوحيدة OrderStatusExtensions — كانت هنا خريطة
+                    //    ثالثة كاملة للواحق الحالات. ملاحظة: RecentOrderDto.StatusCssClass يحمل
+                    //    اللاحقة وحدها (بدون status-)، ويضيفها الـ View.
+                    StatusCssClass = o.Status.GetCssSuffix(),
                     OrderDate = o.CreatedAt
                 })
                 .ToList();
-        }
-
-        /// <summary>
-        /// لاحقة كلاس الحالة (بدون بادئة status-) بحيث يكوّن الـ View `status-new`... إلخ
-        /// بما يطابق الأنماط المعرّفة في components.css (أحرف صغيرة).
-        /// </summary>
-        private static string GetStatusCssSuffix(OrderStatus status)
-        {
-            return status switch
-            {
-                OrderStatus.New => "new",
-                OrderStatus.Pending => "pending",
-                OrderStatus.Approved => "approved",
-                OrderStatus.Rejected => "rejected",
-                OrderStatus.Cancelled => "cancelled",
-                OrderStatus.OnTheWay => "ontheway",
-                OrderStatus.Delivered => "delivered",
-                OrderStatus.Closed => "closed",
-                _ => "new"
-            };
         }
     }
 }
