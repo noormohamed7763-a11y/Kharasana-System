@@ -38,6 +38,7 @@ public static class Messages
     public const string OrderClosedSuccessfully = "تم إغلاق الطلب بنجاح.";
     public const string OrderRejectedSuccessfully = "تم رفض الطلب بنجاح.";
     public const string OrderCancelledSuccessfully = "تم إلغاء الطلب بنجاح.";
+    public const string OrderDeletedSuccessfully = "تم حذف الطلب بنجاح.";
 
     #endregion
 

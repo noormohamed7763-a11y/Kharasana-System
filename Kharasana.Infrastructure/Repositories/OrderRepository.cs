@@ -17,26 +17,38 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     {
     }
 
-    private IQueryable<Order> OrdersWithDetails()
+    /// <summary>
+    /// استعلام الطلب مع تفاصيله.
+    /// <paramref name="trackChanges"/> = false للقراءة فقط (AsNoTracking)،
+    /// و true لمسارات التعديل حيث يعتمد الحفظ على كشف EF للتغييرات.
+    /// </summary>
+    private IQueryable<Order> OrdersWithDetails(bool trackChanges)
     {
-        return _context.Orders
-            .AsNoTracking()
+        var query = _context.Orders
             .Include(o => o.Client)
             .Include(o => o.Factory)
             .Include(o => o.ConcreteType)
             .Include(o => o.Driver);
+
+        return trackChanges ? query : query.AsNoTracking();
     }
 
     public async Task<Order?> GetByIdWithDetailsAsync(int id)
     {
-        return await OrdersWithDetails()
+        return await OrdersWithDetails(trackChanges: false)
+            .FirstOrDefaultAsync(o => o.OrderId == id);
+    }
+
+    public async Task<Order?> GetByIdWithDetailsForUpdateAsync(int id)
+    {
+        return await OrdersWithDetails(trackChanges: true)
             .FirstOrDefaultAsync(o => o.OrderId == id);
     }
 
     public async Task<PagedResult<Order>> GetPagedAsync(
         int? factoryId, int? clientId, int? driverId, OrderStatus? status, string? search, int pageNumber, int pageSize)
     {
-        var query = OrdersWithDetails();
+        var query = OrdersWithDetails(trackChanges: false);
 
         if (factoryId.HasValue)
             query = query.Where(o => o.FactoryId == factoryId.Value);
@@ -85,7 +97,7 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     public async Task<PagedResult<CustomerSummaryDto>> GetFactoryCustomersAsync(
         int? factoryId, string? search, int pageNumber, int pageSize)
     {
-        var query = OrdersWithDetails();
+        var query = OrdersWithDetails(trackChanges: false);
 
         if (factoryId.HasValue)
             query = query.Where(o => o.FactoryId == factoryId.Value);

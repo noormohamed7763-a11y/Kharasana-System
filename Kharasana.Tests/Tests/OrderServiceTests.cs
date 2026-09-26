@@ -808,6 +808,223 @@ public class OrderServiceTests : IDisposable
     }
 
     // ─────────────────────────────────────────────
+    // ⑪  إصلاحات منطق الطلب: تحرير السائق عند الحذف، شرط السعر عند الاعتماد،
+    //     إعادة التسعير عند تغيير نوع الخرسانة، وإعادة تعيين السائق نفسه
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Delete_OrderWithAssignedDriver_ReleasesDriver()
+    {
+        // Arrange — طلب معتمد مسند لسائق حالته Busy
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(210, "سائق_محجوز", 1, status: DriverStatus.Busy);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(OrderStatus.Approved, unitPrice: 150m);
+        order.DriverId = driver.UserId;
+        await _context.SaveChangesAsync();
+
+        // Act
+        await _orderService.DeleteOrderAsync(
+            order.OrderId, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert — السائق عاد متاحًا؛ لولا ذلك بقي محجوزًا على طلب محذوف لا يمكن الوصول إليه
+        var driverAfter = await _context.Users.AsNoTracking().FirstAsync(u => u.UserId == driver.UserId);
+        driverAfter.DriverStatus.Should().Be(DriverStatus.Available);
+    }
+
+    [Fact]
+    public async Task UpdateStatus_ToApproved_WithoutPrice_Throws()
+    {
+        // Arrange — طلب قيد الانتظار بلا سعر
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(OrderStatus.Pending, unitPrice: 0m);
+
+        // Act — المسار المخصّص للمدير: Pending → Approved مباشرة
+        var act = () => _orderService.UpdateStatusAsync(
+            order.OrderId, new UpdateOrderStatusDto { Status = OrderStatus.Approved },
+            callerId: 10, UserRole.Admin, callerFactoryId: null);
+
+        // Assert — نفس قاعدة ApproveOrderAsync، فلا يُلتفّ على التسعير الإلزامي من هذا المسار
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.PriceRequiredBeforeApproval);
+    }
+
+    [Fact]
+    public async Task UpdateStatus_ToApproved_WithPrice_Succeeds()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(OrderStatus.Pending, unitPrice: 150m);
+
+        // Act
+        await _orderService.UpdateStatusAsync(
+            order.OrderId, new UpdateOrderStatusDto { Status = OrderStatus.Approved },
+            callerId: 10, UserRole.Admin, callerFactoryId: null);
+
+        // Assert
+        var updated = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
+        updated!.Status.Should().Be(OrderStatus.Approved);
+    }
+
+    [Fact]
+    public async Task UpdateOrder_ChangingConcreteType_RepricesAndReturnsNewTypeName()
+    {
+        // Arrange — نوعان في المصنع نفسه بسعرين مختلفين، والطلب مسعَّر بسعر النوع الأول
+        await SeedOrderEnvironmentAsync();
+        var newType = TestDataSeeder.CreateConcreteType(2, 1, "C40", 40, 400m);
+        _context.ConcreteTypes.Add(newType);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(OrderStatus.Pending, unitPrice: 150m, quantity: 10);
+
+        // Act
+        var result = await _orderService.UpdateOrderAsync(
+            order.OrderId, new UpdateOrderDto
+            {
+                ConcreteTypeId = newType.ConcreteTypeId,
+                Quantity = 10m,
+                SlabType = order.SlabType,
+                TransportMethod = order.TransportMethod
+            },
+            callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert — السعر يتبع النوع الجديد، والاستجابة تُعيد اسم النوع الجديد لا القديم
+        result.ConcreteTypeName.Should().Be("C40");
+        result.TotalPrice.Should().Be(4000m);
+
+        var stored = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
+        stored!.ConcreteTypeId.Should().Be(newType.ConcreteTypeId);
+        stored.UnitPrice.Should().Be(400m);
+        stored.TotalPrice.Should().Be(4000m);
+    }
+
+    [Fact]
+    public async Task UpdateOrder_ChangingConcreteType_KeepsManuallySetPrice()
+    {
+        // Arrange — سعر مُتفاوض عليه يدويًا (200) يخالف سعر النوع الحالي في القائمة (150)
+        await SeedOrderEnvironmentAsync();
+        var newType = TestDataSeeder.CreateConcreteType(2, 1, "C40", 40, 400m);
+        _context.ConcreteTypes.Add(newType);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(OrderStatus.Pending, unitPrice: 200m, quantity: 10);
+
+        // Act
+        var result = await _orderService.UpdateOrderAsync(
+            order.OrderId, new UpdateOrderDto
+            {
+                ConcreteTypeId = newType.ConcreteTypeId,
+                Quantity = 10m,
+                SlabType = order.SlabType,
+                TransportMethod = order.TransportMethod
+            },
+            callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert — النوع تغيّر لكن السعر المتفاوض عليه بقي كما هو
+        result.ConcreteTypeName.Should().Be("C40");
+        result.TotalPrice.Should().Be(2000m);
+    }
+
+    [Fact]
+    public async Task AssignDriver_SameDriverAgain_UpdatesTruckPlate()
+    {
+        // Arrange — طلب معتمد مسند لسائق، فصار Busy بسبب هذا الطلب نفسه
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(211, "سائق_معاد", 1, status: DriverStatus.Available);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(OrderStatus.Approved, unitPrice: 150m);
+
+        await _orderService.AssignDriverAsync(order.OrderId, new AssignDriverDto
+        {
+            DriverId = driver.UserId,
+            TruckPlate = "أ ب ج 111"
+        }, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Act — إعادة تعيين السائق نفسه برقم شاحنة جديد
+        await _orderService.AssignDriverAsync(order.OrderId, new AssignDriverDto
+        {
+            DriverId = driver.UserId,
+            TruckPlate = "د هـ و 222"
+        }, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert — لم تفشل بـ DriverNotAvailable، ورقم الشاحنة تحدّث والسائق ما زال مشغولًا
+        var updated = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
+        updated!.TruckPlate.Should().Be("د هـ و 222");
+        updated.DriverId.Should().Be(driver.UserId);
+
+        var driverAfter = await _context.Users.AsNoTracking().FirstAsync(u => u.UserId == driver.UserId);
+        driverAfter.DriverStatus.Should().Be(DriverStatus.Busy);
+    }
+
+    // ─────────────────────────────────────────────
+    // ⑫  كلمة المرور المؤقتة لعميل الطلبات الهاتفية
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreatePhoneOrder_NewClient_ReturnsReadableTemporaryPassword()
+    {
+        // Arrange — رقم غير مسجَّل مسبقاً
+        await SeedOrderEnvironmentAsync();
+
+        var dto = new PhoneOrderDto
+        {
+            ClientPhone = "771110005",
+            ClientFullName = "عميل_هاتفي",
+            FactoryId = 1,
+            ConcreteTypeId = 1,
+            Quantity = 10
+        };
+
+        // Act
+        var result = await _orderService.CreatePhoneOrderAsync(dto, employeeFactoryId: 1);
+
+        // Assert — الحساب أُنشئ بكلمة مرور مقروءة (10 محارف بلا 0/O/1/l/I) تُعاد مرة واحدة
+        result.NewClientTemporaryPassword.Should().NotBeNullOrWhiteSpace();
+        result.NewClientTemporaryPassword.Should().MatchRegex("^[A-HJ-NP-Za-hi-kmnp-z2-9]{10}$");
+        result.NewClientPhone.Should().Be("967771110005");
+
+        // Assert — المخزَّن تجزئة فقط، والكلمة المعروضة تطابقها فعلاً فيستطيع العميل الدخول
+        var stored = await _context.Users.AsNoTracking()
+            .FirstAsync(u => u.Phone == "967771110005");
+        stored.PasswordHash.Should().NotBe(result.NewClientTemporaryPassword);
+        BCrypt.Net.BCrypt.Verify(result.NewClientTemporaryPassword, stored.PasswordHash).Should().BeTrue();
+
+        // Assert — الطلب نفسه أُنشئ منسوباً للعميل الجديد
+        result.Order.ClientId.Should().Be(stored.UserId);
+    }
+
+    [Fact]
+    public async Task CreatePhoneOrder_ExistingClient_ReturnsNoTemporaryPassword()
+    {
+        // Arrange — الرقم مسجَّل لعميل قائم (الهاتف يُخزَّن مُطبَّعاً: 967771234567)
+        await SeedOrderEnvironmentAsync();
+        var existing = TestDataSeeder.CreateUser(92, "عميل_قائم", UserRole.Client, phone: "771234567");
+        _context.Users.Add(existing);
+        await _context.SaveChangesAsync();
+
+        var dto = new PhoneOrderDto
+        {
+            ClientPhone = "0771234567",
+            ClientFullName = "اسم_لا_يُستخدم",
+            FactoryId = 1,
+            ConcreteTypeId = 1,
+            Quantity = 10
+        };
+
+        // Act
+        var result = await _orderService.CreatePhoneOrderAsync(dto, employeeFactoryId: 1);
+
+        // Assert — لا كلمة مرور جديدة ولا تغيير لحساب قائم
+        result.NewClientTemporaryPassword.Should().BeNull();
+        result.NewClientPhone.Should().BeNull();
+        result.Order.ClientId.Should().Be(existing.UserId);
+    }
+
+    // ─────────────────────────────────────────────
     // ⑨  معالجة تعارض التواريع (Concurrency)
     // ─────────────────────────────────────────────
 
