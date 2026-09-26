@@ -4,6 +4,9 @@
 
 @{
     ViewData["Title"] = "إدارة السائقين";
+
+    // إضافة السائق مقيّدة في DriversController بـ Roles.FactoryEmployee — تُخفى للأدوار الأخرى
+    var canCreateDriver = (string?)ViewBag.UserRole == Roles.FactoryEmployee;
 }
 
 <div class="dashboard-page">
@@ -16,7 +19,7 @@
             Icon = "bi-truck",
             Title = "إدارة السائقين",
             Description = "عرض وإدارة سائقي المصنع، حالتهم، وبيانات رخصهم.",
-            ActionText = "إضافة سائق",
+            ActionText = canCreateDriver ? "إضافة سائق" : null,
             ActionController = "Drivers",
             ActionMethod = "Create"
         })
@@ -124,7 +127,7 @@
             ImageUrl = "/images/empty-drivers.png",
             Title = "لا يوجد سائقون لعرضهم حاليًا.",
             Message = "مصنعك جاهز! ابدأ بإضافة سائقينك الأوائل.",
-            ShowActionButton = true,
+            ShowActionButton = canCreateDriver,
             ActionText = "إضافة سائق"
         })
     }

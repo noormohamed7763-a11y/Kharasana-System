@@ -74,7 +74,7 @@ internal static class TestDataSeeder
         };
 
     public static ConcreteType CreateConcreteType(int id, int factoryId, string name,
-        int strength = 25, decimal price = 150m, bool isActive = true)
+        int strength = 25, decimal price = 150m, bool isActive = true, bool isDeleted = false)
         => new()
         {
             ConcreteTypeId = id,
@@ -83,6 +83,7 @@ internal static class TestDataSeeder
             Strength = strength,
             UnitPrice = price,
             IsActive = isActive,
+            IsDeleted = isDeleted,
             CreatedAt = DateTime.UtcNow
         };
 

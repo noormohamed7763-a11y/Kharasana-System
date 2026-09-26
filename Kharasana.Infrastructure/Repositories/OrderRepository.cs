@@ -168,20 +168,34 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
 
     public async Task<List<ConcreteTypeCountDto>> GetCountByConcreteTypeAsync(int? factoryId)
     {
-        IQueryable<Order> query = _context.Orders.AsNoTracking();
+        // ⚠️ IgnoreQueryFilters هنا يلغي فلتر الحذف الناعم لكل الكيانات في الاستعلام —
+        //    لا لمجموعة أنواع الخرسانة وحدها — لذا يُعاد تطبيق فلتر الطلبات (!IsDeleted)
+        //    يدويًا في السطر التالي حتى لا تُحتسب الطلبات المحذوفة في التقرير.
+        var orders = _context.Orders
+            .IgnoreQueryFilters()
+            .Where(o => !o.IsDeleted)
+            .AsNoTracking();
 
         if (factoryId.HasValue)
-            query = query.Where(o => o.FactoryId == factoryId.Value);
+            orders = orders.Where(o => o.FactoryId == factoryId.Value);
 
-        var grouped = await query
-            .GroupBy(o => new { o.ConcreteTypeId, Name = o.ConcreteType.Name })
-            .Select(g => new ConcreteTypeCountDto
-            {
-                ConcreteTypeId = g.Key.ConcreteTypeId,
-                ConcreteTypeName = g.Key.Name,
-                Count = g.Count(),
-                TotalQuantity = g.Sum(o => o.Quantity)
-            })
+        // ✅ الانضمام إلى أنواع الخرسانة لا يحمل فلتر الحذف الناعم عمدًا:
+        //    لو طُبِّق لصار INNER JOIN يُسقط طلبات نوع خرسانة محذوف فتختفي طلبات تاريخية.
+        //    الصف المحذوف ناعمًا ما زال موجودًا فعليًا باسمه، فيبقى العدّ صحيحًا
+        //    ويظل النوع مُعرَّفًا بمعرّفه واسمه.
+        var grouped = await (
+                from o in orders
+                join c in _context.ConcreteTypes.IgnoreQueryFilters().AsNoTracking()
+                    on o.ConcreteTypeId equals c.ConcreteTypeId
+                group o by new { o.ConcreteTypeId, c.Name }
+                into g
+                select new ConcreteTypeCountDto
+                {
+                    ConcreteTypeId = g.Key.ConcreteTypeId,
+                    ConcreteTypeName = g.Key.Name,
+                    Count = g.Count(),
+                    TotalQuantity = g.Sum(o => o.Quantity)
+                })
             .OrderByDescending(x => x.Count)
             .ToListAsync();
 

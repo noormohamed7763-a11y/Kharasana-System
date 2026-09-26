@@ -25,20 +25,6 @@ public static class EnumHelper
     }
 
     /// <summary>
-    /// الحصول على وصف القيمة (يدعم DisplayAttribute)
-    /// </summary>
-    public static string GetDescription(this Enum? value)
-    {
-        if (value == null) return string.Empty;
-
-        var field = value.GetType().GetField(value.ToString());
-        if (field == null) return string.Empty;
-
-        var attribute = field.GetCustomAttribute<DisplayAttribute>();
-        return attribute?.Description ?? string.Empty;
-    }
-
-    /// <summary>
     /// الحصول على قائمة SelectListItems مع خيار افتراضي
     /// </summary>
     public static List<SelectListItem> GetSelectList<TEnum>(bool addDefaultOption = true, string? defaultText = null) where TEnum : Enum
@@ -63,78 +49,6 @@ public static class EnumHelper
         }
 
         return items;
-    }
-
-    /// <summary>
-    /// الحصول على أيقونة Bootstrap لكل قيمة (ما عدا OrderStatus)
-    /// </summary>
-    public static string GetIcon(this Enum? value)
-    {
-        if (value == null) return "bi-question-circle";
-
-        return value switch
-        {
-            // TransportMethod
-            TransportMethod.FactoryTransport => "bi-truck",
-            TransportMethod.ClientOwnTransport => "bi-car-front",
-
-            // SlabType
-            SlabType.Foundation => "bi-grid-1x2",
-            SlabType.Columns => "bi-grid-3x3-gap",
-            SlabType.Beams => "bi-grid-3x3",
-            SlabType.Roof => "bi-grid",
-            SlabType.Other => "bi-grid-3x3-gap-fill",
-
-            _ => "bi-question-circle"
-        };
-    }
-
-    /// <summary>
-    /// الحصول على كلاس Bootstrap للشارة (ما عدا OrderStatus)
-    /// </summary>
-    public static string GetBadgeClass(this Enum? value)
-    {
-        if (value == null) return "bg-secondary";
-
-        return value switch
-        {
-            // TransportMethod
-            TransportMethod.FactoryTransport => "bg-primary",
-            TransportMethod.ClientOwnTransport => "bg-success",
-
-            // SlabType
-            SlabType.Foundation => "bg-info",
-            SlabType.Columns => "bg-primary",
-            SlabType.Beams => "bg-warning",
-            SlabType.Roof => "bg-success",
-            SlabType.Other => "bg-secondary",
-
-            _ => "bg-secondary"
-        };
-    }
-
-    /// <summary>
-    /// الحصول على كلاس CSS إضافي (ما عدا OrderStatus)
-    /// </summary>
-    public static string GetCssClass(this Enum? value)
-    {
-        if (value == null) return "default";
-
-        return value switch
-        {
-            // TransportMethod
-            TransportMethod.FactoryTransport => "transport-factory",
-            TransportMethod.ClientOwnTransport => "transport-client",
-
-            // SlabType
-            SlabType.Foundation => "slab-foundation",
-            SlabType.Columns => "slab-columns",
-            SlabType.Beams => "slab-beams",
-            SlabType.Roof => "slab-roof",
-            SlabType.Other => "slab-other",
-
-            _ => "default"
-        };
     }
 
     /// <summary>

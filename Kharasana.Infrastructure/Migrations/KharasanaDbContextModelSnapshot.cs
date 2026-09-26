@@ -74,7 +74,8 @@ namespace Kharasana.Infrastructure.Migrations
                     b.HasKey("ConcreteTypeId");
 
                     b.HasIndex("FactoryId", "Name")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("ConcreteTypes", (string)null);
                 });

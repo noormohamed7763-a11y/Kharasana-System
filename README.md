@@ -12,7 +12,7 @@
 ![EF Core](https://img.shields.io/badge/EF%20Core-10-512BD4?logo=entityfusion&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Clean%20Architecture-Service%20Pattern-blue)
 ![JWT](https://img.shields.io/badge/Auth-JWT-orange)
-![Tests](https://img.shields.io/badge/Tests-74%20passing-green)
+![Tests](https://img.shields.io/badge/Tests-xUnit%20%2B%20FluentAssertions-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 </div>
@@ -72,9 +72,12 @@
 │   │   Kharasana.Web (MVC / UI)    │   │   Kharasana.API (RESTful)   │   │
 │   └───────────────┬───────────────┘   └──────────────┬──────────────┘   │
 └───────────────────┼──────────────────────────────────┼──────────────────┘
-                    │ (HTTP / JSON)                    │
-                    ▼                                  │
-┌──────────────────────────────────────────────────────┴──────────────────┐
+                    │                                  │
+                    │  HTTP / JSON وقت التشغيل          │
+                    └─────────────────────────────────▶│
+                                                       │
+                                                       ▼
+┌─────────────────────────────────────────────────────────────────────────┐
 │             Kharasana.Infrastructure (البنية التحتية)                   │
 │   EF Core DbContext, Repositories, JWT Token, PasswordHasher, Storage    │
 └──────────────────────────────────────┬──────────────────────────────────┘
@@ -91,6 +94,19 @@
 │   Entities, Value Objects, Enums, Domain Rules & Phone Normalization    │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
+
+مراجع المشاريع الفعلية كما هي معرّفة في ملفات `.csproj`:
+
+| المشروع | يشير إلى (`ProjectReference`) |
+|---------|-------------------------------|
+| `Kharasana.Web` | `Kharasana.Application`، `Kharasana.Domain` |
+| `Kharasana.API` | `Kharasana.Application`، `Kharasana.Infrastructure` |
+| `Kharasana.Infrastructure` | `Kharasana.Application`، `Kharasana.Domain` |
+| `Kharasana.Application` | `Kharasana.Domain` |
+| `Kharasana.Domain` | — (لا يشير إلى أي مشروع آخر) |
+| `Kharasana.Tests` | `Kharasana.Application`، `Kharasana.Infrastructure`، `Kharasana.Domain` |
+
+> **ملاحظة:** لا يشير `Kharasana.Web` إلى `Kharasana.Infrastructure` كمرجع مشروع إطلاقاً؛ فعلاقته بالـ API هي علاقة **وقت تشغيل** فقط (HTTP/JSON).
 
 ---
 
@@ -111,12 +127,10 @@ Kharasana.Domain/
 ├── Enums/                       # التعدادات الموحدة في النظام
 │   ├── UserRole.cs              # أدوار المستخدمين (Admin, FactoryEmployee, Driver, Client)
 │   ├── OrderStatus.cs           # دورة حياة وحالات الطلب
+│   ├── OrderStatusHelper.cs     # الأسماء العربية للحالات وجدول الانتقالات المسموحة
 │   ├── SlabType.cs              # أنواع الأسقف والعناصر الإنشائية
 │   ├── TransportMethod.cs       # طرق النقل (سيارات مصنع / نقل ذاتي)
-│   ├── DriverStatus.cs          # حالات السائقين (Available, Busy, Inactive)
-│   ├── PaymentStatus.cs         # حالات السداد المالي
-│   ├── ConcreteQuality.cs       # معايير ورتب جودة الخرسانة
-│   └── PumpLength.cs            # أطوال مضخات الخرسانة
+│   └── DriverStatus.cs          # حالات السائقين (Unset, Available, Busy, Offline)
 └── Validation/                  # سمات التحقق الخاصة بالنطاق (Domain Validation Attributes)
     ├── YemeniEmailAttribute.cs  # سمة التحقق من صيغة البريد الإلكتروني الاختياري
     └── YemeniPhoneAttribute.cs  # سمة التحقق من صحة رقم الهاتف اليمني عبر YemeniPhoneHelper
@@ -131,9 +145,12 @@ Kharasana.Application/
 ├── Common/                      # الأدوات المشتركة ونتائج العمليات
 │   ├── ApiResponse.cs           # غلاف الاستجابة الموحد لجميع نقاط الـ API
 │   ├── Messages.cs              # السجل المركزي لكافة نصوص ورسائل النظام العربية
-│   ├── CallerContext.cs         # سياق وهوية المستخدم المستخرجة من الـ JWT
+│   ├── Roles.cs                 # أسماء الأدوار وتركيباتها كمصدر وحيد بدل تكرار السلاسل
+│   ├── CustomClaimTypes.cs      # أنواع الـ Claims المخصصة (FactoryId)
+│   ├── PhoneValidationHelper.cs # تطبيع أرقام الهواتف مع فحص التفرّد
 │   ├── PagedResult.cs           # نموذج نتائج الصفحات والترقيم (Pagination Result)
 │   ├── PaginationParams.cs      # معايير طلب الصفحات (PageNumber, PageSize)
+│   ├── Exceptions/              # استثناءات الأعمال (BusinessException, NotFound, Conflict, ...)
 │   └── Logging/                 # أدوات التسجيل والربط المشترك للسجلات
 ├── DTOs/                        # كائنات نقل البيانات مصنفة حسب المجال الوظيفي
 │   ├── Auth/                    # نماذج تسجيل الدخول وإنشاء الحسابات
@@ -142,8 +159,8 @@ Kharasana.Application/
 │   ├── ConcreteType/            # نماذج إدارة أصناف الخرسانة
 │   ├── User/                    # نماذج إدارة وتعديل حسابات المستخدمين
 │   ├── Dashboard/               # نماذج إحصائيات لوحات التحكم (Admin & Factory)
-│   ├── Reports/                 # نماذج التقارير المالية والإنتاجية وأداء السائقين
-│   └── Lookup/                  # نماذج القوائم المنسدلة الخفيفة
+│   ├── Report/                  # نماذج التقارير المالية والإنتاجية وأداء السائقين
+│   └── Customer/                # نماذج ملخصات العملاء (عدد الطلبات وإجمالي الكميات)
 ├── Interfaces/                  # العقود والواجهات البرمجية المنفصلة
 │   ├── IUnitOfWork.cs           # واجهة وحدة العمل لضمان سلامة المعاملات
 │   ├── Repositories/            # واجهات مستودعات البيانات (Generic + Specific)
@@ -218,22 +235,24 @@ Kharasana.Infrastructure/
 ```text
 Kharasana.API/
 ├── Controllers/                 # نقاط النهاية (Endpoints) المحمية بالـ JWT
-│   ├── AuthController.cs        # تسجيل الدخول، إنشاء الحسابات، التحقق
+│   ├── AuthController.cs        # تسجيل الدخول وإنشاء الحسابات (نقاط عامة بلا توكن)
 │   ├── FactoriesController.cs   # إدارة المصانع وتحديث بياناتها وشعاراتها
 │   ├── OrdersController.cs      # إدارة مسار الطلبات وإنشائها واعتمادها
 │   ├── ConcreteTypesController.cs # إدارة وتصنيف أنواع الخرسانة
-│   ├── UsersController.cs       # إدارة حسابات المستخدمين والموظفين والسائقين
+│   ├── UsersController.cs       # إدارة حسابات المستخدمين والموظفين والسائقين والعملاء
 │   ├── DashboardController.cs   # إحصائيات لوحات التحكم الإدارية
 │   ├── ReportsController.cs     # التقارير الإحصائية والمالية
-│   └── SettingsController.cs    # الإعدادات العامة
+│   └── SettingsController.cs    # إعدادات المصنع الخاصة بموظف المصنع
 ├── Middlewares/                 # البرمجيات الوسيطة الخاصة بالـ API
 │   ├── ExceptionMiddleware.cs   # التقاط الاستثناءات وإعادتها بصيغة JSON موحدة
 │   └── SecurityHeadersMiddleware.cs # حقن ترويسات الأمان (CSP, XSS, HSTS)
 ├── Common/                      # أدوات وفلاتر الـ API المساعدة
-│   ├── ClaimsPrincipalExtensions.cs # استخراج بيانات المستخدم (Tenant & Role) من الـ JWT
+│   ├── CallerContext.cs         # سياق وهوية المستخدم المستخرجة من الـ JWT
 │   └── ValidationFilter.cs      # فلتر عام للتحقق التلقائي من الـ Models عبر FluentValidation
-├── Extensions/                  # ملحقات المتحكمات وتسهيل الاستجابات
-│   └── ControllerExtensions.cs  # تحويل نتائج الخدمات إلى استجابات HTTP مناسبة
+├── Extensions/                  # ملحقات استخراج الهوية وتوليد الروابط المطلقة
+│   ├── ClaimsPrincipalExtensions.cs # استخراج بيانات المستخدم (Tenant & Role) من الـ JWT
+│   ├── CallerContextExtensions.cs   # تحويل ClaimsPrincipal إلى CallerContext
+│   └── LogoUrlExtensions.cs     # تحويل مسار الشعار النسبي إلى رابط مطلق
 └── Program.cs                   # نقطة تشغيل التطبيق، تكوين CORS، Swagger، Rate Limiting، والـ JWT
 ```
 
@@ -249,7 +268,7 @@ Kharasana.Web/
 │   ├── DashboardController.cs   # لوحات التحكم التفاعلية (أدمن ومصانع)
 │   ├── OrdersController.cs      # إدارة وجداول وعرض تفاصيل الطلبات
 │   ├── OrderWorkflowController.cs # معالجة مسار اعتماد وتسليم الطلبات
-│   ├── FactoriesController.cs   # شاشات إدارة ومتابعة المصانع
+│   ├── FactoryController.cs     # شاشات إدارة ومتابعة المصانع
 │   ├── ConcreteTypesController.cs # شاشات إدارة أنواع الخرسانة
 │   ├── UsersController.cs       # شاشات المستخدمين والموظفين
 │   ├── ClientsController.cs     # شاشات إدارة العملاء
@@ -261,6 +280,7 @@ Kharasana.Web/
 ├── Services/                    # خدمات الاتصال بالـ API واسترجاع البيانات
 │   ├── Api/                     # تنفيذ استدعاءات الـ REST API عبر HttpClient
 │   │   ├── ApiClient.cs         # العميل العام مع معالجة الأخطاء وتمرير التوكن
+│   │   ├── ApiServiceException.cs # استثناءات استدعاءات الـ API
 │   │   ├── AuthApiService.cs
 │   │   ├── OrdersApiService.cs
 │   │   ├── FactoryApiService.cs
@@ -272,7 +292,8 @@ Kharasana.Web/
 │   │   ├── ReportsApiService.cs
 │   │   ├── SettingsApiService.cs
 │   │   └── LookupApiService.cs
-│   └── Interfaces/              # عقود خدمات الويب (I*ApiService)
+│   ├── ConcreteCatalogService.cs # كتالوج أنواع الخرسانة القياسية (قائمة ثابتة محلية)
+│   └── Interfaces/              # عقود خدمات الويب (I*ApiService, IConcreteCatalogService)
 ├── ViewModels/                  # نماذج البيانات المهيأة للعرض في الشاشات
 │   ├── Dashboard/               # نماذج اللوحات والـ KPIs
 │   ├── Orders/                  # نماذج شاشات الطلبات
@@ -281,10 +302,11 @@ Kharasana.Web/
 │   ├── Users/                   # نماذج المستخدمين
 │   ├── Drivers/                 # نماذج السائقين
 │   ├── Reports/                 # نماذج التقارير والرسوم البيانية
-│   └── Account/                 # نماذج شاشات الدخول
-├── Models/                      # نماذج المكونات المشتركة والإعدادات
-│   ├── Components/              # نماذج المكونات الجزئية (SummaryCard, StatusBadge, Toolbar, ...)
-│   └── Settings/                # نماذج شاشات الإعدادات
+│   └── Auth/                    # نماذج شاشات الدخول
+├── Models/                      # نماذج المكونات المشتركة
+│   ├── Components/              # نماذج المكونات الجزئية (SummaryCard, StatusBadge, ...)
+│   │   └── Search/              # نماذج مكوّن البحث (SearchBox)
+│   └── ConcreteCatalog/         # نماذج الكتالوج القياسي (ConcreteStandard)
 ├── Views/                       # شاشات Razor Views المنظمة حسب المتحكم
 │   ├── Shared/                  # القالب الأساسي (_Layout, _Navbar, _Sidebar) والمكونات المشتركة
 │   ├── Dashboard/               # شاشات لوحات المعلومات (_AdminDashboard, _FactoryDashboard)
@@ -311,9 +333,10 @@ Kharasana.Web/
 تضمن سلامة منطق الأعمال وقواعد النطاق وعزل التعديلات.
 ```text
 Kharasana.Tests/
+├── GlobalUsings.cs              # الاستيرادات العامة لمشروع الاختبارات
 ├── TestData/                    # بذور البيانات التجريبية والمولّدات
 │   └── TestDataSeeder.cs        # بيانات اختبارية متكاملة لجميع السيناريوهات
-└── Tests/                       # فئات الاختبارات المنطقية (xUnit & Moq & FluentAssertions)
+└── Tests/                       # فئات الاختبارات المنطقية (xUnit & FluentAssertions)
     ├── AuthServiceTests.cs      # اختبارات المصادقة وتوليد التوكن
     ├── OrderServiceTests.cs     # اختبارات قواعد الطلبات وصلاحيات المصانع
     ├── FactoryServiceTests.cs   # اختبارات إدارة المصانع والأرشفة
@@ -321,7 +344,8 @@ Kharasana.Tests/
     ├── UserServiceTests.cs      # اختبارات إدارة المستخدمين وتغيير كلمات المرور
     ├── DashboardServiceTests.cs # اختبارات حساب مؤشرات الأداء والـ KPIs
     ├── ReportServiceTests.cs    # اختبارات دقة التقارير المالية والإنتاجية
-    └── PaginationParamsTests.cs # اختبارات حدود الترقيم وحجم الصفحات
+    ├── PaginationParamsTests.cs # اختبارات حدود الترقيم وحجم الصفحات
+    └── UniqueConstraintDetectorTests.cs # اختبارات كشف انتهاك قيود التفرّد (أرقام أخطاء SQL Server)
 ```
 
 ---
@@ -381,6 +405,8 @@ Kharasana.Tests/
 - خادم قواعد بيانات **SQL Server** (محلي أو عبر LocalDB).
 - بيئة تطوير متكاملة (Visual Studio 2022، JetBrains Rider، أو VS Code).
 
+> ملف الحل هو `Kharasana.slnx` (لا يوجد ملف `.sln` في المستودع). لبناء كل المشاريع من جذر المستودع: `dotnet build Kharasana.slnx`.
+
 ### 1) إعداد وتشغيل واجهة الـ API
 افتح موجه الأوامر (Terminal) ونفذ التالي:
 ```bash
@@ -394,9 +420,11 @@ dotnet user-secrets set "Jwt:Key" "Your_Super_Secret_Key_For_JWT_Validation_123!
 
 dotnet run
 ```
-تعمل الخدمة على `http://localhost:5000` (ومتوفرة واجهة Swagger التفاعلية).
+تعمل الخدمة على `http://localhost:5000` (ومتوفرة واجهة Swagger التفاعلية في بيئة التطوير)، مع نقطة فحص الصحة على `/health`.
 
 ### 2) إعداد قاعدة البيانات (Migrations)
+> **مهم:** يجب إتمام خطوة `user-secrets` أعلاه **قبل** تنفيذ أي أمر `dotnet ef`، لأن أدوات EF تستدعي `Program.cs` — الذي يرفض التشغيل إذا كان `Jwt:Key` مفقوداً أو أقصر من 32 حرفاً.
+
 يجب تطبيق عمليات الترحيل لتحديث قاعدة البيانات وإنشاء الجداول المطلوبة (بما في ذلك حقول الـ `RowVersion` والحذف الناعم):
 ```bash
 cd Kharasana.Infrastructure
@@ -409,7 +437,7 @@ dotnet ef database update --startup-project ../Kharasana.API
 cd Kharasana.Web
 dotnet run
 ```
-ستعمل الواجهة بشكل افتراضي وتتواصل مع الـ API من خلال العنوان المعرف في `ApiSettings:BaseUrl` داخل ملف `appsettings.json`.
+ستعمل الواجهة على `http://localhost:5283` افتراضياً، وتتواصل مع الـ API من خلال العنوان المعرف في `ApiSettings:BaseUrl` داخل ملف `appsettings.json`.
 
 ---
 
@@ -429,25 +457,28 @@ dotnet run
 
 يحتوي المشروع على بيئة اختبارات شاملة تغطي طبقات التطبيق:
 ```bash
-dotnet test
+dotnet test Kharasana.slnx
 ```
 - يعتمد المشروع على **xUnit** و **FluentAssertions**.
-- حالياً يوجد **74 اختباراً ناجحاً** تغطي كافة العمليات المنطقية الأساسية (التحقق من صحة الطلبات، قفل الحسابات، آليات الحذف الناعم والتحديثات).
+- حالياً يوجد **128 اختباراً ناجحاً** تغطي كافة العمليات المنطقية الأساسية (التحقق من صحة الطلبات، قفل الحسابات، آليات الحذف الناعم والتحديثات).
+- هذه اختبارات **InMemory** لمنطق الخدمات فقط، ولا تُثبت سلوك SQL Server الفعلي (الفهارس الفريدة المُرشَّحة، المفاتيح الأجنبية، `RowVersion`) — انظر `SQL_SERVER_INTEGRATION_TESTING.md`.
+- يوجد تكامل مستمر (CI) في `.github/workflows/ci.yml` يعمل على `master`: يستعيد ويبني ثم ينفذ `dotnet test Kharasana.slnx` في وضع Release. الـ CI يشغّل نفس اختبارات InMemory هذه، ولا يشغّل أي اختبار تكامل على SQL Server حقيقي.
 
 ---
 
 ## 🔌 واجهة الـ API (API Endpoints)
 
-تم توثيق نقاط النهاية باللغة العربية عبر **Swagger**. أهم النطاقات المتاحة:
+تم توثيق نقاط النهاية باللغة العربية عبر **Swagger** (متاح في بيئة التطوير فقط). أهم النطاقات المتاحة:
 
-- **`Auth`**: تسجيل الدخول والخروج والتحقق من التوكن.
+- **`Auth`**: تسجيل حساب جديد (دور Client) وتسجيل الدخول وإصدار توكن JWT.
 - **`Factories`**: إدارة المصانع وتفعيلها/إيقافها وتعديل الشعار.
 - **`Orders`**: إنشاء طلبات الخرسانة، ومسار العمل (Workflow) الخاص بها.
 - **`ConcreteTypes`**: إدارة الأصناف للخرسانة الجاهزة.
-- **`Users / Clients / Drivers`**: إدارة شاملة للحسابات.
+- **`Users`**: إدارة شاملة للحسابات — بما فيها العملاء والسائقون، إذ لا توجد متحكمات منفصلة باسم `Clients` أو `Drivers` في الـ API.
 - **`Dashboard / Reports`**: نقاط مخصصة لسحب الإحصائيات وعرض التقارير اللحظية.
+- **`Settings`**: إعدادات المصنع الخاصة بموظف المصنع.
 
-*(جميع النقاط باستثناء تسجيل الدخول محمية بنظام JWT وتتطلب توكن يحمل الصلاحيات المناسبة).*
+*(جميع النقاط محمية بنظام JWT وتتطلب توكن يحمل الصلاحيات المناسبة، باستثناء نقطتَي التسجيل وتسجيل الدخول في `Auth` فهما عامّتان. تسجيل الخروج إجراء خاص بجلسة واجهة الويب وليس نقطة نهاية في الـ API).*
 
 ---
 

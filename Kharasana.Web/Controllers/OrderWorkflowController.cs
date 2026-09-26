@@ -297,9 +297,13 @@ namespace Kharasana.Web.Controllers
                 if (authResult != null) return authResult;
 
                 var allDrivers = await _lookupApiService.GetAvailableDriversAsync();
-                var factoryDrivers = allDrivers
-                    .Where(d => d.FactoryId == FactoryId)
-                    .ToList();
+
+                // ✅ موظف المصنع يُقيَّد بسائقي مصنعه، والمدير (بلا مصنع) يرى القائمة كاملة
+                //    مطابقةً لقائمة النافذة في Orders/Details؛ التحقق النهائي من تطابق
+                //    مصنع السائق مع مصنع الطلب مسؤولية OrderService.AssignDriverAsync.
+                var factoryDrivers = FactoryId.HasValue
+                    ? allDrivers.Where(d => d.FactoryId == FactoryId.Value).ToList()
+                    : allDrivers;
 
                 var driverExists = factoryDrivers.Any(d => d.Id == model.DriverId);
 

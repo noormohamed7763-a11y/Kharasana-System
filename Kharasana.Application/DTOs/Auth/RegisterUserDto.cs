@@ -24,7 +24,9 @@ public class RegisterUserDto
     [Compare(nameof(Password), ErrorMessage = "كلمتا المرور غير متطابقتين.")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
-    // ✅ التحقق من صيغة الهاتف يتم عبر RegisterClientValidator (FluentValidation) بقاعدة YemeniPhoneHelper
+    // ✅ التحقق من صيغة الهاتف يتم في AuthService عبر PhoneValidationHelper (بقاعدة YemeniPhoneHelper).
+    // ملاحظة: RegisterClientValidator غير مُشغَّل — لا AddFluentValidationAutoValidation في Program.cs
+    // ولا ValidationFilter على AuthController، فلا تعتمد عليه عند تعديل هذا الحقل.
     public string? Phone { get; set; }
 
     public string? WhatsApp { get; set; }

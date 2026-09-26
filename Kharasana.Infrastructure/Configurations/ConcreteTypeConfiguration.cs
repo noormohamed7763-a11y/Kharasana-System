@@ -25,8 +25,12 @@ public class ConcreteTypeConfiguration : IEntityTypeConfiguration<ConcreteType>
         builder.Property(c => c.Description)
             .HasMaxLength(1000);
 
+        // ✅ فهرس تفرّد مُرشَّح: التفرّد يُفرض على الأنواع غير المحذوفة فقط،
+        //    فيتحرّر الاسم فور الحذف الناعم لإعادة الاستخدام داخل المصنع نفسه.
+        //    (قرار مقصود: إعادة استخدام الأسماء المحذوفة — خيار B)
         builder.HasIndex(c => new { c.FactoryId, c.Name })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
 
         builder.HasOne(c => c.Factory)
             .WithMany(f => f.ConcreteTypes)

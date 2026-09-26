@@ -225,20 +225,64 @@ public class ConcreteTypesController : ControllerBase
     }
 
     // ============================================================
-    // ✅ DELETE - للمدير فقط
+    // ✅ DELETE - للمدير وموظف المصنع (حذف ناعم)
     // ============================================================
-    /// <summary>حذف نوع خرسانة.</summary>
-    /// <remarks>مخصصة لدور Admin فقط.</remarks>
+    /// <summary>حذف (أرشفة) نوع خرسانة — حذف ناعم يبقى قابلاً للاستعادة.</summary>
+    /// <remarks>
+    /// - <b>Admin:</b> أي نوع.
+    /// - <b>FactoryEmployee:</b> أنواع مصنعه فقط.
+    /// لا يُحذف الصف فعليًا، فتبقى الطلبات التاريخية التي تشير إليه سليمة.
+    /// </remarks>
     /// <param name="id">معرّف النوع.</param>
     /// <response code="200">تم الحذف بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
-    /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
+    /// <response code="403">النوع لا ينتمي لمصنع الموظف.</response>
+    /// <response code="404">النوع غير موجود.</response>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = Roles.Admin)]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Delete(int id)
     {
-        await _concreteTypeService.DeleteAsync(id);
+        var caller = User.GetCallerContext();
+
+        int? currentFactoryId = null;
+        if (caller.Role == UserRole.FactoryEmployee)
+        {
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            currentFactoryId = caller.FactoryId;
+        }
+
+        await _concreteTypeService.DeleteAsync(id, currentFactoryId);
 
         return Ok(ApiResponse.Ok(Messages.DeletedSuccessfully));
+    }
+
+    // ============================================================
+    // ✅ RESTORE - لموظف المصنع صاحب النوع
+    // ============================================================
+    /// <summary>استعادة نوع خرسانة محذوف (مؤرشف).</summary>
+    /// <remarks>
+    /// مخصصة لدور FactoryEmployee لأنواع مصنعه فقط.
+    /// تفشل بـ 409 إن كان الاسم نفسه مستخدمًا بنوع غير محذوف في المصنع نفسه؛
+    /// يجب إعادة تسمية النوع الحالي أو حذفه قبل الاستعادة (لا إعادة تسمية تلقائية).
+    /// </remarks>
+    /// <param name="id">معرّف النوع المحذوف.</param>
+    /// <response code="200">تمت الاستعادة بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="403">النوع لا ينتمي لمصنع الموظف.</response>
+    /// <response code="404">النوع غير موجود أو غير محذوف.</response>
+    /// <response code="409">الاسم مستخدم بالفعل بنوع غير محذوف في المصنع.</response>
+    [HttpPost("restore/{id:int}")]
+    [Authorize(Roles = Roles.FactoryEmployee)]
+    public async Task<IActionResult> Restore(int id)
+    {
+        var caller = User.GetCallerContext();
+
+        if (caller.FactoryId is null)
+            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+
+        await _concreteTypeService.RestoreAsync(id, caller.FactoryId);
+
+        return Ok(ApiResponse.Ok(Messages.ConcreteTypeRestoredSuccessfully));
     }
 }

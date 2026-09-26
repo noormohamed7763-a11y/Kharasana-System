@@ -7,6 +7,7 @@ using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Tests.TestData;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kharasana.Tests.Tests;
 
@@ -17,6 +18,7 @@ namespace Kharasana.Tests.Tests;
 /// • Delete يضبط IsDeleted = true
 /// • Restore يُلغي الحذف
 /// • HasAccount يُحدّث بشكل صحيح عبر الاستعلام المجمّع
+/// • منع تكرار اسم المصنع (409) — بما فيه الأسماء المؤرشفة
 /// </summary>
 public class FactoryServiceTests : IDisposable
 {
@@ -127,6 +129,122 @@ public class FactoryServiceTests : IDisposable
         result.Should().HaveCount(2);
         result.First(x => x.FactoryId == 5).HasAccount.Should().BeTrue();
         result.First(x => x.FactoryId == 6).HasAccount.Should().BeFalse();
+    }
+
+    // ─────────────────────────────────────────────
+    //  منع تكرار اسم المصنع — Duplicates
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Create_DuplicateFactoryName_ThrowsConflict()
+    {
+        // Arrange
+        _context.Factories.Add(TestDataSeeder.CreateFactory(60, "مصنع_اسم_مكرر"));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _service.CreateAsync(new CreateFactoryDto
+        {
+            FactoryName = "مصنع_اسم_مكرر",
+            Area = "صنعاء",
+            Address = "شارع الاختبار"
+        });
+
+        // Assert
+        await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage(Messages.FactoryAlreadyExists);
+
+        (await _context.Factories.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Create_DuplicateFactoryNameWithDifferentCase_ThrowsConflict()
+    {
+        // Arrange — ترتيب SQL Server الافتراضي غير حساس لحالة الأحرف
+        _context.Factories.Add(TestDataSeeder.CreateFactory(61, "AlNoor"));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _service.CreateAsync(new CreateFactoryDto
+        {
+            FactoryName = "alnoor",
+            Area = "صنعاء",
+            Address = "شارع الاختبار"
+        });
+
+        // Assert
+        await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage(Messages.FactoryAlreadyExists);
+    }
+
+    [Fact]
+    public async Task Create_ArchivedFactoryName_ThrowsConflict()
+    {
+        // Arrange — فهرس التفرّد على FactoryName يشمل المصانع المؤرشفة، فالاسم يبقى محجوزًا
+        _context.Factories.Add(
+            TestDataSeeder.CreateFactory(62, "مصنع_مؤرشف_الاسم", isActive: false, isDeleted: true));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _service.CreateAsync(new CreateFactoryDto
+        {
+            FactoryName = "مصنع_مؤرشف_الاسم",
+            Area = "صنعاء",
+            Address = "شارع الاختبار"
+        });
+
+        // Assert
+        await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage(Messages.FactoryAlreadyExists);
+    }
+
+    [Fact]
+    public async Task Update_RenameToExistingFactoryName_ThrowsConflict()
+    {
+        // Arrange
+        var first = TestDataSeeder.CreateFactory(63, "مصنع_الاول");
+        var second = TestDataSeeder.CreateFactory(64, "مصنع_الثاني");
+        _context.Factories.AddRange(first, second);
+        await _context.SaveChangesAsync();
+
+        // Act — إعادة تسمية المصنع 64 إلى اسم المصنع 63
+        var act = () => _service.UpdateAsync(64, new UpdateFactoryDto
+        {
+            FactoryName = "مصنع_الاول",
+            Area = "صنعاء",
+            Address = "شارع الاختبار",
+            IsActive = true
+        });
+
+        // Assert
+        await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage(Messages.FactoryAlreadyExists);
+
+        var stored = await _context.Factories.AsNoTracking().FirstAsync(f => f.FactoryId == 64);
+        stored.FactoryName.Should().Be("مصنع_الثاني");
+    }
+
+    [Fact]
+    public async Task Update_KeepingSameFactoryName_Succeeds()
+    {
+        // Arrange — الإبقاء على الاسم نفسه ليس تكرارًا
+        _context.Factories.Add(TestDataSeeder.CreateFactory(65, "مصنع_نفسه"));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _service.UpdateAsync(65, new UpdateFactoryDto
+        {
+            FactoryName = "مصنع_نفسه",
+            Area = "عدن",
+            Address = "شارع جديد",
+            IsActive = true
+        });
+
+        // Assert
+        result.Should().BeTrue();
+
+        var stored = await _context.Factories.AsNoTracking().FirstAsync(f => f.FactoryId == 65);
+        stored.Area.Should().Be("عدن");
     }
 
     public void Dispose() => _context.Dispose();

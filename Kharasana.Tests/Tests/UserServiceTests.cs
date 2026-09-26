@@ -1,4 +1,6 @@
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
+using Kharasana.Application.DTOs.User;
 using Kharasana.Application.Services;
 using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Authentication;
@@ -153,6 +155,54 @@ public class UserServiceTests : IDisposable
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    // ─────────────────────────────────────────────
+    // CreateAsync — عقد (الدور ↔ المصنع) الذي يبنيه عميل الـ Web على القيم الرقمية
+    // ─────────────────────────────────────────────
+
+    /// <summary>
+    /// دور Client لا يتطلّب مصنعاً فيُقبل بلا FactoryId.
+    /// هذا هو العقد الذي ينكسر إذا أرسل عميل الـ Web القيمة 3 (Driver) بدل 4 (Client).
+    /// </summary>
+    [Fact]
+    public async Task CreateAsync_ClientRoleWithoutFactory_Succeeds()
+    {
+        var dto = new CreateUserDto
+        {
+            FullName = "عميل اختبار",
+            Email = "client-role-contract@test.local",
+            Password = TestDataSeeder.TestPassword,
+            Phone = "771110001",
+            Role = UserRole.Client
+        };
+
+        var created = await _userService.CreateAsync(dto);
+
+        created.Role.Should().Be(UserRole.Client.ToString());
+        created.FactoryId.Should().BeNull();
+    }
+
+    /// <summary>
+    /// دور Driver بلا مصنع مرفوض — وبهذا الخطأ تحديداً كان ينتهي مسار المدير
+    /// عند إرسال Role=3 مكان Role=4 من عميل الـ Web.
+    /// </summary>
+    [Fact]
+    public async Task CreateAsync_DriverRoleWithoutFactory_ThrowsBusinessException()
+    {
+        var dto = new CreateUserDto
+        {
+            FullName = "سائق اختبار",
+            Email = "driver-role-contract@test.local",
+            Password = TestDataSeeder.TestPassword,
+            Phone = "771110002",
+            Role = UserRole.Driver
+        };
+
+        var act = async () => await _userService.CreateAsync(dto);
+
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.FactoryRequiredForDriver);
     }
 
     // ─────────────────────────────────────────────

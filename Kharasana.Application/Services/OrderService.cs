@@ -401,7 +401,7 @@ public class OrderService : IOrderService
         order.DeliveredAt = DateTime.UtcNow;
         order.UpdatedAt = DateTime.UtcNow;
 
-        await ReleaseDriverAsync(order);
+        ReleaseDriverAsync(order);
 
         _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
@@ -449,7 +449,7 @@ public class OrderService : IOrderService
             order.ClosedAt = DateTime.UtcNow;
 
         if (dto.Status is OrderStatus.Delivered or OrderStatus.Rejected or OrderStatus.Cancelled)
-            await ReleaseDriverAsync(order);
+            ReleaseDriverAsync(order);
 
         _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
@@ -482,6 +482,9 @@ public class OrderService : IOrderService
 
         if (driver.DriverStatus != DriverStatus.Available)
             throw new BusinessException(Messages.DriverNotAvailable);
+
+        if (driver.FactoryId != order.FactoryId)
+            throw new ForbiddenException(Messages.FactoryEmployeeFactoryMismatch);
 
         if (order.DriverId.HasValue && order.DriverId.Value != dto.DriverId)
         {
@@ -524,7 +527,7 @@ public class OrderService : IOrderService
         if (!string.IsNullOrWhiteSpace(reason))
             order.Notes = (order.Notes + "\n" + string.Format(Messages.RejectionReasonPrefix, reason)).Trim();
 
-        await ReleaseDriverAsync(order);
+        ReleaseDriverAsync(order);
 
         _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
@@ -554,7 +557,7 @@ public class OrderService : IOrderService
         order.Status = OrderStatus.Cancelled;
         order.UpdatedAt = DateTime.UtcNow;
 
-        await ReleaseDriverAsync(order);
+        ReleaseDriverAsync(order);
 
         _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
@@ -621,7 +624,12 @@ public class OrderService : IOrderService
         return order;
     }
 
-    private async Task ReleaseDriverAsync(Order order)
+    /// <summary>
+    /// تحرير السائق المرتبط بالطلب (إعادته إلى «متاح»).
+    /// لا تنفّذ أي إدخال/إخراج: تُعدّل الكيان المُتتبَّع فقط، والحفظ الفعلي
+    /// مسؤولية SaveChangesAsync في المستدعي — لذلك ليست async.
+    /// </summary>
+    private void ReleaseDriverAsync(Order order)
     {
         if (!order.DriverId.HasValue)
             return;

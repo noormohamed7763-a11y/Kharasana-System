@@ -57,10 +57,23 @@ namespace Kharasana.Web.Controllers
                 var paged = await _ordersApiService.GetOrdersAsync(
                     pageNumber, pageSize, search, factoryIdFilter, status);
 
-                // ✅ عدّ واحد عبر العناصر بدل 8 مسحات متكررة بواسطة Count(a => a.Status == ...)
-                var statusCounts = (paged?.Items ?? [])
-                    .GroupBy(o => o.Status)
-                    .ToDictionary(g => g.Key, g => g.Count());
+                // ✅ عدّادات حقيقية عبر كل الصفحات (PageSize=1 → TotalCount) بدلًا من
+                //    عدّ عناصر الصفحة الحالية الذي كان يُظهر أرقامًا ناقصة عند وجود أكثر من صفحة.
+                //    تُصفّى بنفس فلاتر القائمة (البحث + المصنع) دون فلتر الحالة — البطاقات للتنقّل.
+                int pendingCount = 0, rejectedCount = 0, cancelledCount = 0, closedCount = 0;
+                try
+                {
+                    var counts = await _ordersApiService.GetStatusCountsAsync(search, factoryIdFilter);
+                    pendingCount = counts.Pending;
+                    rejectedCount = counts.Rejected;
+                    cancelledCount = counts.Cancelled;
+                    closedCount = counts.Closed;
+                }
+                catch (Exception ex)
+                {
+                    // فشل العدّادات لا يُفشل الصفحة — تُعرض أصفار
+                    _logger.LogWarning(ex, "تعذر جلب عدّادات حالات الطلبات");
+                }
 
                 var vm = new OrdersIndexViewModel
                 {
@@ -71,14 +84,10 @@ namespace Kharasana.Web.Controllers
                     StatusFilter = status,
                     FactoryIdFilter = factoryIdFilter,
 
-                    NewCount = statusCounts.GetValueOrDefault(OrderStatus.New),
-                    PendingCount = statusCounts.GetValueOrDefault(OrderStatus.Pending),
-                    ApprovedCount = statusCounts.GetValueOrDefault(OrderStatus.Approved),
-                    RejectedCount = statusCounts.GetValueOrDefault(OrderStatus.Rejected),
-                    CancelledCount = statusCounts.GetValueOrDefault(OrderStatus.Cancelled),
-                    OnTheWayCount = statusCounts.GetValueOrDefault(OrderStatus.OnTheWay),
-                    DeliveredCount = statusCounts.GetValueOrDefault(OrderStatus.Delivered),
-                    ClosedCount = statusCounts.GetValueOrDefault(OrderStatus.Closed)
+                    PendingCount = pendingCount,
+                    RejectedCount = rejectedCount,
+                    CancelledCount = cancelledCount,
+                    ClosedCount = closedCount
                 };
 
                 if (RoleValue == UserRole.Admin)

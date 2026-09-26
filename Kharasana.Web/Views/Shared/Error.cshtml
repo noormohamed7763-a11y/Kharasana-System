@@ -71,5 +71,9 @@
             }
         </div>
     </div>
+
+    @* معالج زر إعادة المحاولة (#retryButton) معرّف في site.js — هذه الصفحة لا تستخدم
+       _Layout فلا تُحمَّل سكربتاتها تلقائياً. سياسة CSP تسمح بالسكربتات من 'self' فلا حاجة لـ nonce. *@
+    <script src="~/js/site.js" asp-append-version="true"></script>
 </body>
 </html>

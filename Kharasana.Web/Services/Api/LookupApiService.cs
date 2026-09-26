@@ -77,28 +77,6 @@ namespace Kharasana.Web.Services.Api
         }
 
         /// <summary>
-        /// جلب السائقين المتاحين في مصنع معين فقط
-        /// </summary>
-        public async Task<List<LookupDto>> GetAvailableDriversByFactoryAsync(int factoryId)
-        {
-            var (Success, Items) = await FetchLookupAsync(
-                $"available drivers for factory {factoryId}",
-                $"Users?role={(int)UserRole.Driver}&driverStatus={(int)DriverStatus.Available}&factoryId={factoryId}&PageSize=100",
-                response => response.Data!.Items
-                    .Where(u => u.IsActive && u.FactoryId == factoryId)
-                    .Select(u => new LookupDto
-                    {
-                        Id = u.UserId,
-                        Name = u.FullName,
-                        FactoryId = u.FactoryId
-                    })
-                    .ToList()
-            );
-
-            return Success ? Items : new List<LookupDto>();
-        }
-
-        /// <summary>
         /// جلب جميع العملاء
         /// </summary>
         public async Task<List<LookupDto>> GetClientsAsync()
@@ -106,28 +84,6 @@ namespace Kharasana.Web.Services.Api
             var (Success, Items) = await FetchLookupAsync(
                 "clients",
                 $"Users?role={(int)UserRole.Client}&PageSize=100",
-                response => response.Data!.Items
-                    .Where(u => u.IsActive)
-                    .Select(u => new LookupDto
-                    {
-                        Id = u.UserId,
-                        Name = u.FullName,
-                        FactoryId = u.FactoryId
-                    })
-                    .ToList()
-            );
-
-            return Success ? Items : new List<LookupDto>();
-        }
-
-        /// <summary>
-        /// جلب جميع السائقين (بغض النظر عن حالتهم)
-        /// </summary>
-        public async Task<List<LookupDto>> GetDriversAsync()
-        {
-            var (Success, Items) = await FetchLookupAsync(
-                "drivers",
-                $"Users?role={(int)UserRole.Driver}&PageSize=100",
                 response => response.Data!.Items
                     .Where(u => u.IsActive)
                     .Select(u => new LookupDto

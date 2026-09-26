@@ -1,7 +1,9 @@
+using Kharasana.Web.Controllers;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace Kharasana.Web.Filters;
 
@@ -57,16 +59,26 @@ public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
 
         // ── الباقي: إعادة توجيه مع رسالة الخطأ ──
         var httpContext = context.HttpContext;
-        httpContext.Items["ErrorMessage"] = apiEx.Message;
 
-        if (!string.IsNullOrEmpty(apiEx.TraceId))
-            httpContext.Items["ErrorTraceId"] = apiEx.TraceId;
+        // الرسالة تُسلَّم عبر TempData لا HttpContext.Items: النتيجة إعادة توجيه،
+        // و Items لا يعبر إلى الطلب التالي فتضيع الرسالة قبل أن يقرأها Components/_Alerts.
+        // نفس الطريقة المتبعة في Program.cs (RateLimiter.OnRejected).
+        var tempData = httpContext.RequestServices
+            .GetRequiredService<ITempDataDictionaryFactory>()
+            .GetTempData(httpContext);
+
+        tempData[BaseController.TempDataError] = apiEx.Message;
+        tempData.Save();
 
         var referrer = httpContext.Request.Headers["Referer"].FirstOrDefault();
 
-        // لا نعيد التوجيه لنفس المسار (حلقة لا نهائية)
+        // لا نعيد التوجيه لنفس المسار (حلقة لا نهائية).
+        // تسجيل الدخول هنا جلسة (Session["Token"]) لا ClaimsPrincipal —
+        // نفس الفحص المتبع في SessionAuthorizeAttribute و BaseController.IsLoggedIn.
+        var isLoggedIn = !string.IsNullOrWhiteSpace(httpContext.Session.GetString("Token"));
+
         var safeRedirect = "/"
-            + (httpContext.User?.Identity?.IsAuthenticated == true ? "Dashboard" : "Account/Login");
+            + (isLoggedIn ? "Dashboard" : "Account/Login");
 
         if (!string.IsNullOrWhiteSpace(referrer)
             && referrer.StartsWith("/", StringComparison.Ordinal)

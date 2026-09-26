@@ -330,7 +330,9 @@
 
                 <!-- Secondary Actions - الإجراءات الثانوية (مجمعة) -->
                 <div class="action-secondary-group">
-                    @if (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending)
+                    @* الرفض متاح للمدير ولموظف مصنع الطلب نفسه فقط — مطابقةً لصلاحية API Reject *@
+                    @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin) &&
+                         (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending))
                     {
                         <button class="btn btn-outline-danger" data-action="reject" data-order-id="@Model.OrderId">
                             <i class="bi bi-x-circle"></i> رفض الطلب
@@ -389,7 +391,9 @@
                             </button>
                         }
 
-                        @if (Model.Status == OrderStatus.Delivered)
+                        @* الإغلاق متاح للمدير ولموظف مصنع الطلب نفسه فقط — مطابقةً لصلاحية API Close *@
+                        @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin) &&
+                             Model.Status == OrderStatus.Delivered)
                         {
                             <button class="btn btn-secondary" data-action="close" data-order-id="@Model.OrderId">
                                 <i class="bi bi-lock"></i> إغلاق الطلب

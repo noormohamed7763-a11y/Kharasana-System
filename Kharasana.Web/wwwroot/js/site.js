@@ -254,11 +254,19 @@ document.addEventListener('keydown', function (e) {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {
+                    // نفس اتفاقية AJAX المتبعة في orders.js — بدونها يعيد الـ controller
+                    // إعادة توجيه (صفحة HTML بحالة 200) فيقرأها الكود نجاحاً وهي ليست كذلك.
+                    'X-Requested-With': 'XMLHttpRequest',
                     'RequestVerificationToken': tokenEl ? tokenEl.value : ''
                 }
             });
 
-            if (!response.ok) throw new Error('Request failed');
+            // لا يكفي response.ok وحده: عند انتهاء الجلسة يعيد الخادم إعادة توجيه إلى
+            // Account/Login فتصل صفحة HTML بحالة 200 وتُقرأ نجاحاً زائفاً. لذلك نقرأ JSON
+            // ونتحقق من success — نفس ما يفعله orders.js في handleAjaxResponse.
+            const data = await response.json();
+
+            if (!response.ok || !data.success) throw new Error(data?.message || 'Request failed');
 
             showToast('تم التحديث',
                 newIsActive ? 'تم تفعيل حساب السائق.' : 'تم إيقاف حساب السائق.',

@@ -243,8 +243,9 @@
                                 </td>
                                 <td class="text-center">
                                     @* إجراءات سريعة - مشغلة من orders.js عبر data-action *@
+                                    @* الدور يُقرأ من الجلسة عبر ViewBag (لا يوجد ClaimsPrincipal في هذا التطبيق) *@
                                     @if (order.Status == OrderStatus.Pending &&
-                                         (User.IsInRole(Roles.Admin) || User.IsInRole(Roles.FactoryEmployee)))
+                                         (ViewBag.UserRole == Roles.Admin || ViewBag.UserRole == Roles.FactoryEmployee))
                                     {
                                         <button type="button" class="btn btn-light border text-success"
                                                 data-action="approve" data-order-id="@order.OrderId"
@@ -268,7 +269,7 @@
                                             ControllerName = "Orders",
                                             ShowDetails = true,
                                             ShowEdit = order.Status == OrderStatus.New || order.Status == OrderStatus.Pending,
-                                            ShowDelete = User.IsInRole(Roles.Admin) && (order.Status == OrderStatus.New || order.Status == OrderStatus.Pending)
+                                            ShowDelete = ViewBag.UserRole == Roles.Admin && (order.Status == OrderStatus.New || order.Status == OrderStatus.Pending)
                                         })
                                 </td>
                             </tr>
