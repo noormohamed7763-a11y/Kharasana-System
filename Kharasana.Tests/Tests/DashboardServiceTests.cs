@@ -72,15 +72,39 @@ public class DashboardServiceTests : IDisposable
         // Act — مصنع 2
         var result2 = await _service.GetFactoryDashboardAsync(2);
 
-        // Assert — مصنع 1: 2 orders (New + Pending)
-        result1.NewOrders.Should().Be(1);
+        // Assert — مصنع 1: طلبان أُنشئا اليوم (New + Pending)
+        result1.TodayOrders.Should().Be(2);
         result1.PendingOrders.Should().Be(1);
         result1.ApprovedOrders.Should().Be(0);
 
-        // Assert — مصنع 2: 1 order (Approved)
-        result2.NewOrders.Should().Be(0);
+        // Assert — مصنع 2: طلب واحد أُنشئ اليوم (Approved)
+        result2.TodayOrders.Should().Be(1);
         result2.PendingOrders.Should().Be(0);
         result2.ApprovedOrders.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetFactoryDashboardAsync_TodayOrders_ExcludesOlderOrders()
+    {
+        // Arrange — ثلاثة طلبات في المصنع نفسه: اليوم، أمس، وقبل ثلاثة أيام
+        var f1 = TestDataSeeder.CreateFactory(1, "مصنع أ");
+        _context.Factories.Add(f1);
+
+        var today = TestDataSeeder.CreateOrder(1, 100, 1, 1);
+        var yesterday = TestDataSeeder.CreateOrder(2, 101, 1, 1);
+        yesterday.CreatedAt = DateTime.UtcNow.Date.AddDays(-1).AddHours(12);
+        var older = TestDataSeeder.CreateOrder(3, 102, 1, 1);
+        older.CreatedAt = DateTime.UtcNow.Date.AddDays(-3);
+
+        _context.Orders.AddRange(today, yesterday, older);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _service.GetFactoryDashboardAsync(1);
+
+        // Assert — «طلبات اليوم» تُفلتر بالزمن (واحد فقط)، بينما PendingOrders تُعدّ بالحالة (الثلاثة)
+        result.TodayOrders.Should().Be(1);
+        result.PendingOrders.Should().Be(3);
     }
 
     [Fact]

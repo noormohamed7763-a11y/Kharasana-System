@@ -1,4 +1,5 @@
-﻿using Kharasana.Application.DTOs.Auth;
+﻿using Kharasana.API.Common;
+using Kharasana.Application.DTOs.Auth;
 using Kharasana.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,11 @@ namespace Kharasana.API.Controllers;
 /// <summary>
 /// تسجيل الدخول وإنشاء الحسابات — نقطة عامة (لا تتطلّب توكن).
 /// </summary>
+/// <remarks>
+/// الجسمان هنا محميّان بـ <c>ValidationFilter</c> (كان <c>RegisterClientValidator</c>
+/// و<c>LoginRequestDtoValidator</c> مكتوبين ولا يُشغَّلان إطلاقاً). الحد الأدنى لطول
+/// كلمة المرور من <c>PasswordPolicy.MinimumLength</c>، وتُعيد الخدمة فحصه بنفسها.
+/// </remarks>
 [ApiController]
 [Route("api/[controller]")]
 [AllowAnonymous] // لا يحتاج توكن للوصول إلى التسجيل والدخول
@@ -30,6 +36,7 @@ public class AuthController : ControllerBase
     /// <response code="409">الحساب موجود مسبقاً — بريد إلكتروني أو رقم هاتف مسجّل.</response>
     /// <response code="429">تجاوز حد المحاولات المسموح في الدقيقة.</response>
     [HttpPost("register")]
+    [ServiceFilter(typeof(ValidationFilter<RegisterUserDto>))]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
     {
         var result = await _authService.RegisterAsync(dto);
@@ -46,6 +53,7 @@ public class AuthController : ControllerBase
     /// <response code="429">تجاوز حد المحاولات المسموح في الدقيقة.</response>
     [HttpPost("login")]
     [EnableRateLimiting("login")]
+    [ServiceFilter(typeof(ValidationFilter<LoginRequestDto>))]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
     {
         var result = await _authService.LoginAsync(dto);

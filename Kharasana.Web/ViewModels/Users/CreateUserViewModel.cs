@@ -15,8 +15,9 @@ public class CreateUserViewModel
     [Display(Name = "البريد الإلكتروني")]
     public string? Email { get; set; }
 
+    // ✅ الحد الأدنى من المصدر الوحيد PasswordPolicy.MinimumLength (كان 6، والخدمة تطلب 8)
     [Required(ErrorMessage = "كلمة المرور مطلوبة.")]
-    [MinLength(6, ErrorMessage = "يجب أن تكون كلمة المرور 6 أحرف على الأقل.")]
+    [MinLength(PasswordPolicy.MinimumLength, ErrorMessage = "يجب أن تكون كلمة المرور 8 أحرف على الأقل.")]
     [DataType(DataType.Password)]
     [Display(Name = "كلمة المرور")]
     public string Password { get; set; } = string.Empty;

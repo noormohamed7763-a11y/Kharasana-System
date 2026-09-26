@@ -6,6 +6,7 @@ using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
+using Kharasana.Domain.Validation;
 
 namespace Kharasana.Application.Services;
 
@@ -33,6 +34,12 @@ public class AuthService : IAuthService
     {
         if (request.Password != request.ConfirmPassword)
             throw new BusinessException(Messages.PasswordsNotMatch);
+
+        // ✅ دفاع في العمق ومصدر واحد للحد الأدنى: كان الحارس الوحيد هنا سمة
+        //    [MinLength(6)] على الـ DTO — أضعف من بقية المسارات (8) ويسقط إن
+        //    استُدعيت الخدمة من مسار لا يمرّ على ModelState.
+        if (string.IsNullOrEmpty(request.Password) || request.Password.Length < PasswordPolicy.MinimumLength)
+            throw new BusinessException(Messages.PasswordMinLength);
 
         // ✅ التحقق من وجود البريد الإلكتروني قبل الاستخدام
         if (!string.IsNullOrWhiteSpace(request.Email))
@@ -173,7 +180,12 @@ public class AuthService : IAuthService
 
     private async Task RecordFailedAttemptAsync(User user)
     {
-        user.FailedLoginAttempts++;
+        // ✅ انتهى قفل سابق ⇒ يُبدأ العدّ من جديد. بدون ذلك يبقى العدّاد على MaxFailedAttempts
+        //    بعد انتهاء المدة، فأول محاولة فاشلة لاحقة تُعيد القفل فورًا — أي قفل دائم فعليًا
+        //    لمستخدم أخطأ مرة واحدة بعد انقضاء مدة عقوبته.
+        var previousLockoutExpired = user.LockoutEnd.HasValue && user.LockoutEnd <= DateTime.UtcNow;
+
+        user.FailedLoginAttempts = previousLockoutExpired ? 1 : user.FailedLoginAttempts + 1;
 
         // ✅ قفل الحساب عند بلوغ الحد الأقصى للمحاولات الفاشلة
         if (user.FailedLoginAttempts >= MaxFailedAttempts)

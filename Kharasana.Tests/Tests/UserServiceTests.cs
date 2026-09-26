@@ -3,9 +3,11 @@ using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.User;
 using Kharasana.Application.Services;
 using Kharasana.Domain.Enums;
+using Kharasana.Domain.Validation;
 using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Tests.TestData;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kharasana.Tests.Tests;
 
@@ -203,6 +205,57 @@ public class UserServiceTests : IDisposable
 
         await act.Should().ThrowAsync<BusinessException>()
             .WithMessage(Messages.FactoryRequiredForDriver);
+    }
+
+    // ─────────────────────────────────────────────
+    // CreateAsync — الحد الأدنى لطول كلمة المرور (كان غائباً تماماً)
+    // ─────────────────────────────────────────────
+
+    /// <summary>
+    /// الخدمة هي الحارس الفعلي لكل مسارات إنشاء المستخدمين: كانت تُخزَّن كلمة مرور
+    /// من محرف واحد بلا اعتراض لأن CreateUserDto بلا DataAnnotations وكان
+    /// CreateUserDtoValidator غير مُشغَّل. الرقم من PasswordPolicy.MinimumLength.
+    /// </summary>
+    [Theory]
+    [InlineData("a")]
+    [InlineData("1234567")]  // محرف أقل من الحد الأدنى — كان مقبولاً قبل التوحيد
+    [InlineData("")]
+    public async Task CreateAsync_PasswordBelowMinimum_ThrowsBusinessException(string password)
+    {
+        var dto = new CreateUserDto
+        {
+            FullName = "مستخدم بكلمة مرور قصيرة",
+            Email = $"short-password-{password.Length}@test.local",
+            Password = password,
+            Phone = "771110003",
+            Role = UserRole.Client
+        };
+
+        var act = async () => await _userService.CreateAsync(dto);
+
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.PasswordMinLength);
+
+        // لا يُنشأ أي حساب بكلمة مرور مرفوضة
+        (await _context.Users.CountAsync(u => u.Email == dto.Email)).Should().Be(0);
+    }
+
+    /// <summary>الحد الأدنى نفسه مقبول — الفحص ليس متشدّداً أكثر من السياسة.</summary>
+    [Fact]
+    public async Task CreateAsync_PasswordAtMinimum_Succeeds()
+    {
+        var dto = new CreateUserDto
+        {
+            FullName = "مستخدم بالحد الأدنى",
+            Email = "at-minimum@test.local",
+            Password = new string('a', PasswordPolicy.MinimumLength),
+            Phone = "771110004",
+            Role = UserRole.Client
+        };
+
+        var created = await _userService.CreateAsync(dto);
+
+        created.Role.Should().Be(UserRole.Client.ToString());
     }
 
     // ─────────────────────────────────────────────
