@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Kharasana.Web.Models.ConcreteCatalog;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Kharasana.Web.ViewModels.ConcreteTypes;
@@ -22,8 +23,9 @@ public class CreateConcreteTypeViewModel
     [Display(Name = "نوع الخرسانة")]
     public string? SelectedConcreteCode { get; set; }
 
-    public IEnumerable<SelectListItem> ConcreteStandards { get; set; }
-        = Enumerable.Empty<SelectListItem>();
+    /// <summary>كتالوج الأنواع القياسية — يُستخدم في قائمة الاختيار وفي بيانات المعاينة (data-strength/data-usage).</summary>
+    public IEnumerable<ConcreteStandardModel> ConcreteCatalog { get; set; }
+        = Enumerable.Empty<ConcreteStandardModel>();
 
 
     // =========================

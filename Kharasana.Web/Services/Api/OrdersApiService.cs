@@ -593,38 +593,5 @@ namespace Kharasana.Web.Services.Api
             }
         }
 
-        // ============================================================
-        // UPDATE ORDER STATUS - تحديث حالة الطلب
-        // ============================================================
-        public async Task<bool> UpdateOrderStatusAsync(int id, UpdateOrderStatusViewModel model)
-        {
-            try
-            {
-                _logger.LogInformation("📋 Updating status for order {Id} to {Status}", id, model.Status);
-
-                var response = await _apiClient.PutAsync<ApiResponse<object>>($"Orders/{id}/status", model);
-
-                if (response == null)
-                {
-                    _logger.LogWarning("❌ UpdateOrderStatusAsync returned null for id={Id}", id);
-                    return false;
-                }
-
-                if (!response.Success)
-                {
-                    _logger.LogWarning("❌ UpdateOrderStatusAsync failed for id={Id}. Message: {Message}", id, response.Message);
-                    return false;
-                }
-
-                _logger.LogInformation("✅ UpdateOrderStatusAsync: Status updated for order {Id}", id);
-                return true;
-            }
-            catch (ApiServiceException) { throw; }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Exception in UpdateOrderStatusAsync for id={Id}: {Message}", id, ex.Message);
-                return false;
-            }
-        }
     }
 }

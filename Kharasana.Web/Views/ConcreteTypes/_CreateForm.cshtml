@@ -72,7 +72,7 @@
 
                     <option value="">-- اختر نوع الخرسانة --</option>
 
-                    @foreach (var item in ViewBag.ConcreteCatalog)
+                    @foreach (var item in Model.ConcreteCatalog)
                     {
                         <option value="@item.Code"
                                 data-strength="@item.Strength"
