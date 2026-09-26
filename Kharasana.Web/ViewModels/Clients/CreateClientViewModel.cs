@@ -21,8 +21,9 @@ public class CreateClientViewModel
     [YemeniPhone(ErrorMessage = "رقم الواتساب غير صحيح. أدخل رقماً يمنياً صالحاً (مثال: 771234567).")]
     public string? WhatsApp { get; set; }
 
+    // ✅ الحد الأدنى من المصدر الوحيد PasswordPolicy.MinimumLength (كان 6، والخدمة تطلب 8)
     [Required(ErrorMessage = "كلمة المرور مطلوبة.")]
-    [MinLength(6, ErrorMessage = "كلمة المرور يجب ألا تقل عن 6 أحرف.")]
+    [MinLength(PasswordPolicy.MinimumLength, ErrorMessage = "كلمة المرور يجب ألا تقل عن 8 أحرف.")]
     [DataType(DataType.Password)]
     [Display(Name = "كلمة المرور")]
     public string Password { get; set; } = string.Empty;

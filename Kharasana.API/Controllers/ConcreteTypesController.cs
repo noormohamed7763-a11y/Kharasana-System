@@ -168,6 +168,7 @@ public class ConcreteTypesController : ControllerBase
     /// <response code="403">الحساب لا يملك صلاحية الإنشاء.</response>
     [HttpPost]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<CreateConcreteTypeDto>))]
     public async Task<IActionResult> Create([FromBody] CreateConcreteTypeDto dto)
     {
         var caller = User.GetCallerContext();
@@ -207,6 +208,7 @@ public class ConcreteTypesController : ControllerBase
     /// <response code="404">النوع غير موجود.</response>
     [HttpPut("{id:int}")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<UpdateConcreteTypeDto>))]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateConcreteTypeDto dto)
     {
         var caller = User.GetCallerContext();
@@ -262,7 +264,8 @@ public class ConcreteTypesController : ControllerBase
     // ============================================================
     /// <summary>استعادة نوع خرسانة محذوف (مؤرشف).</summary>
     /// <remarks>
-    /// مخصصة لدور FactoryEmployee لأنواع مصنعه فقط.
+    /// للمدير (أي مصنع) ولموظف المصنع (أنواع مصنعه فقط) — مطابقةً لباقي عمليات الكتابة
+    /// على هذا المورد (Create/Update/Delete).
     /// تفشل بـ 409 إن كان الاسم نفسه مستخدمًا بنوع غير محذوف في المصنع نفسه؛
     /// يجب إعادة تسمية النوع الحالي أو حذفه قبل الاستعادة (لا إعادة تسمية تلقائية).
     /// </remarks>
@@ -273,15 +276,22 @@ public class ConcreteTypesController : ControllerBase
     /// <response code="404">النوع غير موجود أو غير محذوف.</response>
     /// <response code="409">الاسم مستخدم بالفعل بنوع غير محذوف في المصنع.</response>
     [HttpPost("restore/{id:int}")]
-    [Authorize(Roles = Roles.FactoryEmployee)]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Restore(int id)
     {
         var caller = User.GetCallerContext();
 
-        if (caller.FactoryId is null)
-            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+        // ✅ المدير غير مرتبط بمصنع: يمرّر null فتتخطى الخدمة فحص العزل (defense-in-depth)،
+        //    بينما موظف المصنع بلا مصنع مُسنَد يبقى مرفوضًا — نفس نمط Create.
+        int? currentFactoryId = null;
+        if (caller.Role == UserRole.FactoryEmployee)
+        {
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            currentFactoryId = caller.FactoryId;
+        }
 
-        await _concreteTypeService.RestoreAsync(id, caller.FactoryId);
+        await _concreteTypeService.RestoreAsync(id, currentFactoryId);
 
         return Ok(ApiResponse.Ok(Messages.ConcreteTypeRestoredSuccessfully));
     }

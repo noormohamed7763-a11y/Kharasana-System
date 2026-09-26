@@ -14,6 +14,14 @@ namespace Kharasana.API.Controllers;
 /// إدارة مستخدمي النظام (عملاء، سائقون، موظفو مصانع) مع عزل بيانات المصانع
 /// — موظف المصنع لا يرى ولا يعدّل إلا سائقي مصنعه.
 /// </summary>
+/// <remarks>
+/// كل نقطة نهاية تستقبل جسماً هنا محميّة بـ <c>[ServiceFilter(typeof(ValidationFilter&lt;T&gt;))]</c>،
+/// فيعمل <c>CreateUserDtoValidator</c> ورفاقه فعلياً قبل دخول الدالة.
+/// <para>ملاحظة ترتيب مقصودة: الفلتر يعمل قبل جسم الدالة، فطلب دور <c>Admin</c> يُردّ
+/// 400 من قاعدة <c>NotEqual(UserRole.Admin)</c> بدل 403 من الخدمة، بينما أي دور آخر
+/// غير مسموح لموظف المصنع يبقى 403 من <c>Forbid()</c>. كلا الردّين رفض، والخدمة
+/// تُعيد فحص الدور بنفسها (دفاع في العمق).</para>
+/// </remarks>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize] // حد أدنى: توكن صالح
@@ -122,6 +130,7 @@ public class UsersController : ControllerBase
     /// <response code="403">موظف المصنع يحاول إنشاء دور غير السائق.</response>
     [HttpPost]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<CreateUserDto>))]
     public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
     {
         var caller = User.GetCallerContext();
@@ -178,6 +187,7 @@ public class UsersController : ControllerBase
     /// <response code="404">المستخدم غير موجود أو لا ينتمي لمصنع الموظف.</response>
     [HttpPut("{id:int}")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<UpdateUserDto>))]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDto dto)
     {
         var caller = User.GetCallerContext();
@@ -221,6 +231,7 @@ public class UsersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPut("me")]
     [Authorize]
+    [ServiceFilter(typeof(ValidationFilter<UpdateMyProfileDto>))]
     public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
     {
         var caller = User.GetCallerContext();
@@ -279,6 +290,7 @@ public class UsersController : ControllerBase
     /// <response code="404">السائق غير موجود.</response>
     [HttpPut("{id:int}/driver-status")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<UpdateDriverStatusDto>))]
     public async Task<IActionResult> UpdateDriverStatus(int id, [FromBody] UpdateDriverStatusDto dto)
     {
         var caller = User.GetCallerContext();

@@ -324,6 +324,33 @@ public class AuthServiceTests : IDisposable
         (await _context.Users.CountAsync()).Should().Be(0);
     }
 
+    /// <summary>
+    /// الخدمة تفرض الحد الأدنى لطول كلمة المرور بنفسها — لم يكن هناك أي فحص في
+    /// AuthService (كان الحارس الوحيد سمة [MinLength(6)] على الـ DTO، أضعف من
+    /// بقية المسارات وتسقط إن استُدعيت الخدمة من مسار لا يمرّ على ModelState).
+    /// </summary>
+    [Theory]
+    [InlineData("a")]
+    [InlineData("1234567")]  // محرف أقل من الحد الأدنى الموحّد
+    [InlineData("")]
+    public async Task Register_PasswordBelowMinimum_ThrowsBusinessException(string password)
+    {
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل بكلمة مرور قصيرة",
+            Phone = "771120009",
+            Password = password,
+            ConfirmPassword = password
+        };
+
+        var act = () => _authService.RegisterAsync(dto);
+
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.PasswordMinLength);
+
+        (await _context.Users.CountAsync()).Should().Be(0);
+    }
+
     [Fact]
     public async Task Register_ValidData_CreatesActiveClientWithoutFactory()
     {

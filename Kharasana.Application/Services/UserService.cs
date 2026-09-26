@@ -6,6 +6,7 @@ using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
+using Kharasana.Domain.Validation;
 
 namespace Kharasana.Application.Services;
 
@@ -54,6 +55,13 @@ public class UserService : IUserService
     {
         if (dto.Role == UserRole.Admin)
             throw new ForbiddenException(Messages.CannotCreateAdmin);
+
+        // ✅ دفاع في العمق: الخدمة هي الحارس الفعلي لكل مسارات إنشاء المستخدمين
+        //    (لوحة الويب، الـ API، أي استدعاء داخلي). كانت تُخزَّن كلمة مرور من محرف
+        //    واحد بلا اعتراض لأن CreateUserDto بلا DataAnnotations وكان
+        //    CreateUserDtoValidator غير مُشغَّل. الرقم من المصدر الوحيد PasswordPolicy.
+        if (string.IsNullOrEmpty(dto.Password) || dto.Password.Length < PasswordPolicy.MinimumLength)
+            throw new BusinessException(Messages.PasswordMinLength);
 
         if (string.IsNullOrWhiteSpace(dto.Email) && string.IsNullOrWhiteSpace(dto.Phone))
             throw new BusinessException(Messages.EmailOrPhoneRequired);

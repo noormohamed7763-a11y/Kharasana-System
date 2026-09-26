@@ -1,6 +1,7 @@
 using FluentValidation;
 using Kharasana.Application.Common;
 using Kharasana.Domain.Common;
+using Kharasana.Domain.Validation;
 
 namespace Kharasana.Application.Validators.Common;
 
@@ -15,11 +16,11 @@ public static class ValidationRules
             .NotEmpty().WithMessage(Messages.FullNameRequired)
             .MaximumLength(200).WithMessage(Messages.NameMaxLength);
 
-    /// <summary>كلمة المرور: مطلوبة وثمانية أحرف على الأقل.</summary>
+    /// <summary>كلمة المرور: مطلوبة وبالحد الأدنى الموحّد للطول (<see cref="PasswordPolicy.MinimumLength"/>).</summary>
     public static IRuleBuilderOptions<T, string?> Password<T>(this IRuleBuilder<T, string?> builder)
         => builder
             .NotEmpty().WithMessage(Messages.PasswordRequired)
-            .MinimumLength(8).WithMessage(Messages.PasswordMinLength);
+            .MinimumLength(PasswordPolicy.MinimumLength).WithMessage(Messages.PasswordMinLength);
 
     /// <summary>رقم هاتف يمني اختياري — يُقبل الفارغ.</summary>
     public static IRuleBuilderOptions<T, string?> YemeniPhone<T>(this IRuleBuilder<T, string?> builder)
