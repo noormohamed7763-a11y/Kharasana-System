@@ -46,5 +46,5 @@ WEB_LAYER_CODE_REVIEW.md
 # Documents folder
 Documents/
 
-# Test project
-Kharasana.Tests/
+# ملاحظة: لا تُضِف Kharasana.Tests/ هنا — المشروع مُتعقَّب في Git،
+# وإضافته تُخفي أي ملف اختبار جديد بصمت فيتوقف CI عن تشغيله.
