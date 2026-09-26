@@ -226,7 +226,11 @@ public class OrdersController : ControllerBase
     // 6. CREATE PHONE ORDER
     // ============================================================
     /// <summary>إنشاء طلب هاتفي بالنيابة عن عميل (يستخدمه المصنع/المدير).</summary>
-    /// <remarks>موظف المصنع يُنشئ الطلب لمصنعه تلقائياً؛ المدير يحدّد المصنع في الحمولة.</remarks>
+    /// <remarks>
+    /// موظف المصنع يُنشئ الطلب لمصنعه تلقائياً؛ المدير يحدّد المصنع في الحمولة.
+    /// إن لم يكن رقم العميل مسجَّلاً يُنشأ له حساب، وتُعاد <c>newClientTemporaryPassword</c>
+    /// في الاستجابة <b>مرة واحدة فقط</b> لتسليمها للعميل — لا تُخزَّن نصاً صريحاً ولا تُعاد لاحقاً.
+    /// </remarks>
     /// <param name="dto">بيانات الطلب الهاتفي.</param>
     /// <response code="201">تم إنشاء الطلب بنجاح.</response>
     /// <response code="400">بيانات غير صالحة.</response>
@@ -255,8 +259,8 @@ public class OrdersController : ControllerBase
 
         return CreatedAtAction(
             nameof(GetById),
-            new { id = result.OrderId },
-            new ApiResponse<OrderDetailsDto>
+            new { id = result.Order.OrderId },
+            new ApiResponse<PhoneOrderResultDto>
             {
                 Success = true,
                 Message = Messages.OrderCreatedSuccess,
@@ -463,6 +467,6 @@ public class OrdersController : ControllerBase
 
         await _orderService.DeleteOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(ApiResponse.Ok(Messages.OrderCancelledSuccessfully));
+        return Ok(ApiResponse.Ok(Messages.OrderDeletedSuccessfully));
     }
 }

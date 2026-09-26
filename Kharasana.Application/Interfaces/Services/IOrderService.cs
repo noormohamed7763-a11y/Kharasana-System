@@ -29,7 +29,7 @@ public interface IOrderService
     Task<OrderDetailsDto> CreateAsync(
         CreateOrderDto dto, int currentUserId, UserRole currentRole, int? currentUserFactoryId = null);
 
-    Task<OrderDetailsDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId);
+    Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId);
 
     Task<OrderDto> UpdateOrderAsync(int id, UpdateOrderDto dto, int userId, UserRole role, int? factoryId);
 

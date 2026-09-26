@@ -1,5 +1,7 @@
+using System.Security.Cryptography;
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
+using Kharasana.Application.DTOs.Customer;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Repositories;
@@ -7,8 +9,6 @@ using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
-using Kharasana.Application.DTOs.Customer;
-
 
 namespace Kharasana.Application.Services;
 
@@ -98,7 +98,7 @@ public class OrderService : IOrderService
     // ============================================================
     // CREATE PHONE ORDER
     // ============================================================
-    public async Task<OrderDetailsDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId)
+    public async Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId)
     {
         var normalizedPhone = YemeniPhoneHelper.Normalize(dto.ClientPhone);
         if (normalizedPhone == null)
@@ -127,17 +127,25 @@ public class OrderService : IOrderService
 
         var client = await _unitOfWork.Users.GetByPhoneAsync(normalizedPhone);
 
+        // تُملأ فقط عند إنشاء حساب جديد، وتُعاد للموظف مرة واحدة في نتيجة العملية.
+        string? temporaryPassword = null;
+
         if (client == null)
         {
             if (string.IsNullOrWhiteSpace(dto.ClientFullName))
                 throw new BusinessException(Messages.ClientFullNameRequiredForNewClient);
+
+            // ✅ كلمة مرور مؤقتة مقروءة تُسلَّم للعميل شفهياً.
+            //    قبل ذلك كانت تُولَّد كـ Guid عشوائي لا يمكن لأحد كتابته، فيُنشأ الحساب
+            //    ولا يستطيع العميل تسجيل الدخول أبداً ولا يوجد مسار لاستعادة كلمة المرور.
+            temporaryPassword = GenerateTemporaryPassword();
 
             client = new User
             {
                 FullName = dto.ClientFullName,
                 Phone = normalizedPhone,
                 Email = null,
-                PasswordHash = _passwordHasher.Hash(Guid.NewGuid().ToString("N")),
+                PasswordHash = _passwordHasher.Hash(temporaryPassword),
                 Role = UserRole.Client,
                 FactoryId = null,
                 IsActive = true,
@@ -180,7 +188,29 @@ public class OrderService : IOrderService
         await _unitOfWork.Orders.AddAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDetailsDto(order, hidePricing: false);
+        return new PhoneOrderResultDto
+        {
+            Order = MapToDetailsDto(order, hidePricing: false),
+            NewClientTemporaryPassword = temporaryPassword,
+            NewClientPhone = temporaryPassword == null ? null : normalizedPhone
+        };
+    }
+
+    /// <summary>
+    /// كلمة مرور مؤقتة مقروءة (10 محارف) من أبجدية بلا محارف متشابهة
+    /// (0/O و1/l/I) — تُقرأ وتُكتب يدويًا بلا لبس عند تسليمها هاتفيًا.
+    /// تُولَّد بمولّد أرقام عشوائية تشفيري (<see cref="RandomNumberGenerator"/>) لا بـ Random.
+    /// </summary>
+    private static string GenerateTemporaryPassword()
+    {
+        const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+        const int length = 10;
+
+        var chars = new char[length];
+        for (var i = 0; i < length; i++)
+            chars[i] = alphabet[RandomNumberGenerator.GetInt32(alphabet.Length)];
+
+        return new string(chars);
     }
 
     // ============================================================
@@ -198,7 +228,7 @@ public class OrderService : IOrderService
 
         if (order.ConcreteTypeId != dto.ConcreteTypeId)
         {
-        var concreteType = await _unitOfWork.ConcreteTypes.GetByIdAsync(dto.ConcreteTypeId);
+            var concreteType = await _unitOfWork.ConcreteTypes.GetByIdAsync(dto.ConcreteTypeId);
             if (concreteType == null)
                 throw new BusinessException(string.Format(Messages.ConcreteTypeNotFoundById, dto.ConcreteTypeId));
 
@@ -208,8 +238,21 @@ public class OrderService : IOrderService
             if (!concreteType.IsActive)
                 throw new BusinessException(string.Format(Messages.ConcreteTypeInactiveForOrder, concreteType.Name));
 
+            // ✅ السعر مخزَّن كلقطة (snapshot) من سعر النوع وقت الإنشاء، ويجوز تجاوزه يدويًا عبر
+            //    SetPriceAsync. نُحدّث اللقطة فقط إن كانت لا تزال تساوي سعر النوع السابق (أي لم
+            //    تُتجاوَز يدويًا) حتى لا نُسقط سعرًا متفقًا عليه مع العميل عند تغيير النوع.
+            var previousUnitPrice = order.ConcreteType?.UnitPrice;
+            var wasManuallyPriced = previousUnitPrice.HasValue && order.UnitPrice != previousUnitPrice.Value;
+
             order.ConcreteTypeId = dto.ConcreteTypeId;
-            _unitOfWork.ConcreteTypes.Update(concreteType);
+
+            // ✅ إسناد الـ navigation صراحةً: MapToOrderDto/MapToDetailsDto يقرآن Name وStrength
+            //    من order.ConcreteType، فلا نتركهما رهينة توقيت إصلاح EF للـ navigation —
+            //    بدونهما كانت الاستجابة تُعيد اسم وقوة النوع القديم.
+            order.ConcreteType = concreteType;
+
+            if (!wasManuallyPriced)
+                order.UnitPrice = concreteType.UnitPrice;
         }
 
         // التحقق من الحقول (الكمية، التاريخ، المضخة والطابق) أصبح مسؤولية
@@ -279,9 +322,13 @@ public class OrderService : IOrderService
             throw new ForbiddenException(Messages.NotAuthorizedToViewReport);
         }
 
-        // موظف المصنع يرى سائقي مصنعه فقط
-        if (callerRole == UserRole.FactoryEmployee && callerFactoryId.HasValue)
+        // موظف المصنع يرى سائقي مصنعه فقط.
+        // ✅ fail-closed: موظف بلا مصنع مُسنَد يُرفض بدل أن يمرّ بلا فحص عزل إطلاقًا.
+        if (callerRole == UserRole.FactoryEmployee)
         {
+            if (!callerFactoryId.HasValue)
+                throw new ForbiddenException(Messages.NotAuthorizedToViewReport);
+
             var driver = await _unitOfWork.Users.GetByIdAsync(driverId);
             if (driver == null || driver.FactoryId != callerFactoryId.Value || driver.Role != UserRole.Driver)
             {
@@ -439,6 +486,11 @@ public class OrderService : IOrderService
         if (!OrderStatusHelper.CanTransitionTo(order.Status, dto.Status))
             throw new BusinessException(Messages.InvalidStatusTransition);
 
+        // ✅ نفس شرط ApproveOrderAsync حرفيًا: بدون هذا الفحص يتيح مسار تغيير الحالة
+        //    الانتقال Pending → Approved بسعر صفر، فيلتفّ على قاعدة التسعير الإلزامي.
+        if (dto.Status == OrderStatus.Approved && order.UnitPrice <= 0)
+            throw new BusinessException(Messages.PriceRequiredBeforeApproval);
+
         order.Status = dto.Status;
         order.UpdatedAt = DateTime.UtcNow;
 
@@ -480,7 +532,11 @@ public class OrderService : IOrderService
         if (!driver.IsActive)
             throw new BusinessException(Messages.UserInactive);
 
-        if (driver.DriverStatus != DriverStatus.Available)
+        // ✅ إعادة تعيين السائق نفسه بلا أثر (idempotent): حالته Busy لأن هذا الطلب ذاته مسند
+        //    إليه، فاشتراط Available هنا كان يرفض مجرد تعديل رقم الشاحنة على الطلب نفسه.
+        var isSameDriver = order.DriverId.HasValue && order.DriverId.Value == dto.DriverId;
+
+        if (!isSameDriver && driver.DriverStatus != DriverStatus.Available)
             throw new BusinessException(Messages.DriverNotAvailable);
 
         if (driver.FactoryId != order.FactoryId)
@@ -578,6 +634,11 @@ public class OrderService : IOrderService
         if (order.Status is OrderStatus.Delivered or OrderStatus.Closed)
             throw new BusinessException(Messages.CannotCancelDeliveredOrClosedOrder);
 
+        // ✅ تحرير السائق قبل الحذف الناعم: الطلب المحذوف يختفي من كل الاستعلامات،
+        //    فلو بقي السائق على DriverStatus.Busy لما ظهر في قائمة المتاحين ولا يمكن
+        //    تحريره لاحقًا عبر أي مسار — تسريب دائم لمورد السائق.
+        ReleaseDriverAsync(order);
+
         order.IsDeleted = true;
         order.UpdatedAt = DateTime.UtcNow;
 
@@ -593,7 +654,14 @@ public class OrderService : IOrderService
 
     private async Task<Order> GetOrderOrThrowAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId)
     {
-        var order = await _unitOfWork.Orders.GetByIdWithDetailsAsync(id);
+        // ✅ قراءة مُتتبَّعة: كل مسارات هذا المُساعد إمّا تُعدّل الطلب أو تُحرّر سائقه.
+        //    مع قراءة AsNoTracking كان Update(order) يُرفق الرسم البياني كاملاً
+        //    (العميل، المصنع، نوع الخرسانة، السائق) بحالة Modified، فيُرسل UPDATE
+        //    محروس بـ RowVersion على كلٍّ منها مع كل تغيير حالة — ويُرمي استثناء تتبّع
+        //    عند إسناد سائق جديد لطلب له سائق سابق. لذا ندع EF يكشف التغييرات فعلياً:
+        //    نداءات Update(order) أدناه صارت بلا أثر (كيان مُتتبَّع)، وبقاؤها مقصود
+        //    كتوثيق للنية وكأمان لو عادت القراءة يوماً إلى AsNoTracking.
+        var order = await _unitOfWork.Orders.GetByIdWithDetailsForUpdateAsync(id);
         if (order == null)
             throw new NotFoundException(Messages.OrderNotFound);
 
