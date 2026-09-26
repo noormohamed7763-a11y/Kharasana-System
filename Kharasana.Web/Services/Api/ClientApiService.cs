@@ -2,6 +2,7 @@ using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Clients;
 using Kharasana.Application.DTOs.Customer;
+using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Kharasana.Web.Services.Api;
@@ -176,7 +177,7 @@ public class ClientApiService : IClientApiService
                 WhatsApp = model.WhatsApp,
 
                 // Client
-                Role = 3
+                Role = (int)UserRole.Client
             };
 
             var response =
@@ -277,7 +278,7 @@ public class ClientApiService : IClientApiService
                 IsActive = model.IsActive,
 
                 // Client
-                Role = 3,
+                Role = (int)UserRole.Client,
 
                 // العميل لا يتبع مصنعًا
                 FactoryId = (int?)null,

@@ -39,6 +39,14 @@ public class UnitOfWork : IUnitOfWork
         {
             throw new ConflictException(Messages.ConcurrencyConflict);
         }
+        catch (DbUpdateException ex) when (UniqueConstraintDetector.IsUniqueViolation(ex))
+        {
+            // ✅ الحماية النهائية ضد السباق: فحص الخدمة المسبق قد يمرّ قبل أن يسجّل طلب آخر
+            //    نفس القيمة، فيبقى فهرس التفرّد في قاعدة البيانات هو الحكم — ويُترجم إلى 409.
+            //    ملاحظة: هذا الالتقاط مقصور على انتهاك التفرّد (2601/2627) فقط؛
+            //    أخطاء المفاتيح الأجنبية وغيرها تبقى 500 كما كانت.
+            throw new ConflictException(Messages.DuplicateValueConflict);
+        }
     }
 
     protected virtual async Task<int> SaveChangesInternalAsync()

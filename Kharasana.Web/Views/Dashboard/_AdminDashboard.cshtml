@@ -1,4 +1,5 @@
 @model Kharasana.Web.ViewModels.Dashboard.DashboardViewModel
+@using Kharasana.Domain.Enums
 @using Kharasana.Web.Models.Components
 
 @{
@@ -189,12 +190,16 @@
                                                aria-label="عرض تفاصيل الطلب @order.OrderNumber">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a asp-controller="Orders" asp-action="Edit" asp-route-id="@order.Id"
-                                               class="btn btn-sm btn-light text-muted rounded-circle"
-                                               title="تعديل الطلب"
-                                               aria-label="تعديل الطلب @order.OrderNumber">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
+                                            @* التعديل مسموح في حالتي "جديد" و"قيد الانتظار" فقط — مطابقةً لشرط OrdersController.Edit *@
+                                            @if (order.Status == OrderStatus.New || order.Status == OrderStatus.Pending)
+                                            {
+                                                <a asp-controller="Orders" asp-action="Edit" asp-route-id="@order.Id"
+                                                   class="btn btn-sm btn-light text-muted rounded-circle"
+                                                   title="تعديل الطلب"
+                                                   aria-label="تعديل الطلب @order.OrderNumber">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                            }
                                         </td>
                                     </tr>
                                     idx++;

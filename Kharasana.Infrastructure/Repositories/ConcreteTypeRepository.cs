@@ -41,4 +41,22 @@ public class ConcreteTypeRepository
             .Include(x => x.Factory)
             .FirstOrDefaultAsync(x => x.ConcreteTypeId == id);
     }
+
+    public async Task<ConcreteType?> FindActiveByNameInFactoryAsync(
+        int factoryId, string name, int? excludeConcreteTypeId = null)
+    {
+        // فلتر الحذف الناعم العام (!IsDeleted) مطبَّق هنا عمدًا:
+        // الأسماء المحرَّرة بحذف ناعم متاحة لإعادة الاستخدام (خيار B)،
+        // فلا يعارض الإنشاء/التعديل إلا نوع غير محذوف بالاسم نفسه.
+        // المقارنة غير حساسة لحالة الأحرف لتطابق ترتيب SQL Server الافتراضي
+        // وتطابق إنفاذ الفهرس المُرشَّح (WHERE IsDeleted = 0) وهو الحماية النهائية ضد السباق.
+        var normalized = name.ToLower();
+
+        return await _context.ConcreteTypes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                x.FactoryId == factoryId
+                && x.Name.ToLower() == normalized
+                && (excludeConcreteTypeId == null || x.ConcreteTypeId != excludeConcreteTypeId));
+    }
 }

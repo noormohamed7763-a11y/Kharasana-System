@@ -20,8 +20,6 @@
         <form asp-action="Create" method="post" enctype="multipart/form-data" id="createConcreteTypeForm">
             @Html.AntiForgeryToken()
 
-            <div asp-validation-summary="All" class="alert alert-danger"></div>
-
             <partial name="_CreateForm" model="Model" />
 
             <hr class="my-4" />

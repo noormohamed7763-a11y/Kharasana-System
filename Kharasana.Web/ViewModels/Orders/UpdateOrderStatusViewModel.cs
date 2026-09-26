@@ -17,12 +17,13 @@ namespace Kharasana.Web.ViewModels.Orders
         // ============================================================
 
         /// <summary>
-        /// الحالة الجديدة للطلب (قيمة رقمية من enum OrderStatus)
+        /// الحالة الجديدة للطلب (قيمة من enum OrderStatus)
+        /// يُرسل إلى الـ API كقيمة بترميز string أو عددي بحسب إعدادات JsonStringEnumConverter
         /// </summary>
          [Required(ErrorMessage = "الحالة مطلوبة")]
         [EnumDataType(typeof(OrderStatus), ErrorMessage = "الحالة غير صالحة")]
         [Display(Name = "الحالة")]
-        public int Status { get; set; }
+        public OrderStatus Status { get; set; }
 
         // ============================================================
         // 2. OPTIONAL FIELDS - حقول اختيارية
@@ -51,37 +52,37 @@ namespace Kharasana.Web.ViewModels.Orders
         /// هل الحالة المطلوبة هي "مرفوض"؟
         /// </summary>
         [JsonIgnore]
-        public bool IsRejected => Status == (int)OrderStatus.Rejected;
+        public bool IsRejected => Status == OrderStatus.Rejected;
 
         /// <summary>
         /// هل الحالة المطلوبة هي "مغلق"؟
         /// </summary>
         [JsonIgnore]
-        public bool IsClosed => Status == (int)OrderStatus.Closed;
+        public bool IsClosed => Status == OrderStatus.Closed;
 
         /// <summary>
         /// هل الحالة المطلوبة هي "تم التسليم"؟
         /// </summary>
         [JsonIgnore]
-        public bool IsDelivered => Status == (int)OrderStatus.Delivered;
+        public bool IsDelivered => Status == OrderStatus.Delivered;
 
         /// <summary>
         /// هل الحالة المطلوبة هي "معتمد"؟
         /// </summary>
         [JsonIgnore]
-        public bool IsApproved => Status == (int)OrderStatus.Approved;
+        public bool IsApproved => Status == OrderStatus.Approved;
 
         /// <summary>
         /// هل الحالة المطلوبة هي "في الطريق"؟
         /// </summary>
         [JsonIgnore]
-        public bool IsOnTheWay => Status == (int)OrderStatus.OnTheWay;
+        public bool IsOnTheWay => Status == OrderStatus.OnTheWay;
 
         /// <summary>
         /// هل الحالة المطلوبة هي "قيد الانتظار"؟
         /// </summary>
         [JsonIgnore]
-        public bool IsPending => Status == (int)OrderStatus.Pending;
+        public bool IsPending => Status == OrderStatus.Pending;
 
         // ============================================================
         // 4. VALIDATION

@@ -5,6 +5,9 @@
 
 @{
     ViewData["Title"] = "إدارة المستخدمين";
+
+    // الإنشاء والتعديل والحذف مقيّدة في UsersController بـ Roles.Admin — تُخفى للأدوار الأخرى
+    var isAdmin = (string?)ViewBag.UserRole == Roles.Admin;
 }
 
 <!-- تم حذف هذه الكتلة: كانت تعيد تعريف .erp-table/.form-card/.pagination
@@ -20,7 +23,7 @@
             Icon = "bi-people",
             Title = "إدارة المستخدمين",
             Description = "إدارة جميع حسابات المستخدمين داخل النظام.",
-            ActionText = "مستخدم جديد",
+            ActionText = isAdmin ? "مستخدم جديد" : null,
             ActionController = "Users",
             ActionMethod = "Create"
         })
@@ -111,7 +114,7 @@
         {
             Title = "لا يوجد مستخدمون لعرضهم",
             Message = "قم بإضافة أول مستخدم للبدء.",
-            ShowActionButton = true,
+            ShowActionButton = isAdmin,
             ActionController = "Users",
             ActionAction = "Create",
             ActionText = "مستخدم جديد"
@@ -209,10 +212,10 @@
                                                             ShowDetails = true,
                                                             DetailsAction = "Details",
 
-                                                            ShowEdit = true,
+                                                            ShowEdit = isAdmin,
                                                             EditAction = "Edit",
 
-                                                            ShowDelete = true,
+                                                            ShowDelete = isAdmin,
                                                             DeleteAction = "Delete"
                                                         })
                         </td>
@@ -229,7 +232,7 @@
     {
         var pageCount = (int)Math.Ceiling(Model.PagedUsers.TotalCount / (double)Model.PageSize);
 
-        <nav class="mt-4">
+        <nav class="mt-4" aria-label="Page navigation">
             <ul class="pagination justify-content-center">
                 @if (Model.PageNumber > 1)
                 {

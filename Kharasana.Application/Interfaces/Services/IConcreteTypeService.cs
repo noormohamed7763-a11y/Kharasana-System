@@ -8,5 +8,12 @@ public interface IConcreteTypeService
     Task<ConcreteTypeDto> GetByIdAsync(int id, int? currentFactoryId = null);
     Task<ConcreteTypeDto> CreateAsync(CreateConcreteTypeDto dto, int? currentFactoryId = null);
     Task<bool> UpdateAsync(int id, UpdateConcreteTypeDto dto, int? currentFactoryId = null);
-    Task<bool> DeleteAsync(int id);
+
+    /// <summary>حذف ناعم لنوع الخرسانة — يبقى الصف لتظل الطلبات التاريخية سليمة.</summary>
+    /// <param name="currentFactoryId">مصنع المتصل (يُمرَّر لموظف المصنع فقط) لفرض العزل.</param>
+    Task<bool> DeleteAsync(int id, int? currentFactoryId = null);
+
+    /// <summary>استعادة نوع خرسانة محذوفًا ناعمًا — يفشل بـ 409 إن كان الاسم مستخدمًا بنوع غير محذوف.</summary>
+    /// <param name="currentFactoryId">مصنع المتصل (يُمرَّر لموظف المصنع فقط) لفرض العزل.</param>
+    Task<bool> RestoreAsync(int id, int? currentFactoryId = null);
 }

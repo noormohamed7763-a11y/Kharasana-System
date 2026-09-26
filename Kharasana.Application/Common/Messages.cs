@@ -23,6 +23,7 @@ public static class Messages
     public const string FactoryRetrievedSuccessfully = "تم جلب المصنع بنجاح.";
     public const string ArchivedFactoriesRetrievedSuccessfully = "تم جلب المصانع المؤرشفة بنجاح.";
     public const string FactoryRestoredSuccessfully = "تم استعادة المصنع بنجاح.";
+    public const string ConcreteTypeRestoredSuccessfully = "تم استعادة نوع الخرسانة بنجاح.";
     public const string FactoryLogoUploadedSuccessfully = "تم رفع شعار المصنع بنجاح.";
     public const string FactoryLogoDeletedSuccessfully = "تم حذف شعار المصنع بنجاح.";
     public const string FactorySettingsRetrievedSuccessfully = "تم جلب بيانات المصنع بنجاح.";
@@ -58,6 +59,10 @@ public static class Messages
     public const string FactoryAlreadyExists = "اسم المصنع مستخدم مسبقًا.";
     public const string FactoryAlreadyHasAccount = "هذا المصنع يمتلك حساباً مسجلاً بالفعل ولا يمكن إنشاء حساب آخر له.";
     public const string ConcreteTypeAlreadyExists = "نوع الخرسانة موجود مسبقًا لهذا المصنع.";
+
+    /// <summary>فشل استعادة نوع خرسانة لأن الاسم نفسه ما زال مستخدمًا بنوع نشط في المصنع.</summary>
+    public const string ConcreteTypeRestoreNameConflict = "لا يمكن استعادة نوع الخرسانة: الاسم \"{0}\" مستخدم بالفعل في هذا المصنع. يجب إعادة تسمية النوع الحالي أو حذفه قبل الاستعادة.";
+
     public const string PasswordsNotMatch = "كلمة المرور وتأكيد كلمة المرور غير متطابقتين.";
     public const string InvalidCredentials = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
     public const string AccountLocked = "تم قفل الحساب بسبب محاولات دخول فاشلة متكررة. حاول مرة أخرى بعد 15 دقيقة.";
@@ -164,6 +169,12 @@ public static class Messages
     #region General Messages
 
     public const string UnexpectedError = "حدث خطأ غير متوقع.";
+
+    /// <summary>
+    /// احتياط أخير لانتهاك قيد التفرّد على مستوى قاعدة البيانات (حالة سباق فاتت الفحص المسبق).
+    /// قاعدة البيانات هي المرجع النهائي، لذا تُترجم هذه الحالة إلى 409 بدل 500.
+    /// </summary>
+    public const string DuplicateValueConflict = "لا يمكن حفظ البيانات: إحدى القيم المدخلة مستخدمة مسبقًا (اسم مكرر أو بريد إلكتروني أو رقم هاتف).";
 
     public const string CustomersRetrievedSuccessfully = "تم جلب العملاء بنجاح.";
 

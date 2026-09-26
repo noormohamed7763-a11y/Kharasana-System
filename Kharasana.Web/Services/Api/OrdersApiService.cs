@@ -1,4 +1,5 @@
 using Kharasana.Application.Common;
+using Kharasana.Domain.Enums;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Orders;
 using Microsoft.Extensions.Logging;
@@ -62,6 +63,41 @@ namespace Kharasana.Web.Services.Api
             {
                 _logger.LogError(ex, "❌ Exception in GetOrdersAsync: {Message}", ex.Message);
                 return null;
+            }
+        }
+
+        // ============================================================
+        // GET STATUS COUNTS - عدّ الطلبات حسب الحالة عبر كل الصفحات
+        // ============================================================
+        public async Task<(int Pending, int Closed, int Cancelled, int Rejected)> GetStatusCountsAsync(
+            string? search = null,
+            int? factoryId = null)
+        {
+            try
+            {
+                // PageSize=1 لجلب TotalCount فقط دون تحميل بيانات الصفحة
+                string CountQuery(OrderStatus status) =>
+                    $"Orders?PageNumber=1&PageSize=1&status={(int)status}"
+                    + (string.IsNullOrWhiteSpace(search) ? "" : $"&Search={Uri.EscapeDataString(search)}")
+                    + (factoryId.HasValue ? $"&factoryId={factoryId.Value}" : "");
+
+                _logger.LogInformation("📊 Fetching order status counts (Search={Search}, FactoryId={FactoryId})", search, factoryId);
+
+                // ✅ تنفيذ متوازٍ — ApiClient يضيف رأس Authorization لكل طلب على حدة
+                var pendingTask = _apiClient.GetPagedTotalAsync<OrderDto>(CountQuery(OrderStatus.Pending));
+                var closedTask = _apiClient.GetPagedTotalAsync<OrderDto>(CountQuery(OrderStatus.Closed));
+                var cancelledTask = _apiClient.GetPagedTotalAsync<OrderDto>(CountQuery(OrderStatus.Cancelled));
+                var rejectedTask = _apiClient.GetPagedTotalAsync<OrderDto>(CountQuery(OrderStatus.Rejected));
+
+                await Task.WhenAll(pendingTask, closedTask, cancelledTask, rejectedTask);
+
+                return (pendingTask.Result, closedTask.Result, cancelledTask.Result, rejectedTask.Result);
+            }
+            catch (ApiServiceException) { throw; }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Exception in GetStatusCountsAsync: {Message}", ex.Message);
+                return (0, 0, 0, 0);
             }
         }
 

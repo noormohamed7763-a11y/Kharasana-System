@@ -60,6 +60,9 @@ public class FactoryService : IFactoryService
 
     public async Task<FactoryDto> CreateAsync(CreateFactoryDto dto)
     {
+        // ✅ منع تكرار اسم المصنع — فحص مسبق برسالة واضحة، وفهرس التفرّد هو الحماية النهائية
+        await EnsureNameIsFreeAsync(dto.FactoryName);
+
         var factory = new Factory
         {
             FactoryName = dto.FactoryName,
@@ -88,6 +91,9 @@ public class FactoryService : IFactoryService
         var factory = await _unitOfWork.Factories.GetByIdAsync(id);
         if (factory == null || factory.IsDeleted)
             throw new NotFoundException(Messages.FactoryNotFound);
+
+        // ✅ منع تكرار اسم المصنع (باستثناء المصنع نفسه)
+        await EnsureNameIsFreeAsync(dto.FactoryName, factory.FactoryId);
 
         factory.FactoryName = dto.FactoryName;
         factory.OwnerName = dto.OwnerName;
@@ -191,6 +197,17 @@ public class FactoryService : IFactoryService
         await _unitOfWork.SaveChangesAsync();
 
         return true;
+    }
+
+    /// <summary>
+    /// فحص مسبق لتفرّد اسم المصنع — يرمي <c>ConflictException</c> (409) برسالة واضحة.
+    /// فهرس التفرّد على <c>FactoryName</c> يبقى الحماية النهائية ضد حالات السباق.
+    /// </summary>
+    private async Task EnsureNameIsFreeAsync(string factoryName, int? excludeFactoryId = null)
+    {
+        var exists = await _unitOfWork.Factories.FactoryNameExistsAsync(factoryName, excludeFactoryId);
+        if (exists)
+            throw new ConflictException(Messages.FactoryAlreadyExists);
     }
 
     private async Task<FactoryDto> MapToDtoAsync(Factory factory, HashSet<int>? factoryIdsWithEmployee = null)

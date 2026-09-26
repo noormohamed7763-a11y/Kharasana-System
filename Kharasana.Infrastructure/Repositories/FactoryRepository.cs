@@ -22,4 +22,17 @@ public class FactoryRepository
             .AsNoTracking()
             .ToListAsync();
     }
+
+    public async Task<bool> FactoryNameExistsAsync(string factoryName, int? excludeFactoryId = null)
+    {
+        // IgnoreQueryFilters: فهرس التفرّد على FactoryName يشمل المؤرشفة، فالفحص المسبق يطابقه
+        var normalized = factoryName.ToLower();
+
+        return await _context.Factories
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .AnyAsync(f =>
+                f.FactoryName.ToLower() == normalized
+                && (excludeFactoryId == null || f.FactoryId != excludeFactoryId));
+    }
 }

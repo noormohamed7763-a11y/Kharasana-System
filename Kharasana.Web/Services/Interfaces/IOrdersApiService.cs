@@ -28,6 +28,17 @@ namespace Kharasana.Web.Services.Interfaces
             int? factoryId = null,
             int? status = null); // ✅ أضف معامل status
 
+        /// <summary>
+        /// عدّ الطلبات حسب الحالة عبر كل الصفحات (وليست عناصر الصفحة الحالية)
+        /// — يُستخدم في بطاقات الإحصاءات في صفحة الطلبات
+        /// </summary>
+        /// <param name="search">نص البحث (نفس فلتر القائمة)</param>
+        /// <param name="factoryId">معرف المصنع (نفس فلتر القائمة)</param>
+        /// <returns>عدد الطلبات: قيد الانتظار، مغلق، ملغي، مرفوض</returns>
+        Task<(int Pending, int Closed, int Cancelled, int Rejected)> GetStatusCountsAsync(
+            string? search = null,
+            int? factoryId = null);
+
 
         /// <summary>
         /// جلب تفاصيل طلب محدد

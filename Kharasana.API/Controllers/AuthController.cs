@@ -26,7 +26,8 @@ public class AuthController : ControllerBase
     /// </summary>
     /// <param name="dto">بيانات التسجيل: الاسم، الهاتف، كلمة المرور... إلخ.</param>
     /// <response code="201">تم إنشاء الحساب بنجاح.</response>
-    /// <response code="400">بيانات غير صالحة أو الحساب موجود مسبقاً.</response>
+    /// <response code="400">بيانات غير صالحة (كلمة المرور، الهاتف، البريد... إلخ).</response>
+    /// <response code="409">الحساب موجود مسبقاً — بريد إلكتروني أو رقم هاتف مسجّل.</response>
     /// <response code="429">تجاوز حد المحاولات المسموح في الدقيقة.</response>
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)

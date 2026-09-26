@@ -268,6 +268,38 @@ public class OrderServiceTests : IDisposable
             .WithMessage(Messages.DriverNotAvailable);
     }
 
+    [Fact]
+    public async Task AssignDriver_CrossFactoryDriver_Throws()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(status: OrderStatus.Approved, unitPrice: 150m);
+
+        // Another factory and a driver belonging to it
+        var otherFactory = TestDataSeeder.CreateFactory(900, "FactoryB");
+        var otherDriver = TestDataSeeder.CreateDriver(105, "DriverOther", 900, status: DriverStatus.Available);
+        _context.Factories.Add(otherFactory);
+        _context.Users.Add(otherDriver);
+        await _context.SaveChangesAsync();
+
+        // Act — assign a driver from a different factory to this order
+        var act = () => _orderService.AssignDriverAsync(order.OrderId, new AssignDriverDto
+        {
+            DriverId = 105,
+            TruckPlate = "ABC"
+        }, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert
+        await act.Should().ThrowAsync<ForbiddenException>()
+            .WithMessage(Messages.FactoryEmployeeFactoryMismatch);
+
+        // Verify no partial mutation
+        var updated = await _context.Users.ToListAsync();
+        updated.Find(u => u.UserId == 105)!.DriverStatus.Should().Be(DriverStatus.Available);
+        var orderAfter = await _context.Orders.ToListAsync();
+        orderAfter.Find(o => o.OrderId == order.OrderId)!.DriverId.Should().BeNull();
+    }
+
     // ─────────────────────────────────────────────
     // ⑤  إلغاء الطلب
     // ─────────────────────────────────────────────
@@ -652,6 +684,127 @@ public class OrderServiceTests : IDisposable
         // Assert
         await act.Should().ThrowAsync<BusinessException>()
             .WithMessage(Messages.OrderCannotBeRejectedInStatus);
+    }
+
+    // ─────────────────────────────────────────────
+    // ⑩  مسارات لم تكن مغطّاة: إنشاء الطلب وحذفه
+    //     (CreateAsync / CreatePhoneOrderAsync / DeleteOrderAsync)
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Create_ClientRole_UsesCallerId_NotDtoClientId()
+    {
+        // Arrange — عميلان: المستدعي (90) وعميل آخر (91)
+        await SeedOrderEnvironmentAsync();
+        var otherClient = TestDataSeeder.CreateUser(91, "عميل_آخر", UserRole.Client, phone: "050000091");
+        _context.Users.Add(otherClient);
+        await _context.SaveChangesAsync();
+
+        var dto = new CreateOrderDto
+        {
+            ClientId = otherClient.UserId, // محاولة نسبة الطلب إلى عميل آخر
+            FactoryId = 1,
+            ConcreteTypeId = 1,
+            Quantity = 10
+        };
+
+        // Act
+        var created = await _orderService.CreateAsync(dto, currentUserId: 90, UserRole.Client);
+
+        // Assert — الطلب يُنسب دائماً إلى المستدعي، وdto.ClientId مُتجاهَل تماماً لدور العميل
+        created.ClientId.Should().Be(90);
+    }
+
+    [Fact]
+    public async Task Create_DriverRole_ThrowsOrderCreationNotAllowed()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(200, "سائق_اختبار", 1);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        var dto = new CreateOrderDto
+        {
+            ClientId = 90, FactoryId = 1, ConcreteTypeId = 1, Quantity = 10
+        };
+
+        // Act — السائق ليس من أدوار إنشاء الطلبات
+        var act = () => _orderService.CreateAsync(dto, currentUserId: 200, UserRole.Driver);
+
+        // Assert
+        await act.Should().ThrowAsync<ForbiddenException>()
+            .WithMessage(Messages.OrderCreationNotAllowed);
+    }
+
+    [Fact]
+    public async Task Create_ConcreteTypeFromAnotherFactory_ThrowsFactoryMismatch()
+    {
+        // Arrange — نوع خرسانة تابع لمصنع آخر (بسعر قائمة مختلف تماماً)
+        await SeedOrderEnvironmentAsync();
+        var otherFactory = TestDataSeeder.CreateFactory(2, "مصنع_آخر");
+        var foreignType = TestDataSeeder.CreateConcreteType(2, 2, "C40_آخر", 40, 900m);
+        _context.Factories.Add(otherFactory);
+        _context.ConcreteTypes.Add(foreignType);
+        await _context.SaveChangesAsync();
+
+        var dto = new CreateOrderDto
+        {
+            ClientId = 90,
+            FactoryId = 1,
+            ConcreteTypeId = foreignType.ConcreteTypeId, // نوع يتبع مصنعاً آخر
+            Quantity = 10
+        };
+
+        // Act
+        var act = () => _orderService.CreateAsync(dto, currentUserId: 90, UserRole.Client);
+
+        // Assert — لا يُنشأ طلب داخل مصنع بسعر قائمة مصنع آخر
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.FactoryMismatch);
+    }
+
+    [Fact]
+    public async Task CreatePhoneOrder_PhoneBelongsToDriver_ThrowsPhoneLinkedToNonClientAccount()
+    {
+        // Arrange — الرقم مسجّل لحساب سائق (وليس عميلاً)
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateUser(
+            200, "سائق_بمرقم", UserRole.Driver, factoryId: 1, phone: "771110004");
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        var dto = new PhoneOrderDto
+        {
+            ClientPhone = "771110004",
+            ClientFullName = "اسم مُقترح",
+            FactoryId = 1,
+            ConcreteTypeId = 1,
+            Quantity = 10
+        };
+
+        // Act — لا يُنشأ عميل جديد بمرقم حساب موظف/سائق
+        var act = () => _orderService.CreatePhoneOrderAsync(dto, employeeFactoryId: 1);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.PhoneLinkedToNonClientAccount);
+    }
+
+    [Fact]
+    public async Task Delete_ClientCaller_ThrowsForbidden()
+    {
+        // Arrange — العميل يملك الطلب لكنه لا يملك حق حذفه/أرشفته
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(OrderStatus.Pending);
+
+        // Act
+        var act = () => _orderService.DeleteOrderAsync(
+            order.OrderId, callerId: 90, UserRole.Client, callerFactoryId: null);
+
+        // Assert
+        await act.Should().ThrowAsync<ForbiddenException>()
+            .WithMessage(Messages.Unauthorized);
     }
 
     // ─────────────────────────────────────────────

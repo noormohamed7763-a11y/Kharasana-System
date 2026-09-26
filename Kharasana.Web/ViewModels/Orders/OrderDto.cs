@@ -93,7 +93,7 @@ public class OrderDto
     public string? SiteDescription { get; set; }
 
     [JsonPropertyName("slabType")]
-    public int SlabType { get; set; }
+    public SlabType SlabType { get; set; }
 
     [JsonPropertyName("slabTypeDisplay")]
     public string? SlabTypeDisplay { get; set; }

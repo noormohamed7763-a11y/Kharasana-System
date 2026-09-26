@@ -72,7 +72,12 @@ public class AuthService : IAuthService
 
     public async Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginRequestDto request)
     {
-        var identifier = request.EmailOrPhone.Trim();
+        // جسم الطلب قد يصل بـ null صريح ({"emailOrPhone": null}) — لا [Required] على LoginRequestDto
+        // ولا يفرض System.Text.Json تعليقات nullability افتراضياً، فيتحوّل الطلب بلا هذا الحارس
+        // إلى 500 (NullReferenceException على Trim / ArgumentNullException في BCrypt) بدل 400.
+        var identifier = request.EmailOrPhone?.Trim();
+        if (string.IsNullOrEmpty(identifier) || string.IsNullOrEmpty(request.Password))
+            throw new BusinessException(Messages.InvalidCredentials);
 
         User? user;
 

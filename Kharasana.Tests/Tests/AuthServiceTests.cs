@@ -8,6 +8,7 @@ using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Tests.TestData;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Kharasana.Tests.Tests;
@@ -19,6 +20,7 @@ namespace Kharasana.Tests.Tests;
 /// • السائق الموقوف يُمنع بالرسالة الخاصة
 /// • حماية الحساب من التخمين العنيف (قفل بعد 5 محاولات)
 /// • إعادة تعيين العدّاد بعد نجاح تسجيل الدخول
+/// • RegisterAsync — التسجيل الذاتي: تطابق كلمتي المرور، تفرّد البريد والهاتف، دور العميل دائماً
 /// </summary>
 public class AuthServiceTests : IDisposable
 {
@@ -254,6 +256,152 @@ public class AuthServiceTests : IDisposable
         // Assert
         await act.Should().ThrowAsync<BusinessException>()
             .WithMessage(Messages.InvalidCredentials);
+    }
+
+    /// <summary>
+    /// null صريح في EmailOrPhone (كما يرسل عميل متهالك {"emailOrPhone": null}) يجب أن يُردّ
+    /// بـ 400 لا 500 — كان Trim() ينفجر بـ NullReferenceException قبل هذا الحارس.
+    /// </summary>
+    [Fact]
+    public async Task Login_NullIdentifier_ThrowsInvalidCredentials()
+    {
+        // Arrange
+        var request = new LoginRequestDto { EmailOrPhone = null!, Password = TestDataSeeder.TestPassword };
+
+        // Act
+        var act = () => _authService.LoginAsync(request);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+    }
+
+    /// <summary>
+    /// null صريح في Password لمستخدم موجود يجب أن يُردّ بـ 400 لا 500 —
+    /// كان BCrypt.Verify(null, ...) يرمي ArgumentNullException بعد العثور على المستخدم.
+    /// </summary>
+    [Fact]
+    public async Task Login_ExistingUser_NullPassword_ThrowsInvalidCredentials()
+    {
+        // Arrange — مستخدم موجود حتى يصل التنفيذ إلى التحقق من كلمة المرور
+        var user = TestDataSeeder.CreateUser(80, "بلا كلمة مرور", UserRole.Client, phone: "770000080");
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        var request = new LoginRequestDto { EmailOrPhone = user.Phone!, Password = null! };
+
+        // Act
+        var act = () => _authService.LoginAsync(request);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+    }
+
+    // ─────────────────────────────────────────────
+    // ⑥  RegisterAsync — التسجيل الذاتي (نقطة عامة بلا توكن)
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Register_PasswordMismatch_ThrowsPasswordsNotMatch()
+    {
+        // Arrange — تأكيد كلمة المرور لا يطابق كلمة المرور
+        var dto = new RegisterUserDto
+        {
+            FullName = "مستخدم جديد",
+            Phone = "771120001",
+            Password = TestDataSeeder.TestPassword,
+            ConfirmPassword = "Different@9999"
+        };
+
+        // Act
+        var act = () => _authService.RegisterAsync(dto);
+
+        // Assert — الرفض قبل أي فحص لقاعدة البيانات وقبل إنشاء أي حساب
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.PasswordsNotMatch);
+
+        (await _context.Users.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Register_ValidData_CreatesActiveClientWithoutFactory()
+    {
+        // Arrange
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل جديد",
+            Email = "new-client@test.local",
+            Phone = "771120005",
+            WhatsApp = "771120005",
+            Password = TestDataSeeder.TestPassword,
+            ConfirmPassword = TestDataSeeder.TestPassword
+        };
+
+        // Act
+        var result = await _authService.RegisterAsync(dto);
+
+        // Assert — التسجيل الذاتي يُنتج دائماً عميلاً نشطاً بلا مصنع (لا تصعيد صلاحيات)
+        result.Success.Should().BeTrue();
+
+        var created = await _context.Users.SingleAsync(u => u.Email == "new-client@test.local");
+        created.Role.Should().Be(UserRole.Client);
+        created.FactoryId.Should().BeNull();
+        created.IsActive.Should().BeTrue();
+        // يُخزَّن الرقم بالصيغة القياسية 967XXXXXXXXX — وهي الصيغة التي يبحث بها تسجيل الدخول
+        created.Phone.Should().Be("967771120005");
+    }
+
+    [Fact]
+    public async Task Register_DuplicatePhone_ThrowsConflict()
+    {
+        // Arrange — الرقم مسجّل مسبقاً لحساب آخر
+        var existing = TestDataSeeder.CreateUser(
+            120, "عميل مسجّل", UserRole.Client, phone: "771120002");
+        _context.Users.Add(existing);
+        await _context.SaveChangesAsync();
+
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل مكرر",
+            Phone = "771120002",
+            Password = TestDataSeeder.TestPassword,
+            ConfirmPassword = TestDataSeeder.TestPassword
+        };
+
+        // Act
+        var act = () => _authService.RegisterAsync(dto);
+
+        // Assert — 409 (لا حساب ثانٍ بنفس الرقم) — العقد المُعلن في AuthController.Register
+        await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage(Messages.PhoneAlreadyExists);
+    }
+
+    [Fact]
+    public async Task Register_DuplicateEmail_ThrowsConflict()
+    {
+        // Arrange — البريد مسجّل مسبقاً لحساب آخر
+        var existing = TestDataSeeder.CreateUser(
+            121, "عميل مسجّل", UserRole.Client,
+            phone: "771120003", email: "dup-register@test.local");
+        _context.Users.Add(existing);
+        await _context.SaveChangesAsync();
+
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل مكرر",
+            Email = "dup-register@test.local",
+            Phone = "771120004",
+            Password = TestDataSeeder.TestPassword,
+            ConfirmPassword = TestDataSeeder.TestPassword
+        };
+
+        // Act
+        var act = () => _authService.RegisterAsync(dto);
+
+        // Assert — 409 (لا حساب ثانٍ بنفس البريد) — العقد المُعلن في AuthController.Register
+        await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage(Messages.EmailAlreadyExists);
     }
 
     public void Dispose() => _context.Dispose();
