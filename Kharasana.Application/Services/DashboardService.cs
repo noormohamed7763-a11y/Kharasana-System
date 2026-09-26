@@ -38,8 +38,13 @@ public class DashboardService : IDashboardService
         var today = DateTime.UtcNow.Date;
         var tomorrow = today.AddDays(1);
 
-        var newOrders = await _unitOfWork.Orders.CountAsync(o =>
-            o.FactoryId == factoryId && o.Status == OrderStatus.New);
+        // ✅ «طلبات اليوم» = الطلبات المُنشأة اليوم، وليس OrderStatus.New.
+        //    الحالة New لا تُسنَد في أي مسار إنشاء (CreateAsync وCreatePhoneOrderAsync
+        //    تُنشئان بحالة Pending)، فاحتسابها كان يُعطي صفرًا دائمًا.
+        var todayOrders = await _unitOfWork.Orders.CountAsync(o =>
+            o.FactoryId == factoryId &&
+            o.CreatedAt >= today &&
+            o.CreatedAt < tomorrow);
         var pendingOrders = await _unitOfWork.Orders.CountAsync(o =>
             o.FactoryId == factoryId && o.Status == OrderStatus.Pending);
         var approvedOrders = await _unitOfWork.Orders.CountAsync(o =>
@@ -61,7 +66,7 @@ public class DashboardService : IDashboardService
 
         return new FactoryDashboardDto
         {
-            NewOrders = newOrders,
+            TodayOrders = todayOrders,
             PendingOrders = pendingOrders,
             ApprovedOrders = approvedOrders,
             OnTheWayOrders = onTheWayOrders,

@@ -1,5 +1,4 @@
 @model Kharasana.Web.ViewModels.Reports.ReportsViewModel
-@using Kharasana.Domain.Enums
 @using Kharasana.Web.Models.Components
 
 @{
@@ -11,19 +10,6 @@
 
     var concreteJson = System.Text.Json.JsonSerializer.Serialize(
         Model.OrdersByConcreteType.Select(c => new { label = c.ConcreteTypeName, count = c.Count, quantity = c.TotalQuantity }));
-
-    string StatusSuffix(OrderStatus status) => status switch
-    {
-        OrderStatus.New => "new",
-        OrderStatus.Pending => "pending",
-        OrderStatus.Approved => "approved",
-        OrderStatus.Rejected => "rejected",
-        OrderStatus.Cancelled => "cancelled",
-        OrderStatus.OnTheWay => "ontheway",
-        OrderStatus.Delivered => "delivered",
-        OrderStatus.Closed => "closed",
-        _ => "new"
-    };
 
     string StatusPercent(int count) =>
         Model.TotalOrders > 0 ? (count * 100d / Model.TotalOrders).ToString("0.#") : "0";
@@ -58,11 +44,15 @@
             "~/Views/Shared/Components/_SummaryCard.cshtml",
             new SummaryCardViewModel
             {
-                Title = "طلبات جديدة",
-                Value = (Model.NewOrders?.Count ?? 0).ToString(),
-                Icon = "bi-plus-circle",
+                // ✅ كانت «طلبات جديدة» تُحتسب من OrderStatus.New — وهي حالة لا تُسنَد
+                //    لأي طلب في النظام (الطلبات تُنشأ Pending)، فكانت البطاقة تعرض صفراً
+                //    دائماً ورابطها (status = 0) يعود بقائمة فارغة. استُبدلت بـ«قيد الانتظار»
+                //    وهي الحالة الفعلية التي تنتظر إجراءً من المصنع.
+                Title = "قيد الانتظار",
+                Value = (Model.PendingOrders?.Count ?? 0).ToString(),
+                Icon = "bi-hourglass-split",
                 IconClass = "kpi-icon-primary",
-                LinkUrl = Url.Action("Index", "Orders", new { status = 0 })
+                LinkUrl = Url.Action("Index", "Orders", new { status = 1 })
             })
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -140,7 +130,9 @@
                             <tbody>
                                 @foreach (var item in Model.OrdersByStatus)
                                 {
-                                    var badgeModel = new StatusBadgeViewModel { Text = item.StatusName, CssClass = $"status-{StatusSuffix(item.Status)}" };
+                                    @* ✅ اللاحقة من طبقة العرض الوحيدة OrderStatusExtensions.GetCssSuffix
+                                       (كانت هنا خريطة محلية مكرّرة — أُلغيت) *@
+                                    var badgeModel = new StatusBadgeViewModel { Text = item.StatusName, CssClass = $"status-{item.Status.GetCssSuffix()}" };
                                     <tr>
                                         <td>
                                             <partial name="Components/_StatusBadge" model="badgeModel" />
