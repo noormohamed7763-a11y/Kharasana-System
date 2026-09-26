@@ -178,7 +178,7 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         // CREATE PHONE ORDER - إنشاء طلب هاتفي
         // ============================================================
-        public async Task<OrderDto?> CreatePhoneOrderAsync(CreatePhoneOrderViewModel model)
+        public async Task<PhoneOrderResultDto?> CreatePhoneOrderAsync(CreatePhoneOrderViewModel model)
         {
             try
             {
@@ -209,7 +209,7 @@ namespace Kharasana.Web.Services.Api
                     phoneOrderDto.FactoryId,
                     phoneOrderDto.ProjectName);
 
-                var response = await _apiClient.PostAsync<ApiResponse<OrderDto>>("Orders/phone-order", phoneOrderDto);
+                var response = await _apiClient.PostAsync<ApiResponse<PhoneOrderResultDto>>("Orders/phone-order", phoneOrderDto);
 
                 if (response == null)
                 {
@@ -223,13 +223,18 @@ namespace Kharasana.Web.Services.Api
                     return null;
                 }
 
-                if (response.Data == null)
+                if (response.Data?.Order == null)
                 {
-                    _logger.LogWarning("❌ CreatePhoneOrderAsync: Response.Data is null");
+                    _logger.LogWarning("❌ CreatePhoneOrderAsync: Response.Data.Order is null");
                     return null;
                 }
 
-                _logger.LogInformation("✅ CreatePhoneOrderAsync: Phone order created successfully. Order ID: {OrderId}", response.Data.OrderId);
+                // ✅ لا نسجّل كلمة المرور المؤقتة إطلاقاً — تُعرض في الواجهة مرة واحدة فقط
+                _logger.LogInformation(
+                    "✅ CreatePhoneOrderAsync: Phone order created successfully. Order ID: {OrderId}, NewClientAccount: {NewClientAccount}",
+                    response.Data.Order.OrderId,
+                    response.Data.NewClientTemporaryPassword != null);
+
                 return response.Data;
             }
             catch (ApiServiceException) { throw; }
