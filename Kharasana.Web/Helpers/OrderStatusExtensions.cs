@@ -4,8 +4,15 @@ using System;
 namespace Kharasana.Web.Helpers
 {
     /// <summary>
-    /// دوال مساعدة للعرض لـ OrderStatus Enum
-    /// (قواعد الانتقال بين الحالات مصدرها الوحيد OrderStatusHelper في Domain)
+    /// طبقة العرض الوحيدة لحالة الطلب: الاسم العربي المزيَّن بالإيموجي، ولاحقة كلاس CSS.
+    ///
+    /// <para>هذا الملف هو <b>المكان الوحيد</b> المسموح فيه بكتابة خريطة (switch) تُرجع نصاً
+    /// لكل حالة. الاسم المجرّد مصدره <see cref="OrderStatusHelper.GetArabicName"/> في Domain،
+    /// وقواعد الانتقال مصدرها <see cref="OrderStatusHelper.GetAllowedTransitions"/>.
+    /// أي خريطة ثالثة في الويب (في View أو DTO أو خدمة) يرفضها اختبار
+    /// <c>OrderStatusMapTests</c> — كان في المشروع ثلاث خرائط متوازية للأسماء
+    /// (هنا، وفي <c>OrderDto.StatusArabic</c>) وثلاث للأصناف
+    /// (هنا، وفي <c>DashboardApiService</c>، وفي <c>Reports/Index.cshtml</c>).</para>
     /// </summary>
     public static class OrderStatusExtensions
     {
@@ -32,23 +39,29 @@ namespace Kharasana.Web.Helpers
         }
 
         /// <summary>
-        /// الحصول على كلاس CSS المناسب للحالة
+        /// لاحقة كلاس CSS للحالة بدون البادئة <c>status-</c>.
+        /// الأنماط معرّفة في <c>wwwroot/css/components.css</c> بأحرف صغيرة.
         /// </summary>
-        public static string GetCssClass(this OrderStatus status)
+        public static string GetCssSuffix(this OrderStatus status)
         {
             return status switch
             {
-                // مهم: CSS حساس لحالة الأحرف — الأصناف كلها lowercase وتطابق components.css
-                OrderStatus.New => "status-new",
-                OrderStatus.Pending => "status-pending",
-                OrderStatus.Approved => "status-approved",
-                OrderStatus.Rejected => "status-rejected",
-                OrderStatus.Cancelled => "status-cancelled",
-                OrderStatus.OnTheWay => "status-ontheway",
-                OrderStatus.Delivered => "status-delivered",
-                OrderStatus.Closed => "status-closed",
-                _ => "status-default"
+                // مهم: CSS حساس لحالة الأحرف — اللواحق كلها lowercase وتطابق components.css
+                OrderStatus.New => "new",
+                OrderStatus.Pending => "pending",
+                OrderStatus.Approved => "approved",
+                OrderStatus.Rejected => "rejected",
+                OrderStatus.Cancelled => "cancelled",
+                OrderStatus.OnTheWay => "ontheway",
+                OrderStatus.Delivered => "delivered",
+                OrderStatus.Closed => "closed",
+                _ => "default"
             };
         }
+
+        /// <summary>
+        /// الحصول على كلاس CSS المناسب للحالة
+        /// </summary>
+        public static string GetCssClass(this OrderStatus status) => $"status-{status.GetCssSuffix()}";
     }
 }

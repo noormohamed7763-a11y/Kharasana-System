@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 using Kharasana.Domain.Enums;
+using Kharasana.Web.Helpers;
 
 namespace Kharasana.Web.ViewModels.Orders;
 
@@ -159,18 +160,14 @@ public class OrderDto
     // HELPER PROPERTIES
     // ============================================================
 
-    public string StatusArabic => Status switch
-    {
-        OrderStatus.New => "جديد",
-        OrderStatus.Pending => "⏳ قيد الانتظار",
-        OrderStatus.Approved => "✅ معتمد",
-        OrderStatus.Rejected => "❌ مرفوض",
-        OrderStatus.Cancelled => "🚫 ملغي",
-        OrderStatus.OnTheWay => "🚚 في الطريق",
-        OrderStatus.Delivered => "📦 تم التسليم",
-        OrderStatus.Closed => "🔒 مغلق",
-        _ => "غير معروف"
-    };
+    /// <summary>
+    /// الاسم العربي للحالة جاهزاً للعرض (مع إيموجي).
+    /// <para>✅ يحوّل إلى طبقة العرض الوحيدة <see cref="OrderStatusExtensions.GetArabicName"/> —
+    /// كانت هنا خريطة ثالثة كاملة مكرّرة حرفياً مع إيموجيها. الخريطة المكرّرة تعني أن
+    /// إضافة حالة جديدة يوماً ما كانت ستتطلّب تعديل ثلاثة مواضع، وأن نسيتها في أحدهما
+    /// تُنتج نصاً متناقضاً بين شاشة الطلبات ولوحة المعلومات لنفس الطلب.</para>
+    /// </summary>
+    public string StatusArabic => Status.GetArabicName();
 
     public int StatusInt => (int)Status;
 
