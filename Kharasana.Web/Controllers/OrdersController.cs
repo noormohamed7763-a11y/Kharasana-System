@@ -250,7 +250,7 @@ namespace Kharasana.Web.Controllers
 
                 var created = await _ordersApiService.CreatePhoneOrderAsync(model);
 
-                if (created == null)
+                if (created?.Order == null)
                 {
                     TempData[TempDataError] = AppMessages.Common.OperationFailed;
                     var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
@@ -258,7 +258,21 @@ namespace Kharasana.Web.Controllers
                     return View(model);
                 }
 
-                TempData[TempDataSuccess] = AppMessages.Success.Created;
+                // ✅ إن أُنشئ حساب عميل جديد تُعرض كلمة المرور المؤقتة مرة واحدة فقط هنا.
+                //    TempData يعيش لدورة إعادة توجيه واحدة ثم يُقرأ ويُحذف في _Alerts،
+                //    فلا تظهر في تحديث الصفحة ولا في أي طلب لاحق.
+                if (!string.IsNullOrEmpty(created.NewClientTemporaryPassword))
+                {
+                    TempData[TempDataSuccess] = string.Format(
+                        AppMessages.Success.NewClientAccountCreated,
+                        created.NewClientPhone ?? model.ClientPhone,
+                        created.NewClientTemporaryPassword);
+                }
+                else
+                {
+                    TempData[TempDataSuccess] = AppMessages.Success.Created;
+                }
+
                 return RedirectToAction(nameof(Index));
             }
             catch (ApiServiceException ex)

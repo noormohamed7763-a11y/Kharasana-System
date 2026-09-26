@@ -63,8 +63,11 @@ namespace Kharasana.Web.Services.Interfaces
         /// إنشاء طلب هاتفي (بواسطة موظف المصنع)
         /// </summary>
         /// <param name="model">بيانات الطلب الهاتفي</param>
-        /// <returns>تفاصيل الطلب المنشأ</returns>
-        Task<OrderDto?> CreatePhoneOrderAsync(CreatePhoneOrderViewModel model);
+        /// <returns>
+        /// تفاصيل الطلب المنشأ، ومعها كلمة المرور المؤقتة إن أُنشئ حساب عميل جديد
+        /// (تُعرض مرة واحدة فقط لتسليمها للعميل)
+        /// </returns>
+        Task<PhoneOrderResultDto?> CreatePhoneOrderAsync(CreatePhoneOrderViewModel model);
 
 
         // ============================================================

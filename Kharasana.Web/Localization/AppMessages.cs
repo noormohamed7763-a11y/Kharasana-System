@@ -48,6 +48,15 @@ public static class AppMessages
         public const string DeliveryStarted = "تم بدء التوصيل بنجاح.";
         public const string Delivered = "تم تسليم الطلب بنجاح.";
         public const string Closed = "تم إغلاق الطلب بنجاح.";
+
+        /// <summary>
+        /// تُعرض عند إنشاء طلب هاتفي لعميل غير مسجَّل، فيُنشأ له حساب بكلمة مرور مؤقتة.
+        /// {0} = رقم هاتف العميل، {1} = كلمة المرور المؤقتة.
+        /// ⚠️ تُعرض مرة واحدة فقط — لا تُخزَّن نصاً صريحاً ولا تُعاد لاحقاً.
+        /// </summary>
+        public const string NewClientAccountCreated =
+            "تم إنشاء الطلب وإنشاء حساب للعميل. سلّم العميل البيانات التالية الآن — لن تُعرض كلمة المرور مرة أخرى: " +
+            "الهاتف: {0} | كلمة المرور المؤقتة: {1}";
     }
 
     /// <summary>رسائل الأخطاء.</summary>
