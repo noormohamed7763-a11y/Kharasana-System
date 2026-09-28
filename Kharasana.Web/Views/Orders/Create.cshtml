@@ -21,19 +21,24 @@
         })
 
     <!-- ============================================================
-    FORM - نموذج إنشاء الطلب
+    FORM - نموذج إنشاء الطلب لشاشات الكمبيوتر
     ============================================================ -->
-    <div class="form-card">
-        <form asp-action="Create" method="post" id="createOrderForm">
+    <form asp-action="Create" method="post" id="createOrderForm">
 
-            @Html.AntiForgeryToken()
+        @Html.AntiForgeryToken()
 
-            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+        <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
-            <!-- ============================================================
-            1. CLIENT INFO - معلومات العميل
-            ============================================================ -->
-            <div class="form-section-title">
+        <div class="row g-4 align-items-start">
+
+            <!-- العمود الرئيسي: مدخلات النموذج وبيانات الطلب -->
+            <div class="col-lg-8 col-xl-8">
+                <div class="form-card">
+
+                    <!-- ============================================================
+                    1. CLIENT INFO - معلومات العميل
+                    ============================================================ -->
+                    <div class="form-section-title">
                 <i class="bi bi-person-circle"></i>
                 <span>معلومات العميل</span>
             </div>
@@ -263,31 +268,105 @@
             </div>
 
             <!-- ============================================================
-            5. SUBMIT - أزرار الإرسال
+            5. SUBMIT - أزرار الإرسال السفلية
             ============================================================ -->
-            <div class="d-flex flex-wrap gap-3 mt-4 pt-3 border-top">
-                <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn">
-                    <i class="bi bi-check-circle"></i> إنشاء الطلب
-                </button>
-                <div class="ms-auto d-flex align-items-center gap-3">
-                    <div>
-                        <label class="form-label text-muted mb-0">سعر المتر</label>
-                        <div id="selectedUnitPrice" class="fw-bold">-</div>
+            <div class="d-flex flex-wrap gap-3 mt-4 pt-3 border-top justify-content-between align-items-center">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg px-4" id="submitBtn">
+                        <i class="bi bi-check-circle"></i> إنشاء الطلب
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="bi bi-x-circle"></i> إلغاء
+                    </a>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end">
+                        <span class="text-muted small d-block">سعر المتر:</span>
+                        <div id="selectedUnitPrice" class="fw-bold text-dark">-</div>
                     </div>
-                    <div>
-                        <label class="form-label text-muted mb-0">الإجمالي المتوقع</label>
-                        <div id="calculatedTotal" class="fw-bold text-primary">-</div>
+                    <div class="text-end">
+                        <span class="text-muted small d-block">الإجمالي التقديري:</span>
+                        <div id="calculatedTotal" class="fw-bold text-primary fs-5">-</div>
                     </div>
                 </div>
-                <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-5">
-                    <i class="bi bi-x-circle"></i> إلغاء
-                </a>
             </div>
 
-        </form>
-    </div>
+        </div><!-- /.form-card -->
+    </div><!-- /.col-lg-8 -->
 
-</div>
+    <!-- ============================================================
+    DESKTOP STICKY ESTIMATOR PANEL - حاسبة وملخص التكلفة لشاشات الكمبيوتر
+    ============================================================ -->
+    <div class="col-lg-4 col-xl-4">
+        <div class="order-estimator-sticky">
+            <div class="estimator-header">
+                <h5 class="estimator-title">
+                    <i class="bi bi-calculator-fill"></i>
+                    ملخص وتكلفة الطلب
+                </h5>
+                <span class="estimator-badge">حساب فوري</span>
+            </div>
+
+            <div class="estimator-body">
+                <div class="estimator-row">
+                    <span class="estimator-label"><i class="bi bi-person me-1"></i> العميل:</span>
+                    <span class="estimator-value estimator-value--clamp text-truncate" id="summaryClientName">لم يُحدد بعد</span>
+                </div>
+
+                <div class="estimator-row">
+                    <span class="estimator-label"><i class="bi bi-box-seam me-1"></i> الصنف:</span>
+                    <span class="estimator-value estimator-value--clamp text-truncate" id="summaryConcreteName">-- اختر النوع --</span>
+                </div>
+
+                <div class="estimator-row">
+                    <span class="estimator-label"><i class="bi bi-tag me-1"></i> سعر المتر:</span>
+                    <span class="estimator-value" id="summaryUnitPrice">-</span>
+                </div>
+
+                <div class="estimator-row">
+                    <span class="estimator-label"><i class="bi bi-rulers me-1"></i> الكمية:</span>
+                    <span class="estimator-value" id="summaryQuantity">-</span>
+                </div>
+
+                <div class="estimator-row">
+                    <span class="estimator-label"><i class="bi bi-truck me-1"></i> النقل:</span>
+                    <span class="estimator-value" id="summaryTransport">نقل المصنع</span>
+                </div>
+
+                <div class="estimator-row">
+                    <span class="estimator-label"><i class="bi bi-water me-1"></i> المضخة:</span>
+                    <span class="estimator-value" id="summaryPump">لا</span>
+                </div>
+            </div>
+
+            <!-- إجمالي التكلفة التقديرية للخرسانة -->
+            <div class="estimator-total-box">
+                <div class="estimator-total-label">تكلفة الخرسانة التقديرية</div>
+                <div class="estimator-total-amount" id="summaryTotalAmount">0 <small style="font-size: 0.9rem; font-weight: normal;">ر.ي</small></div>
+            </div>
+
+            <div class="estimator-note">
+                <i class="bi bi-info-circle me-1"></i>
+                الحساب فوري ومبني على سعر المتر للصنف والكمية المحددة. قد تُضاف تكلفة النقل أو المضخة بالاتفاق.
+            </div>
+
+            <!-- أزرار الإجراء السريع في اللوحة الثابتة -->
+            <div class="estimator-actions">
+                <button type="submit" class="btn btn-primary btn-lg shadow-sm" id="stickySubmitBtn">
+                    <i class="bi bi-check-circle"></i> إنشاء الطلب الآن
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right"></i> إلغاء والعودة
+                </a>
+            </div>
+        </div>
+    </div><!-- /.col-lg-4 -->
+
+</div><!-- /.row -->
+
+</form>
+
+</div><!-- /.dashboard-page -->
 
 <!-- ============================================================
 MODAL - إنشاء نوع خرسانة مخصص
@@ -343,35 +422,116 @@ MODAL - إنشاء نوع خرسانة مخصص
     </div>
 </div>
 
-<!-- تم نقل تنسيقات هذه الصفحة إلى wwwroot/css/orders.css (ملف مركزي موحّد) -->
 @section Scripts {
-    @* ✅ كانت غائبة عن هذه الصفحة وحدها (Edit/Details تستدعيها)، فلا يعمل التحقق
-       الفوري في المتصفح: كل خطأ إدخال يستلزم إرسال النموذج وانتظار إعادة تحميل الصفحة. *@
     <partial name="_ValidationScriptsPartial" />
     <script nonce="@ViewBag.CspNonce">
-        (function(){
+        (function () {
             const concreteSelect = document.getElementById('concreteTypeSelect');
             const qtyInput = document.querySelector('input[name="Quantity"]');
             const unitPriceEl = document.getElementById('selectedUnitPrice');
             const totalEl = document.getElementById('calculatedTotal');
 
-            function formatNumber(n){
-                if (n == null) return '-';
-                return Number(n).toLocaleString(undefined, {maximumFractionDigits:2});
+            // عناصر اللوحة الثابتة لشاشات الكمبيوتر
+            const summaryClientName = document.getElementById('summaryClientName');
+            const summaryConcreteName = document.getElementById('summaryConcreteName');
+            const summaryUnitPrice = document.getElementById('summaryUnitPrice');
+            const summaryQuantity = document.getElementById('summaryQuantity');
+            const summaryTransport = document.getElementById('summaryTransport');
+            const summaryPump = document.getElementById('summaryPump');
+            const summaryTotalAmount = document.getElementById('summaryTotalAmount');
+
+            const clientNameInput = document.querySelector('input[name="ClientFullName"]');
+            const clientPhoneInput = document.querySelector('input[name="ClientPhone"]');
+            const transportRadios = document.querySelectorAll('input[name="TransportMethod"]');
+            const needPumpSwitch = document.getElementById('needPumpSwitch');
+            const floorNumberInput = document.querySelector('input[name="FloorNumber"]');
+            const floorNumberContainer = document.getElementById('floorNumberContainer');
+
+            function formatNumber(n) {
+                if (n == null || isNaN(n) || n === 0) return '0';
+                // 'en-US' عمداً: بقية التطبيق يعرض الأرقام لاتينية — عدّادات لوحة
+                // المعلومات والتقارير (dashboard.js/reports.js) وأسعار الخادم كلها
+                // كذلك. 'ar-EG' كانت تُخرج أرقاماً عربية-هندية (١٢٬٥٠٠) فيرى
+                // المستخدم نظامين للأرقام في نفس النظام.
+                return Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
             }
 
-            function recalc(){
-                const sel = concreteSelect.options[concreteSelect.selectedIndex];
-                const unit = sel ? parseFloat(sel.dataset.unitPrice || '0') : 0;
+            function recalc() {
+                // 1. النوع والسعر والكمية
+                const sel = concreteSelect ? concreteSelect.options[concreteSelect.selectedIndex] : null;
+                const hasConcrete = sel && sel.value !== "";
+                const concreteName = hasConcrete ? sel.text : 'لم يُحدد';
+                const unit = hasConcrete ? parseFloat(sel.dataset.unitPrice || '0') : 0;
                 const qty = qtyInput ? parseFloat(qtyInput.value || '0') : 0;
-                unitPriceEl.textContent = unit > 0 ? formatNumber(unit) + ' ر.ي' : '-';
+
+                const formattedUnit = unit > 0 ? formatNumber(unit) + ' ر.ي' : '-';
                 const total = unit * qty;
-                totalEl.textContent = total > 0 ? formatNumber(total) + ' ر.ي' : '-';
+                const formattedTotal = total > 0 ? formatNumber(total) + ' ر.ي' : '-';
+
+                // الشريط السفلي
+                if (unitPriceEl) unitPriceEl.textContent = formattedUnit;
+                if (totalEl) totalEl.textContent = formattedTotal;
+
+                // اللوحة الثابتة الجانبية
+                if (summaryConcreteName) summaryConcreteName.textContent = concreteName;
+                if (summaryUnitPrice) summaryUnitPrice.textContent = formattedUnit;
+                if (summaryQuantity) summaryQuantity.textContent = qty > 0 ? qty + ' م³' : '-';
+                if (summaryTotalAmount) {
+                    summaryTotalAmount.innerHTML = (total > 0 ? formatNumber(total) : '0') + ' <small style="font-size:0.9rem; font-weight:normal;">ر.ي</small>';
+                }
+
+                // 2. العميل
+                const cName = clientNameInput ? clientNameInput.value.trim() : '';
+                const cPhone = clientPhoneInput ? clientPhoneInput.value.trim() : '';
+                if (summaryClientName) {
+                    if (cName) {
+                        summaryClientName.textContent = cName;
+                    } else if (cPhone) {
+                        summaryClientName.textContent = cPhone;
+                    } else {
+                        summaryClientName.textContent = 'لم يُحدد بعد';
+                    }
+                }
+
+                // 3. النقل
+                let transportText = 'نقل المصنع';
+                transportRadios.forEach(r => {
+                    if (r.checked) {
+                        transportText = r.value === '1' ? 'نقل المصنع' : 'نقل ذاتي';
+                    }
+                });
+                if (summaryTransport) summaryTransport.textContent = transportText;
+
+                // 4. المضخة والطابق
+                const needPump = needPumpSwitch ? needPumpSwitch.checked : false;
+                if (floorNumberContainer) {
+                    floorNumberContainer.style.opacity = needPump ? '1' : '0.45';
+                    if (!needPump && floorNumberInput) {
+                        floorNumberInput.setAttribute('disabled', 'disabled');
+                    } else if (floorNumberInput) {
+                        floorNumberInput.removeAttribute('disabled');
+                    }
+                }
+                if (summaryPump) {
+                    if (needPump) {
+                        const floor = floorNumberInput && floorNumberInput.value ? ' (طابق ' + floorNumberInput.value + ')' : '';
+                        summaryPump.textContent = 'نعم' + floor;
+                    } else {
+                        summaryPump.textContent = 'لا';
+                    }
+                }
             }
 
             concreteSelect?.addEventListener('change', recalc);
             qtyInput?.addEventListener('input', recalc);
+            clientNameInput?.addEventListener('input', recalc);
+            clientPhoneInput?.addEventListener('input', recalc);
+            needPumpSwitch?.addEventListener('change', recalc);
+            floorNumberInput?.addEventListener('input', recalc);
+            transportRadios.forEach(r => r.addEventListener('change', recalc));
+
             document.addEventListener('DOMContentLoaded', recalc);
+            recalc();
         })();
     </script>
 }

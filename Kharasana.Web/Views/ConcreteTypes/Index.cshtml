@@ -16,7 +16,12 @@
 <div class="dashboard-page">
 
     @{
-        var factoryInactive = (string?)ViewBag.UserRole == Roles.FactoryEmployee && ViewBag.FactoryIsActive == false;
+        var role = (string?)ViewBag.UserRole;
+        var factoryInactive = role == Roles.FactoryEmployee && ViewBag.FactoryIsActive == false;
+
+        // الإنشاء للمدير وموظف المصنع فقط — مطابقةً لصلاحية الـ API (Create: AdminOrFactoryEmployee).
+        // العميل يرى القائمة وحدها، فلا يُعرض له زر إضافة يفشل بـ 403.
+        var canManage = role == Roles.Admin || role == Roles.FactoryEmployee;
     }
 
     @if (factoryInactive)
@@ -34,7 +39,7 @@
             Icon = "bi-box-seam",
             Title = "أنواع الخرسانة",
             Description = "إدارة جميع أنواع الخرسانة داخل النظام",
-            ActionText = factoryInactive ? string.Empty : "إضافة نوع خرسانة",
+            ActionText = canManage && !factoryInactive ? "إضافة نوع خرسانة" : string.Empty,
             ActionController = "ConcreteTypes",
             ActionMethod = "Create"
         })
@@ -79,9 +84,9 @@
     </div>
 
     <!-- Search -->
-    <div class="mb-3">
-        <div class="row align-items-center">
-            <div class="col-lg-5">
+    <div class="form-card mb-3 p-3">
+        <div class="row g-2 align-items-center">
+            <div class="col-lg-6">
                 @await Html.PartialAsync(
                                 "~/Views/Shared/Components/_SearchBox.cshtml",
                                 new SearchBoxViewModel
@@ -89,6 +94,14 @@
                                     InputId = "tableSearch",
                                     Placeholder = "ابحث باسم النوع أو المصنع..."
                                 })
+            </div>
+            @* ms-auto يدفع التنبيه إلى الطرف الآخر من الصف على سطح المكتب،
+               وإلا بقي ملاصقاً لصندوق البحث في وسط الصفحة وبقيت نصف الأعمدة فارغة. *@
+            <div class="col-auto ms-auto">
+                <span class="text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    البحث يعمل داخل الصفحة الحالية
+                </span>
             </div>
         </div>
     </div>

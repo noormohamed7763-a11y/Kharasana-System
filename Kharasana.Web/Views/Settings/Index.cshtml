@@ -5,7 +5,7 @@
     ViewData["Title"] = "إعدادات المصنع";
 }
 
-<div class="dashboard-page">
+<div class="dashboard-page dashboard-page--narrow">
 
     <partial name="Components/_PageHeader"
              model='new PageHeaderViewModel
@@ -32,35 +32,38 @@
 
             <div class="row g-3">
                 <div class="col-md-6">
-                    <div class="p-3 bg-light rounded-3 border">
-                        <span class="text-muted d-block small mb-1">اسم المصنع</span>
-                        <h6 class="fw-bold mb-0 text-dark">@Model.FactoryName</h6>
+                    <div class="detail-group">
+                        <span class="detail-label"><i class="bi bi-building me-1"></i>اسم المصنع</span>
+                        <div class="detail-value fw-bold">@Model.FactoryName</div>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="p-3 bg-light rounded-3 border">
-                        <span class="text-muted d-block small mb-1">اسم المالك</span>
-                        <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrEmpty(Model.OwnerName) ? "-" : Model.OwnerName)</h6>
+                    <div class="detail-group">
+                        <span class="detail-label"><i class="bi bi-person me-1"></i>اسم المالك</span>
+                        <div class="detail-value fw-bold">@(string.IsNullOrEmpty(Model.OwnerName) ? "-" : Model.OwnerName)</div>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="p-3 bg-light rounded-3 border">
-                        <span class="text-muted d-block small mb-1">رقم الهاتف</span>
-                        <h6 class="fw-bold mb-0 text-dark" dir="ltr">@(string.IsNullOrEmpty(Model.Phone) ? "-" : Model.Phone)</h6>
+                    <div class="detail-group">
+                        <span class="detail-label"><i class="bi bi-telephone me-1"></i>رقم الهاتف</span>
+                        <div class="detail-value fw-bold" dir="ltr">@(string.IsNullOrEmpty(Model.Phone) ? "-" : Model.Phone)</div>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="p-3 bg-light rounded-3 border">
-                        <span class="text-muted d-block small mb-1">المنطقة</span>
-                        <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrEmpty(Model.Area) ? "-" : Model.Area)</h6>
+                    <div class="detail-group">
+                        <span class="detail-label"><i class="bi bi-geo-alt me-1"></i>المنطقة</span>
+                        <div class="detail-value fw-bold">@(string.IsNullOrEmpty(Model.Area) ? "-" : Model.Area)</div>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="p-3 bg-light rounded-3 border">
-                        <span class="text-muted d-block small mb-1">الحالة</span>
-                        <h6 class="fw-bold mb-0 @(Model.IsActive ? "text-success" : "text-danger")">
-                            @(Model.IsActive ? "نشط" : "متوقف")
-                        </h6>
+                    <div class="detail-group">
+                        <span class="detail-label"><i class="bi bi-activity me-1"></i>الحالة</span>
+                        <div class="detail-value">
+                            <span class="status-badge @(Model.IsActive ? "status-success" : "status-danger")">
+                                <span class="status-dot"></span>
+                                @(Model.IsActive ? "نشط" : "متوقف")
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -86,13 +89,12 @@
                              alt="شعار المصنع"
                              data-name="@Model.FactoryName"
                              id="logoPreview"
-                             style="width:120px; height:120px; object-fit:cover; border-radius:50%; border:3px solid #dee2e6; background:#f8f9fa;"
+                             class="logo-preview"
                              data-img-error="logo" />
                     }
                     else
                     {
-                        <div class="d-flex flex-column align-items-center justify-content-center bg-light rounded-circle border"
-                             style="width:120px; height:120px; margin:0 auto;">
+                        <div class="logo-preview--empty">
                             <i class="bi bi-building fs-1 text-muted"></i>
                             <span class="text-muted small mt-2">لا يوجد شعار</span>
                         </div>

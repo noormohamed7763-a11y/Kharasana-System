@@ -5,7 +5,7 @@
     ViewData["Title"] = "تفاصيل المصنع";
 }
 
-<div class="dashboard-page">
+<div class="dashboard-page dashboard-page--narrow">
 
     <!-- 1. الترويسة -->
     <partial name="Components/_PageHeader"
@@ -26,13 +26,12 @@
                     <img src="@Model.Logo"
                          alt="@Model.FactoryName"
                          data-name="@Model.FactoryName"
-                         style="width:65px; height:65px; object-fit:cover; border-radius:50%; border:2px solid #dee2e6; background:#f8f9fa;"
+                         class="logo-preview logo-size--sm"
                                           data-img-error="logo" />
                 }
                 else
                 {
-                    <div class="factory-avatar bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4 shadow-sm"
-                         style="width: 65px; height: 65px;">
+                    <div class="factory-avatar bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4 shadow-sm logo-size--sm">
                         @(string.IsNullOrWhiteSpace(Model.FactoryName) ? "--" : Model.FactoryName[..Math.Min(2, Model.FactoryName.Length)])
                     </div>
                 }

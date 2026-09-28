@@ -5,7 +5,7 @@
     ViewData["Title"] = "حذف المصنع";
 }
 
-<div class="dashboard-page">
+<div class="dashboard-page dashboard-page--narrow">
 
     <!-- 1. الترويسة -->
     <partial name="Components/_PageHeader"
@@ -36,13 +36,13 @@
                         <img src="@Model.Logo"
                              alt="شعار المصنع"
                              data-name="@Model.FactoryName"
-                             style="width:80px; height:80px; object-fit:cover; border-radius:50%; border:3px solid #dee2e6; background:#f8f9fa;"
+                             class="logo-preview logo-size--md"
                               data-img-error="logo" />
                     }
                     else
                     {
-                        <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary fw-bold rounded-circle border shadow-sm"
-                             style="width:80px; height:80px; font-size:28px;">
+                        @* fs-3 = 1.75rem = 28px، وهي القيمة التي كانت مكتوبة style مضمّناً *@
+                        <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary fw-bold rounded-circle border shadow-sm fs-3 logo-size--md">
                             @(string.IsNullOrWhiteSpace(Model.FactoryName) ? "--" : Model.FactoryName[..Math.Min(2, Model.FactoryName.Length)])
                         </div>
                     }

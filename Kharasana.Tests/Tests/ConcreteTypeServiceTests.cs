@@ -121,6 +121,90 @@ public class ConcreteTypeServiceTests : IDisposable
     }
 
     // ─────────────────────────────────────────────
+    // ①′  قائمة المؤرشفة — GetArchived (الوجه الآخر للحذف الناعم)
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetArchived_WithFactoryFilter_ReturnsOnlyDeletedTypesOfThatFactory()
+    {
+        // Arrange — مصنعان، في كلٍّ منهما نوع محذوف ونوع نشط
+        _context.Factories.AddRange(
+            TestDataSeeder.CreateFactory(105, "مصنع_أرشيف_أ"),
+            TestDataSeeder.CreateFactory(106, "مصنع_أرشيف_ب"));
+        _context.ConcreteTypes.AddRange(
+            TestDataSeeder.CreateConcreteType(210, 105, "محذوف_أ", isDeleted: true, isActive: false),
+            TestDataSeeder.CreateConcreteType(211, 105, "نشط_أ"),
+            TestDataSeeder.CreateConcreteType(212, 106, "محذوف_ب", isDeleted: true, isActive: false));
+        await _context.SaveChangesAsync();
+
+        // Act — موظف المصنع 105
+        var result = (await _service.GetArchivedAsync(105)).ToList();
+
+        // Assert — المحذوف من مصنعه وحده، والنشط مُستبعَد
+        result.Should().HaveCount(1);
+        result[0].ConcreteTypeId.Should().Be(210);
+        result[0].FactoryId.Should().Be(105);
+        result.Should().OnlyContain(x => x.FactoryId == 105);
+    }
+
+    [Fact]
+    public async Task GetArchived_WithoutFactoryFilter_ReturnsDeletedTypesOfEveryFactory()
+    {
+        // Arrange — نفس الترتيب، لكن بلا عزل (المدير)
+        _context.Factories.AddRange(
+            TestDataSeeder.CreateFactory(107, "مصنع_أرشيف_ج"),
+            TestDataSeeder.CreateFactory(108, "مصنع_أرشيف_د"));
+        _context.ConcreteTypes.AddRange(
+            TestDataSeeder.CreateConcreteType(220, 107, "محذوف_ج", isDeleted: true, isActive: false),
+            TestDataSeeder.CreateConcreteType(221, 108, "محذوف_د", isDeleted: true, isActive: false),
+            TestDataSeeder.CreateConcreteType(222, 108, "نشط_د"));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = (await _service.GetArchivedAsync()).ToList();
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Select(x => x.ConcreteTypeId).Should().BeEquivalentTo(new[] { 220, 221 });
+    }
+
+    [Fact]
+    public async Task GetArchived_AfterDelete_CarriesArchiveTimestamp()
+    {
+        // Arrange
+        _context.Factories.Add(TestDataSeeder.CreateFactory(109, "مصنع_ختم"));
+        _context.ConcreteTypes.Add(TestDataSeeder.CreateConcreteType(230, 109, "C25"));
+        await _context.SaveChangesAsync();
+
+        // Act
+        await _service.DeleteAsync(230, currentFactoryId: 109);
+        var archived = (await _service.GetArchivedAsync(109)).ToList();
+
+        // Assert — تاريخ الأرشفة الذي تعرضه الصفحة يأتي من UpdatedAt التي تكتبها DeleteAsync
+        archived.Should().HaveCount(1);
+        archived[0].UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetArchived_AfterRestore_NoLongerListsTheType()
+    {
+        // Arrange
+        _context.Factories.Add(TestDataSeeder.CreateFactory(111, "مصنع_استعادة"));
+        _context.ConcreteTypes.Add(TestDataSeeder.CreateConcreteType(240, 111, "C30"));
+        await _context.SaveChangesAsync();
+        await _service.DeleteAsync(240, currentFactoryId: 111);
+
+        // Act — استعادة ثم قراءة الأرشيف
+        await _service.RestoreAsync(240, currentFactoryId: 111);
+        var archived = (await _service.GetArchivedAsync(111)).ToList();
+
+        // Assert — عاد إلى القائمة العادية وخرج من الأرشيف
+        archived.Should().BeEmpty();
+        var active = (await _service.GetAllAsync(111)).ToList();
+        active.Should().ContainSingle(x => x.ConcreteTypeId == 240);
+    }
+
+    // ─────────────────────────────────────────────
     // ②  الحذف الناعم — Soft Delete
     // ─────────────────────────────────────────────
 

@@ -20,7 +20,10 @@
 .content-body {
     flex: 1;
     width: 100%;
-    padding: 16px var(--page-padding) var(--space-6);
+    /* الهامش كله يتبع --page-padding: 16px للشاشات الصغيرة، و24px لسطح المكتب
+       عبر تجاوز الجذر في variables.css. كان الهامش العلوي 16px مكتوبة مباشرة
+       فيبقى ضيّقاً على الشاشات الكبيرة بينما الجانبي يتوسّع. */
+    padding: var(--page-padding) var(--page-padding) var(--space-6);
     background: var(--background);
     box-sizing: border-box;
 }

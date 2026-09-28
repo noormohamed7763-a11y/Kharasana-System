@@ -38,9 +38,15 @@
             </a>
         </li>
         <li>
-            <a asp-controller="ConcreteTypes" asp-action="Index" class="@isActiveCtrl("ConcreteTypes")">
+            <a asp-controller="ConcreteTypes" asp-action="Index" class="@(currentController.Equals("ConcreteTypes", StringComparison.OrdinalIgnoreCase) && !currentAction.Equals("Archived", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
                 <i class="bi bi-box-seam"></i>
                 <span>أنواع الخرسانة</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="ConcreteTypes" asp-action="Archived" class="@(currentController.Equals("ConcreteTypes", StringComparison.OrdinalIgnoreCase) && currentAction.Equals("Archived", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+                <i class="bi bi-archive"></i>
+                <span>أرشيف أنواع الخرسانة</span>
             </a>
         </li>
         <li>

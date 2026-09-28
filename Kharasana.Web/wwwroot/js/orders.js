@@ -486,16 +486,22 @@ document.addEventListener("DOMContentLoaded", function () {
         if (isAjaxForm) return;
 
         form.addEventListener('submit', function () {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn && !submitBtn.disabled) {
-                const originalText = submitBtn.innerHTML;
-                setButtonState(submitBtn, true, getLoadingText('جاري الإرسال...'));
+            // كل أزرار الإرسال في النموذج — لا الأول فقط.
+            // صفحات مثل Orders/Create فيها زرّان لنفس الإرسال (السفلي + زر اللوحة
+            // الجانبية الثابتة)، وكان querySelector يُعطّل الأول ويترك الثاني فعّالاً،
+            // فتمرّ نقرة مزدوجة عليه وتُنشئ الطلب مرّتين.
+            const submitBtns = Array.from(this.querySelectorAll('button[type="submit"]'))
+                .filter(btn => !btn.disabled);
+
+            submitBtns.forEach(btn => {
+                const originalText = btn.innerHTML;
+                setButtonState(btn, true, getLoadingText('جاري الإرسال...'));
                 setTimeout(() => {
-                    if (submitBtn.disabled) {
-                        setButtonState(submitBtn, false, originalText);
+                    if (btn.disabled) {
+                        setButtonState(btn, false, originalText);
                     }
                 }, 3000);
-            }
+            });
         });
     });
 
@@ -516,26 +522,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 
-/**
- * تطبيق الفلاتر وإعادة تحميل الصفحة
- */
-function applyFilters() {
-    const status = document.getElementById('statusFilter')?.value || '';
-    const factory = document.getElementById('factoryFilter')?.value || '';
-
-    const statusInput = document.getElementById('statusInput');
-    const factoryInput = document.getElementById('factoryInput');
-
-    if (statusInput) statusInput.value = status;
-    if (factoryInput) factoryInput.value = factory;
-
-    const searchForm = document.getElementById('searchForm');
-    if (searchForm) searchForm.submit();
-}
-
 // ==============================
-// CSP-safe filter event listeners
-// (replaces inline onchange="applyFilters()")
+// فلاتر شريط البحث (الحالة / المصنع)
+// انتقلت إلى الشريط الموحّد Views/Shared/Components/_ListToolbar.cshtml:
+// القائمة المنسدلة تحمل name فتُرسل مع النموذج مباشرة، والإرسال التلقائي عند
+// التغيير يتولاه المعالج المُفوَّض في site.js عبر data-toolbar-autosubmit.
+// حُذفت من هنا دالة applyFilters وحقلا statusInput/factoryInput المخفيان.
 // ==============================
-document.getElementById('statusFilter')?.addEventListener('change', applyFilters);
-document.getElementById('factoryFilter')?.addEventListener('change', applyFilters);

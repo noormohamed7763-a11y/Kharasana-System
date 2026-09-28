@@ -24,6 +24,7 @@ public static class Messages
     public const string ArchivedFactoriesRetrievedSuccessfully = "تم جلب المصانع المؤرشفة بنجاح.";
     public const string FactoryRestoredSuccessfully = "تم استعادة المصنع بنجاح.";
     public const string ConcreteTypeRestoredSuccessfully = "تم استعادة نوع الخرسانة بنجاح.";
+    public const string ArchivedConcreteTypesRetrievedSuccessfully = "تم جلب أنواع الخرسانة المؤرشفة بنجاح.";
     public const string FactoryLogoUploadedSuccessfully = "تم رفع شعار المصنع بنجاح.";
     public const string FactoryLogoDeletedSuccessfully = "تم حذف شعار المصنع بنجاح.";
     public const string FactorySettingsRetrievedSuccessfully = "تم جلب بيانات المصنع بنجاح.";

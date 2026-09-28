@@ -8,13 +8,13 @@
         <table class="erp-table erp-table--sticky-cols">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>الاسم</th>
+                    <th class="col-index">#</th>
+                    <th>العميل</th>
                     <th>الهاتف</th>
                     <th>عدد الطلبات</th>
-                    <th>إجمالي الكمية (م³)</th>
+                    <th>الكمية (م³)</th>
                     <th>آخر طلب</th>
-                    <th class="text-center">الإجراءات</th>
+                    <th class="text-center col-actions">الإجراءات</th>
                 </tr>
             </thead>
 
@@ -31,18 +31,29 @@
                             @(index++)
                         </td>
 
-                        <!-- اسم العميل -->
+                        <!-- اسم العميل مع avatar -->
                         <td>
-                            <strong class="text-primary">
-                                @client.FullName
-                            </strong>
+                            @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_UserCell.cshtml",
+                                new UserCellViewModel
+                                {
+                                    FullName = client.FullName,
+                                    AvatarCssClass = "avatar-client"
+                                })
                         </td>
 
-                        <!-- الهاتف -->
-                        <td>
-                            @(string.IsNullOrWhiteSpace(client.Phone)
-                                                    ? "-"
-                                                    : client.Phone)
+                        <!-- الهاتف مع خيارات التواصل السريع والنسخ -->
+                        <td dir="ltr">
+                            @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_PhoneActions.cshtml",
+                                new PhoneActionsViewModel
+                                {
+                                    Phone = client.Phone ?? string.Empty,
+                                    ContactName = client.FullName,
+                                    ContactLabel = "العميل",
+                                    // العملاء لا يُتصل بهم هاتفياً من الجدول (لا سياق للاتصال)
+                                    ShowCall = false
+                                })
                         </td>
 
                         <!-- عدد الطلبات -->

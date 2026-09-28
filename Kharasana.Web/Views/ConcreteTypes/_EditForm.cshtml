@@ -153,11 +153,13 @@
 
         <div class="text-center">
 
+            @* بلا `rounded` هنا: هي `border-radius: ... !important` من Bootstrap
+               فتتجاوز --radius-md في .concrete-preview-img *@
             <img id="editPreviewImage"
                  src="~/images/default-concrete.png"
                  asp-append-version="true"
                  data-record-image="@Model.ImageUrl"
-                 class="concrete-preview-img rounded shadow-sm mb-3" />
+                 class="concrete-preview-img shadow-sm mb-3" />
 
         </div>
 

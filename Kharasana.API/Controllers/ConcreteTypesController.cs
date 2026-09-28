@@ -88,6 +88,42 @@ public class ConcreteTypesController : ControllerBase
     }
 
     // ============================================================
+    // ✅ GET ARCHIVED - المؤرشفة (المحذوفة حذفًا ناعمًا)
+    // ============================================================
+    /// <summary>جلب أنواع الخرسانة المؤرشفة بحسب صلاحية المتصل.</summary>
+    /// <remarks>
+    /// - <b>Admin:</b> المؤرشفة في كل المصانع.
+    /// - <b>FactoryEmployee:</b> المؤرشفة في مصنعه فقط.
+    /// مسار منفصل عن <c>GET /api/ConcreteTypes</c> لا وسيط عليه، لأن فلتر الحذف العام
+    /// يستبعد المؤرشفة فلا يمكن التعبير عن هذا الطلب بالاستعلام العادي.
+    /// </remarks>
+    /// <response code="200">تم جلب الأنواع المؤرشفة بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    [HttpGet("archived")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    public async Task<IActionResult> GetArchived()
+    {
+        var caller = User.GetCallerContext();
+
+        int? currentFactoryId = null;
+        if (caller.Role == UserRole.FactoryEmployee)
+        {
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            currentFactoryId = caller.FactoryId;
+        }
+
+        var archivedTypes = await _concreteTypeService.GetArchivedAsync(currentFactoryId);
+
+        return Ok(new ApiResponse<IEnumerable<ConcreteTypeDto>>
+        {
+            Success = true,
+            Message = Messages.ArchivedConcreteTypesRetrievedSuccessfully,
+            Data = archivedTypes
+        });
+    }
+
+    // ============================================================
     // ✅ GET BY ID - تم إضافة Client للصلاحيات
     // ============================================================
     /// <summary>جلب نوع خرسانة واحد بمعرّفه.</summary>

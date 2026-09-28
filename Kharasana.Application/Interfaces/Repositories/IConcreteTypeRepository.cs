@@ -8,6 +8,14 @@ public interface IConcreteTypeRepository : IGenericRepository<ConcreteType>
 
     Task<IEnumerable<ConcreteType>> GetByFactoryWithFactoryAsync(int factoryId);
 
+    /// <summary>
+    /// الأنواع <b>المحذوفة حذفًا ناعمًا</b> (المؤرشفة) مع مصانعها — لتجاوز فلتر الحذف العام.
+    /// </summary>
+    /// <param name="factoryId">
+    /// مصنع بعينه (موظف المصنع)، أو <c>null</c> لكل المصانع (المدير).
+    /// </param>
+    Task<IEnumerable<ConcreteType>> GetArchivedWithFactoryAsync(int? factoryId);
+
     Task<ConcreteType?> GetByIdWithFactoryAsync(int id);
 
     /// <summary>

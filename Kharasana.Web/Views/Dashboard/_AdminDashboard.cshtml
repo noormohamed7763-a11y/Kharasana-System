@@ -157,7 +157,10 @@
                     <a asp-controller="Orders" asp-action="Index" class="btn-erp-outline">عرض الكل <i class="bi bi-arrow-left ms-1"></i></a>
                 </div>
                 <div class="table-responsive">
-                    <table class="table erp-table align-middle mb-0">
+                    @* بلا كلاس `table` من Bootstrap: قواعده (الحشو `--bs-table-cell-padding-*`
+                       وخلفية الخلايا) تتقدّم على قواعد `.erp-table` فتعطي هذا الجدول
+                       وحدها حشواً وخلفية مختلفين عن بقية جداول النظام. *@
+                    <table class="erp-table align-middle mb-0">
                         <thead>
                             <tr>
                                 <th>#</th>

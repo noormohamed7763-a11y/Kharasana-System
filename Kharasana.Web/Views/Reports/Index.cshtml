@@ -119,26 +119,31 @@
                         <h5 class="erp-section-title"><i class="bi bi-list-check"></i>تفاصيل حسب حالة الطلب</h5>
                     </div>
                     <div class="table-responsive">
-                        <table class="table erp-table align-middle mb-0">
+                        <table class="erp-table align-middle mb-0">
                             <thead>
                                 <tr>
                                     <th>الحالة</th>
-                                    <th class="text-center">عدد الطلبات</th>
-                                    <th class="text-center">النسبة</th>
+                                    <th class="text-center col-count">عدد الطلبات</th>
+                                    <th class="text-center col-percent">النسبة</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var item in Model.OrdersByStatus)
                                 {
-                                    @* ✅ اللاحقة من طبقة العرض الوحيدة OrderStatusExtensions.GetCssSuffix
-                                       (كانت هنا خريطة محلية مكرّرة — أُلغيت) *@
                                     var badgeModel = new StatusBadgeViewModel { Text = item.StatusName, CssClass = $"status-{item.Status.GetCssSuffix()}" };
                                     <tr>
                                         <td>
                                             <partial name="Components/_StatusBadge" model="badgeModel" />
                                         </td>
                                         <td class="text-center fw-bold text-dark">@item.Count</td>
-                                        <td class="text-center text-muted">@StatusPercent(item.Count)%</td>
+                                        <td class="text-center">
+                                            <div class="d-flex align-items-center gap-2 justify-content-center">
+                                                <div class="progress progress--report flex-fill">
+                                                    <div class="progress-bar" style="width:@StatusPercent(item.Count)%;"></div>
+                                                </div>
+                                                <span class="text-muted small">@StatusPercent(item.Count)%</span>
+                                            </div>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
@@ -153,12 +158,12 @@
                         <h5 class="erp-section-title"><i class="bi bi-box-seam"></i>تفاصيل حسب نوع الخرسانة</h5>
                     </div>
                     <div class="table-responsive">
-                        <table class="table erp-table align-middle mb-0">
+                        <table class="erp-table align-middle mb-0">
                             <thead>
                                 <tr>
                                     <th>نوع الخرسانة</th>
-                                    <th class="text-center">عدد الطلبات</th>
-                                    <th class="text-center">الكمية الإجمالية (م³)</th>
+                                    <th class="text-center col-count">عدد الطلبات</th>
+                                    <th class="text-center col-quantity">الكمية (م³)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -167,7 +172,10 @@
                                     <tr>
                                         <td class="fw-semibold text-dark">@item.ConcreteTypeName</td>
                                         <td class="text-center fw-bold">@item.Count</td>
-                                        <td class="text-center text-muted">@item.TotalQuantity.ToString("0.##")</td>
+                                        <td class="text-center">
+                                            <span class="fw-semibold">@item.TotalQuantity.ToString("0.##")</span>
+                                            <small class="text-muted"> م³</small>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>

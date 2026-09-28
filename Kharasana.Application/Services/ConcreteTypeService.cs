@@ -34,6 +34,15 @@ public class ConcreteTypeService : IConcreteTypeService
         return concreteTypes.Select(MapToDto);
     }
 
+    public async Task<IEnumerable<ConcreteTypeDto>> GetArchivedAsync(int? factoryId = null)
+    {
+        // المستودع يتجاوز الفلتر العام (!IsDeleted) ليعيد المحذوف حذفًا ناعمًا وحده.
+        var archivedTypes = await _unitOfWork.ConcreteTypes
+            .GetArchivedWithFactoryAsync(factoryId);
+
+        return archivedTypes.Select(MapToDto);
+    }
+
     public async Task<ConcreteTypeDto> GetByIdAsync(int id, int? currentFactoryId = null)
     {
         var concreteType = await _unitOfWork.ConcreteTypes
@@ -205,7 +214,8 @@ public class ConcreteTypeService : IConcreteTypeService
             UnitPrice = concreteType.UnitPrice,
             ImageUrl = concreteType.ImageUrl,
             Description = concreteType.Description,
-            IsActive = concreteType.IsActive
+            IsActive = concreteType.IsActive,
+            UpdatedAt = concreteType.UpdatedAt
         };
     }
 }

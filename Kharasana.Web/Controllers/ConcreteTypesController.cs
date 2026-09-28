@@ -71,6 +71,7 @@ public class ConcreteTypesController : BaseController
     // إنشاء نوع خرسانة (GET)
     // ===========================
     [HttpGet]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Create()
     {
         if (IsFactoryInactive())
@@ -125,6 +126,7 @@ public class ConcreteTypesController : BaseController
     // ===========================
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Create(CreateConcreteTypeViewModel model)
     {
         try
@@ -221,6 +223,7 @@ public class ConcreteTypesController : BaseController
     // تعديل نوع خرسانة (GET)
     // ===========================
     [HttpGet]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Edit(int id)
     {
         if (IsFactoryInactive())
@@ -271,6 +274,7 @@ public class ConcreteTypesController : BaseController
     // ===========================
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Edit(int id, UpdateConcreteTypeViewModel model)
     {
         if (IsFactoryInactive())
@@ -315,6 +319,7 @@ public class ConcreteTypesController : BaseController
     // ===========================
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Delete(int id)
     {
         try
@@ -342,6 +347,69 @@ public class ConcreteTypesController : BaseController
             _logger.LogError(ex, "خطأ غير متوقع في حذف نوع الخرسانة {ConcreteTypeId}", id);
             TempData[TempDataError] = AppMessages.Common.OperationFailed;
             return RedirectToAction(nameof(Index));
+        }
+    }
+
+    // ===========================
+    // عرض أنواع الخرسانة المؤرشفة (المحذوفة حذفًا ناعمًا)
+    // ===========================
+    [HttpGet]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
+    public async Task<IActionResult> Archived()
+    {
+        try
+        {
+            // العزل على المصنع يفرضه الـ API من التوكن، فلا نمرّر مصنعًا من هنا
+            // (لو مُرِّر لتمكّن موظفٌ من قراءة أرشيف مصنع آخر بتغيير الوسيط).
+            var archivedTypes = await _concreteTypeService.GetArchivedAsync();
+            return View(archivedTypes);
+        }
+        catch (ApiServiceException ex)
+        {
+            _logger.LogError(ex, "خطأ في تحميل أنواع الخرسانة المؤرشفة StatusCode={StatusCode}", (int)ex.StatusCode);
+            TempData[TempDataError] = ex.Message;
+            return View(new List<ConcreteTypeListItemViewModel>());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "خطأ غير متوقع في تحميل أنواع الخرسانة المؤرشفة");
+            TempData[TempDataError] = AppMessages.Common.OperationFailed;
+            return View(new List<ConcreteTypeListItemViewModel>());
+        }
+    }
+
+    // ===========================
+    // استعادة نوع خرسانة مؤرشف (POST)
+    // ===========================
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
+    public async Task<IActionResult> Restore(int id)
+    {
+        try
+        {
+            var success = await _concreteTypeService.RestoreAsync(id);
+
+            if (!success)
+                TempData[TempDataError] = "تعذر استعادة نوع الخرسانة.";
+            else
+                TempData[TempDataSuccess] = "تم استعادة نوع الخرسانة بنجاح.";
+
+            // العودة إلى الأرشيف لا إلى القائمة: غالبًا تُستعاد عدة أنواع متتالية.
+            return RedirectToAction(nameof(Archived));
+        }
+        catch (ApiServiceException ex)
+        {
+            // تعارض الاسم (409) يصل هنا برسالته العربية من الـ API، فيُعرض كما هو.
+            _logger.LogError(ex, "خطأ في استعادة نوع الخرسانة {ConcreteTypeId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
+            TempData[TempDataError] = ex.Message;
+            return RedirectToAction(nameof(Archived));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "خطأ غير متوقع في استعادة نوع الخرسانة {ConcreteTypeId}", id);
+            TempData[TempDataError] = AppMessages.Common.OperationFailed;
+            return RedirectToAction(nameof(Archived));
         }
     }
 

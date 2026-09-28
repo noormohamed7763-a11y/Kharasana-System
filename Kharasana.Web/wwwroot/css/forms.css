@@ -2,7 +2,10 @@
    FORMS LIBRARY (Kharasana ERP)
    ========================================================== */
 
-/* .dashboard-page لها تعريف واحد فقط في dashboard.css (max-width + margin مضمّنان هناك) */
+/* .dashboard-page لها تعريف واحد فقط في dashboard.css — لا تُعرَّف هنا.
+   (كان في هذا السطر ذكر أن max-width وmargin مضمّنان هناك، وقد أُزيلا من
+   القاعدة الأساسية: المحتوى يأخذ العرض الكامل بعد خصم الـ Sidebar. الحدّ
+   الأعلى صار لمعدِّل .dashboard-page--narrow وحده، لصفحات النماذج.) */
 
 .form-card {
     background: var(--surface);
@@ -74,6 +77,12 @@ textarea.form-control {
     color: var(--text-main);
     cursor: pointer;
     font-weight: 600;
+}
+
+/* ضبط بصري بمقدار 2px لمحاذاة نص مفتاح التبديل — كان مكتوباً style مضمّناً
+   في Views/ConcreteTypes/_CreateForm.cshtml. */
+.form-switch-label {
+    margin-top: 2px;
 }
 
 .validation-message,
