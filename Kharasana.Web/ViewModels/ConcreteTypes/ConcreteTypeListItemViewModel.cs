@@ -15,4 +15,10 @@ public class ConcreteTypeListItemViewModel
     public decimal UnitPrice { get; set; }
 
     public bool IsActive { get; set; }
+
+    /// <summary>
+    /// لحظة الأرشفة في النوع المحذوف حذفًا ناعمًا (تأتي من <c>UpdatedAt</c> في الـ API).
+    /// لا تُعرض في قائمة الأنواع النشطة، بل في صفحة الأرشيف وحدها.
+    /// </summary>
+    public DateTime? UpdatedAt { get; set; }
 }

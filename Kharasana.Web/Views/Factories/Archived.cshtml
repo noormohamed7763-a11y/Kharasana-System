@@ -19,7 +19,7 @@
         العودة إلى قائمة المصانع
     </a>
 
-    <div class="erp-section-card bg-white shadow-sm rounded-3 border p-4">
+    <div class="form-card">
 
         @if (Model == null || !Model.Any())
         {
@@ -35,16 +35,16 @@
         {
             <div class="table-responsive">
 
-                <table class="table erp-table erp-table--sticky-cols align-middle mb-0">
+                <table class="erp-table erp-table--sticky-cols align-middle mb-0">
 
-                    <thead class="table-light">
+                    <thead>
                         <tr>
-                            <th style="width:80px;">الشعار</th>
+                            <th>الشعار</th>
                             <th>اسم المصنع</th>
                             <th>المالك</th>
                             <th>رقم الهاتف</th>
                             <th>المنطقة</th>
-                            <th class="text-center" style="width:170px;">
+                            <th class="text-center col-actions col-actions--lg">
                                 الإجراءات
                             </th>
                         </tr>
@@ -63,14 +63,12 @@
                                         <img src="@item.Logo"
                                              alt="شعار @item.FactoryName"
                                              data-name="@item.FactoryName"
-                                             class="rounded-circle border"
-                                             style="width:45px;height:45px;object-fit:cover;"
+                                             class="table-thumb"
                                               data-img-error="logo" />
                                     }
                                     else
                                     {
-                                        <div class="factory-avatar bg-light border rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold"
-                                             style="width:45px;height:45px;font-size:15px;"
+                                        <div class="table-thumb-fallback"
                                              aria-label="شعار @item.FactoryName">
                                             @(string.IsNullOrWhiteSpace(item.FactoryName)
                                                                         ? "--"

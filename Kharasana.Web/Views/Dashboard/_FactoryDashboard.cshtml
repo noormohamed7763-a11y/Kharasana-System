@@ -187,9 +187,10 @@
 
         <!-- حالة الطلبات — شريط بصري -->
         <div class="order-status-bar mb-3" title="توزيع الطلبات حسب الحالة">
-            <div class="order-status-segment" style="width: @pPending.ToString("0")%; background: var(--warning);"></div>
-            <div class="order-status-segment" style="width: @pApproved.ToString("0")%; background: var(--success);"></div>
-            <div class="order-status-segment" style="width: @pOnWay.ToString("0")%; background: var(--info);"></div>
+            @* العرض وحده مضمّن لأنه بيانات؛ الألوان في dashboard.css *@
+            <div class="order-status-segment order-status-segment--pending"  style="width: @pPending.ToString("0")%;"></div>
+            <div class="order-status-segment order-status-segment--approved" style="width: @pApproved.ToString("0")%;"></div>
+            <div class="order-status-segment order-status-segment--ontheway" style="width: @pOnWay.ToString("0")%;"></div>
         </div>
 
         <!-- فلاتر سريعة للحالة -->
@@ -201,8 +202,9 @@
             <button type="button" class="btn btn-sm btn-outline-info order-filter-btn" data-filter="OnTheWay">قيد النقل</button>
         </div>
 
+        @* بلا كلاس `table` من Bootstrap — انظر التعليق في _AdminDashboard.cshtml *@
         <div class="table-responsive">
-            <table class="table erp-table align-middle mb-0">
+            <table class="erp-table align-middle mb-0">
                 <thead>
                     <tr>
                         <th>رقم الطلب</th>

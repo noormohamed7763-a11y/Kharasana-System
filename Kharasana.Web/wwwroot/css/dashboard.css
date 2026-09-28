@@ -8,9 +8,10 @@
        لتجنب التباعد المزدوج (gap + margin) الذي كان يُنشئ فراغات كبيرة.
 
        لا نضيف padding أفقي إضافي هنا — .content-body (layout.css) يوفر
-       الـ gutter الجانبي (16px). إضافة padding من هذا العنصر كان يضيّق
-       الحاوية الفعلية بـ 44px إضافية ويضغط المحتوى على اللابتوب —
-       وهذا أحد أسباب الازدحام التي أزلناها.
+       الـ gutter الجانبي من --page-padding (16px للشاشات الصغيرة و24px
+       لسطح المكتب). إضافة padding من هذا العنصر كان يضيّق الحاوية الفعلية
+       بـ 44px إضافية ويضغط المحتوى على اللابتوب — وهذا أحد أسباب الازدحام
+       التي أزلناها.
 
        ملاحظة: أزلنا max-width و margin:auto من .content-body (layout.css) —
        المحتوى يأخذ العرض الكامل المتاح بعد خصم الـ Sidebar الثابت (260px)
@@ -30,6 +31,22 @@
 /* إزالة الفراغ السفلي للعنصر الأخير في أي صفحة dashboard-page */
 .dashboard-page > :last-child {
     margin-bottom: 0;
+}
+
+/* ==========================================================
+   NARROW PAGE — صفحات النماذج والبيانات (لا القوائم)
+   ----------------------------------------------------------
+   الصفحات التي محتواها نموذج أو بطاقات بيانات: عرضها الكامل على شاشة
+   1920px يجعل حقل col-md-6 بعرض ~780px وحقل col-12 بعرض ~1560px، فيصعب
+   تتبّع السطر بالعين ويُهدر فراغ أفقي كبير. الحدّ هنا (‎--form-max-width‎)
+   يُوسّط الصفحة بما فيها رأسها، فيبقى زر الرأس مُحاذياً لحدّ البطاقة.
+
+   لا يمسّ اللابتوب: عند 1440px يكون المتاح بعد خصم الـ Sidebar والهوامش
+   ~1130px أي فوق الحدّ، فلا يتغيّر شيء. ولا يمسّ صفحات القوائم لأنها لا
+   تحمل هذا المعدِّل — الجداول تستفيد من العرض الكامل بخلاف النماذج. */
+.dashboard-page--narrow {
+    max-width: var(--form-max-width);
+    margin-inline: auto;
 }
 
 /* ==========================================================
@@ -616,6 +633,14 @@ a.kpi-card--link {
     border-radius: var(--radius-pill);
 }
 
+/* شريط النسبة داخل جداول التقارير: أنحف وأقصر من الشريط العام.
+   كان ارتفاعه وحدّاه الأدنى والأقصى مكتوبة style مضمّناً في Reports/Index. */
+.progress--report {
+    height: 6px;
+    min-width: 40px;
+    max-width: 80px;
+}
+
 /* Order Status Visual Bar — شريط توزيع الطلبات حسب الحالة */
 .order-status-bar {
     display: flex;
@@ -632,6 +657,20 @@ a.kpi-card--link {
 
 .order-status-segment:hover {
     opacity: 0.8;
+}
+
+/* ألوان الشرائح — كانت مكتوبة style مضمّناً في _FactoryDashboard.cshtml
+   (background: var(--warning/--success/--info)) بجوار العرض الذي هو بيانات. */
+.order-status-segment--pending {
+    background: var(--warning);
+}
+
+.order-status-segment--approved {
+    background: var(--success);
+}
+
+.order-status-segment--ontheway {
+    background: var(--info);
 }
 
 /* Order Filter Buttons */

@@ -5,7 +5,7 @@
     ViewData["Title"] = "تعديل بيانات المصنع";
 }
 
-<div class="dashboard-page">
+<div class="dashboard-page dashboard-page--narrow">
     <partial name="Components/_PageHeader"
              model='new PageHeaderViewModel
              {
@@ -32,13 +32,12 @@
                          alt="شعار المصنع"
                          data-name="@Model.FactoryName"
                          id="logoPreview"
-                         style="width:120px; height:120px; object-fit:cover; border-radius:50%; border:3px solid #dee2e6; background:#f8f9fa;"
+                         class="logo-preview"
                                          data-img-error="logo" />
                 }
                 else
                 {
-                    <div class="d-flex flex-column align-items-center justify-content-center bg-light rounded-circle border"
-                         style="width:120px; height:120px; margin:0 auto;">
+                    <div class="logo-preview--empty">
                         <i class="bi bi-building fs-1 text-muted"></i>
                         <span class="text-muted small mt-2">لا يوجد شعار</span>
                     </div>

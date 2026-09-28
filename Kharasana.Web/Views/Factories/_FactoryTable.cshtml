@@ -1,20 +1,25 @@
 @model IEnumerable<Kharasana.Web.ViewModels.Factories.FactoryListItemViewModel>
 @using Kharasana.Web.Models.Components
 
-<div class="erp-section-card">
+<div class="form-card">
     <div class="table-responsive">
-        <table class="table erp-table erp-table--sticky-cols align-middle mb-0 table-hover" id="factoriesTable">
-            <thead class="table-light">
+        @* بلا كلاسات Bootstrap للجداول: كان `table table-hover` و`table-light`
+           يعيدان فرض خلفية رأس رمادية من Bootstrap على رأس الجدول، فتفوز على
+           `--table-header-bg` في tables.css بخاصية الوراثة الأعلى — أي أن رأس هذا
+           الجدول وحده كان خارج نظام الألوان. `form-card` وعناوين الجدول هنا هما
+           نفس ما تستعمله بقية جداول القوائم. *@
+        <table class="erp-table erp-table--sticky-cols align-middle mb-0" id="factoriesTable">
+            <thead>
                 <tr>
-                    <th class="py-3">#</th>
-                    <th class="py-3">الشعار</th>
-                    <th class="py-3">اسم المصنع</th>
-                    <th class="py-3">المالك</th>
-                    <th class="py-3">الهاتف</th>
-                    <th class="py-3">المنطقة</th>
-                    <th class="py-3">حساب المصنع</th>
-                    <th class="py-3">الحالة</th>
-                    <th class="text-center py-3" style="width:170px;">الإجراءات</th>
+                    <th class="col-index">#</th>
+                    <th>الشعار</th>
+                    <th>اسم المصنع</th>
+                    <th>المالك</th>
+                    <th>الهاتف</th>
+                    <th>المنطقة</th>
+                    <th>حساب المصنع</th>
+                    <th>الحالة</th>
+                    <th class="text-center col-actions col-actions--lg">الإجراءات</th>
                 </tr>
             </thead>
 
@@ -39,13 +44,12 @@
                                          alt="شعار @item.FactoryName"
                                          loading="lazy"
                                          data-name="@item.FactoryName"
-                                         style="width:40px; height:40px; object-fit:cover; border-radius:50%; border:2px solid #e9ecef; background:#f8f9fa;"
+                                         class="table-thumb"
                                          data-img-error="logo" />
                                 }
                                 else
                                 {
-                                    <div class="factory-avatar bg-light border rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold"
-                                         style="width:40px;height:40px;font-size:14px;"
+                                    <div class="table-thumb-fallback"
                                          aria-label="شعار @item.FactoryName">
                                         @(string.IsNullOrWhiteSpace(item.FactoryName)
                                                                     ? "--"

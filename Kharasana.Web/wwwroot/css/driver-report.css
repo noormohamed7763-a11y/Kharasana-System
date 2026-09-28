@@ -1,0 +1,79 @@
+/* ==========================================================
+   DRIVER REPORT (Kharasana ERP)
+   تقرير طلبات السائق — ورقة تُعرض وتُطبع.
+
+   كانت هذه التنسيقات في كتلة <style> داخل Users/DriverReport.cshtml، وهي
+   الصفحة الوحيدة في المشروع التي بقيت كذلك؛ بقية الصفحات تنقل تنسيقاتها إلى
+   wwwroot/css (انظر تعليق نهاية Orders/Index.cshtml). تُحمَّل الآن عبر قسم
+   «Styles» في _Layout.cshtml بعد كل الأوراق العامة، فيصحّ ترتيب الترجيح.
+
+   ولون العنوان كان var(--kpi-icon-primary, #0d6efd): متند غير موجود (الأسماء
+   kpi-icon-* كلاسات لا متغيّرات)، فكان يسقط دائماً على أزرق Bootstrap الخارج
+   عن الهوية. الآن var(--primary).
+========================================================== */
+
+.driver-report {
+    font-family: var(--font-main);
+}
+
+.driver-report__toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.driver-report__brand {
+    color: var(--primary);
+    font-weight: 800;
+}
+
+.driver-report__header {
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+    margin-bottom: var(--space-4);
+    background: var(--surface);
+}
+
+.driver-report__title {
+    font-weight: 800;
+    font-size: var(--text-xl);
+    margin-bottom: 0.25rem;
+}
+
+@media print {
+    /* الطباعة تُبقي التقرير وحده: تُخفى القائمة الجانبية والشريط العلوي
+       وأزرار الصفحة (no-print). */
+    .sidebar,
+    .navbar-top,
+    .no-print {
+        display: none !important;
+    }
+
+    .wrapper {
+        display: block !important;
+    }
+
+    .main-content,
+    .content-body {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    body {
+        background: #fff !important;
+    }
+
+    .driver-report__toolbar {
+        display: none !important;
+    }
+
+    /* على الورق تُلغى البطاقة ويبقى نصّ الترويسة وحدها */
+    .driver-report__header {
+        border: none;
+        padding: 0;
+        margin-bottom: 0.75rem;
+    }
+}

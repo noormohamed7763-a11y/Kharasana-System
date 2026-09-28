@@ -1,7 +1,14 @@
 ﻿@{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     Func<string, string> isActive = (controller) =>
         string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+
+    // متحكّم ConcreteTypes له عنصرا قائمة (الأنواع / الأرشيف)، فيلزم مطابقة العمل أيضًا
+    // وإلا أُبرز العنصران معًا. بقية العناصر يكفيها مطابقة المتحكّم.
+    var isConcreteTypes = string.Equals(currentController, "ConcreteTypes", StringComparison.OrdinalIgnoreCase);
+    var isConcreteTypesArchived = isConcreteTypes
+        && string.Equals(currentAction, "Archived", StringComparison.OrdinalIgnoreCase);
 }
 
 <aside class="sidebar">
@@ -42,9 +49,15 @@
             </a>
         </li>
         <li>
-            <a asp-controller="ConcreteTypes" asp-action="Index" class="@isActive("ConcreteTypes")">
+            <a asp-controller="ConcreteTypes" asp-action="Index" class="@(isConcreteTypes && !isConcreteTypesArchived ? "active" : "")">
                 <i class="bi bi-box-seam"></i>
                 <span>أنواع الخرسانة</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="ConcreteTypes" asp-action="Archived" class="@(isConcreteTypesArchived ? "active" : "")">
+                <i class="bi bi-archive"></i>
+                <span>أرشيف أنواع الخرسانة</span>
             </a>
         </li>
         <li>

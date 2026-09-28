@@ -44,13 +44,18 @@
    تعوض عن :focus-visible في المتصفحات القديمة
 ========================================================== */
 
+/* حلقة التركيز بلون العلامة لا بالأزرق: كان rgba(0, 123, 255, .6) وهو
+   أزرق Bootstrap 4، فيظهر إطار أزرق على كل عنصر يُتنقَّل إليه بالكيبورد
+   في واجهة برتقالية — وخارج طبقة المتغيّرات، وهو ما يمنعه رأس هذا الملف.
+   --primary-glow شفاف بنسبة 20% فقط؛ نستخدم --primary نفسه لأن حلقة
+   التركيز يجب أن تكون واضحة لا خفيفة. */
 /* إزالة الظل الافتراضي ثم إعادة إضافته بالكيبورد فقط */
 :focus {
     outline: none;
 }
 
 :focus-visible {
-    outline: 3px solid rgba(0, 123, 255, 0.6);
+    outline: 3px solid var(--primary);
     outline-offset: 2px;
     border-radius: 2px;
 }
@@ -58,7 +63,7 @@
 /* حماية للمتصفحات التي لا تدعم :focus-visible */
 @supports not selector(:focus-visible) {
     :focus {
-        outline: 3px solid rgba(0, 123, 255, 0.6);
+        outline: 3px solid var(--primary);
         outline-offset: 2px;
     }
 }

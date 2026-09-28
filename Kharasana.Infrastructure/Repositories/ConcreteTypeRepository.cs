@@ -42,6 +42,24 @@ public class ConcreteTypeRepository
             .FirstOrDefaultAsync(x => x.ConcreteTypeId == id);
     }
 
+    public async Task<IEnumerable<ConcreteType>> GetArchivedWithFactoryAsync(int? factoryId)
+    {
+        // IgnoreQueryFilters: تجاوز الفلتر العام (!IsDeleted) حتى لا تُستبعد المؤرشفة
+        // قبل القراءة — نفس نمط FactoryRepository.GetArchivedAsync.
+        var query = _context.ConcreteTypes
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(x => x.Factory)
+            .Where(x => x.IsDeleted);
+
+        if (factoryId.HasValue)
+        {
+            query = query.Where(x => x.FactoryId == factoryId.Value);
+        }
+
+        return await query.ToListAsync();
+    }
+
     public async Task<ConcreteType?> FindActiveByNameInFactoryAsync(
         int factoryId, string name, int? excludeConcreteTypeId = null)
     {

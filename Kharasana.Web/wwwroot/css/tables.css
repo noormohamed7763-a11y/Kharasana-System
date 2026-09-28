@@ -16,18 +16,21 @@
 }
 
     .erp-table thead th {
-        background: var(--table-header-bg, #F1F5F9);
+        background: var(--table-header-bg);
         color: var(--text-muted);
         font-weight: 700;
         font-size: var(--text-xs);
-        padding: 16px 24px;
+        padding: 12px 18px;
         border-bottom: 2px solid var(--border-main);
-        letter-spacing: 0.3px;
+        /* بلا letter-spacing: كان 0.3px (و0.5px على سطح المكتب) وهو أسلوب
+           لاتيني — العربية متّصلة الحروف، وإدخال فراغ بينها يفكّ اتصالها
+           بصرياً. text-transform: uppercase يبقى لأنه يخدم العناوين اللاتينية
+           القليلة (MPa مثلاً) ولا أثر له على العربية. */
         text-transform: uppercase;
     }
 
     .erp-table tbody td {
-        padding: 16px 24px;
+        padding: 12px 18px;
         font-size: var(--text-base);
         color: var(--text-main);
         border-bottom: 1px solid var(--border-soft);
@@ -39,16 +42,16 @@
     }
 
         .erp-table tbody tr:hover {
-            background: var(--surface-alt);
+            background: var(--table-row-hover);
         }
 
     /* stripe خفيف على الصفوف الزوجية */
     .erp-table tbody tr:nth-child(even) {
-        background-color: var(--table-stripe, #FAFBFC);
+        background-color: var(--table-stripe);
     }
 
         .erp-table tbody tr:nth-child(even):hover {
-            background-color: var(--surface-alt);
+            background-color: var(--table-row-hover);
         }
 
 .table-avatar {
@@ -70,7 +73,7 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background: var(--sticky-head-bg, var(--surface-alt));
+    background: var(--sticky-head-bg);
 }
 
 /* Modifier: sticky first and last columns for wide tables (e.g. Orders list) */
@@ -83,7 +86,10 @@
     box-shadow: -2px 0 5px rgba(0,0,0,0.05);
 }
 .erp-table--sticky-cols thead th:first-child {
-    background: var(--surface-alt);
+    /* --table-header-bg لا --surface-alt: كانتا قيمتين مختلفتين
+       (#F1F5F9 مقابل #F8FAFC)، فيظهر رأس العمود الأول بلون أفتح من بقية
+       رأس الجدول في كل جدول بأعمدة مثبّتة. اللون نفسه معتم فيصلح للتثبيت. */
+    background: var(--table-header-bg);
     z-index: 11;
 }
 
@@ -96,14 +102,26 @@
     box-shadow: 2px 0 5px rgba(0,0,0,0.05);
 }
 .erp-table--sticky-cols thead th:last-child {
-    background: var(--surface-alt);
+    background: var(--table-header-bg);
     z-index: 11;
+}
+
+/* العمودان المثبّتان يحتاجان خلفية معتمة ليغطّيا ما يمرّ تحتهما عند التمرير
+   الأفقي، لكن الخلفية المعتمة نفسها (--surface البيضاء) تطمس لون الصف فيبدوان
+   أبيضين وسط صفٍّ مخطّط أو مُحوَّل عليه. نُعيد لون الصفّ عليهما صراحةً — والخلل
+   صار ظاهراً بعد أن صار لون التحويم برتقالياً فاتحاً بدل --surface-alt. */
+.erp-table--sticky-cols tbody tr:nth-child(even) td:first-child,
+.erp-table--sticky-cols tbody tr:nth-child(even) td:last-child {
+    background-color: var(--table-stripe);
+}
+
+.erp-table--sticky-cols tbody tr:hover td:first-child,
+.erp-table--sticky-cols tbody tr:hover td:last-child {
+    background-color: var(--table-row-hover);
 }
 
 /* ==========================================================
    PAGINATION — single source of truth for every list page
-   (previously redefined 3 times: components.css default Bootstrap
-   colors, Orders inline <style>, Users inline <style> with --bs-gray-*)
    ========================================================== */
 .pagination {
     gap: 4px;
@@ -136,20 +154,181 @@
     }
 
 /* ==========================================================
-   TABLE CELL OVERFLOW — منع كسر أعمدة جداول Bootstrap
-   الجداول الرئيسية (.erp-table) تستخدم overflow:scroll + sticky بالفعل.
-========================================================== */
-.table td,
-.table th {
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    max-width: 240px;
-    vertical-align: middle;
+   DESKTOP ENHANCEMENTS — تحسينات خاصة بشاشات الكمبيوتر
+   rows أعلى قليلاً ومريحة للقراءة، header أوضح
+   ========================================================== */
+@media (min-width: 992px) {
+    .erp-table thead th {
+        /* لا خلفية هنا: القاعدة الأساسية أعلاه تضبط --table-header-bg على كل
+           العروض. كانت هنا #EDF0F5 مكتوبة مباشرة — لون خارج نظام المتغيّرات
+           يمنع الوضع الليلي لاحقاً ويخالف القاعدة الأساسية بلا سبب. */
+        padding: 13px 20px;
+        font-size: 0.72rem;
+        border-bottom: 2px solid var(--border-main);
+    }
+
+    .erp-table tbody td {
+        padding: 14px 20px;
+        font-size: var(--text-base);
+    }
 }
 
-/* السماح بالتفاف المحتوى لعمود واحد إن لزم */
-.table td.allow-wrap,
-.table th.allow-wrap {
-    white-space: normal;
+/* ==========================================================
+   USER / CLIENT AVATAR CELL — خلية الأفاتار الدائري
+   ========================================================== */
+.table-user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.table-avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.8);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* ألوان الأفاتار حسب الدور */
+.avatar-admin    { background: var(--danger-soft);   color: var(--danger-text); }
+.avatar-employee { background: var(--info-soft);     color: var(--info-text); }
+.avatar-driver   { background: var(--warning-soft);  color: var(--warning-text); }
+.avatar-client   { background: var(--success-soft);  color: var(--success-text); }
+.avatar-default  { background: var(--primary-soft);  color: var(--primary-dark); }
+
+.table-user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.table-user-name {
+    font-weight: 700;
+    color: var(--text-main);
+    font-size: var(--text-base);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.table-user-sub {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================
+   STRENGTH BADGE — شارة مقاومة الخرسانة
+   بديل Bootstrap badge كبير الحجم
+   ========================================================== */
+.strength-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--info-soft);
+    color: var(--info-text);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ==========================================================
+   PRICE DISPLAY — عرض السعر في جداول أنواع الخرسانة
+   ========================================================== */
+.price-display {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.price-value {
+    font-weight: 700;
+    color: var(--primary-dark);
+    font-size: var(--text-base);
+}
+
+.price-unit {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+/* ==========================================================
+   COLUMN WIDTHS — عروض أعمدة الجداول الثابتة
+   كانت مكتوبة style مضمّناً في كل جدول بقيم متفرقة لعمود الإجراءات نفسه
+   (120px في العملاء والمستخدمين، 140px في السائقين، 170px في المصانع،
+   180px في أنواع الخرسانة) — والفرق لا يعود إلى سبب، بل إلى كل جدول
+   حُدِّد رقمه على حدة. الحجم يتبع عدد الأزرار داخل الخلية.
+   ========================================================== */
+.col-index {
+    width: 50px;
+}
+
+.col-actions {
+    width: 120px;
+}
+
+.col-actions--md {
+    width: 140px;
+}
+
+.col-actions--lg {
+    width: 180px;
+}
+
+/* عمود تاريخ (صفحة أرشيف أنواع الخرسانة) — يمنع كسر السطر في «2026-09-27» */
+.col-date {
+    width: 110px;
+}
+
+/* أعمدة جداول التقارير (العدد / النسبة / الكمية) */
+.col-count {
+    width: 100px;
+}
+
+.col-percent {
+    width: 120px;
+}
+
+.col-quantity {
+    width: 140px;
+}
+
+/* ==========================================================
+   TABLE THUMB — صورة مصغّرة داخل الجداول (شعار المصنع) وبديلها النصي
+   كانت الأبعاد والإطار ولونا الخلفية مكتوبة style مضمّناً في كل جدول
+   بقيم متفرقة (40px في قائمة المصانع و45px في الأرشيف) وبألوان Hex
+   ثابتة (#e9ecef / #f8f9fa) بدل توكنات التصميم.
+   ========================================================== */
+.table-thumb,
+.table-thumb-fallback {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--border-main);
+    background: var(--surface-alt);
+    flex-shrink: 0;
+}
+
+.table-thumb {
+    object-fit: cover;
+}
+
+.table-thumb-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-text);
+    font-weight: 700;
+    font-size: 0.85rem;
 }

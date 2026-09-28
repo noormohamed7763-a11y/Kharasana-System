@@ -1,4 +1,4 @@
-﻿// ==========================
+// ==========================
 // Confirmation Modal — يُستخدم بدل confirm() في كل الصفحات
 // ==========================
 (function () {
@@ -152,11 +152,15 @@ document.addEventListener('keydown', function (e) {
     });
 
     function checkEmpty(tbody, table) {
-        const rows = tbody.querySelectorAll('tr');
-        let visibleCount = 0;
-        rows.forEach(function (row) {
-            if (row.style.display !== 'none') visibleCount++;
-        });
+        // صفّ «لا نتائج» نفسه يُستثنى من العدّ: كان يُحتسب صفًا ظاهرًا فيُزال،
+        // وإزالته تجعل العدّ صفرًا فيُضاف من جديد — والمراقب يرصد كل إضافة/إزالة،
+        // فيدور الاثنان في حلقة لا تنتهي بمجرد أن تُخفى كل الصفوف (أول بحث بلا نتائج).
+        const rows = Array.from(tbody.querySelectorAll('tr'))
+            .filter(function (row) { return !row.classList.contains('no-results-row'); });
+
+        const visibleCount = rows.filter(function (row) {
+            return row.style.display !== 'none';
+        }).length;
 
         let noResults = tbody.querySelector('.no-results-row');
         if (visibleCount === 0 && rows.length > 0) {
@@ -332,13 +336,8 @@ document.addEventListener('keydown', function (e) {
         }
     });
 
-    // #printReportBtn: print the report
-    document.addEventListener('click', function (e) {
-        if (e.target.closest('#printReportBtn')) {
-            e.preventDefault();
-            window.print();
-        }
-    });
+    // (زر طباعة تقرير السائق #printReportBtn أُزيل من هنا: صار يستعمل
+    //  data-print مثل بقية أزرار الطباعة — معالج واحد أعلى الملف.)
 })();
 
 // ==========================
@@ -418,3 +417,76 @@ document.addEventListener('keydown', function (e) {
         return promise;
     };
 })();
+
+// ==========================
+// Copy to Clipboard Helper
+// ==========================
+document.addEventListener('click', function (e) {
+    const copyBtn = e.target.closest('[data-copy]');
+    if (!copyBtn) return;
+
+    const textToCopy = copyBtn.getAttribute('data-copy');
+    if (!textToCopy) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(function () {
+            const originalHtml = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="bi bi-check-lg text-success"></i>';
+            setTimeout(function () {
+                copyBtn.innerHTML = originalHtml;
+            }, 1800);
+            if (typeof showToast === 'function') {
+                showToast('تم النسخ بنجاح', textToCopy, 'success');
+            }
+        }).catch(function () {
+            copyFallback(textToCopy, copyBtn);
+        });
+    } else {
+        copyFallback(textToCopy, copyBtn);
+    }
+});
+
+function copyFallback(text, btn) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        if (typeof showToast === 'function') {
+            showToast('تم النسخ بنجاح', text, 'success');
+        }
+    } catch (err) {}
+    document.body.removeChild(textarea);
+}
+
+// ==========================
+// Print Helper — data-print
+// بديل onclick="window.print()" الذي تحجبه سياسة CSP (script-src بلا unsafe-inline).
+// نفس أسلوب data-copy: معالج واحد مُفوَّض على document لكل أزرار الطباعة.
+// ==========================
+document.addEventListener('click', function (e) {
+    const printBtn = e.target.closest('[data-print]');
+    if (!printBtn) return;
+
+    e.preventDefault();
+    window.print();
+});
+
+// ==========================
+// Toolbar Filters — data-toolbar-autosubmit
+// إرسال نموذج شريط البحث فور تغيير أي قائمة فلترة.
+// بديل onchange="applyFilters()" المضمّن الذي تحجبه سياسة CSP، وبديل دالة
+// applyFilters التي كانت في orders.js: كانت تنسخ قيمة القائمة إلى حقل مخفي
+// مرآة ثم تُرسل النموذج — مساران للقيمة نفسها. الآن القائمة نفسها تحمل name
+// فتُرسل مع النموذج، وهذا المعالج يُرسله فقط.
+// ==========================
+document.addEventListener('change', function (e) {
+    const filter = e.target.closest('[data-toolbar-autosubmit]');
+    if (!filter) return;
+
+    const form = filter.form;
+    if (form) form.submit();
+});

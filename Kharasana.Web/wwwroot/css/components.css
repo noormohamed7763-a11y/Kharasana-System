@@ -112,7 +112,15 @@
 .summary-cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr));
-    gap: 16px;
+    gap: var(--space-4);
+}
+
+/* سطح المكتب: فسحة أوسع بين الكروت — البطاقة نفسها صارت أوسع
+   (--card-padding) فكانت الفواصل الضيّقة تجعلها تبدو ملتصقة. */
+@media (min-width: 992px) {
+    .summary-cards-grid {
+        gap: var(--space-5);
+    }
 }
 
 /* Status Badges */
@@ -275,18 +283,29 @@
 }
 
 /* Detail Rows (used by *Details.cshtml profile-style pages) */
+.detail-group {
+    padding: 12px 16px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 .detail-label {
     color: var(--text-muted);
     font-size: var(--text-sm);
     font-weight: 600;
     margin-bottom: 4px;
+    display: block;
 }
 
 .detail-value {
     font-size: var(--text-lg);
     font-weight: 500;
     color: var(--text-main);
-    margin-bottom: var(--space-4);
+    margin-bottom: 0;
 }
 
 .detail-divider {
@@ -357,3 +376,86 @@
         font-size: 1.05rem;
         flex-shrink: 0;
     }
+
+/* ==========================================================
+   PROGRESS — شريط تقدّم مركّب (توزيع الحالات)
+   الارتفاع والحد الأدنى كانا style مضمّناً في Views/Drivers/Index.cshtml.
+   العرض وحده يبقى مضمّناً لأنه بيانات لا تنسيق.
+========================================================== */
+.progress--status-bar {
+    height: 10px;
+    min-width: 120px;
+}
+
+/* ==========================================================
+   LOGO PREVIEW — شعار المصنع في صفحات المصانع والإعدادات
+   ----------------------------------------------------------
+   كان المقاس والإطار ولونا الخلفية مكتوبين style مضمّناً في أربعة مواضع
+   وبثلاثة مقاسات متفرقة (65px في تفاصيل المصنع، 80px في صفحة الحذف، و120px
+   في التعديل والإعدادات) وبألوان Hex ثابتة (#dee2e6 و#f8f9fa) خارج نظام
+   المتغيّرات — والفرق بين المقاسات لا يعود إلى سبب، بل إلى أن كلاًّ منها
+   كُتب على حدة، وهو نفس ما نُظّف في .table-thumb.
+
+   المقاس الافتراضي في القاعدة، وتتجاوزه معدِّلات الحجم في نهاية القسم.
+   وهي عامّة (بلا ارتباط بنوع العنصر) فيصلح الكلاس نفسه للشعار الحقيقي
+   وللشعار البديل بالحروف الأولى، فلا يفترقان عند أي تعديل لاحق.
+========================================================== */
+.logo-preview,
+.logo-preview--empty {
+    width: 120px;
+    height: 120px;
+    border-radius: var(--radius-full);
+    border: 3px solid var(--border-main);
+    background: var(--surface-alt);
+}
+
+.logo-preview {
+    object-fit: cover;
+}
+
+.logo-preview--empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+/* معدِّلات الحجم — بعد القاعدة أعلاه لتتجاوز مقاسها الافتراضي (نفس الخصوصية) */
+.logo-size--sm {
+    width: 65px;
+    height: 65px;
+}
+
+.logo-size--md {
+    width: 80px;
+    height: 80px;
+}
+
+/* ==========================================================
+   CONCRETE TYPE PREVIEW — صورة معاينة نوع الخرسانة
+   ----------------------------------------------------------
+   كانت هذه القواعد في wwwroot/css/concrete-type.css، وهو ملف لا يُحمَّل في
+   أي موضع: _Layout لا يضمّه، ولا صفحة تفتح قسم Styles له — فالصورة في
+   _EditForm.cshtml كانت بلا تنسيق أصلاً (تظهر بمقاسها الطبيعي). نُقلت هنا
+   لأن كل ملفات هذا المجلد تُحمَّل في _Layout دائماً، وحُذف الملف الميت.
+
+   الصورة المصغّرة كانت مكتوبة style مضمّناً بمقاسين (88px في تفاصيل النوع،
+   100px في نموذج الإنشاء) — والفرق بلا سبب، فوُحِّد على 88px.
+========================================================== */
+.concrete-preview-img {
+    width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    background: var(--surface-alt);
+}
+
+.concrete-preview-img--thumb {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border-main);
+    background: var(--surface-alt);
+}

@@ -26,7 +26,7 @@
         : "غير محدد";
 }
 
-<div class="dashboard-page">
+<div class="dashboard-page dashboard-page--print-ticket">
 
     <!-- ============================================================
     HEADER - رأس الصفحة
@@ -40,10 +40,20 @@
                     <span class="order-number-seq">#@Model.OrderNumberSeq</span>
                     <span class="order-number-date">@Model.OrderNumberDate</span>
                 </span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 ms-2 btn-copy" data-copy="@Model.OrderNumber" title="نسخ رقم الطلب" aria-label="نسخ رقم الطلب">
+                    <i class="bi bi-clipboard"></i>
+                </button>
             </h1>
             <p>إدارة ومتابعة الطلب من البداية إلى النهاية</p>
         </div>
-        <div>
+        <div class="d-flex align-items-center gap-2">
+            @* ✅ data-print بدل onclick="window.print()": سياسة CSP في
+               SecurityHeadersMiddleware تسمح بـ script-src 'self' + nonce فقط،
+               فالمعالجات المضمّنة (inline handlers) تُحجب صامتةً في المتصفح
+               ويصبح الزر بلا أثر. المعالج المُفوَّض في site.js هو نفس أسلوب data-copy. *@
+            <button type="button" class="btn btn-outline-primary" data-print title="طباعة بوليصة / أمر الصب والتسليم">
+                <i class="bi bi-printer"></i> طباعة بوليصة الصب
+            </button>
             <a asp-action="Index" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-right"></i> العودة إلى القائمة
             </a>
@@ -76,7 +86,7 @@
                 <span class="fw-bold">تقدم الطلب</span>
                 <span class="fw-bold">@progressPercentage%</span>
             </div>
-            <div class="progress" style="height: 12px;">
+            <div class="progress progress--order">
                 <div class="progress-bar @progressColor @progressMotion"
                      role="progressbar"
                      style="width: @progressPercentage%;"
@@ -106,7 +116,19 @@
                         <dd class="col-sm-8 fw-bold">@(Model.ClientName ?? "غير معروف")</dd>
 
                         <dt class="col-sm-4 text-muted">رقم الهاتف</dt>
-                        <dd class="col-sm-8" dir="ltr">@(Model.ClientPhone ?? "-")</dd>
+                        <dd class="col-sm-8" dir="ltr">
+                            @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_PhoneActions.cshtml",
+                                new PhoneActionsViewModel
+                                {
+                                    Phone = Model.ClientPhone ?? string.Empty,
+                                    // بلا اسم: البطاقة تعرض اسم العميل في السطر أعلاه
+                                    ContactLabel = "العميل",
+                                    Variant = PhoneActionsVariant.Outline,
+                                    AlignEnd = false,
+                                    WhatsAppMessage = $"السلام عليكم، بخصوص طلب الخرسانة رقم {Model.OrderNumber}"
+                                })
+                        </dd>
 
                         <dt class="col-sm-4 text-muted">عدد الطلبات</dt>
                         <dd class="col-sm-8">@(Model.ClientOrdersCount ?? 0)</dd>
@@ -131,10 +153,26 @@
                         <dd class="col-sm-8">@(Model.ProjectOwnerName ?? "-")</dd>
 
                         <dt class="col-sm-4 text-muted">المنطقة</dt>
-                        <dd class="col-sm-8">@(Model.SiteArea ?? "-")</dd>
+                        <dd class="col-sm-8 d-flex align-items-center justify-content-between">
+                            <span>@(Model.SiteArea ?? "-")</span>
+                            @if (!string.IsNullOrEmpty(Model.SiteArea))
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-copy" data-copy="@Model.SiteArea" title="نسخ المنطقة" aria-label="نسخ منطقة الموقع">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            }
+                        </dd>
 
                         <dt class="col-sm-4 text-muted">الوصف</dt>
-                        <dd class="col-sm-8">@(Model.SiteDescription ?? "-")</dd>
+                        <dd class="col-sm-8 d-flex align-items-center justify-content-between">
+                            <span>@(Model.SiteDescription ?? "-")</span>
+                            @if (!string.IsNullOrEmpty(Model.SiteDescription))
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-copy" data-copy="@Model.SiteDescription" title="نسخ وصف الموقع" aria-label="نسخ وصف الموقع">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            }
+                        </dd>
 
                         <dt class="col-sm-4 text-muted">نوع البلاطة</dt>
                         <dd class="col-sm-8">@slabName</dd>
@@ -535,6 +573,86 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    PRINTABLE DELIVERY TICKET - بوليصة الصب والتسليم الرسمية (للطباعة فقط)
+    ============================================================ -->
+    <div class="print-delivery-ticket d-none d-print-block">
+        <div class="ticket-header text-center">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="text-start">
+                    @* اسم المصنع الحقيقي من الطلب — كانت لافتة عامة ثابتة
+                       ("مصنع خرسانة جاهزة") فتخرج البوليصة بلا هوية مصدرها. *@
+                    <h5 class="fw-bold mb-1">@(string.IsNullOrWhiteSpace(Model.FactoryName) ? "مصنع خرسانة جاهزة" : Model.FactoryName)</h5>
+                    <div class="text-muted small">سند توريد وبوليصة صب</div>
+                </div>
+                <div>
+                    <h2 class="ticket-title">بوليصة صب وتسليم خرسانة</h2>
+                    <div class="mt-1">
+                        <strong>رقم الطلب:</strong> #@Model.OrderNumber
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="small"><strong>تاريخ الصب:</strong> @(Model.PouringDate?.ToString("yyyy-MM-dd") ?? Model.CreatedAt.ToString("yyyy-MM-dd"))</div>
+                    <div class="small"><strong>وقت الطباعة:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-6">
+                <table class="ticket-table">
+                    <tbody>
+                        <tr><th>اسم العميل</th><td>@(Model.ClientName ?? "غير محدد")</td></tr>
+                        <tr><th>رقم الهاتف</th><td dir="ltr">@(Model.ClientPhone ?? "-")</td></tr>
+                        <tr><th>اسم المشروع</th><td>@(Model.ProjectName ?? "-")</td></tr>
+                        <tr><th>مالك المشروع</th><td>@(Model.ProjectOwnerName ?? "-")</td></tr>
+                        <tr><th>منطقة الموقع</th><td>@(Model.SiteArea ?? "-")</td></tr>
+                        <tr><th>وصف الموقع</th><td>@(Model.SiteDescription ?? "-")</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-6">
+                <table class="ticket-table">
+                    <tbody>
+                        <tr><th>صنف الخرسانة</th><td class="fw-bold">@Model.ConcreteTypeName</td></tr>
+                        <tr><th>الكمية المصرحة</th><td class="fw-bold">@Model.Quantity م³</td></tr>
+                        <tr><th>العنصر الإنشائي</th><td>@slabName</td></tr>
+                        <tr><th>مضخة خرسانية</th><td>@(Model.NeedPump ? $"نعم (طابق {Model.FloorNumber})" : "بدون مضخة")</td></tr>
+                        <tr><th>طريقة النقل</th><td>@transportName</td></tr>
+                        <tr><th>السائق والشاحنة</th><td>@(Model.DriverName ?? "غير معين") @(string.IsNullOrEmpty(Model.TruckPlate) ? "" : $"({Model.TruckPlate})")</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Notes))
+        {
+            <div class="p-2 border mb-3 small">
+                <strong>ملاحظات إضافية:</strong> @Model.Notes
+            </div>
+        }
+
+        <div class="ticket-signatures">
+            <div class="row text-center">
+                <div class="col-4 ticket-sig-box">
+                    <div class="fw-bold">مسؤول محطة الخلط</div>
+                    <div class="ticket-sig-line"></div>
+                    <small class="text-muted d-block mt-1">الاسم والختم</small>
+                </div>
+                <div class="col-4 ticket-sig-box">
+                    <div class="fw-bold">سائق الشاحنة</div>
+                    <div class="ticket-sig-line"></div>
+                    <small class="text-muted d-block mt-1">توقيع السائق</small>
+                </div>
+                <div class="col-4 ticket-sig-box">
+                    <div class="fw-bold">المستلم / مهندس الموقع</div>
+                    <div class="ticket-sig-line"></div>
+                    <small class="text-muted d-block mt-1">توقيع استلام الكمية</small>
                 </div>
             </div>
         </div>

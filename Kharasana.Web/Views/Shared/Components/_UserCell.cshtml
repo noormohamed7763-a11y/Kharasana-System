@@ -1,0 +1,18 @@
+@model Kharasana.Web.Models.Components.UserCellViewModel
+
+@{
+    var avatarChar = string.IsNullOrWhiteSpace(Model.FullName)
+        ? "?"
+        : Model.FullName.Trim()[0].ToString();
+}
+
+<div class="table-user-cell">
+    <div class="table-avatar-circle @Model.AvatarCssClass">@avatarChar</div>
+    <div class="table-user-info">
+        <span class="table-user-name">@Model.FullName</span>
+        @if (!string.IsNullOrWhiteSpace(Model.SubText))
+        {
+            <span class="table-user-sub">@Model.SubText</span>
+        }
+    </div>
+</div>

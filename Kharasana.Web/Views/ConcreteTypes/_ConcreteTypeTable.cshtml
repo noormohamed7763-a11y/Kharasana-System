@@ -1,7 +1,14 @@
 @model IEnumerable<Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeListItemViewModel>
 @using Kharasana.Web.Models.Components
 @{
-    var factoryInactive = (string?)ViewBag.UserRole == Roles.FactoryEmployee && ViewBag.FactoryIsActive == false;
+    var role = (string?)ViewBag.UserRole;
+
+    var factoryInactive = role == Roles.FactoryEmployee && ViewBag.FactoryIsActive == false;
+
+    // من يملك التحرير: المدير وموظف المصنع — مطابقةً لصلاحيات الـ API
+    // (Create/Update/Delete كلها AdminOrFactoryEmployee). العميل يرى القائمة
+    // و«التفاصيل» فقط؛ وكانت أزرار التعديل والحذف تظهر له فيفشل بـ 403 من الـ API.
+    var canManage = role == Roles.Admin || role == Roles.FactoryEmployee;
 }
 
 <div class="form-card">
@@ -12,7 +19,7 @@
 
                 <tr>
 
-                    <th style="width:70px">#</th>
+                    <th class="col-index">#</th>
 
                     <th>النوع</th>
 
@@ -22,7 +29,7 @@
 
                     <th>الحالة</th>
 
-                    <th class="text-center" style="width:180px">
+                    <th class="text-center col-actions col-actions--lg">
                         الإجراءات
                     </th>
 
@@ -76,7 +83,8 @@
 
                             <td>
 
-                                <span class="badge rounded-pill bg-primary fs-6 px-3 py-2">
+                                <span class="strength-badge">
+                                    <i class="bi bi-speedometer2"></i>
                                     @item.Strength MPa
                                 </span>
 
@@ -84,15 +92,10 @@
 
                             <td>
 
-                                <div class="price-value">
-
-                                    @item.UnitPrice.ToString("N0")
-
+                                <div class="price-display">
+                                    <span class="price-value">@item.UnitPrice.ToString("N0")</span>
+                                    <span class="price-unit">ر.ي / م³</span>
                                 </div>
-
-                                <small class="text-muted">
-                                    ريال / م³
-                                </small>
 
                             </td>
 
@@ -132,7 +135,7 @@
 
                                 </a>
 
-                                @if (!factoryInactive)
+                                @if (canManage && !factoryInactive)
                                 {
                                     <a asp-action="Edit"
                                        asp-route-id="@item.ConcreteTypeId"
@@ -143,9 +146,9 @@
 
                                     </a>
 
-                                    @* الدور يُقرأ من الجلسة عبر ViewBag (لا يوجد ClaimsPrincipal في هذا التطبيق) *@
-                                    @if ((string?)ViewBag.UserRole == Roles.Admin)
-                                    {
+                                    @* الأرشفة (حذف ناعم) متاحة لموظف المصنع كما للمدير — عقد الـ API
+                                       نفسه، وصفحة الأرشيف تعيده. وقبل ذلك كان الزر للمدير وحده
+                                       فتبقى صفحة الأرشيف فارغة أبداً للموظف. *@
                                     <form asp-action="Delete"
                                       asp-route-id="@item.ConcreteTypeId"
                                       method="post"
@@ -163,7 +166,6 @@
                                     </button>
 
                                     </form>
-                                    }
                                 }
 
                             </td>
@@ -187,7 +189,7 @@
                                 ImageUrl = "/images/empty-concrete.png",
                                 Title = "لا توجد أنواع خرسانة",
                                 Message = "قم بإضافة أول نوع خرسانة ليظهر هنا.",
-                                ShowActionButton = !factoryInactive,
+                                ShowActionButton = canManage && !factoryInactive,
                                 ActionController = "ConcreteTypes",
                                 ActionAction = "Create",
                                 ActionText = "إضافة نوع خرسانة"

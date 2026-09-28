@@ -1,0 +1,76 @@
+@model Kharasana.Web.Models.Components.PhoneActionsViewModel
+@using Kharasana.Domain.Common
+@using Kharasana.Web.Models.Components
+
+@*
+    أزرار التواصل مع رقم هاتف — موضع واحد لكل صيغ العرض الثلاث.
+
+    ملاحظتان مقصودتان:
+    1) الصيغ (Classes) مأخوذة حرفياً من المواضع القديمة، فلا يتغيّر شكل الأزرار.
+    2) رابط واتساب يُبنى من YemeniPhoneHelper.Normalize لا من إزالة "+" والفراغات
+       يدوياً — ذاك الحساب كان يفشل مع الصيغة المحلية (0771234567) فينتج رابطاً
+       بلا رمز الدولة.
+*@
+
+@{
+    var normalized = YemeniPhoneHelper.Normalize(Model.Phone);
+    var whatsAppNumber = normalized ?? Model.Phone.Replace("+", "").Replace(" ", "").Trim();
+    var whatsAppUrl = string.IsNullOrWhiteSpace(Model.WhatsAppMessage)
+        ? $"https://wa.me/{whatsAppNumber}"
+        : $"https://wa.me/{whatsAppNumber}?text={Uri.EscapeDataString(Model.WhatsAppMessage)}";
+
+    var who = string.IsNullOrWhiteSpace(Model.ContactName) ? Model.ContactLabel : Model.ContactName;
+
+    // في الجداول يُذكر الوصف ثم الاسم ("الاتصال بالسائق محمد النور") لأنه أوضح
+    // لقارئ الشاشة من "الاتصال بمحمد النور" وحدها؛ وفي البطاقات يكفي الوصف.
+    var callAria = who == Model.ContactLabel
+        ? $"الاتصال بـ{Model.ContactLabel}"
+        : $"الاتصال بـ{Model.ContactLabel} {Model.ContactName}";
+
+    var isOutline = Model.Variant == PhoneActionsVariant.Outline;
+    var copyClass = isOutline
+        ? "btn btn-sm btn-outline-secondary py-0 px-2 btn-copy ms-1"
+        : "btn btn-sm btn-link p-0 text-muted btn-copy ms-1";
+    var callClass = isOutline
+        ? "btn btn-sm btn-outline-primary py-0 px-2"
+        : "btn btn-sm btn-link p-0 text-primary ms-1";
+    var whatsAppClass = isOutline
+        ? "btn btn-sm btn-outline-success py-0 px-2"
+        : "btn btn-sm btn-link p-0 text-success ms-1";
+}
+
+@if (string.IsNullOrWhiteSpace(Model.Phone))
+{
+    <span class="text-muted">@Model.EmptyText</span>
+}
+else
+{
+    <div class="d-flex align-items-center gap-1@(Model.AlignEnd ? " justify-content-end" : "")">
+        <span>@Model.Phone</span>
+
+        <button type="button" class="@copyClass"
+                data-copy="@Model.Phone"
+                title="نسخ رقم الهاتف"
+                aria-label="نسخ رقم هاتف @who">
+            <i class="bi bi-clipboard"></i>
+        </button>
+
+        @if (Model.ShowCall)
+        {
+            <a href="tel:@Model.Phone" class="@callClass"
+               title="اتصال بـ@Model.ContactLabel"
+               aria-label="@callAria">
+                <i class="bi bi-telephone"></i>
+            </a>
+        }
+
+        @if (Model.ShowWhatsApp)
+        {
+            <a href="@whatsAppUrl" target="_blank" rel="noopener noreferrer" class="@whatsAppClass"
+               title="مراسلة واتساب"
+               aria-label="مراسلة @who على واتساب">
+                <i class="bi bi-whatsapp"></i>
+            </a>
+        }
+    </div>
+}

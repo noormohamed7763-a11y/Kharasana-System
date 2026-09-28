@@ -8,13 +8,13 @@
         <table class="erp-table erp-table--sticky-cols">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>الاسم</th>
+                    <th class="col-index">#</th>
+                    <th>السائق</th>
                     <th>الهاتف</th>
                     <th>رقم الرخصة</th>
                     <th>الحالة</th>
                     <th>الحساب</th>
-                    <th class="text-center">الإجراءات</th>
+                    <th class="text-center col-actions col-actions--md">الإجراءات</th>
                 </tr>
             </thead>
                     <tbody id="driverTableBody">
@@ -38,11 +38,27 @@
                         DriverStatus.Offline => "status-secondary",
                         _ => "status-secondary"
                     };
-
                     <tr data-status="@driver.DriverStatus">
                         <td class="text-muted fw-bold">@(index++)</td>
-                        <td><strong class="text-primary">@driver.FullName</strong></td>
-                        <td>@(driver.Phone ?? "-")</td>
+                        <td>
+                            @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_UserCell.cshtml",
+                                new UserCellViewModel
+                                {
+                                    FullName = driver.FullName,
+                                    AvatarCssClass = "avatar-driver"
+                                })
+                        </td>
+                        <td dir="ltr">
+                            @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_PhoneActions.cshtml",
+                                new PhoneActionsViewModel
+                                {
+                                    Phone = driver.Phone ?? string.Empty,
+                                    ContactName = driver.FullName,
+                                    ContactLabel = "السائق"
+                                })
+                        </td>
                         <td>
                             @if (string.IsNullOrWhiteSpace(driver.LicenseNumber))
                             {

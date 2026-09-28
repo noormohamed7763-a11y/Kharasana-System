@@ -31,6 +31,21 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         }
     }
 
+    public async Task<List<ConcreteTypeListItemViewModel>> GetArchivedAsync()
+    {
+        try
+        {
+            var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeListItemViewModel>>>("ConcreteTypes/archived");
+            return response?.Data ?? new List<ConcreteTypeListItemViewModel>();
+        }
+        catch (ApiServiceException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception while fetching archived concrete types.");
+            return new List<ConcreteTypeListItemViewModel>();
+        }
+    }
+
     public async Task<ConcreteTypeViewModel?> GetByIdAsync(int id)
     {
         try
@@ -87,6 +102,22 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Exception while deleting concrete type {ConcreteTypeId}.", id);
+            return false;
+        }
+    }
+
+    public async Task<bool> RestoreAsync(int id)
+    {
+        try
+        {
+            // POST بلا جسم — نفس نمط بقية أوامر الحالة في المشروع (ApiClient.PostAsync يرسل {}).
+            var response = await _apiClient.PostAsync<ApiResponse<object>>($"ConcreteTypes/restore/{id}", new { });
+            return response != null && response.Success;
+        }
+        catch (ApiServiceException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception while restoring concrete type {ConcreteTypeId}.", id);
             return false;
         }
     }

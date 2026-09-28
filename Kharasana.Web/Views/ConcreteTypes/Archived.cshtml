@@ -1,0 +1,219 @@
+@model IEnumerable<Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeListItemViewModel>
+@using Kharasana.Web.Models.Components
+@using Kharasana.Web.Models.Components.Search
+
+@{
+    ViewData["Title"] = "أنواع الخرسانة المؤرشفة";
+}
+
+@* أنواع الخرسانة المحذوفة حذفًا ناعمًا. الحذف ناعم لأن الطلبات التاريخية تشير
+   إلى النوع، فلو حُذف الصف فعليًا انكسرت تلك الطلبات — لذلك لا توجد صفحة «حذف نهائي»
+   هنا، بل عرضٌ واستعادة فقط.
+
+   العزل على المصنع يفرضه الـ API من التوكن: موظف المصنع يرى أنواع مصنعه وحده،
+   والمدير يرى الجميع. لا نُمرّر معرّف مصنع من الصفحة حتى لا يكون وسيطًا قابلًا للتلاعب.
+
+   الجدول يطابق Views/ConcreteTypes/_ConcreteTypeTable.cshtml في الأعمدة والتنسيق،
+   ليكون الجدولان أخوين متطابقين في المظهر، ويزيد عليه عمود «تاريخ الأرشفة». *@
+
+<div class="dashboard-page">
+
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-archive",
+            Title = "أنواع الخرسانة المؤرشفة",
+            Description = "أنواع الخرسانة المحذوفة، مع إمكانية استعادتها إلى القائمة."
+        })
+
+    <a asp-action="Index" class="btn btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-right me-1"></i>
+        العودة إلى أنواع الخرسانة
+    </a>
+
+    @if (Model.Any())
+    {
+        <!-- Search — فلترة داخل الصفحة، نفس نمط Views/ConcreteTypes/Index.cshtml -->
+        <div class="form-card mb-3 p-3">
+            <div class="row g-2 align-items-center">
+                <div class="col-lg-6">
+                    @await Html.PartialAsync(
+                        "~/Views/Shared/Components/_SearchBox.cshtml",
+                        new SearchBoxViewModel
+                        {
+                            InputId = "tableSearch",
+                            Placeholder = "ابحث باسم النوع أو المصنع..."
+                        })
+                </div>
+                @* ms-auto يدفع التنبيه إلى الطرف الآخر من الصف على سطح المكتب *@
+                <div class="col-auto ms-auto">
+                    <span class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        البحث يعمل داخل الصفحة الحالية
+                    </span>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="form-card">
+        <div class="table-responsive">
+            <table class="erp-table erp-table--sticky-cols align-middle mb-0">
+
+                <thead>
+
+                    <tr>
+
+                        <th class="col-index">#</th>
+
+                        <th>النوع</th>
+
+                        <th>المقاومة</th>
+
+                        <th>السعر</th>
+
+                        <th class="col-date">تاريخ الأرشفة</th>
+
+                        <th class="text-center col-actions col-actions--lg">
+                            الإجراءات
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Any())
+                    {
+                        var index = 1;
+
+                        foreach (var item in Model)
+                        {
+
+                            <tr>
+
+                                <td>
+
+                                    <span class="fw-bold text-secondary">
+                                        @index
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    <div class="concrete-name">
+
+                                        <div class="concrete-icon">
+                                            <i class="bi bi-box-seam"></i>
+                                        </div>
+
+                                        <div>
+
+                                            <div class="concrete-title">
+                                                @item.Name
+                                            </div>
+
+                                            <div class="concrete-subtitle">
+                                                <i class="bi bi-building"></i>
+                                                @item.FactoryName
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+
+                                    <span class="strength-badge">
+                                        <i class="bi bi-speedometer2"></i>
+                                        @item.Strength MPa
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    <div class="price-display">
+                                        <span class="price-value">@item.UnitPrice.ToString("N0")</span>
+                                        <span class="price-unit">ر.ي / م³</span>
+                                    </div>
+
+                                </td>
+
+                                <td>
+
+                                    @* UpdatedAt هو لحظة الأرشفة: DeleteAsync وحدها تكتبه،
+                                       ولا يُعدَّل الصف وهو مؤرشف. *@
+                                    <span class="text-muted">
+                                        @item.UpdatedAt.FormatDate()
+                                    </span>
+
+                                </td>
+
+                                <td class="text-center">
+
+                                    <form asp-action="Restore"
+                                          asp-route-id="@item.ConcreteTypeId"
+                                          method="post"
+                                          class="d-inline">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <button type="submit"
+                                                class="btn btn-success btn-sm">
+
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+
+                                            استعادة
+
+                                        </button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
+
+                            index++;
+                        }
+                    }
+                    else
+                    {
+
+                        <tr>
+
+                            <td colspan="6">
+
+                                @await Html.PartialAsync(
+                                    "~/Views/Shared/Components/_EmptyState.cshtml",
+                                    new EmptyStateViewModel
+                                    {
+                                        Icon = "bi-archive",
+                                        Title = "لا توجد أنواع خرسانة مؤرشفة",
+                                        Message = "أنواع الخرسانة التي تُحذف ستظهر هنا لإمكانية استعادتها."
+                                    })
+
+                            </td>
+
+                        </tr>
+
+                    }
+
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    @* يُعيد استعمال مرشّح البحث الداخلي على #tableSearch — كل ما عداه في الملف
+       محروس بـ ?. فلا يمسّ هذه الصفحة التي لا نموذج إنشاء/تعديل فيها. *@
+    <script src="~/js/concrete-type.js" asp-append-version="true"></script>
+}

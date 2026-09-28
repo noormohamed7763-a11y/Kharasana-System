@@ -40,6 +40,11 @@
          Loading it globally previously polluted every page's body/.form-control/.form-label. -->
     <!-- ASP.NET Core CSS Isolation -->
     <link rel="stylesheet" href="~/Kharasana.Web.styles.css" asp-append-version="true" />
+
+    @* قسم اختياري لتنسيقات صفحة بعينها. يأتي بعد كل الأوراق العامة عمداً،
+       فيصحّ ترتيب الترجيح بلا !important. بديل عن كتلة <style> داخل الصفحة
+       (كانت في Users/DriverReport.cshtml وحدها). *@
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <body>

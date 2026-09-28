@@ -1,4 +1,4 @@
-﻿/* ==========================================================
+/* ==========================================================
    ORDERS MODULE (Kharasana ERP)
    يجمّع هذا الملف كل التنسيقات الخاصة بوحدة الطلبات التي كانت
    مبعثرة داخل 4 كتل <style> منفصلة (Index/Create/Edit/Details)،
@@ -310,4 +310,279 @@ a.order-number-chip:hover {
             width: 100%;
             justify-content: center;
         }
+}
+
+/* ==========================================================
+   11. Desktop Order Estimator & Sticky Live Summary Panel
+   مخصص لبيئة سطح المكتب وشاشات الحواسيب
+========================================================== */
+.order-estimator-sticky {
+    position: sticky;
+    top: calc(var(--navbar-height) + var(--space-4));
+    background: var(--surface);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: var(--card-padding);
+    transition: box-shadow var(--transition);
+}
+
+.estimator-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--border-soft);
+    padding-bottom: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.estimator-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.estimator-title i {
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+.estimator-badge {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 3px 8px;
+    border-radius: var(--radius-pill);
+}
+
+.estimator-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.estimator-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border-soft);
+    font-size: var(--text-sm);
+}
+
+.estimator-row:last-of-type {
+    border-bottom: none;
+}
+
+.estimator-label {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.estimator-value {
+    color: var(--text-main);
+    font-weight: 700;
+    text-align: left;
+}
+
+/* قيمة مقصوصة بعرض محدود — كان max-width: 160px مكتوباً style مضمّناً على
+   صفَّي «العميل» و«الصنف» في Views/Orders/Create.cshtml. */
+.estimator-value--clamp {
+    max-width: 160px;
+}
+
+.estimator-total-box {
+    background: linear-gradient(135deg, var(--surface-low) 0%, var(--surface-alt) 100%);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-3) 0 var(--space-2);
+    text-align: center;
+}
+
+.estimator-total-label {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.estimator-total-amount {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.2;
+    direction: ltr;
+}
+
+.estimator-note {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    background: var(--primary-soft);
+    border-right: 3px solid var(--primary);
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: var(--space-3);
+    line-height: 1.5;
+}
+
+.estimator-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.estimator-actions .btn {
+    width: 100%;
+    font-weight: 700;
+}
+
+/* على الجوال (أقل من lg) تنزل اللوحة أسفل النموذج كاملاً، أي بعد زرّي الإرسال
+   والإلغاء اللذين يحملهما النموذج نفسه — فتكون أزرار اللوحة تكراراً مربكاً في
+   نهاية الصفحة. تُخفى الأزرار ويبقى الملخص مقروءاً؛ الإجمالي يظهر أصلاً في
+   الشريط السفلي للنموذج قبل الإرسال. */
+@media (max-width: 991.98px) {
+    .estimator-actions {
+        display: none;
+    }
+}
+
+/* ارتفاع شريط تقدّم الطلب في صفحة التفاصيل — كان 12px مكتوباً style مضمّناً */
+.progress--order {
+    height: 12px;
+}
+
+/* ==========================================================
+   12. Enterprise Print Styles - بوليصة الصب والتسليم
+========================================================== */
+@media print {
+    /* صفحة تفاصيل الطلب تطبع البوليصة وحدها.
+       كان الإخفاء يُعدّد العناصر واحداً واحداً، فيتسرّب باقي المحتوى (كل بطاقات
+       التفاصيل وسير العمل) إلى الورق قبل البوليصة فتخرج الطبعة عدة صفحات لا
+       علاقة لها بسند التسليم. العكس أصحّ: يُخفى كل ما عدا البوليصة.
+       (بقية القواعد العامة أدناه تظل لازمة لباقي الصفحات التي تُطبع بـ Ctrl+P.) */
+    .dashboard-page--print-ticket > *:not(.print-delivery-ticket) {
+        display: none !important;
+    }
+
+    /* إخفاء عناصر التحكم وقوائم المتصفح */
+    .sidebar,
+    .navbar-top,
+    .skip-link,
+    .btn,
+    .btn-action,
+    .action-buttons-container,
+    .action-secondary-group,
+    .action-delivery-group,
+    #toastContainer,
+    .modal,
+    .dashboard-header .btn,
+    .dashboard-header p,
+    .erp-section-title i,
+    .erp-section-card .progress,
+    .timeline,
+    footer {
+        display: none !important;
+    }
+
+    /* إعداد الصفحة للطباعة بحجم A4 أبيض ونظيف */
+    body,
+    .wrapper,
+    .main-content,
+    .content-body,
+    .dashboard-page {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        width: 100% !important;
+        min-height: auto !important;
+    }
+
+    .main-content {
+        margin-right: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .dashboard-page {
+        padding: 10px !important;
+    }
+
+    .print-delivery-ticket {
+        display: block !important;
+        page-break-after: avoid;
+    }
+
+    .ticket-header {
+        border-bottom: 2px solid #000 !important;
+        padding-bottom: 12px;
+        margin-bottom: 18px;
+    }
+
+    .ticket-title {
+        font-size: 1.6rem;
+        font-weight: 900;
+        margin: 0;
+        color: #000;
+    }
+
+    .ticket-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 16px;
+    }
+
+    .ticket-table th,
+    .ticket-table td {
+        border: 1px solid #333 !important;
+        padding: 8px 12px !important;
+        font-size: 0.95rem !important;
+        color: #000 !important;
+    }
+
+    .ticket-table th {
+        background-color: #f2f2f2 !important;
+        font-weight: 700;
+        width: 35%;
+    }
+
+    .ticket-signatures {
+        margin-top: 35px;
+        padding-top: 15px;
+        border-top: 1px dashed #666;
+    }
+
+    .ticket-sig-box {
+        text-align: center;
+    }
+
+    .ticket-sig-line {
+        margin-top: 45px;
+        border-bottom: 1px solid #000;
+        width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* عنوان الصفحة يُصغَّر في الطباعة (اقتصاد في الورق). لا أثر له على صفحة
+       البوليصة لأن رأسها مخفي بالقاعدة أعلاه. */
+    .dashboard-header h1 {
+        font-size: 1.4rem !important;
+    }
+
+    /* بطاقات التفاصيل تبقى ظاهرة في الصفحات التي تُطبع بـ Ctrl+P (لا زر بوليصة
+       فيها)، لكن بحدّ رقيق بلا ظل حتى لا تستهلك حِبراً بلا داعٍ. */
+    .erp-section-card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        padding: 12px !important;
+        margin-bottom: 12px !important;
+        break-inside: avoid;
+    }
 }

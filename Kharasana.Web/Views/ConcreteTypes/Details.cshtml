@@ -7,7 +7,7 @@
     var statusCss = Model.IsActive ? "status-success" : "status-danger";
 }
 
-<div class="dashboard-page">
+<div class="dashboard-page dashboard-page--narrow">
 
     @await Html.PartialAsync(
     "~/Views/Shared/Components/_PageHeader.cshtml",
@@ -31,7 +31,7 @@
                 <img src="@previewSrc"
                      asp-append-version="true"
                      alt="@Model.Name"
-                     style="width:88px; height:88px; object-fit:cover; border-radius:var(--radius-md); border:2px solid var(--border-main); background:var(--surface-alt);" />
+                     class="concrete-preview-img--thumb" />
                 <div>
                     <h3 class="fw-bold mb-1 text-dark">@Model.Name</h3>
                     <span class="text-muted"><i class="bi bi-box-seam me-1"></i> خرسانة بقوة @Model.Strength MPa</span>

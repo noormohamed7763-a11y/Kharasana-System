@@ -68,6 +68,17 @@
     --border-main: var(--color-border);
     --border-soft: var(--color-border-soft);
 
+    /* جداول — كانت الثلاثة الأولى تُستعمل في tables.css بصيغة var(--x, #hex)
+       بلا تعريف في أي ملف، فيفوز الاحتياطي دائماً ويبقى اللون خارج طبقة
+       المتغيّرات (نفس ما مُنع في بقية الملف). عُرِّفت هنا لتصبح مصدراً واحداً.
+
+       --table-row-hover جديد: كان التحويم بلون --surface-alt وهو بلون التخطيط
+       نفسه تقريباً (#F8FAFC مقابل #FAFBFC)، فلا يُرى أثر للتحويم أصلاً. */
+    --table-header-bg: var(--color-surface-low);
+    --table-stripe: #FAFBFC;
+    --table-row-hover: rgba(194, 75, 23, 0.09);
+    --sticky-head-bg: var(--surface-alt);
+
     --success: var(--color-success);
     --success-soft: var(--color-success-soft);
     --success-text: var(--color-success);
@@ -103,6 +114,9 @@
     --card-padding: 16px;
     --section-gap: 24px;
     --page-padding: 16px;
+    /* الحدّ الأعلى لعرض صفحة النموذج — التفصيل في .dashboard-page--narrow
+       في dashboard.css. لا يمسّ الجداول ولا لوحات المعلومات. */
+    --form-max-width: 1100px;
     --chart-height: 220px;
     --icon-size-lg: 42px;
     --icon-size-md: 38px;
@@ -143,4 +157,34 @@
     --z-modal: 1200;
     --transition: 0.16s ease;
     --transition-slow: 0.2s ease;
+}
+
+/* ============================================================
+   DESKTOP DENSITY — شاشات الكمبيوتر
+   ------------------------------------------------------------
+   النظام مبنيّ لسطح المكتب أولاً: كل Media Query في بقية الملفات
+   هي من نوع max-width، أي تضييقٌ للشاشات الصغيرة. لم يكن في الملف
+   كله موضعٌ واحد يوسّع المساحات على الشاشات الكبيرة، فكان المحتوى
+   على شاشة 1920 يلتصق بالحواف بهامش 16px وحشو بطاقة 16px — وهي
+   قيم ضيّقة كانت مناسبة للجوال لا لسطح المكتب.
+
+   التوسيع هنا في طبقة المتغيّرات وحدها، فيتبعه كل مستهلك تلقائياً:
+   --page-padding  ← .content-body (layout.css)
+   --card-padding  ← .form-card / .kpi-card / .erp-section-card / بطاقة الطلبات
+   --section-gap   ← .erp-section-card { margin-bottom } — المسافة بين البطاقات
+                     المرصوفة رأسياً. كانت 24px مثل --card-padding تماماً، فتبدو
+                     البطاقات ملتصقة بعد أن صار حشوها الداخلي 20px؛ رُفعت إلى 28px
+                     ليبقى الفاصل بين بطاقتين أكبر من الحشو داخلهما.
+
+   الحدّ 992px هو نفسه المستعمل في layout.css و tables.css.
+   ملاحظة: عند 992px بالضبط يفوز تجاوز الشاشات الصغيرة في layout.css
+   (max-width: 992px) لأن ملفه يُحمَّل بعد هذا الملف، وهو السلوك المقصود:
+   992px حدُّ الجهاز اللوحي لا سطح المكتب.
+============================================================ */
+@media (min-width: 992px) {
+    :root {
+        --page-padding: 24px;
+        --card-padding: 20px;
+        --section-gap: 28px;
+    }
 }

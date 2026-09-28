@@ -1,0 +1,72 @@
+@model Kharasana.Web.Models.Components.ListToolbarViewModel
+
+@*
+    شريط البحث والفلترة الموحّد لصفحات القوائم.
+
+    كان هذا الشريط منسوخاً حرفياً في Orders / Clients / Drivers / Users، والفرق
+    بين النسخ لا يتجاوز نص الـ placeholder وعروض الأعمدة. أي إصلاح فيه — مثل تمرير
+    pageSize حتى لا يعود البحث إلى الصفحة الأولى بحجم افتراضي — كان يلزم تكراره
+    في المواضع الأربعة، وهو ما جرى فعلاً في بعضها ونسي في بعضها الآخر.
+
+    ملاحظة عن الفلاتر: القائمة المنسدلة تحمل name فتُرسل مع النموذج مباشرة، بلا
+    حقول مخفية موازية ولا دالة JS تجمع القيم يدوياً. الإرسال التلقائي عند التغيير
+    يتولاه المعالج المُفوَّض في site.js عبر data-toolbar-autosubmit، لأن سياسة CSP
+    تحجب onchange المضمّن.
+*@
+
+@{
+    var actionName = string.IsNullOrWhiteSpace(Model.ActionName) ? "Index" : Model.ActionName;
+}
+
+<div class="form-card mb-3 p-3">
+    <form method="get" asp-action="@actionName" asp-controller="@Model.ControllerName">
+        @if (Model.PageSize.HasValue)
+        {
+            @* يُرسل مع البحث حتى لا يعود المستخدم إلى الحجم الافتراضي *@
+            <input type="hidden" name="pageSize" value="@Model.PageSize.Value" />
+        }
+
+        <div class="row g-2 align-items-center">
+            <div class="@Model.SearchColumnClass">
+                @await Html.PartialAsync("~/Views/Shared/Components/_SearchBox.cshtml", Model.Search)
+            </div>
+
+            @foreach (var filter in Model.Filters)
+            {
+                <div class="@filter.ColumnClass">
+                    <select class="form-select form-select-sm"
+                            id="@filter.Id"
+                            name="@(string.IsNullOrWhiteSpace(filter.Name) ? null : filter.Name)"
+                            aria-label="@(string.IsNullOrWhiteSpace(filter.AriaLabel) ? null : filter.AriaLabel)"
+                            data-toolbar-autosubmit="@(filter.AutoSubmit ? "true" : null)">
+                        @if (!string.IsNullOrEmpty(filter.EmptyOptionText))
+                        {
+                            <option value="">@filter.EmptyOptionText</option>
+                        }
+                        @foreach (var option in filter.Options)
+                        {
+                            if (option.Selected)
+                            {
+                                <option value="@option.Value" selected="selected">@option.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@option.Value">@option.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+            }
+
+            <div class="@Model.ActionsColumnClass d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                    <i class="bi bi-search me-1"></i> @Model.SubmitText
+                </button>
+                <a asp-action="@actionName" asp-controller="@Model.ControllerName"
+                   class="btn btn-outline-secondary btn-sm flex-fill" title="إلغاء الفلاتر">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> @Model.ResetText
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
