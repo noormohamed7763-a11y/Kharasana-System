@@ -200,13 +200,14 @@ namespace Kharasana.Web.Services.Api
             if (file == null || file.Length == 0)
                 return ServiceResult<string>.Fail(AppMessages.Error.InvalidLogo);
 
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            // القواعد من LogoFiles لا نسخة محلية: كانت هذه آخر نسخة حرفية متبقّية
+            // بعد توحيد FilesController و SettingsApiService في LogoFiles.
             var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant();
 
-            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+            if (string.IsNullOrEmpty(extension) || !LogoFiles.AllowedExtensions.Contains(extension))
                 return ServiceResult<string>.Fail(AppMessages.Error.InvalidLogo);
 
-            if (file.Length > 5 * 1024 * 1024)
+            if (file.Length > LogoFiles.MaxFileSizeInBytes)
                 return ServiceResult<string>.Fail(AppMessages.Error.LogoUpload);
 
             try

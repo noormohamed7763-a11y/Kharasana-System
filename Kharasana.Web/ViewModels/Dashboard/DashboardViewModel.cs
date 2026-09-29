@@ -10,7 +10,6 @@ namespace Kharasana.Web.ViewModels.Dashboard
         public int TotalFactories { get; set; }
         public int TotalClients { get; set; }
         public int TotalEmployees { get; set; }
-        public int TotalUsers { get; set; }
         public int TotalDrivers { get; set; }
         public int TotalOrders { get; set; }
 
@@ -25,11 +24,11 @@ namespace Kharasana.Web.ViewModels.Dashboard
         public int AvailableDrivers { get; set; }
 
         // ==========================
-        // Tables & Charts Extensions
+        // Tables Extensions
         // ==========================
+        // (أُزيل WeeklyOrdersJson و OrderStatusJson: عضوان مكتوبان بلا كاتب ولا قارئ —
+        //  الرسوم تُبنى في الـ Views من قيم النموذج مباشرةً عبر data-chart-values.)
         public List<RecentOrderDto> RecentOrders { get; set; } = new();
-        public string? WeeklyOrdersJson { get; set; }
-        public string? OrderStatusJson { get; set; }
     }
 
     public class RecentOrderDto

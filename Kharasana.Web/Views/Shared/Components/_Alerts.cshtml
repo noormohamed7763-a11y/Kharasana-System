@@ -2,16 +2,21 @@
     ============================================================
     UNIFIED ALERTS — الجزء الموحّد لعرض رسائل TempData.
     متضمن داخل _Layout في بداية كل صفحة، فيقرأ الرسائل التالية:
-      - Success (أو SuccessMessage القديمة)
-      - Error   (أو ErrorMessage القديمة)
-      - Info    / Warning
+      - Success / Error / Info / Warning
     تستخدم الـ Controllers الثوابت من BaseController:
       TempData[TempDataSuccess] / TempData[TempDataError] / ...
+
+    ⚠️ المفاتيح منفصلة عن ثوابت BaseController نصًّا لا مرجعًا: هذا الجزء
+    يُترجم إلى صنف View خاص به ولا يرى ثوابت الـ Controller. فإن تغيّرت
+    قيمة ثابت هناك وجب تغيير النص المقابل هنا.
+
+    (أُزيل احتياطا «SuccessMessage»/«ErrorMessage»: لا كاتب لهما في المشروع
+     كله — لا متحكّم ولا وسيط — فكانا قراءتين لا تُنتجان شيئًا أبدًا.)
     ============================================================
 *@
 @{
-    var success = TempData["Success"]?.ToString() ?? TempData["SuccessMessage"]?.ToString();
-    var error = TempData["Error"]?.ToString() ?? TempData["ErrorMessage"]?.ToString();
+    var success = TempData["Success"]?.ToString();
+    var error = TempData["Error"]?.ToString();
     var info = TempData["Info"]?.ToString();
     var warning = TempData["Warning"]?.ToString();
 }

@@ -18,8 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
             cancel: '🚫 تم إلغاء الطلب بنجاح',
             'start-delivery': '🚚 تم بدء التوصيل بنجاح',
             deliver: '📦 تم تسليم الطلب بنجاح',
-            close: '🔒 تم إغلاق الطلب بنجاح',
-            delete: '🗑️ تم حذف الطلب بنجاح'
+            close: '🔒 تم إغلاق الطلب بنجاح'
         }
     };
 
@@ -45,11 +44,9 @@ document.addEventListener("DOMContentLoaded", function () {
             return metaToken.getAttribute('content');
         }
 
-        // محاولة الحصول من أي نموذج في الصفحة
-        const formToken = document.querySelector('form input[name="__RequestVerificationToken"]');
-        if (formToken) {
-            return formToken.value;
-        }
+        // (أُزيل احتياط ثالث كان يبحث عن الرمز داخل <form> تحديداً: البحث الأول
+        //  يطابق أي حقل بهذا الاسم في الصفحة — ومنه حقول النماذج — فكان فرعاً
+        //  لا يُبلَغ أبداً.)
 
         return null;
     }

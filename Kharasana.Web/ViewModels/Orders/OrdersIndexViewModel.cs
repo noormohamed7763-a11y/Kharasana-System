@@ -1,5 +1,4 @@
 ﻿using Kharasana.Application.Common;
-using Kharasana.Web.ViewModels.Orders;
 
 namespace Kharasana.Web.ViewModels.Orders
 {

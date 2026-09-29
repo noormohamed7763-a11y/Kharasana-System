@@ -255,12 +255,8 @@ function initializeLogoUpload() {
 
 }
 
-// ==============================
-// ✅ حذف شعار المصنع (مع تأكيد)
-// ==============================
-function confirmDeleteLogo() {
-    return confirm("هل أنت متأكد من حذف شعار المصنع؟");
-}
+// (أُزيلت `confirmDeleteLogo`: لم يكن لها أي مستدعٍ — نماذج حذف الشعار كلها
+//  تحمل `data-confirm` ويتولّى site.js تأكيدها بنافذة موحّدة.)
 
 // ==============================
 // ✅ عرض الشعار في الجدول — عند فشل تحميل الصورة
@@ -285,5 +281,4 @@ function handleLogoError(imgElement) {
 // جعل الدوال متاحة عالمياً
 window.openCreateAccountModal = openCreateAccountModal;
 window.filterByStatus = filterByStatus;
-window.confirmDeleteLogo = confirmDeleteLogo;
 window.handleLogoError = handleLogoError;

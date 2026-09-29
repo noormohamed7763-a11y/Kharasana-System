@@ -215,7 +215,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const editPrice = document.getElementById("editPrice");
     const editImageUrl = document.getElementById("editImageUrl");
     const editPreviewImage = document.getElementById("editPreviewImage");
-    const editForm = document.getElementById("editConcreteTypeForm");
 
     function updateEditPrice() {
         if (!editPreviewPrice || !editPrice) return;
@@ -241,10 +240,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (editPreviewImage && editPreviewImage.dataset.recordImage) {
         editPreviewImage.src = editPreviewImage.dataset.recordImage;
     }
-
-    editForm?.addEventListener("submit", () => {
-        // No extra processing needed for edit form
-    });
 
     // ==========================
     // Index Page: Filter Rows by Search (if present)

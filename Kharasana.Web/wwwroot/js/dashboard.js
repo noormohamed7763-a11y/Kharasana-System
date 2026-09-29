@@ -114,7 +114,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // 3. Doughnut Chart: Factory Active Orders (حالة الطلبات النشطة)
-    // بيانات حقيقية من الـ ViewModel: جديدة / قيد التنفيذ / جاهزة للتسليم / قيد النقل
+    // بيانات حقيقية من الـ ViewModel: قيد التنفيذ / جاهزة للتسليم / قيد النقل
+    // (بلا شريحة «جديدة»: الطلبات تُنشأ Pending ولا تُسنَد حالة New أبداً)
     const factoryCanvas = document.getElementById('factoryOrdersChart');
     if (factoryCanvas) {
         try {

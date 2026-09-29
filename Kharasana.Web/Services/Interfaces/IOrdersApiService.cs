@@ -26,7 +26,7 @@ namespace Kharasana.Web.Services.Interfaces
             int pageSize = 20,
             string? search = null,
             int? factoryId = null,
-            int? status = null); // ✅ أضف معامل status
+            int? status = null);
 
         /// <summary>
         /// عدّ الطلبات حسب الحالة عبر كل الصفحات (وليست عناصر الصفحة الحالية)
@@ -120,7 +120,7 @@ namespace Kharasana.Web.Services.Interfaces
         /// <param name="id">معرف الطلب</param>
         /// <param name="reason">سبب الرفض (اختياري)</param>
         /// <returns>true إذا تم الرفض بنجاح</returns>
-        Task<bool> RejectOrderAsync(int id, string? reason); // ✅ أضف ? لتكون اختيارية
+        Task<bool> RejectOrderAsync(int id, string? reason);
 
         /// <summary>
         /// إلغاء الطلب من قبل العميل أو الموظف (قبل التسليم)

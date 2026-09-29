@@ -31,6 +31,12 @@ public static class Messages
     public const string DriverActivatedSuccessfully = "تم تفعيل حساب السائق بنجاح.";
     public const string DriverDeactivatedSuccessfully = "تم إيقاف حساب السائق بنجاح.";
 
+    public const string ConcreteTypesRetrievedSuccessfully = "تم جلب أنواع الخرسانة بنجاح.";
+    public const string ConcreteTypeRetrievedSuccessfully = "تم جلب نوع الخرسانة بنجاح.";
+
+    public const string DashboardRetrievedSuccessfully = "تم جلب بيانات لوحة التحكم بنجاح.";
+    public const string ReportsRetrievedSuccessfully = "تم جلب التقارير بنجاح.";
+
     public const string OrderUpdatedSuccessfully = "تم تحديث الطلب بنجاح.";
     public const string PriceSavedSuccessfully = "تم حفظ السعر بنجاح.";
     public const string OrderApprovedSuccessfully = "تم اعتماد الطلب بنجاح.";
@@ -244,15 +250,11 @@ public static class Messages
     /// <summary>لا توجد طلبات لهذا العميل في النطاق المطلوب (ومنها تُبنى إحصاءاته كلها).</summary>
     public const string CustomerNotFound = "لا توجد طلبات لهذا العميل.";
 
-    #endregion
-
-    public const string ConcreteTypesRetrievedSuccessfully = "تم جلب أنواع الخرسانة بنجاح.";
-    public const string ConcreteTypeRetrievedSuccessfully = "تم جلب نوع الخرسانة بنجاح.";
+    /// <summary>حصر نطاق أنواع الخرسانة على مصنع المستخدم — مسار الإنشاء وحده؛
+    /// القراءة والتعديل والحذف والاستعادة تستعمل <see cref="FactoryEmployeeFactoryMismatch"/> العامة.</summary>
     public const string CannotCreateConcreteTypeForOtherFactory = "لا يمكنك إنشاء نوع خرسانة لمصنع آخر.";
 
-    public const string DashboardRetrievedSuccessfully = "تم جلب بيانات لوحة التحكم بنجاح.";
-
-    public const string ReportsRetrievedSuccessfully = "تم جلب التقارير بنجاح.";
+    #endregion
 
     #region Fallback Display Strings
 

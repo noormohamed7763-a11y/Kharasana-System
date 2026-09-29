@@ -16,8 +16,6 @@ public class ClientDetailsViewModel
 
     public string? WhatsApp { get; set; }
 
-    public string? ProfileImage { get; set; }
-
     public bool IsActive { get; set; }
 
 

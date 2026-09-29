@@ -25,6 +25,14 @@ public class UserRepository : GenericRepository<User>, IUserRepository
         return await _context.Users.FirstOrDefaultAsync(x => x.Phone == phone);
     }
 
+    public async Task<User?> GetByIdWithFactoryAsync(int id)
+    {
+        return await _context.Users
+            .AsNoTracking()
+            .Include(u => u.Factory)
+            .FirstOrDefaultAsync(u => u.UserId == id);
+    }
+
     public async Task<bool> EmailExistsAsync(string email, int? excludeUserId = null)
     {
         var query = _context.Users.Where(x => x.Email == email);

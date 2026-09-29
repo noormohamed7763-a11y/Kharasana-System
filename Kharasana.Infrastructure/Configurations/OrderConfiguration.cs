@@ -34,7 +34,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.SlabType)
             .HasConversion<int>();
         builder.Property(o => o.TransportMethod)
-    .HasConversion<int>();
+            .HasConversion<int>();
 
         builder.Property(o => o.Quantity)
             .HasPrecision(18, 2);

@@ -42,6 +42,13 @@ namespace Kharasana.Web.Services.Api
                     TotalOrders = response.Data.TotalOrders
                 };
 
+                // أحدث الطلبات: `_AdminDashboard` يعرضها ويتعامل مع فراغها، وكانت
+                // تُترك فارغة هنا دائماً فيظهر «لا توجد طلبات مسجلة في النظام بعد»
+                // ولو كان في النظام مئات الطلبات — معلومة خاطئة لا ناقصة.
+                // بلا معرّف مصنع: الـ API لا يحصر الطلبات على الأدمن فيعيدها كلها،
+                // وهو المطلوب لعرض «أحدث الطلبات» على مستوى النظام.
+                vm.RecentOrders = await LoadRecentOrdersAsync(null);
+
                 return vm;
             }
             catch (ApiServiceException) { throw; }
@@ -92,10 +99,14 @@ namespace Kharasana.Web.Services.Api
         }
 
         /// <summary>
-        /// تحميل آخر طلبات المصنع الحقيقية (الأحدث أولاً) لعرضها في لوحة المصنع.
+        /// تحميل آخر الطلبات الحقيقية (الأحدث أولاً) لعرضها في اللوحة.
         /// يستخدم نفس Endpoint (Orders) وبالتالي يُطبَّق عليه عزل المصنع تلقائياً من الـ JWT.
         /// </summary>
-        private async Task<List<RecentOrderDto>> LoadRecentOrdersAsync(int factoryId)
+        /// <param name="factoryId">
+        /// معرّف المصنع (لوحة المصنع)، أو <c>null</c> (لوحة المدير) فيعيد الـ API
+        /// طلبات النظام كله لأن المدير غير محصور بمصنع.
+        /// </param>
+        private async Task<List<RecentOrderDto>> LoadRecentOrdersAsync(int? factoryId)
         {
             const int pageSize = 6;
 

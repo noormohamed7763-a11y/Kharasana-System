@@ -8,8 +8,8 @@ namespace Kharasana.API.Extensions;
 /// ملحقات استخراج هوية الطالب من ClaimsPrincipal.
 /// نمط الخطأ هنا استثنائي (UnauthorizedException) لا قيمة إرجاع IActionResult:
 /// هذا هو «النمط الموجود مسبقاً» في المشروع — الاستثناءات تُرمى من الطبقات الداخلية
-/// ويحوّلها ExceptionMiddleware إلى رموز HTTP. عند اعتمادها في الخطوة لاحقاً سيُلصق
-/// ربط UnauthorizedException → 401.
+/// ويحوّلها ExceptionMiddleware إلى رموز HTTP، وربط <see cref="UnauthorizedException"/>
+/// بـ 401 قائم في فرعه المخصّص.
 /// </summary>
 public static class CallerContextExtensions
 {

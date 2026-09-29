@@ -50,9 +50,10 @@ public class ConcreteTypeService : IConcreteTypeService
         if (concreteType == null)
             throw new NotFoundException(Messages.ConcreteTypeNotFound);
 
-        // ✅ defense-in-depth: التحقق من صلاحية المصنع
+        // ✅ defense-in-depth: التحقق من صلاحية المصنع — رسالة عامة لا تذكر «الإنشاء»
+        //    لأن هذا مسار قراءة (كانت رسالة الإنشاء تُعرض لمن يقرأ نوع مصنع آخر).
         if (currentFactoryId.HasValue && concreteType.FactoryId != currentFactoryId.Value)
-            throw new ForbiddenException(Messages.CannotCreateConcreteTypeForOtherFactory);
+            throw new ForbiddenException(Messages.FactoryEmployeeFactoryMismatch);
 
         return MapToDto(concreteType);
     }
@@ -106,9 +107,10 @@ public class ConcreteTypeService : IConcreteTypeService
         if (concreteType == null)
             throw new NotFoundException(Messages.ConcreteTypeNotFound);
 
-        // ✅ defense-in-depth: التحقق من صلاحية المصنع
+        // ✅ defense-in-depth: التحقق من صلاحية المصنع — رسالة عامة لا تذكر «الإنشاء»
+        //    لأن هذا مسار تعديل (كانت رسالة الإنشاء تُعرض لمن يعدّل نوع مصنع آخر).
         if (currentFactoryId.HasValue && concreteType.FactoryId != currentFactoryId.Value)
-            throw new ForbiddenException(Messages.CannotCreateConcreteTypeForOtherFactory);
+            throw new ForbiddenException(Messages.FactoryEmployeeFactoryMismatch);
 
         // ✅ المصنع موقوف أو مؤرشف — لا يُسمح بتعديل أنواع الخرسانة أيضاً
         var factory = await _unitOfWork.Factories.GetByIdIncludingDeletedAsync(concreteType.FactoryId);

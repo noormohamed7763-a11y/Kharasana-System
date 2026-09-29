@@ -78,7 +78,11 @@
                                     type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             </button>
                             <ul class="dropdown-menu">
-                                @foreach (var status in Enum.GetValues<DriverStatus>())
+                                @* الحالات الثلاث الفعلية فقط: `DriverStatus.Unset = 0` قيمة حارسة تعني
+                                   «لم تُمرَّر الحالة» في الـ DTO (UserService يسقطها إلى Offline)، وليست
+                                   حالة سائق. عرضها هنا كان يتيح اختيارها فيصير السائق بحالة لا يعرضها
+                                   الجدول (statusText = "-") ولا تحسبها اللوحة، وبنصّها الإنجليزي. *@
+                                @foreach (var status in new[] { DriverStatus.Available, DriverStatus.Busy, DriverStatus.Offline })
                                     {
                                         <li>
                                             <form asp-action="UpdateStatus" method="post" class="d-inline">

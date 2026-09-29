@@ -20,8 +20,8 @@
         <form asp-action="Edit" asp-route-id="@Model.ConcreteTypeId" method="post" id="editConcreteTypeForm">
             @Html.AntiForgeryToken()
 
-            <div asp-validation-summary="All" class="alert alert-danger"></div>
-
+            @* ملخّص التحقق موضعه داخل `_EditForm` (كما في `_CreateForm` و`_FactoryForm`)،
+               فوجود نسخة ثانية هنا كان يعرض قائمة الأخطاء نفسها مرتين في النموذج. *@
             <partial name="_EditForm" model="Model" />
 
             <hr class="my-4" />

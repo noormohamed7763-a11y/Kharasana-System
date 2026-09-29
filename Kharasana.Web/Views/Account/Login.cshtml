@@ -48,7 +48,12 @@
                                 <span>@TempData[BaseController.TempDataError]</span>
                             </div>
                         }
-                        <div asp-validation-summary="All" class="alert alert-danger"></div>
+                        @* ModelOnly: الملخّص يعرض أخطاء النموذج ككل وحدها — وهي التي
+                           يضيفها AccountController بمفتاح فارغ (بيانات دخول خاطئة أو
+                           خطأ من الـ API) ولا يطبعها أي `asp-validation-for`. أما أخطاء
+                           الحقلين فلكلٍّ منها `asp-validation-for` خاص به، وكانت
+                           `All` تعرضها مرّتين: في الملخّص وتحته. *@
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                         <!-- حقل المستخدم -->
                         <div class="form-group mb-3">
