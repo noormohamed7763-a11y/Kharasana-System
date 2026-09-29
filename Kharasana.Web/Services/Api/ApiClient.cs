@@ -273,7 +273,7 @@ public class ApiClient
         // ✅ تسجيل معلومات الطلب بدون المحتوى
         _logger.LogInformation("إرسال طلب POST إلى {Url}", url);
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
@@ -292,7 +292,7 @@ public class ApiClient
         // ✅ تسجيل معلومات الطلب بدون المحتوى
         _logger.LogInformation("إرسال طلب PUT إلى {Url}", url);
 
-        var request = new HttpRequestMessage(HttpMethod.Put, url)
+        using var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
@@ -311,7 +311,7 @@ public class ApiClient
     {
         _logger.LogInformation("إرسال طلب PUT إلى {Url} (بلا جسم)", url);
 
-        var request = new HttpRequestMessage(HttpMethod.Put, url)
+        using var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = new StringContent("{ }", Encoding.UTF8, "application/json")
         };
@@ -342,7 +342,7 @@ public class ApiClient
 
         _logger.LogInformation("إرسال طلب POST متعدّد الأجزاء إلى {Url} بالملف {FileName}", url, fileName);
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = content
         };

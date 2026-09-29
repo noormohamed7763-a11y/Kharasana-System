@@ -19,7 +19,7 @@ public class SecurityHeadersMiddleware
         _next = next;
     }
 
-    /// <summary>إنشاء nonce عشوائي آمن لكل طلب — يُخزن فيHttpContext.Items
+    /// <summary>إنشاء nonce عشوائي آمن لكل طلب — يُخزَّن في HttpContext.Items
     /// ليقرأه الـ ViewBag في الـ Controller ثم يُستعمل في الـ Views.</summary>
     private static string GenerateNonce()
     {
@@ -41,8 +41,8 @@ public class SecurityHeadersMiddleware
         // ضد clickjacking — التطبيق لا يُضمَّن في iframes
         headers["X-Frame-Options"] = "DENY";
 
-        // CSP: unsafe-inline مسموح للأنماط (Bootstrap) لكن تم استبدالها
-        // بـ nonce للـ scripts — يوقض CSS-based CSP bypass عبر nonce.
+        // CSP: unsafe-inline مسموح للأنماط (Bootstrap) لكن استُبدلت للـ scripts
+        // بـ nonce، وهو ما يسدّ تجاوز CSP المعتمد على الأنماط (CSS-based CSP bypass).
         headers["Content-Security-Policy"] =
             "default-src 'self'; " +
             $"script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net; " +

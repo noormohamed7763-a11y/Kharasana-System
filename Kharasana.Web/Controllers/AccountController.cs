@@ -33,8 +33,9 @@ namespace Kharasana.Web.Controllers
         /// <summary>
         /// صفحة منع الوصول (403). <b>لا يناظرها تكوين ASP.NET Authorization</b>: هذا
         /// المشروع لا يسجّل أي AuthenticationScheme (انظر Program.cs) والحراسة كلها عبر
-        /// <see cref="SessionAuthorizeAttribute"/>. الفعل باقٍ كصفحة 403 صريحة يمكن
-        /// توجيه المستخدم إليها، ولا شيء يحوّل إليه تلقائيًا اليوم.
+        /// <see cref="SessionAuthorizeAttribute"/>. الفعل باقٍ كصفحة 403 صريحة، ويُحوَّل
+        /// إليه من <c>DashboardController.Index</c> حين يكون موظف مصنعٍ بلا مصنعٍ مُسنَد
+        /// في جلسته (وإلا عرضت اللوحة بيانات بلا مصنع).
         /// </summary>
         [HttpGet]
         public IActionResult AccessDenied()

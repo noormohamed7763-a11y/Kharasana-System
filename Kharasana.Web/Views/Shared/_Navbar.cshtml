@@ -1,6 +1,16 @@
+@using Kharasana.Domain.Enums
 @{
     var userName = ViewBag.UserName as string ?? "مستخدم";
     var userRole = ViewBag.UserRole as string ?? "";
+
+    // ✅ اسم الدور بالعربية: `ViewBag.UserRole` يحمل مفتاح الجلسة الخام ("Admin"…)
+    //    وكان يُعرض كما هو فتظهر كلمة إنجليزية في واجهة عربية. المصدر الوحيد للاسم
+    //    العربي هو [Display] على UserRole (نفس نمط TransportMethod في Orders/Details)،
+    //    فلا خريطة مكرّرة في الـ View. ودور غير معروف يبقى بنصّه الخام بدل أن يختفي.
+    var userRoleName = Enum.TryParse<UserRole>(userRole, out var parsedRole)
+        ? parsedRole.GetDisplayName()
+        : userRole;
+
     var initial = userName.Length > 0 ? userName.Substring(0, 1).ToUpper() : "م";
 
     // شعار المصنع (يُمرَّر من الـ Controller عبر ViewBag — يتحدَّث عند رفع/حذف الشعار)
@@ -23,9 +33,9 @@
 
         <div class="navbar-user-info">
             <div class="navbar-user-name">@userName</div>
-            @if (!string.IsNullOrEmpty(userRole))
+            @if (!string.IsNullOrEmpty(userRoleName))
             {
-                <span class="navbar-user-role">@userRole</span>
+                <span class="navbar-user-role">@userRoleName</span>
             }
         </div>
 

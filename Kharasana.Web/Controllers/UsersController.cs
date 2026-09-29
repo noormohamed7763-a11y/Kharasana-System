@@ -179,8 +179,8 @@ public class UsersController : BaseController
                 "Offline" => "غير متصل",
                 _ => user.DriverStatus
             },
-            CreatedAt = null,
-            UpdatedAt = null
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt
         };
 
         return View(model);

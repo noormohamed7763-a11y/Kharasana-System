@@ -4,7 +4,6 @@ using Kharasana.Web.Services.Api;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Orders;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Kharasana.Web.Controllers
 {
@@ -127,12 +126,11 @@ namespace Kharasana.Web.Controllers
                 if (updated == null)
                 {
                     TempData[TempDataError] = AppMessages.Common.OperationFailed;
-                    var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
-                    ViewBag.ConcreteTypes = new SelectList(concreteTypes, "Id", "Name", model.ConcreteTypeId);
-                    ViewBag.OrderNumber = existingOrder.OrderNumber;
-                    ViewBag.ClientName = existingOrder.ClientName;
-                    ViewBag.OrderId = model.OrderId;
-                    ViewBag.ShowDeleteButton = true;
+
+                    // مصدر واحد لبيانات النموذج: كانت هذه النسخة المكرّرة الأطول لا تضبط
+                    // Status/UnitPrice، فتظهر الحالة «غير معروف» والسعر «-» — معلومة خاطئة
+                    // لا ناقصة. وبقية مسارات الفشل تستعمل الدالة المساعدة نفسها.
+                    await ReloadEditViewDataAsync(model);
                     return View(model);
                 }
 

@@ -29,6 +29,12 @@
                 </div>
             }
 
+            @* أخطاء النموذج ككل (AddModelError بمفتاح فارغ في UsersController) لا يطبعها
+               أي `asp-validation-for`؛ فبلا هذا الملخّص كان فشل التحديث ورسالة الـ API
+               تختفي ولا يبقى إلا تنبيه «يرجى تصحيح الأخطاء أدناه» بلا خطأ تحته.
+               ModelOnly حتى لا تتكرّر أخطاء الحقول المعروضة أصلاً بجانب كل حقل. *@
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
             <div class="row g-3">
                 <!-- الاسم الكامل -->
                 <div class="col-md-6">
@@ -67,7 +73,10 @@
                     <label asp-for="Role" class="form-label">
                         <span class="text-danger">*</span> @Html.DisplayNameFor(m => m.Role)
                     </label>
-                    <select asp-for="Role" class="form-select" asp-items="Html.GetEnumSelectList<UserRole>()">
+                    @* بلا `None` (=0، بلا دور): قيمة حارسة لا يُسنَد بها مستخدم، وكانت تُعرض
+                       باسمها الإنجليزي ويقبلها النموذج. الأسماء العربية من [Display] على UserRole. *@
+                    <select asp-for="Role" class="form-select"
+                            asp-items="Html.GetEnumSelectList<UserRole>().Where(r => r.Value != ((int)UserRole.None).ToString())">
                         <option value="">-- اختر الدور --</option>
                     </select>
                     <span asp-validation-for="Role" class="text-danger small"></span>
@@ -83,7 +92,10 @@
                 <!-- حالة السائق (يظهر فقط للسائق) -->
                 <div class="col-md-6" id="driverStatusGroup" style="display: none;">
                     <label asp-for="DriverStatus" class="form-label">@Html.DisplayNameFor(m => m.DriverStatus)</label>
-                    <select asp-for="DriverStatus" class="form-select" asp-items="Html.GetEnumSelectList<DriverStatus>()">
+                    @* بلا `Unset` (=0): قيمة حارسة تعني «لم تُحدَّد» ويسقطها UserService إلى
+                       Offline، فليست حالة سائق. الأسماء العربية من [Display] على DriverStatus. *@
+                    <select asp-for="DriverStatus" class="form-select"
+                            asp-items="Html.GetEnumSelectList<DriverStatus>().Where(s => s.Value != ((int)DriverStatus.Unset).ToString())">
                         <option value="">-- اختر الحالة --</option>
                     </select>
                     <span asp-validation-for="DriverStatus" class="text-danger small"></span>

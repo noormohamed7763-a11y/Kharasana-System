@@ -374,7 +374,13 @@ public class DriverApiService : IDriverApiService
             {
                 _logger.LogDebug("تبديل تفعيل حساب السائق: {DriverId}", id);
 
-                var response = await _apiClient.PutAsync<ApiResponse<object>>($"Users/{id}/toggle-active", token);
+                // ✅ القيمة المنطقية بِنيتها المعلنة لا عبر object: القراءة إلى
+                //    ApiResponse<object> تُنتج JsonElement دائماً (كما يعالجه
+                //    FactoryApiService و SettingsApiService)، فكان فحص `Data is bool`
+                //    لا يصدُق أبداً ويسقط التنفيذ إلى تخمين من نصّ الرسالة العربية
+                //    («تفعيل») — أي أن عرض «تم تفعيل» أو «تم إيقاف» كان رهين صياغة
+                //    رسالة في طبقة Application.
+                var response = await _apiClient.PutAsync<ApiResponse<bool>>($"Users/{id}/toggle-active", token);
 
                 if (response == null || !response.Success)
                 {
@@ -382,14 +388,7 @@ public class DriverApiService : IDriverApiService
                     return false;
                 }
 
-                // ✅ الأولوية لـ Data كـ boolean صريح — وإلا يُعاد false مع تحذير
-                var isActive = response.Data is bool active
-                    ? active
-                    : (response.Success && (response.Message?.Contains("تفعيل", StringComparison.OrdinalIgnoreCase) ?? false));
-                if (response.Data is not bool)
-                {
-                    _logger.LogWarning("ToggleActiveAsync: بيانات الردّ ليست منطقية للسائق {DriverId}. الاعتماد على راية النجاح.", id);
-                }
+                var isActive = response.Data;
                 _logger.LogInformation("بُدّل تفعيل حساب السائق: {DriverId} ← {IsActive}", id, isActive);
                 return isActive;
             });

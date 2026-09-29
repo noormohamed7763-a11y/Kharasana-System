@@ -17,6 +17,13 @@ public interface IUserRepository : IGenericRepository<User>
     Task<bool> PhoneExistsAsync(string phone);
 
     /// <summary>
+    /// قراءة مستخدم واحد مع كيان المصنع. القراءة العادية (<c>GetByIdAsync</c>) لا تُحمّل
+    /// المصنع فتبقى <c>UserDto.FactoryName</c> فارغة؛ صفحة تفاصيل المستخدم تعرض الاسم
+    /// نفسه لا معرّفه، فتحتاج هذه القراءة.
+    /// </summary>
+    Task<User?> GetByIdWithFactoryAsync(int id);
+
+    /// <summary>
     /// هل للمصنع حساب موظف؟ <paramref name="excludeUserId"/> يستثني المستخدم نفسه عند
     /// التعديل — نفس دور المعامل في <see cref="EmailExistsAsync"/>.
     /// </summary>

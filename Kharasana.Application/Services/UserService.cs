@@ -45,7 +45,9 @@ public class UserService : IUserService
 
     public async Task<UserDto> GetByIdAsync(int id)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(id);
+        // ✅ مع المصنع: صفحة تفاصيل المستخدم تعرض اسم المصنع لا معرّفه، والقراءة العادية
+        //    لا تُحمّله فتصل FactoryName فارغة ويسقط العرض على الرقم.
+        var user = await _unitOfWork.Users.GetByIdWithFactoryAsync(id);
         if (user == null)
             throw new NotFoundException(Messages.UserNotFound);
 
@@ -302,7 +304,12 @@ public class UserService : IUserService
             LicenseNumber = user.LicenseNumber,
             DriverStatus = user.DriverStatus,
             FactoryId = user.FactoryId,
-            IsActive = user.IsActive
+            // لا يُحمَّل المصنع إلا في قراءة المستخدم الواحد (GetByIdWithFactoryAsync)،
+            // فتبقى فارغة في القائمة — والقائمة لا تعرضها.
+            FactoryName = user.Factory?.FactoryName,
+            IsActive = user.IsActive,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt
         };
     }
 }

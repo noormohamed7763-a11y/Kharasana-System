@@ -133,9 +133,15 @@ public class UserApiService : IUserApiService
                 WhatsApp = u.WhatsApp,
                 Role = u.Role,
                 FactoryId = u.FactoryId,
+                // اسم المصنع والتواريخ: تعرضها صفحة تفاصيل المستخدم، وكانت تُقرأ منها
+                // بلا أن تُنقل من الـ API ⇒ كانت «المصنع» تعرض المعرّف الرقمي و«تاريخ
+                // الإنشاء» شرطة دائماً و«آخر تحديث» لا يظهر أبداً.
+                FactoryName = u.FactoryName,
                 IsActive = u.IsActive,
                 LicenseNumber = u.LicenseNumber,
-                DriverStatus = u.DriverStatus?.ToString()
+                DriverStatus = u.DriverStatus?.ToString(),
+                CreatedAt = u.CreatedAt,
+                UpdatedAt = u.UpdatedAt
             };
         }
         catch

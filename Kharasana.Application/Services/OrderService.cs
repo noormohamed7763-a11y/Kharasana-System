@@ -96,6 +96,9 @@ public partial class OrderService : IOrderService
             OrderId = o.OrderId,
             OrderNumber = o.OrderNumber,
             ClientName = o.Client?.FullName ?? string.Format(Messages.ClientFallback, o.ClientId),
+            // هاتف العميل وتاريخ الصب: تعرضهما قائمة الطلبات في الويب، وكانا يُقرآن من هذا الـDTO
+            // بلا أن يُرسَلا فيه ⇒ كانت الخانة تظهر فارغة و«تاريخ الصب» شرطة دائمًا.
+            ClientPhone = o.Client?.Phone,
             DriverId = o.DriverId,
             DriverName = o.Driver?.FullName ?? string.Empty,
             FactoryName = o.Factory?.FactoryName ?? string.Format(Messages.FactoryFallback, o.FactoryId),
@@ -105,6 +108,7 @@ public partial class OrderService : IOrderService
             TotalPrice = hidePricing ? null : o.TotalPrice,
             TransportMethod = o.TransportMethod,
             Status = o.Status,
+            PouringDate = o.PouringDate,
             CreatedAt = o.CreatedAt
         };
     }
