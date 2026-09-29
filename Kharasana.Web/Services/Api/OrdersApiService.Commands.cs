@@ -38,7 +38,7 @@ namespace Kharasana.Web.Services.Api
 
                 // ✅ سجل معلومات مختصرة فقط
                 _logger.LogInformation(
-                    "📤 Sending PhoneOrder: Client={ClientFullName}, Factory={FactoryId}, Project={ProjectName}",
+                    "إرسال الطلب الهاتفي: العميل={ClientFullName}، المصنع={FactoryId}، المشروع={ProjectName}",
                     phoneOrderDto.ClientFullName,
                     phoneOrderDto.FactoryId,
                     phoneOrderDto.ProjectName);
@@ -47,25 +47,25 @@ namespace Kharasana.Web.Services.Api
 
                 if (response == null)
                 {
-                    _logger.LogWarning("❌ CreatePhoneOrderAsync: Response is null");
+                    _logger.LogWarning("CreatePhoneOrderAsync: الردّ فارغ");
                     return null;
                 }
 
                 if (!response.Success)
                 {
-                    _logger.LogWarning("❌ CreatePhoneOrderAsync failed. Message: {Message}", response.Message);
+                    _logger.LogWarning("فشل CreatePhoneOrderAsync. الرسالة: {Message}", response.Message);
                     return null;
                 }
 
                 if (response.Data?.Order == null)
                 {
-                    _logger.LogWarning("❌ CreatePhoneOrderAsync: Response.Data.Order is null");
+                    _logger.LogWarning("CreatePhoneOrderAsync: بيانات الطلب في الردّ فارغة");
                     return null;
                 }
 
                 // ✅ لا نسجّل كلمة المرور المؤقتة إطلاقاً — تُعرض في الواجهة مرة واحدة فقط
                 _logger.LogInformation(
-                    "✅ CreatePhoneOrderAsync: Phone order created successfully. Order ID: {OrderId}, NewClientAccount: {NewClientAccount}",
+                    "CreatePhoneOrderAsync: أُنشئ الطلب الهاتفي. رقم الطلب: {OrderId}، حساب عميل جديد: {NewClientAccount}",
                     response.Data.Order.OrderId,
                     response.Data.NewClientTemporaryPassword != null);
 
@@ -74,7 +74,7 @@ namespace Kharasana.Web.Services.Api
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in CreatePhoneOrderAsync: {Message}", ex.Message);
+                _logger.LogError(ex, "استثناء في CreatePhoneOrderAsync: {Message}", ex.Message);
                 return null;
             }
         }
@@ -86,7 +86,7 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                _logger.LogInformation("📋 Updating order {Id}", id);
+                _logger.LogInformation("تعديل الطلب {Id}", id);
 
                 // ✅ تحويل صريح ViewModel → DTO
                 var dto = new Kharasana.Application.DTOs.Order.UpdateOrderDto
@@ -109,17 +109,17 @@ namespace Kharasana.Web.Services.Api
 
                 if (response == null || !response.Success)
                 {
-                    _logger.LogWarning("❌ UpdateOrderAsync failed for id={Id}. Message: {Message}", id, response?.Message);
+                    _logger.LogWarning("فشل UpdateOrderAsync للمعرّف {Id}. الرسالة: {Message}", id, response?.Message);
                     return null;
                 }
 
-                _logger.LogInformation("✅ UpdateOrderAsync: Order {Id} updated successfully", id);
+                _logger.LogInformation("UpdateOrderAsync: عُدّل الطلب {Id}", id);
                 return response.Data;
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in UpdateOrderAsync for id={Id}: {Message}", id, ex.Message);
+                _logger.LogError(ex, "استثناء في UpdateOrderAsync للمعرّف {Id}: {Message}", id, ex.Message);
                 return null;
             }
         }
@@ -129,11 +129,11 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         public async Task<bool> DeleteOrderAsync(int id)
         {
-            _logger.LogInformation("📋 Deleting order {Id}", id);
+            _logger.LogInformation("حذف الطلب {Id}", id);
 
             return await ExecuteOrderActionAsync(
                 nameof(DeleteOrderAsync),
-                $"Order {id} deleted successfully",
+                $"حُذف الطلب {id}",
                 () => _apiClient.DeleteAsync<ApiResponse<object>>($"Orders/{id}"),
                 id);
         }

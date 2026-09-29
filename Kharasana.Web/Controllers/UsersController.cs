@@ -101,7 +101,7 @@ public class UsersController : BaseController
         if ((model.Role == UserRole.Driver || model.Role == UserRole.FactoryEmployee)
             && !model.FactoryId.HasValue)
         {
-            ModelState.AddModelError(nameof(model.FactoryId), "المصنع مطلوب للسائق وموظف المصنع.");
+            ModelState.AddModelError(nameof(model.FactoryId), AppMessages.Common.FactoryRequiredForDriverAndEmployee);
         }
 
         if (!ModelState.IsValid)
@@ -115,11 +115,11 @@ public class UsersController : BaseController
 
             if (result.Success)
             {
-                TempData[TempDataSuccess] = "تم إنشاء المستخدم بنجاح.";
+                TempData[TempDataSuccess] = AppMessages.Success.UserCreated;
                 return RedirectToAction(nameof(Index));
             }
 
-            ModelState.AddModelError(string.Empty, result.Message ?? "حدث خطأ أثناء إنشاء المستخدم.");
+            ModelState.AddModelError(string.Empty, result.Message ?? AppMessages.Error.UserCreate);
         }
         catch (ApiServiceException ex)
         {
@@ -201,7 +201,7 @@ public class UsersController : BaseController
 
         if (user.Role != Roles.Driver)
         {
-            TempData[TempDataError] = "التقرير متاح لبطاقة سائق فقط.";
+            TempData[TempDataError] = AppMessages.Common.DriverReportForDriverCardOnly;
             return RedirectToAction(nameof(Index));
         }
 
@@ -272,7 +272,7 @@ public class UsersController : BaseController
         if ((model.Role == UserRole.Driver || model.Role == UserRole.FactoryEmployee)
             && !model.FactoryId.HasValue)
         {
-            ModelState.AddModelError(nameof(model.FactoryId), "المصنع مطلوب للسائق وموظف المصنع.");
+            ModelState.AddModelError(nameof(model.FactoryId), AppMessages.Common.FactoryRequiredForDriverAndEmployee);
         }
 
         if (!ModelState.IsValid)
@@ -286,11 +286,11 @@ public class UsersController : BaseController
 
             if (result.Success)
             {
-                TempData[TempDataSuccess] = "تم تحديث المستخدم بنجاح.";
+                TempData[TempDataSuccess] = AppMessages.Success.UserUpdated;
                 return RedirectToAction(nameof(Index));
             }
 
-            ModelState.AddModelError(string.Empty, result.Message ?? "حدث خطأ أثناء تحديث المستخدم.");
+            ModelState.AddModelError(string.Empty, result.Message ?? AppMessages.Error.UserUpdate);
         }
         catch (ApiServiceException ex)
         {
@@ -318,11 +318,11 @@ public class UsersController : BaseController
 
             if (result.Success)
             {
-                TempData[TempDataSuccess] = "تم حذف المستخدم بنجاح.";
+                TempData[TempDataSuccess] = AppMessages.Success.UserDeleted;
             }
             else
             {
-                TempData[TempDataError] = result.Message ?? "حدث خطأ أثناء حذف المستخدم.";
+                TempData[TempDataError] = result.Message ?? AppMessages.Error.UserDelete;
             }
         }
         catch (ApiServiceException ex)

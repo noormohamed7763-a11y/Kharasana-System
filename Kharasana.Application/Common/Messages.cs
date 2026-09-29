@@ -89,6 +89,13 @@ public static class Messages
 
     public const string InvalidLogoFile = "يرجى اختيار ملف صورة صالح.";
     public const string FactoryHasNoLogoToDelete = "لا يوجد شعار لهذا المصنع لحذفه.";
+
+    // تخزين الملفات (ImageStorageService) — رسائل تصل للمستخدم عبر ردّ الـ API
+    public const string InvalidUploadedFile = "الملف المرفوع غير صالح.";
+    public const string UnsupportedFileExtension = "امتداد الملف غير مدعوم. الامتدادات المسموحة: jpg, jpeg, png, webp.";
+    public const string FileTooLarge = "حجم الملف يتجاوز الحد المسموح به (5 ميجابايت).";
+    public const string InvalidFileContentType = "نوع محتوى الملف غير صالح أو لا يتطابق مع الامتداد.";
+    public const string InvalidStorageFolder = "مجلد تخزين الصور غير صالح.";
     public const string FactoryNotFoundOrInactive = "المصنع غير موجود أو غير نشط.";
     public const string ConcreteTypeNotFoundShort = "نوع الخرسانة غير موجود.";
     public const string ConcreteTypeNotActiveForClient = "نوع الخرسانة غير نشط.";

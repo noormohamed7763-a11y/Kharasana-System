@@ -2,6 +2,7 @@ using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Clients;
 using Kharasana.Application.DTOs.Customer;
+using Kharasana.Application.DTOs.User;
 using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using System.Net;
@@ -56,7 +57,7 @@ public class ClientApiService : IClientApiService
                 response.Data == null)
             {
                 _logger.LogWarning(
-                    "GetClientsAsync failed. Query: {Query}",
+                    "فشل GetClientsAsync. الاستعلام: {Query}",
                     query);
 
                 return null;
@@ -86,7 +87,7 @@ public class ClientApiService : IClientApiService
         {
             _logger.LogError(
                 ex,
-                "Exception in GetClientsAsync");
+                "استثناء في GetClientsAsync");
 
             return null;
         }
@@ -117,7 +118,7 @@ public class ClientApiService : IClientApiService
                 response.Data == null)
             {
                 _logger.LogWarning(
-                    "GetDetailsAsync: Could not load customer {ClientId}.",
+                    "GetDetailsAsync: تعذّر جلب العميل {ClientId}.",
                     clientId);
 
                 return null;
@@ -145,7 +146,7 @@ public class ClientApiService : IClientApiService
             // 404 = لا توجد طلبات لهذا العميل: حالة متوقعة يعالجها
             // ClientsController.Details بإعادة توجيه ورسالة، لا خطأ نظام.
             _logger.LogWarning(
-                "GetDetailsAsync: Customer {ClientId} has no orders.",
+                "GetDetailsAsync: لا طلبات للعميل {ClientId}.",
                 clientId);
 
             return null;
@@ -155,7 +156,7 @@ public class ClientApiService : IClientApiService
         {
             _logger.LogError(
                 ex,
-                "Exception in GetDetailsAsync for clientId={ClientId}",
+                "استثناء في GetDetailsAsync للعميل {ClientId}",
                 clientId);
 
             return null;
@@ -192,7 +193,7 @@ public class ClientApiService : IClientApiService
                 !response.Success)
             {
                 _logger.LogWarning(
-                    "CreateAsync failed. Message: {Message}",
+                    "فشل CreateAsync. الرسالة: {Message}",
                     response?.Message);
 
                 return false;
@@ -205,7 +206,7 @@ public class ClientApiService : IClientApiService
         {
             _logger.LogError(
                 ex,
-                "Exception in CreateAsync");
+                "استثناء في CreateAsync");
 
             return false;
         }
@@ -222,7 +223,7 @@ public class ClientApiService : IClientApiService
         {
             var response =
                 await _apiClient.GetAsync<
-                    ApiResponse<ClientAccountDto>
+                    ApiResponse<UserDto>
                 >($"Users/{clientId}");
 
             if (response == null ||
@@ -230,7 +231,7 @@ public class ClientApiService : IClientApiService
                 response.Data == null)
             {
                 _logger.LogWarning(
-                    "GetForEditAsync: Client {ClientId} not found.",
+                    "GetForEditAsync: العميل {ClientId} غير موجود.",
                     clientId);
 
                 return null;
@@ -254,7 +255,7 @@ public class ClientApiService : IClientApiService
         {
             _logger.LogError(
                 ex,
-                "Exception in GetForEditAsync for clientId={ClientId}",
+                "استثناء في GetForEditAsync للعميل {ClientId}",
                 clientId);
 
             return null;
@@ -299,7 +300,7 @@ public class ClientApiService : IClientApiService
                 !response.Success)
             {
                 _logger.LogWarning(
-                    "UpdateAsync failed for client {Id}. Message: {Message}",
+                    "فشل UpdateAsync للعميل {Id}. الرسالة: {Message}",
                     id,
                     response?.Message);
 
@@ -313,32 +314,10 @@ public class ClientApiService : IClientApiService
         {
             _logger.LogError(
                 ex,
-                "Exception in UpdateAsync for client {Id}",
+                "استثناء في UpdateAsync للعميل {Id}",
                 id);
 
             return false;
         }
     }
-}
-
-
-// ============================================================
-// INTERNAL DTO
-// GET /api/Users/{id}
-// ============================================================
-internal class ClientAccountDto
-{
-    public int UserId { get; set; }
-
-    public string FullName { get; set; } = string.Empty;
-
-    public string? Email { get; set; }
-
-    public string? Phone { get; set; }
-
-    public string? WhatsApp { get; set; }
-
-    public string? ProfileImage { get; set; }
-
-    public bool IsActive { get; set; }
 }

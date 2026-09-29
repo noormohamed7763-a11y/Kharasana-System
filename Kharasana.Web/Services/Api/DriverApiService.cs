@@ -46,13 +46,13 @@ public class DriverApiService : IDriverApiService
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("{Operation}: Request was cancelled or timed out. {Detail}", operation, detail);
+            _logger.LogWarning("{Operation}: أُلغي الطلب أو انتهت مهلته. {Detail}", operation, detail);
             return cancellationFallback;
         }
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception in {Operation}. {Detail}", operation, detail);
+            _logger.LogError(ex, "استثناء في {Operation}. {Detail}", operation, detail);
             return errorFallback(ex);
         }
     }
@@ -82,13 +82,13 @@ public class DriverApiService : IDriverApiService
                 if (factoryId.HasValue)
                     query += $"&factoryId={factoryId.Value}";
 
-                _logger.LogDebug("Fetching drivers with query: {Query}", query);
+                _logger.LogDebug("جلب السائقين — الاستعلام: {Query}", query);
 
                 var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(query, token);
 
                 if (response == null || !response.Success || response.Data == null)
                 {
-                    _logger.LogWarning("GetDriversAsync: API returned null/failed for query {Query}", query);
+                    _logger.LogWarning("GetDriversAsync: ردّ الـ API فارغ أو فاشل للاستعلام {Query}", query);
                     return null;
                 }
 
@@ -127,7 +127,7 @@ public class DriverApiService : IDriverApiService
 
                 if (response == null || !response.Success || response.Data == null)
                 {
-                    _logger.LogWarning("GetByIdAsync: Could not load driver {DriverId}", id);
+                    _logger.LogWarning("GetByIdAsync: تعذّر جلب السائق {DriverId}", id);
                     return null;
                 }
 
@@ -161,7 +161,7 @@ public class DriverApiService : IDriverApiService
 
                 if (response == null || !response.Success || response.Data == null)
                 {
-                    _logger.LogWarning("GetForEditAsync: Could not load driver {DriverId}", driverId);
+                    _logger.LogWarning("GetForEditAsync: تعذّر جلب السائق {DriverId}", driverId);
                     return null;
                 }
 
@@ -204,23 +204,23 @@ public class DriverApiService : IDriverApiService
                     FactoryId = model.FactoryId
                 };
 
-                _logger.LogDebug("Creating new driver: {FullName}", model.FullName);
+                _logger.LogDebug("إنشاء سائق جديد: {FullName}", model.FullName);
 
                 var response = await _apiClient.PostAsync<ApiResponse<object>>("Users", payload, token);
 
                 if (response == null)
                 {
-                    _logger.LogWarning("CreateAsync (Driver): API returned null response.");
+                    _logger.LogWarning("CreateAsync (سائق): ردّ الـ API فارغ.");
                     return (false, "تعذر الاتصال بالخادم. حاول مرة أخرى.");
                 }
 
                 if (!response.Success)
                 {
-                    _logger.LogWarning("CreateAsync (Driver) failed. Message: {Message}", response.Message);
+                    _logger.LogWarning("فشل CreateAsync (سائق). الرسالة: {Message}", response.Message);
                     return (false, response.Message);
                 }
 
-                _logger.LogInformation("Driver created successfully: {FullName}", model.FullName);
+                _logger.LogInformation("أُنشئ السائق: {FullName}", model.FullName);
                 return (true, null);
             });
 
@@ -251,23 +251,23 @@ public class DriverApiService : IDriverApiService
                     IsActive = model.IsActive
                 };
 
-                _logger.LogDebug("Updating driver: {DriverId}", id);
+                _logger.LogDebug("تعديل السائق: {DriverId}", id);
 
                 var response = await _apiClient.PutAsync<ApiResponse<object>>($"Users/{id}", payload, token);
 
                 if (response == null)
                 {
-                    _logger.LogWarning("UpdateAsync (Driver): API returned null response for id={Id}", id);
+                    _logger.LogWarning("UpdateAsync (سائق): ردّ الـ API فارغ للمعرّف {Id}", id);
                     return (false, "تعذر الاتصال بالخادم. حاول مرة أخرى.");
                 }
 
                 if (!response.Success)
                 {
-                    _logger.LogWarning("UpdateAsync (Driver) failed for id={Id}. Message: {Message}", id, response.Message);
+                    _logger.LogWarning("فشل UpdateAsync (سائق) للمعرّف {Id}. الرسالة: {Message}", id, response.Message);
                     return (false, response.Message);
                 }
 
-                _logger.LogInformation("Driver updated successfully: {DriverId}", id);
+                _logger.LogInformation("عُدّل السائق: {DriverId}", id);
                 return (true, null);
             });
 
@@ -285,17 +285,17 @@ public class DriverApiService : IDriverApiService
             errorFallback: _ => false,
             action: async token =>
             {
-                _logger.LogDebug("Deleting driver: {DriverId}", id);
+                _logger.LogDebug("حذف السائق: {DriverId}", id);
 
                 var response = await _apiClient.DeleteAsync<ApiResponse<object>>($"Users/{id}", token);
 
                 if (response == null || !response.Success)
                 {
-                    _logger.LogWarning("DeleteAsync (Driver) failed for id={Id}. Message: {Message}", id, response?.Message);
+                    _logger.LogWarning("فشل DeleteAsync (سائق) للمعرّف {Id}. الرسالة: {Message}", id, response?.Message);
                     return false;
                 }
 
-                _logger.LogInformation("Driver deleted successfully: {DriverId}", id);
+                _logger.LogInformation("حُذف السائق: {DriverId}", id);
                 return true;
             });
     }
@@ -314,17 +314,17 @@ public class DriverApiService : IDriverApiService
                 // ✅ PascalCase لتطابق UpdateDriverStatusDto في الـ API
                 var payload = new { DriverStatus = (int)model.DriverStatus };
 
-                _logger.LogDebug("Updating driver status: {DriverId} -> {Status}", id, model.DriverStatus);
+                _logger.LogDebug("تحديث حالة السائق: {DriverId} ← {Status}", id, model.DriverStatus);
 
                 var response = await _apiClient.PutAsync<ApiResponse<object>>($"Users/{id}/driver-status", payload, token);
 
                 if (response == null || !response.Success)
                 {
-                    _logger.LogWarning("UpdateStatusAsync failed for id={Id}. Message: {Message}", id, response?.Message);
+                    _logger.LogWarning("فشل UpdateStatusAsync للمعرّف {Id}. الرسالة: {Message}", id, response?.Message);
                     return false;
                 }
 
-                _logger.LogInformation("Driver status updated successfully: {DriverId} -> {Status}", id, model.DriverStatus);
+                _logger.LogInformation("حُدّثت حالة السائق: {DriverId} ← {Status}", id, model.DriverStatus);
                 return true;
             });
     }
@@ -372,13 +372,13 @@ public class DriverApiService : IDriverApiService
             errorFallback: _ => false,
             action: async token =>
             {
-                _logger.LogDebug("Toggling driver active state: {DriverId}", id);
+                _logger.LogDebug("تبديل تفعيل حساب السائق: {DriverId}", id);
 
                 var response = await _apiClient.PutAsync<ApiResponse<object>>($"Users/{id}/toggle-active", token);
 
                 if (response == null || !response.Success)
                 {
-                    _logger.LogWarning("ToggleActiveAsync failed for id={Id}. Message: {Message}", id, response?.Message);
+                    _logger.LogWarning("فشل ToggleActiveAsync للمعرّف {Id}. الرسالة: {Message}", id, response?.Message);
                     return false;
                 }
 
@@ -388,9 +388,9 @@ public class DriverApiService : IDriverApiService
                     : (response.Success && (response.Message?.Contains("تفعيل", StringComparison.OrdinalIgnoreCase) ?? false));
                 if (response.Data is not bool)
                 {
-                    _logger.LogWarning("ToggleActiveAsync: Response Data is not boolean for driver {DriverId}. Relying on Success flag.", id);
+                    _logger.LogWarning("ToggleActiveAsync: بيانات الردّ ليست منطقية للسائق {DriverId}. الاعتماد على راية النجاح.", id);
                 }
-                _logger.LogInformation("Driver active state toggled: {DriverId} -> {IsActive}", id, isActive);
+                _logger.LogInformation("بُدّل تفعيل حساب السائق: {DriverId} ← {IsActive}", id, isActive);
                 return isActive;
             });
     }

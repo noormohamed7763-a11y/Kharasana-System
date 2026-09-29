@@ -10,7 +10,6 @@ public class RegisterUserDto
     [MaxLength(200)]
     public string FullName { get; set; } = string.Empty;
 
-    // ✅ تم إزالة [Required] وجعل البريد الإلكتروني اختيارياً
     [YemeniEmail(ErrorMessage = Messages.InvalidEmail)]
     public string? Email { get; set; }
 
@@ -36,5 +35,5 @@ public class RegisterUserDto
 
     public string? WhatsApp { get; set; }
 
-    // ✅ تم إزالة Role و FactoryId لأنهما ليسا جزءاً من التسجيل الذاتي للعميل
+    // لا Role ولا FactoryId هنا: التسجيل الذاتي للعميل لا يتضمّنهما.
 }

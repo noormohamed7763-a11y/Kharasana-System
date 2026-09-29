@@ -29,7 +29,7 @@ public class ReportsApiService : IReportsApiService
 
             if (response == null || !response.Success || response.Data == null)
             {
-                _logger.LogWarning("Reports API returned null or empty response.");
+                _logger.LogWarning("أعادت واجهة التقارير ردًّا فارغًا.");
                 return null;
             }
 
@@ -43,7 +43,7 @@ public class ReportsApiService : IReportsApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while loading reports summary.");
+            _logger.LogError(ex, "خطأ في تحميل ملخّص التقارير.");
             return null;
         }
     }

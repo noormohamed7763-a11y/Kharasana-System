@@ -100,7 +100,7 @@ namespace Kharasana.Web.Controllers
 
             if (model.OrderId != id)
             {
-                _logger.LogWarning("OrderId mismatch: model.OrderId={ModelOrderId}, route id={RouteId}", model.OrderId, id);
+                _logger.LogWarning("عدم تطابق معرّف الطلب: النموذج={ModelOrderId}، المسار={RouteId}", model.OrderId, id);
                 model.OrderId = id;
             }
 
@@ -117,7 +117,7 @@ namespace Kharasana.Web.Controllers
                 var existingOrder = await _ordersApiService.GetOrderByIdAsync(id);
                 if (existingOrder == null)
                 {
-                    _logger.LogWarning("Order {OrderId} not found for editing", id);
+                    _logger.LogWarning("الطلب {OrderId} غير موجود للتعديل", id);
                     TempData[TempDataError] = AppMessages.Common.NotFound;
                     return RedirectToAction(nameof(Index));
                 }
@@ -136,13 +136,13 @@ namespace Kharasana.Web.Controllers
                     return View(model);
                 }
 
-                _logger.LogInformation("Order {OrderId} updated successfully", id);
+                _logger.LogInformation("عُدّل الطلب {OrderId}", id);
                 TempData[TempDataSuccess] = AppMessages.Success.Updated;
                 return RedirectToAction(nameof(Details), new { id });
             }
             catch (ApiServiceException ex)
             {
-                _logger.LogError(ex, "Error editing order {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
+                _logger.LogError(ex, "خطأ في تعديل الطلب {OrderId} الحالة={StatusCode}", id, (int)ex.StatusCode);
                 TempData[TempDataError] = ex.Message;
 
                 await ReloadEditViewDataAsync(model);
@@ -150,7 +150,7 @@ namespace Kharasana.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error editing order {OrderId}", id);
+                _logger.LogError(ex, "خطأ غير متوقع في تعديل الطلب {OrderId}", id);
                 TempData[TempDataError] = AppMessages.Common.OperationFailed;
 
                 await ReloadEditViewDataAsync(model);

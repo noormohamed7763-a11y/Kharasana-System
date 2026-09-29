@@ -24,12 +24,12 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                _logger.LogDebug("Requesting Admin dashboard data from API");
+                _logger.LogDebug("طلب بيانات لوحة المدير من الـ API");
                 var response = await _apiClient.GetAsync<ApiResponse<AdminDashboardDto>>("Dashboard/admin");
 
                 if (response == null || !response.Success || response.Data == null)
                 {
-                    _logger.LogWarning("Admin dashboard API returned null or empty. Returning default VM.");
+                    _logger.LogWarning("أعادت واجهة لوحة المدير ردًّا فارغًا. تُعاد قيمة افتراضية.");
                     return new DashboardViewModel();
                 }
 
@@ -47,7 +47,7 @@ namespace Kharasana.Web.Services.Api
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception while loading admin dashboard");
+                _logger.LogError(ex, "خطأ في تحميل لوحة المدير");
                 return new DashboardViewModel();
             }
         }
@@ -56,12 +56,12 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                _logger.LogDebug("Requesting Factory({FactoryId}) dashboard data from API", factoryId);
+                _logger.LogDebug("طلب بيانات لوحة المصنع ({FactoryId}) من الـ API", factoryId);
                 var response = await _apiClient.GetAsync<ApiResponse<FactoryDashboardDto>>($"Dashboard/factory?factoryId={factoryId}");
 
                 if (response == null || !response.Success || response.Data == null)
                 {
-                    _logger.LogWarning("Factory dashboard API returned null or empty for factoryId={FactoryId}. Returning empty factory dashboard.", factoryId);
+                    _logger.LogWarning("أعادت واجهة لوحة المصنع ردًّا فارغًا للمصنع {FactoryId}. تُعاد لوحة فارغة.", factoryId);
 
                     return new DashboardViewModel();
                 }
@@ -79,14 +79,14 @@ namespace Kharasana.Web.Services.Api
 
                 vm.RecentOrders = await LoadRecentOrdersAsync(factoryId);
 
-                _logger.LogInformation("Factory dashboard loaded for factoryId={FactoryId}: TodayOrdersCount={TodayOrdersCount}", factoryId, vm.TodayOrdersCount);
+                _logger.LogInformation("حُمّلت لوحة المصنع {FactoryId}: طلبات اليوم={TodayOrdersCount}", factoryId, vm.TodayOrdersCount);
 
                 return vm;
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception while loading factory dashboard for factoryId={FactoryId}", factoryId);
+                _logger.LogError(ex, "خطأ في تحميل لوحة المصنع {FactoryId}", factoryId);
                 return new DashboardViewModel();
             }
         }
@@ -102,7 +102,7 @@ namespace Kharasana.Web.Services.Api
             var result = await _ordersApiService.GetOrdersAsync(pageNumber: 1, pageSize: pageSize, factoryId: factoryId);
             if (result == null)
             {
-                _logger.LogWarning("Failed to load recent orders for dashboard (factoryId={FactoryId}). Showing empty state.", factoryId);
+                _logger.LogWarning("تعذّر جلب أحدث الطلبات للوحة (المصنع {FactoryId}). تُعرض حالة فارغة.", factoryId);
                 return new List<RecentOrderDto>();
             }
 

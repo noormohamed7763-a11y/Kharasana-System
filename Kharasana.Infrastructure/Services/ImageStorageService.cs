@@ -1,4 +1,5 @@
-﻿using Kharasana.Application.Common.Exceptions;
+﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Hosting;
 
@@ -26,18 +27,18 @@ public class ImageStorageService : IImageStorageService
     public async Task<string> SaveImageAsync(Stream fileStream, string originalFileName, long fileLength, string folderName)
     {
         if (fileStream == null || fileLength <= 0)
-            throw new BusinessException("الملف المرفوع غير صالح.");
+            throw new BusinessException(Messages.InvalidUploadedFile);
 
         var extension = Path.GetExtension(originalFileName)?.ToLowerInvariant();
 
         if (string.IsNullOrEmpty(extension) || !AllowedExtensions.Contains(extension))
-            throw new BusinessException("امتداد الملف غير مدعوم. الامتدادات المسموحة: jpg, jpeg, png, webp.");
+            throw new BusinessException(Messages.UnsupportedFileExtension);
 
         if (fileLength > MaxFileSizeInBytes)
-            throw new BusinessException("حجم الملف يتجاوز الحد المسموح به (5 ميجابايت).");
+            throw new BusinessException(Messages.FileTooLarge);
 
         if (!IsValidMimeType(fileStream, extension))
-            throw new BusinessException("نوع محتوى الملف غير صالح أو لا يتطابق مع الامتداد.");
+            throw new BusinessException(Messages.InvalidFileContentType);
 
         // ✅ حارس اجتياز المسار على اسم المجلد: الوسيط جزء من عقد الواجهة، ولو مرّره
         //    مستدعٍ من مدخلات المستخدم لصار ".." أو مسار مطلق يكتب خارج مجلد الصور.
@@ -47,7 +48,7 @@ public class ImageStorageService : IImageStorageService
             || folderName.IndexOfAny('/', '\\') >= 0
             || Path.IsPathRooted(folderName))
         {
-            throw new BusinessException("مجلد تخزين الصور غير صالح.");
+            throw new BusinessException(Messages.InvalidStorageFolder);
         }
 
         // ✅ مسار wwwroot موحّد بين الحفظ والحذف — كان الحفظ يستخدم GetCurrentDirectory()

@@ -267,6 +267,8 @@ Kharasana.Web/
 │   ├── AccountController.cs     # تسجيل الدخول والخروج وإدارة الجلسات
 │   ├── DashboardController.cs   # لوحات التحكم التفاعلية (أدمن ومصانع)
 │   ├── OrdersController.cs      # إدارة وجداول وعرض تفاصيل الطلبات
+│   │   ├── OrdersController.Read.cs     # القائمة والتفاصيل والنماذج (GET) — `partial class`
+│   │   └── OrdersController.Commands.cs # الإنشاء والتعديل والحذف (POST) — `partial class`
 │   ├── OrderWorkflowController.cs # معالجة مسار اعتماد وتسليم الطلبات
 │   ├── FactoriesController.cs   # شاشات إدارة ومتابعة المصانع
 │   ├── ConcreteTypesController.cs # شاشات إدارة أنواع الخرسانة
@@ -275,6 +277,7 @@ Kharasana.Web/
 │   ├── DriversController.cs     # شاشات السائقين والتقارير الميدانية
 │   ├── ReportsController.cs     # شاشات الرسوم البيانية والتقارير
 │   ├── SettingsController.cs    # إعدادات الحساب والمصنع
+│   ├── SupportController.cs     # صفحة الدعم والمساعدة (ثابتة بلا استدعاءات API)
 │   ├── FilesController.cs       # خادم وسيط لعرض وتنزيل الصور والملفات
 │   └── HomeController.cs        # الصفحة الترحيبية وتوجيه الجلسات
 ├── Services/                    # خدمات الاتصال بالـ API واسترجاع البيانات
@@ -283,6 +286,9 @@ Kharasana.Web/
 │   │   ├── ApiServiceException.cs # استثناءات استدعاءات الـ API
 │   │   ├── AuthApiService.cs
 │   │   ├── OrdersApiService.cs
+│   │   │   ├── OrdersApiService.Read.cs     # القراءة والاستعلامات — `partial class`
+│   │   │   ├── OrdersApiService.Commands.cs # الإنشاء والتعديل والحذف — `partial class`
+│   │   │   └── OrdersApiService.Workflow.cs # مسار الحالة (سعر، اعتماد، إسناد سائق) — `partial class`
 │   │   ├── FactoryApiService.cs
 │   │   ├── DashboardApiService.cs
 │   │   ├── ConcreteTypeApiService.cs
@@ -314,8 +320,11 @@ Kharasana.Web/
 │   ├── Factories/               # شاشات إدارة وتفاصيل وأرشيف المصانع
 │   ├── ConcreteTypes/           # شاشات إدارة أنواع الخرسانة
 │   ├── Users/                   # شاشات إدارة وتعديل المستخدمين
+│   ├── Clients/                 # شاشات إدارة العملاء (قائمة، إنشاء، تعديل، تفاصيل)
 │   ├── Drivers/                 # شاشات السائقين
 │   ├── Reports/                 # شاشات التقارير العامة
+│   ├── Settings/                # شاشة إعدادات المصنع وشعاره
+│   ├── Support/                 # صفحة الدعم والمساعدة
 │   └── Account/                 # شاشات تسجيل الدخول
 ├── Filters/                     # فلاتر الأمان ومعالجة أخطاء الواجهة
 │   ├── SessionAuthorizeAttribute.cs # التحقق من جلسة المستخدم وصلاحياته
