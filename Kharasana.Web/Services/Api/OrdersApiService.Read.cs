@@ -30,29 +30,29 @@ namespace Kharasana.Web.Services.Api
                 if (status.HasValue)
                     query += $"&status={status.Value}";
 
-                _logger.LogInformation("📋 Fetching orders with query: {Query}", query);
+                _logger.LogInformation("جلب الطلبات — الاستعلام: {Query}", query);
 
                 var response = await _apiClient.GetAsync<ApiResponse<PagedResult<OrderDto>>>(query);
 
                 if (response == null)
                 {
-                    _logger.LogWarning("❌ GetOrdersAsync: API returned null for query {Query}", query);
+                    _logger.LogWarning("GetOrdersAsync: ردّ الـ API فارغ للاستعلام {Query}", query);
                     return null;
                 }
 
                 if (!response.Success)
                 {
-                    _logger.LogWarning("❌ GetOrdersAsync: API returned success=false. Message: {Message}", response.Message);
+                    _logger.LogWarning("GetOrdersAsync: الـ API أعاد Success=false. الرسالة: {Message}", response.Message);
                     return null;
                 }
 
-                _logger.LogInformation("✅ GetOrdersAsync: Retrieved {Count} orders", response.Data?.Items?.Count() ?? 0);
+                _logger.LogInformation("GetOrdersAsync: أُعيدت {Count} طلبًا", response.Data?.Items?.Count() ?? 0);
                 return response.Data;
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in GetOrdersAsync: {Message}", ex.Message);
+                _logger.LogError(ex, "استثناء في GetOrdersAsync: {Message}", ex.Message);
                 return null;
             }
         }
@@ -72,7 +72,7 @@ namespace Kharasana.Web.Services.Api
                     + (string.IsNullOrWhiteSpace(search) ? "" : $"&Search={Uri.EscapeDataString(search)}")
                     + (factoryId.HasValue ? $"&factoryId={factoryId.Value}" : "");
 
-                _logger.LogInformation("📊 Fetching order status counts (Search={Search}, FactoryId={FactoryId})", search, factoryId);
+                _logger.LogInformation("جلب عدّادات حالات الطلبات (البحث={Search}، المصنع={FactoryId})", search, factoryId);
 
                 // ✅ تنفيذ متوازٍ — ApiClient يضيف رأس Authorization لكل طلب على حدة
                 var pendingTask = _apiClient.GetPagedTotalAsync<OrderDto>(CountQuery(OrderStatus.Pending));
@@ -87,7 +87,7 @@ namespace Kharasana.Web.Services.Api
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in GetStatusCountsAsync: {Message}", ex.Message);
+                _logger.LogError(ex, "استثناء في GetStatusCountsAsync: {Message}", ex.Message);
                 return (0, 0, 0, 0);
             }
         }
@@ -99,35 +99,35 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                _logger.LogInformation("📋 Fetching order details for ID: {Id}", id);
+                _logger.LogInformation("جلب تفاصيل الطلب رقم {Id}", id);
 
                 var response = await _apiClient.GetAsync<ApiResponse<OrderDto>>($"Orders/{id}");
 
                 if (response == null)
                 {
-                    _logger.LogWarning("❌ GetOrderByIdAsync: API returned null for id={Id}", id);
+                    _logger.LogWarning("GetOrderByIdAsync: ردّ الـ API فارغ للمعرّف {Id}", id);
                     return null;
                 }
 
                 if (!response.Success)
                 {
-                    _logger.LogWarning("❌ GetOrderByIdAsync: API returned success=false for id={Id}. Message: {Message}", id, response.Message);
+                    _logger.LogWarning("GetOrderByIdAsync: الـ API أعاد Success=false للمعرّف {Id}. الرسالة: {Message}", id, response.Message);
                     return null;
                 }
 
                 if (response.Data == null)
                 {
-                    _logger.LogWarning("❌ GetOrderByIdAsync: Response.Data is null for id={Id}", id);
+                    _logger.LogWarning("GetOrderByIdAsync: بيانات الردّ فارغة للمعرّف {Id}", id);
                     return null;
                 }
 
-                _logger.LogInformation("✅ GetOrderByIdAsync: Retrieved order {Id} - {OrderNumber}", id, response.Data.OrderNumber);
+                _logger.LogInformation("GetOrderByIdAsync: أُعيد الطلب {Id} — {OrderNumber}", id, response.Data.OrderNumber);
                 return response.Data;
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in GetOrderByIdAsync for id={Id}: {Message}", id, ex.Message);
+                _logger.LogError(ex, "استثناء في GetOrderByIdAsync للمعرّف {Id}: {Message}", id, ex.Message);
                 return null;
             }
         }
@@ -139,29 +139,29 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                _logger.LogInformation("📋 Fetching all orders for driver {DriverId} (print report)", driverId);
+                _logger.LogInformation("جلب كل طلبات السائق {DriverId} (تقرير الطباعة)", driverId);
 
                 var response = await _apiClient.GetAsync<ApiResponse<IEnumerable<OrderDto>>>($"Orders/by-driver/{driverId}");
 
                 if (response == null)
                 {
-                    _logger.LogWarning("❌ GetOrdersByDriverIdAsync: API returned null for driverId={DriverId}", driverId);
+                    _logger.LogWarning("GetOrdersByDriverIdAsync: ردّ الـ API فارغ للسائق {DriverId}", driverId);
                     return null;
                 }
 
                 if (!response.Success)
                 {
-                    _logger.LogWarning("❌ GetOrdersByDriverIdAsync: API returned success=false for driverId={DriverId}. Message: {Message}", driverId, response.Message);
+                    _logger.LogWarning("GetOrdersByDriverIdAsync: الـ API أعاد Success=false للسائق {DriverId}. الرسالة: {Message}", driverId, response.Message);
                     return null;
                 }
 
-                _logger.LogInformation("✅ GetOrdersByDriverIdAsync: Retrieved {Count} orders for driver {DriverId}", response.Data?.Count() ?? 0, driverId);
+                _logger.LogInformation("GetOrdersByDriverIdAsync: أُعيدت {Count} طلبًا للسائق {DriverId}", response.Data?.Count() ?? 0, driverId);
                 return response.Data;
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in GetOrdersByDriverIdAsync for driverId={DriverId}: {Message}", driverId, ex.Message);
+                _logger.LogError(ex, "استثناء في GetOrdersByDriverIdAsync للسائق {DriverId}: {Message}", driverId, ex.Message);
                 return null;
             }
         }

@@ -14,11 +14,11 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         public async Task<bool> SavePriceAsync(int id, decimal unitPrice)
         {
-            _logger.LogInformation("📋 Saving price for order {Id}: {UnitPrice}", id, unitPrice);
+            _logger.LogInformation("حفظ سعر الطلب {Id}: {UnitPrice}", id, unitPrice);
 
             return await ExecuteOrderActionAsync(
                 nameof(SavePriceAsync),
-                $"Price saved for order {id}",
+                $"حُفظ سعر الطلب {id}",
                 () => _apiClient.PutAsync<ApiResponse<object>>($"Orders/{id}/price", new { unitPrice }),
                 id);
         }
@@ -28,11 +28,11 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         public async Task<bool> ApproveOrderAsync(int id)
         {
-            _logger.LogInformation("📋 Approving order {Id}", id);
+            _logger.LogInformation("اعتماد الطلب {Id}", id);
 
             return await ExecuteOrderActionAsync(
                 nameof(ApproveOrderAsync),
-                $"Order {id} approved successfully",
+                $"اعتُمد الطلب {id}",
                 () => _apiClient.PutAsync<ApiResponse<object>>($"Orders/{id}/approve", new { }),
                 id);
         }
@@ -42,11 +42,11 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         public async Task<bool> RejectOrderAsync(int id, string? reason)
         {
-            _logger.LogInformation("📋 Rejecting order {Id}. Reason: {Reason}", id, reason ?? "No reason provided");
+            _logger.LogInformation("رفض الطلب {Id}. السبب: {Reason}", id, reason ?? "بلا سبب");
 
             return await ExecuteOrderActionAsync(
                 nameof(RejectOrderAsync),
-                $"Order {id} rejected successfully",
+                $"رُفض الطلب {id}",
                 () => _apiClient.PutAsync<ApiResponse<object>>($"Orders/{id}/reject", new { reason = reason ?? string.Empty }),
                 id);
         }
@@ -56,11 +56,11 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         public async Task<bool> CancelOrderAsync(int id)
         {
-            _logger.LogInformation("📋 Cancelling order {Id}", id);
+            _logger.LogInformation("إلغاء الطلب {Id}", id);
 
             return await ExecuteOrderActionAsync(
                 nameof(CancelOrderAsync),
-                $"Order {id} cancelled successfully",
+                $"أُلغي الطلب {id}",
                 () => _apiClient.PutAsync<ApiResponse<object>>($"Orders/{id}/cancel", new { }),
                 id);
         }
@@ -70,11 +70,11 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         public async Task<bool> StartDeliveryAsync(int id)
         {
-            _logger.LogInformation("📋 Starting delivery for order {Id}", id);
+            _logger.LogInformation("بدء توصيل الطلب {Id}", id);
 
             return await ExecuteOrderActionAsync(
                 nameof(StartDeliveryAsync),
-                $"Delivery started for order {id}",
+                $"بدأ توصيل الطلب {id}",
                 () => _apiClient.PutAsync<ApiResponse<object>>($"Orders/{id}/start-delivery", new { }),
                 id);
         }
@@ -84,11 +84,11 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         public async Task<bool> DeliverOrderAsync(int id)
         {
-            _logger.LogInformation("📋 Marking order {Id} as delivered", id);
+            _logger.LogInformation("تسجيل تسليم الطلب {Id}", id);
 
             return await ExecuteOrderActionAsync(
                 nameof(DeliverOrderAsync),
-                $"Order {id} marked as delivered",
+                $"سُلّم الطلب {id}",
                 () => _apiClient.PutAsync<ApiResponse<object>>($"Orders/{id}/deliver", new { }),
                 id);
         }
@@ -98,11 +98,11 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         public async Task<bool> CloseOrderAsync(int id)
         {
-            _logger.LogInformation("📋 Closing order {Id}", id);
+            _logger.LogInformation("إغلاق الطلب {Id}", id);
 
             return await ExecuteOrderActionAsync(
                 nameof(CloseOrderAsync),
-                $"Order {id} closed successfully",
+                $"أُغلق الطلب {id}",
                 () => _apiClient.PutAsync<ApiResponse<object>>($"Orders/{id}/close", new { }),
                 id);
         }
@@ -112,11 +112,11 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         public async Task<bool> AssignDriverAsync(int id, AssignDriverViewModel model)
         {
-            _logger.LogInformation("📋 Assigning driver to order {Id}", id);
+            _logger.LogInformation("إسناد سائق للطلب {Id}", id);
 
             return await ExecuteOrderActionAsync(
                 nameof(AssignDriverAsync),
-                $"Driver assigned to order {id}",
+                $"أُسند سائق للطلب {id}",
                 () => _apiClient.PutAsync<ApiResponse<object>>($"Orders/{id}/assign-driver", model),
                 id);
         }

@@ -76,7 +76,7 @@ public class ConcreteTypesController : BaseController
     {
         if (IsFactoryInactive())
         {
-            TempData[TempDataWarning] = "مصنعك غير نشط حالياً، لذا لا يمكنك إضافة أنواع خرسانة.";
+            TempData[TempDataWarning] = AppMessages.Common.FactoryInactiveCannotAddConcreteTypes;
             return RedirectToAction(nameof(Index));
         }
 
@@ -161,7 +161,7 @@ public class ConcreteTypesController : BaseController
                 if (standard == null)
                 {
                     ModelState.AddModelError(nameof(model.SelectedConcreteCode),
-                        "يرجى اختيار نوع الخرسانة.");
+                        AppMessages.Validation.ConcreteTypeRequired);
                 }
                 else
                 {
@@ -174,13 +174,13 @@ public class ConcreteTypesController : BaseController
                 if (string.IsNullOrWhiteSpace(model.CustomName))
                 {
                     ModelState.AddModelError(nameof(model.CustomName),
-                        "اسم النوع المخصص مطلوب.");
+                        AppMessages.Validation.CustomConcreteTypeNameRequired);
                 }
 
                 if (!model.CustomStrength.HasValue)
                 {
                     ModelState.AddModelError(nameof(model.CustomStrength),
-                        "المقاومة مطلوبة.");
+                        AppMessages.Validation.ConcreteStrengthRequired);
                 }
 
                 if (ModelState.IsValid)
@@ -197,11 +197,11 @@ public class ConcreteTypesController : BaseController
 
             if (!success)
             {
-                ModelState.AddModelError(string.Empty, "تعذر إنشاء نوع الخرسانة.");
+                ModelState.AddModelError(string.Empty, AppMessages.Error.ConcreteTypeCreate);
                 return View(model);
             }
 
-            TempData[TempDataSuccess] = "تم إنشاء نوع الخرسانة بنجاح.";
+            TempData[TempDataSuccess] = AppMessages.Success.ConcreteTypeCreated;
 
             return RedirectToAction(nameof(Index));
         }
@@ -228,7 +228,7 @@ public class ConcreteTypesController : BaseController
     {
         if (IsFactoryInactive())
         {
-            TempData[TempDataWarning] = "مصنعك غير نشط حالياً، لذا لا يمكنك تعديل أنواع الخرسانة.";
+            TempData[TempDataWarning] = AppMessages.Common.FactoryInactiveCannotEditConcreteTypes;
             return RedirectToAction(nameof(Index));
         }
 
@@ -279,7 +279,7 @@ public class ConcreteTypesController : BaseController
     {
         if (IsFactoryInactive())
         {
-            TempData[TempDataWarning] = "مصنعك غير نشط حالياً، لذا لا يمكنك تعديل أنواع الخرسانة.";
+            TempData[TempDataWarning] = AppMessages.Common.FactoryInactiveCannotEditConcreteTypes;
             return RedirectToAction(nameof(Index));
         }
 
@@ -292,11 +292,11 @@ public class ConcreteTypesController : BaseController
 
             if (!success)
             {
-                ModelState.AddModelError(string.Empty, "تعذر تحديث نوع الخرسانة.");
+                ModelState.AddModelError(string.Empty, AppMessages.Error.ConcreteTypeUpdate);
                 return View(model);
             }
 
-            TempData[TempDataSuccess] = "تم تحديث نوع الخرسانة بنجاح.";
+            TempData[TempDataSuccess] = AppMessages.Success.ConcreteTypeUpdated;
 
             return RedirectToAction(nameof(Index));
         }
@@ -326,7 +326,7 @@ public class ConcreteTypesController : BaseController
         // بعد تسجيل الدخول بقيت قديمة هنا — والحارس النهائي في ConcreteTypeService.DeleteAsync.
         if (IsFactoryInactive())
         {
-            TempData[TempDataWarning] = "مصنعك غير نشط حالياً، لذا لا يمكنك حذف أنواع الخرسانة.";
+            TempData[TempDataWarning] = AppMessages.Common.FactoryInactiveCannotDeleteConcreteTypes;
             return RedirectToAction(nameof(Index));
         }
 
@@ -336,11 +336,11 @@ public class ConcreteTypesController : BaseController
 
             if (!success)
             {
-                TempData[TempDataError] = "تعذر حذف نوع الخرسانة.";
+                TempData[TempDataError] = AppMessages.Error.ConcreteTypeDelete;
                 return RedirectToAction(nameof(Index));
             }
 
-            TempData[TempDataSuccess] = "تم حذف نوع الخرسانة بنجاح.";
+            TempData[TempDataSuccess] = AppMessages.Success.ConcreteTypeDeleted;
 
             return RedirectToAction(nameof(Index));
         }
@@ -399,9 +399,9 @@ public class ConcreteTypesController : BaseController
             var success = await _concreteTypeService.RestoreAsync(id);
 
             if (!success)
-                TempData[TempDataError] = "تعذر استعادة نوع الخرسانة.";
+                TempData[TempDataError] = AppMessages.Error.ConcreteTypeRestore;
             else
-                TempData[TempDataSuccess] = "تم استعادة نوع الخرسانة بنجاح.";
+                TempData[TempDataSuccess] = AppMessages.Success.ConcreteTypeRestored;
 
             // العودة إلى الأرشيف لا إلى القائمة: غالبًا تُستعاد عدة أنواع متتالية.
             return RedirectToAction(nameof(Archived));

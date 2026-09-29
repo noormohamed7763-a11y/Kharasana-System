@@ -23,7 +23,7 @@ namespace Kharasana.Web.Controllers
 
             if (model == null)
             {
-                TempData[TempDataError] = "تعذر تحميل بيانات المصنع.";
+                TempData[TempDataError] = AppMessages.Error.FactorySettingsLoad;
             }
 
             return View(model);
@@ -40,15 +40,16 @@ namespace Kharasana.Web.Controllers
             }
 
             var logoPath = await _settingsApiService.UploadLogoAsync(logoFile);
+            var uploaded = !string.IsNullOrEmpty(logoPath);
 
             // تحديث الجلسة فوراً ليظهر الشعار الجديد في الـ Navbar
-            if (!string.IsNullOrEmpty(logoPath))
+            if (uploaded)
             {
-                HttpContext.Session.SetString("FactoryLogo", logoPath);
+                HttpContext.Session.SetString("FactoryLogo", logoPath!);
             }
 
-            TempData[string.IsNullOrEmpty(logoPath) ? TempDataError : TempDataSuccess] =
-                string.IsNullOrEmpty(logoPath) ? "تعذر رفع الشعار." : "تم تحديث شعار المصنع بنجاح.";
+            TempData[uploaded ? TempDataSuccess : TempDataError] =
+                uploaded ? AppMessages.Success.FactoryLogoUpdated : AppMessages.Error.LogoUploadShort;
 
             return RedirectToAction(nameof(Index));
         }

@@ -26,7 +26,7 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while fetching concrete types.");
+            _logger.LogError(ex, "خطأ في جلب أنواع الخرسانة.");
             return new List<ConcreteTypeListItemViewModel>();
         }
     }
@@ -41,7 +41,7 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while fetching archived concrete types.");
+            _logger.LogError(ex, "خطأ في جلب أنواع الخرسانة المؤرشفة.");
             return new List<ConcreteTypeListItemViewModel>();
         }
     }
@@ -56,7 +56,7 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while fetching concrete type {ConcreteTypeId}.", id);
+            _logger.LogError(ex, "خطأ في جلب نوع الخرسانة {ConcreteTypeId}.", id);
             return null;
         }
     }
@@ -71,7 +71,7 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while creating concrete type.");
+            _logger.LogError(ex, "خطأ في إنشاء نوع الخرسانة.");
             return false;
         }
     }
@@ -86,7 +86,7 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while updating concrete type {ConcreteTypeId}.", id);
+            _logger.LogError(ex, "خطأ في تحديث نوع الخرسانة {ConcreteTypeId}.", id);
             return false;
         }
     }
@@ -101,7 +101,7 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while deleting concrete type {ConcreteTypeId}.", id);
+            _logger.LogError(ex, "خطأ في حذف نوع الخرسانة {ConcreteTypeId}.", id);
             return false;
         }
     }
@@ -117,7 +117,7 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while restoring concrete type {ConcreteTypeId}.", id);
+            _logger.LogError(ex, "خطأ في استعادة نوع الخرسانة {ConcreteTypeId}.", id);
             return false;
         }
     }

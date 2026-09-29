@@ -32,7 +32,7 @@ public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
         context.ExceptionHandled = true;
 
         _logger.LogWarning(
-            "Unhandled ApiServiceException intercepted by filter: StatusCode={StatusCode} Message={Message} TraceId={TraceId}",
+            "التقط الفلتر ApiServiceException غير معالَج: الحالة={StatusCode} الرسالة={Message} التتبّع={TraceId}",
             (int)apiEx.StatusCode,
             apiEx.Message,
             apiEx.TraceId);

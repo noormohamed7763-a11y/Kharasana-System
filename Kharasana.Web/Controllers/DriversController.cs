@@ -83,7 +83,7 @@ public class DriversController : BaseController
         // ✅ التحقق من الصلاحية
         if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
-            TempData[TempDataError] = "ليس لديك صلاحية لعرض بيانات السائقين.";
+            TempData[TempDataError] = AppMessages.Common.DriversViewForbidden;
             return RedirectToAction(nameof(Index));
         }
 
@@ -127,7 +127,7 @@ public class DriversController : BaseController
     {
         if (RoleValue != UserRole.FactoryEmployee || !FactoryId.HasValue)
         {
-            TempData[TempDataError] = "إضافة السائقين متاحة حاليًا لموظف المصنع فقط.";
+            TempData[TempDataError] = AppMessages.Common.DriverCreateFactoryEmployeeOnly;
             return RedirectToAction(nameof(Index));
         }
 
@@ -148,7 +148,7 @@ public class DriversController : BaseController
     {
         if (RoleValue != UserRole.FactoryEmployee || !FactoryId.HasValue)
         {
-            TempData[TempDataError] = "إضافة السائقين متاحة حاليًا لموظف المصنع فقط.";
+            TempData[TempDataError] = AppMessages.Common.DriverCreateFactoryEmployeeOnly;
             return RedirectToAction(nameof(Index));
         }
 
@@ -163,11 +163,11 @@ public class DriversController : BaseController
 
             if (!success)
             {
-                ModelState.AddModelError(string.Empty, message ?? "تعذر إنشاء حساب السائق لسبب غير معروف.");
+                ModelState.AddModelError(string.Empty, message ?? AppMessages.Error.DriverCreate);
                 return View(model);
             }
 
-            TempData[TempDataSuccess] = "تم إنشاء حساب السائق بنجاح.";
+            TempData[TempDataSuccess] = AppMessages.Success.DriverAccountCreated;
             return RedirectToAction(nameof(Index));
         }
         catch (ApiServiceException ex)
@@ -193,7 +193,7 @@ public class DriversController : BaseController
         // ✅ التحقق من الصلاحية
         if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
-            TempData[TempDataError] = "ليس لديك صلاحية لتعديل السائقين.";
+            TempData[TempDataError] = AppMessages.Common.DriverEditForbidden;
             return RedirectToAction(nameof(Index));
         }
 
@@ -243,7 +243,7 @@ public class DriversController : BaseController
         // ✅ التحقق من الصلاحية
         if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
-            TempData[TempDataError] = "ليس لديك صلاحية لتعديل السائقين.";
+            TempData[TempDataError] = AppMessages.Common.DriverEditForbidden;
             return RedirectToAction(nameof(Index));
         }
 
@@ -267,11 +267,11 @@ public class DriversController : BaseController
 
             if (!success)
             {
-                ModelState.AddModelError(string.Empty, message ?? "تعذر تعديل بيانات السائق لسبب غير معروف.");
+                ModelState.AddModelError(string.Empty, message ?? AppMessages.Error.DriverUpdate);
                 return View(model);
             }
 
-            TempData[TempDataSuccess] = "تم تعديل بيانات السائق بنجاح.";
+            TempData[TempDataSuccess] = AppMessages.Success.DriverUpdated;
             return RedirectToAction(nameof(Index));
         }
         catch (ApiServiceException ex)
@@ -298,7 +298,7 @@ public class DriversController : BaseController
         // ✅ التحقق من الصلاحية
         if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
-            TempData[TempDataError] = "ليس لديك صلاحية لحذف السائقين.";
+            TempData[TempDataError] = AppMessages.Common.DriverDeleteForbidden;
             return RedirectToAction(nameof(Index));
         }
 
@@ -319,11 +319,11 @@ public class DriversController : BaseController
 
             if (!success)
             {
-                TempData[TempDataError] = "تعذر حذف/تعطيل السائق. تأكد أنه غير مرتبط برحلات نشطة.";
+                TempData[TempDataError] = AppMessages.Error.DriverDelete;
             }
             else
             {
-                TempData[TempDataSuccess] = "تم حذف السائق بنجاح.";
+                TempData[TempDataSuccess] = AppMessages.Success.DriverDeleted;
             }
 
             return RedirectToAction(nameof(Index));
@@ -354,9 +354,9 @@ public class DriversController : BaseController
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return BadRequest(new { success = false, message = "ليس لديك صلاحية." });
+                return BadRequest(new { success = false, message = AppMessages.Common.PermissionDeniedShort });
             }
-            TempData[TempDataError] = "ليس لديك صلاحية لتحديث حالة السائقين.";
+            TempData[TempDataError] = AppMessages.Common.DriverStatusForbidden;
             return RedirectToAction(nameof(Index));
         }
 
@@ -368,13 +368,13 @@ public class DriversController : BaseController
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return success
-                    ? Ok(new { success = true, message = "تم تحديث حالة السائق." })
-                    : BadRequest(new { success = false, message = "تعذر تحديث الحالة." });
+                    ? Ok(new { success = true, message = AppMessages.Success.DriverStatusUpdatedShort })
+                    : BadRequest(new { success = false, message = AppMessages.Error.DriverStatusUpdateShort });
             }
 
             TempData[success ? TempDataSuccess : TempDataError] = success
-                ? "تم تحديث حالة السائق بنجاح."
-                : "تعذر تحديث حالة السائق.";
+                ? AppMessages.Success.DriverStatusUpdated
+                : AppMessages.Error.DriverStatusUpdate;
 
             return RedirectToAction(nameof(Index));
         }
@@ -412,9 +412,9 @@ public class DriversController : BaseController
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return BadRequest(new { success = false, message = "ليس لديك صلاحية." });
+                return BadRequest(new { success = false, message = AppMessages.Common.PermissionDeniedShort });
             }
-            TempData[TempDataError] = "ليس لديك صلاحية لتحديث حالة السائقين.";
+            TempData[TempDataError] = AppMessages.Common.DriverStatusForbidden;
             return RedirectToAction(nameof(Index));
         }
 
@@ -437,7 +437,9 @@ public class DriversController : BaseController
 
             var isActive = await _driverApiService.ToggleActiveAsync(id);
 
-            var message = isActive ? "تم تفعيل حساب السائق." : "تم إيقاف حساب السائق.";
+            var message = isActive
+                ? AppMessages.Success.DriverActivatedShort
+                : AppMessages.Success.DriverDeactivatedShort;
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {

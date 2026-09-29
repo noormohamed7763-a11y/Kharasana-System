@@ -97,13 +97,13 @@ public class ClientsController : BaseController
         {
             ModelState.AddModelError(
                 string.Empty,
-                "تعذر إنشاء حساب العميل. تأكد من عدم تكرار البريد أو الهاتف.");
+                AppMessages.Error.ClientAccountCreate);
 
             return View(model);
         }
 
         TempData[TempDataSuccess] =
-            "تم إنشاء حساب العميل بنجاح.";
+            AppMessages.Success.ClientAccountCreated;
 
         return RedirectToAction(nameof(Index));
     }
@@ -154,13 +154,13 @@ public class ClientsController : BaseController
         {
             ModelState.AddModelError(
                 string.Empty,
-                "تعذر تعديل بيانات العميل.");
+                AppMessages.Error.ClientUpdate);
 
             return View(model);
         }
 
         TempData[TempDataSuccess] =
-            "تم تعديل بيانات العميل بنجاح.";
+            AppMessages.Success.ClientUpdated;
 
         return RedirectToAction(nameof(Index));
     }

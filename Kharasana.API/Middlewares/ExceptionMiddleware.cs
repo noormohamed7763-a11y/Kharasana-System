@@ -25,35 +25,35 @@ public class ExceptionMiddleware
         catch (NotFoundException ex)
         {
             _logger.LogWarning(ex,
-                "NotFound: {Message} TraceId={TraceId} Path={Path}",
+                "غير موجود: {Message} التتبّع={TraceId} المسار={Path}",
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.NotFound);
         }
         catch (ForbiddenException ex)
         {
             _logger.LogWarning(ex,
-                "Forbidden: {Message} TraceId={TraceId} Path={Path}",
+                "ممنوع: {Message} التتبّع={TraceId} المسار={Path}",
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.Forbidden);
         }
         catch (ConflictException ex)
         {
             _logger.LogWarning(ex,
-                "Conflict: {Message} TraceId={TraceId} Path={Path}",
+                "تعارض: {Message} التتبّع={TraceId} المسار={Path}",
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.Conflict);
         }
         catch (BusinessException ex)
         {
             _logger.LogWarning(ex,
-                "Business rule: {Message} TraceId={TraceId} Path={Path}",
+                "قاعدة عمل: {Message} التتبّع={TraceId} المسار={Path}",
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.BadRequest);
         }
         catch (UnauthorizedException ex)
         {
             _logger.LogWarning(ex,
-                "Unauthorized: {Message} TraceId={TraceId} Path={Path}",
+                "غير مُصرَّح: {Message} التتبّع={TraceId} المسار={Path}",
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.Unauthorized);
         }
@@ -64,7 +64,7 @@ public class ExceptionMiddleware
             var firstError = ex.Errors.FirstOrDefault()?.ErrorMessage ?? ex.Message;
 
             _logger.LogWarning(ex,
-                "Validation failed: {Message} TraceId={TraceId} Path={Path}",
+                "فشل التحقق: {Message} التتبّع={TraceId} المسار={Path}",
                 firstError, context.TraceIdentifier, context.Request.Path);
 
             await HandleMessageAsync(context, firstError, HttpStatusCode.BadRequest);
@@ -72,10 +72,10 @@ public class ExceptionMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "Unhandled exception. TraceId={TraceId} Path={Path} User={User}",
+                "استثناء غير معالَج. التتبّع={TraceId} المسار={Path} المستخدم={User}",
                 context.TraceIdentifier,
                 context.Request.Path,
-                context.User.Identity?.Name ?? "anonymous");
+                context.User.Identity?.Name ?? "مجهول");
             await HandleExceptionAsync(context, ex, HttpStatusCode.InternalServerError);
         }
     }
@@ -94,7 +94,7 @@ public class ExceptionMiddleware
         if (context.Response.HasStarted)
         {
             _logger.LogWarning(
-                "Response already started. Cannot write error response. StatusCode={StatusCode} TraceId={TraceId}",
+                "بدأ إرسال الردّ بالفعل. تعذّر كتابة ردّ الخطأ. الحالة={StatusCode} التتبّع={TraceId}",
                 (int)statusCode, context.TraceIdentifier);
             return;
         }

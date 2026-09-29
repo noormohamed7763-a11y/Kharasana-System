@@ -47,7 +47,7 @@ namespace Kharasana.Web.Services.Api
 
                 if (response == null || !response.Success || response.Data?.Items == null)
                 {
-                    _logger.LogWarning("No lookup data on page {Page} of {Url}", pageNumber, url);
+                    _logger.LogWarning("لا بيانات قوائم في الصفحة {Page} من {Url}", pageNumber, url);
                     break;
                 }
 
@@ -59,7 +59,7 @@ namespace Kharasana.Web.Services.Api
             if (items.Count < totalCount)
             {
                 _logger.LogWarning(
-                    "Lookup truncated: fetched {Fetched} of {Total} from {Url}",
+                    "قُطعت القوائم: جُلب {Fetched} من {Total} من {Url}",
                     items.Count,
                     totalCount,
                     url);
@@ -82,12 +82,12 @@ namespace Kharasana.Web.Services.Api
             string url,
             Func<UserDto, LookupDto> project)
         {
-            _logger.LogInformation("Fetching {Operation}...", operation);
+            _logger.LogInformation("جلب {Operation}...", operation);
 
             var users = await FetchAllUsersAsync(url);
             var items = users.Select(project).ToList();
 
-            _logger.LogInformation("Found {Count} {Operation}", items.Count, operation);
+            _logger.LogInformation("وُجد {Count} {Operation}", items.Count, operation);
 
             return items;
         }
@@ -101,7 +101,7 @@ namespace Kharasana.Web.Services.Api
         public async Task<List<LookupDto>> GetAvailableDriversAsync()
         {
             return await FetchUserLookupAsync(
-                "available drivers",
+                "السائقون المتاحون",
                 $"Users?role={(int)UserRole.Driver}&driverStatus={(int)DriverStatus.Available}&isActive=true",
                 u => new LookupDto
                 {
@@ -125,7 +125,7 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                _logger.LogInformation("Fetching concrete types...");
+                _logger.LogInformation("جلب أنواع الخرسانة...");
 
                 var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeDto>>>("ConcreteTypes");
 
@@ -141,15 +141,15 @@ namespace Kharasana.Web.Services.Api
                         })
                         .ToList();
 
-                    _logger.LogInformation("Found {Count} concrete types", types.Count);
+                    _logger.LogInformation("وُجد {Count} نوع خرسانة", types.Count);
                     return types;
                 }
 
-                _logger.LogWarning("No concrete types found.");
+                _logger.LogWarning("لا أنواع خرسانة.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching concrete types");
+                _logger.LogError(ex, "خطأ في جلب أنواع الخرسانة");
             }
 
             return new List<LookupDto>();

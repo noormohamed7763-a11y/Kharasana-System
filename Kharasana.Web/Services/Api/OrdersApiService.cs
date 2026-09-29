@@ -44,23 +44,23 @@ namespace Kharasana.Web.Services.Api
 
                 if (response == null)
                 {
-                    _logger.LogWarning("❌ {Operation}: API returned null for id={Id}", operation, id);
+                    _logger.LogWarning("{Operation}: ردّ الـ API فارغ للمعرّف {Id}", operation, id);
                     return false;
                 }
 
                 if (!response.Success)
                 {
-                    _logger.LogWarning("❌ {Operation} failed for id={Id}. Message: {Message}", operation, id, response.Message);
+                    _logger.LogWarning("فشل {Operation} للمعرّف {Id}. الرسالة: {Message}", operation, id, response.Message);
                     return false;
                 }
 
-                _logger.LogInformation("✅ {Operation}: {Detail}", operation, successDetail);
+                _logger.LogInformation("{Operation}: {Detail}", operation, successDetail);
                 return true;
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in {Operation} for id={Id}: {Message}", operation, id, ex.Message);
+                _logger.LogError(ex, "استثناء في {Operation} للمعرّف {Id}: {Message}", operation, id, ex.Message);
                 return false;
             }
         }

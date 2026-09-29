@@ -101,27 +101,27 @@ namespace Kharasana.Web.Controllers
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Invalid order ID: {OrderId}", id);
+                _logger.LogWarning("معرّف طلب غير صالح: {OrderId}", id);
                 TempData[TempDataError] = AppMessages.Error.InvalidId;
                 return RedirectToAction(nameof(Index));
             }
 
             try
             {
-                _logger.LogInformation("Calling API to get order {OrderId}", id);
+                _logger.LogInformation("نداء الـ API لجلب الطلب {OrderId}", id);
 
                 var order = await _ordersApiService.GetOrderByIdAsync(id);
 
                 if (order == null)
                 {
-                    _logger.LogWarning("Order {OrderId} not found in API", id);
+                    _logger.LogWarning("الطلب {OrderId} غير موجود في الـ API", id);
                     TempData[TempDataError] = AppMessages.Common.NotFound;
                     return RedirectToAction(nameof(Index));
                 }
 
                 if (IsFactoryIsolated(order.FactoryId))
                 {
-                    _logger.LogWarning("Factory mismatch: order.FactoryId={OrderFactoryId}, user.FactoryId={UserFactoryId}", order.FactoryId, FactoryId);
+                    _logger.LogWarning("عدم تطابق المصنع: مصنع الطلب={OrderFactoryId}، مصنع المستخدم={UserFactoryId}", order.FactoryId, FactoryId);
                     TempData[TempDataError] = AppMessages.Common.Forbidden;
                     return RedirectToAction(nameof(Index));
                 }
@@ -138,7 +138,7 @@ namespace Kharasana.Web.Controllers
                         .Where(d => d.FactoryId == FactoryId.Value)
                         .ToList();
 
-                    _logger.LogInformation("Total drivers: {TotalCount}, Factory drivers: {FactoryCount}", allDrivers.Count, factoryDrivers.Count);
+                    _logger.LogInformation("إجمالي السائقين: {TotalCount}، سائقو المصنع: {FactoryCount}", allDrivers.Count, factoryDrivers.Count);
                 }
                 else
                 {
@@ -152,13 +152,13 @@ namespace Kharasana.Web.Controllers
             }
             catch (ApiServiceException ex)
             {
-                _logger.LogError(ex, "Error loading order {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
+                _logger.LogError(ex, "خطأ في تحميل الطلب {OrderId} الحالة={StatusCode}", id, (int)ex.StatusCode);
                 TempData[TempDataError] = ex.Message;
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error loading order {OrderId}", id);
+                _logger.LogError(ex, "خطأ غير متوقع في تحميل الطلب {OrderId}", id);
                 TempData[TempDataError] = AppMessages.Common.OperationFailed;
                 return RedirectToAction(nameof(Index));
             }
