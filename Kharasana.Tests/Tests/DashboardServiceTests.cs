@@ -7,8 +7,6 @@ using Kharasana.Domain.Common;
 using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Tests.TestData;
-using FluentAssertions;
-using Xunit;
 
 namespace Kharasana.Tests.Tests;
 

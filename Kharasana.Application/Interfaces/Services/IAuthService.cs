@@ -5,7 +5,7 @@ namespace Kharasana.Application.Interfaces.Services;
 
 public interface IAuthService
 {
-    Task<ApiResponse<object>> RegisterAsync(RegisterUserDto request);  // ← تغيير الاسم
+    Task<ApiResponse<object>> RegisterAsync(RegisterUserDto request);
 
     Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginRequestDto request);
 }

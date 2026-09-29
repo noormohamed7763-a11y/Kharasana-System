@@ -80,8 +80,12 @@ public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
         var safeRedirect = "/"
             + (isLoggedIn ? "Dashboard" : "Account/Login");
 
+        // ✅ مسار محلي فقط: "‎//evil.com‎" و"‎/\evil.com‎" يفسّرهما المتصفح كرابط خارجي
+        //    مطلق (protocol-relative)، فـ StartsWith("/") وحده لا يمنع إعادة توجيه مفتوحة.
         if (!string.IsNullOrWhiteSpace(referrer)
             && referrer.StartsWith("/", StringComparison.Ordinal)
+            && !referrer.StartsWith("//", StringComparison.Ordinal)
+            && !referrer.StartsWith("/\\", StringComparison.Ordinal)
             && !referrer.StartsWith(httpContext.Request.Path, StringComparison.OrdinalIgnoreCase))
         {
             safeRedirect = referrer;

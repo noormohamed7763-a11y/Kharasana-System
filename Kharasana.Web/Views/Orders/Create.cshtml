@@ -83,28 +83,24 @@
                     <small class="text-muted">يتم تحديد المصنع تلقائياً حسب حسابك</small>
                 </div>
 
-                <!-- ✅ نوع الخرسانة مع زر إضافة -->
+                <!-- ✅ نوع الخرسانة: اختيار من الأنواع القائمة فقط.
+                     حُذف زر «إنشاء نوع مخصص» ونافذته: لم يكن لأي منهما معالج في أي ملف
+                     (لا JS ولا asp-for ولا form)، فكان الزر لا يفعل شيئاً. والنوع الجديد
+                     يُنشأ فعلاً من صفحة «أنواع الخرسانة» (ConcreteTypes/_CreateForm). -->
                 <div class="col-md-6 mb-3">
                     <label asp-for="ConcreteTypeId" class="form-label fw-bold">
                         <i class="bi bi-box-seam"></i> نوع الخرسانة
                         <span class="text-danger">*</span>
                     </label>
-                    <div class="d-flex gap-2">
-                        <select asp-for="ConcreteTypeId" class="form-select form-select-lg" id="concreteTypeSelect">
-                            <option value="">-- اختر نوع الخرسانة --</option>
-                            @foreach (var item in concreteTypes)
-                            {
-                                <option value="@item.Id" data-unit-price="@item.UnitPrice">@item.Name</option>
-                            }
-                        </select>
-                        <button type="button" class="btn btn-outline-primary btn-lg"
-                                data-bs-toggle="modal" data-bs-target="#customConcreteModal"
-                                title="إنشاء نوع خرسانة مخصص">
-                            <i class="bi bi-plus-circle"></i>
-                        </button>
-                    </div>
+                    <select asp-for="ConcreteTypeId" class="form-select form-select-lg" id="concreteTypeSelect">
+                        <option value="">-- اختر نوع الخرسانة --</option>
+                        @foreach (var item in concreteTypes)
+                        {
+                            <option value="@item.Id" data-unit-price="@item.UnitPrice">@item.Name</option>
+                        }
+                    </select>
                     <span asp-validation-for="ConcreteTypeId" class="text-danger"></span>
-                    <small class="text-muted">اختر نوع الخرسانة المطلوب أو أضف نوعاً مخصصاً</small>
+                    <small class="text-muted">اختر النوع المطلوب من القائمة، ولإضافة نوع جديد استخدم صفحة «أنواع الخرسانة».</small>
                 </div>
 
                 <div class="col-md-6 mb-3">
@@ -367,60 +363,6 @@
 </form>
 
 </div><!-- /.dashboard-page -->
-
-<!-- ============================================================
-MODAL - إنشاء نوع خرسانة مخصص
-============================================================ -->
-<div class="modal fade" id="customConcreteModal" tabindex="-1" aria-labelledby="customConcreteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold" id="customConcreteModalLabel">
-                    <i class="bi bi-plus-circle"></i> إنشاء نوع خرسانة مخصص
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="customConcreteMessage" class="alert d-none"></div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">
-                        اسم النوع <span class="text-danger">*</span>
-                    </label>
-                    <input type="text" id="customConcreteName" class="form-control form-control-lg"
-                           placeholder="مثال: خرسانة مقاومة للأملاح" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">
-                        المقاومة (MPa) <span class="text-danger">*</span>
-                    </label>
-                    <input type="number" id="customConcreteStrength" class="form-control form-control-lg"
-                           placeholder="مثال: 35" min="1" max="100" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">ملاحظات</label>
-                    <textarea id="customConcreteDescription" class="form-control" rows="3"
-                              placeholder="أي ملاحظات إضافية عن النوع المطلوب..."></textarea>
-                </div>
-
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i>
-                    سيتم إرسال طلبك إلى المصنع لمراجعته. سيتم إشعارك عند اعتماد النوع.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle"></i> إلغاء
-                </button>
-                <button type="button" class="btn btn-primary btn-lg" id="saveCustomConcreteBtn">
-                    <i class="bi bi-save"></i> حفظ وإضافة
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

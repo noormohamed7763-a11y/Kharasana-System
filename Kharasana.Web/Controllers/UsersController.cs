@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Kharasana.Application.Common;
+﻿using Kharasana.Application.Common;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
@@ -29,6 +28,11 @@ public class UsersController : BaseController
     }
 
     // GET: Users/Index
+    // ✅ حصر الدور هنا مطابقةً لبَوّابة الـ API (AdminOrFactoryEmployee): بدونها يصل
+    //    السائق/العميل إلى النداء فيردّ الـ API بـ403؛ يلتقطه UnhandledExceptionFilter
+    //    فلا تُعرض صفحة خطأ 500، لكن الحصر هنا يجعل الرفض نظيفاً وبلا رحلة ذهاب وعودة.
+    [HttpGet]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Index(
         int pageNumber = 1,
         int pageSize = 20,
@@ -111,7 +115,7 @@ public class UsersController : BaseController
 
             if (result.Success)
             {
-                TempData[TempDataSuccess] = "✅ تم إنشاء المستخدم بنجاح.";
+                TempData[TempDataSuccess] = "تم إنشاء المستخدم بنجاح.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -132,7 +136,11 @@ public class UsersController : BaseController
     }
 
     // GET: Users/Details/{id}
+    // ✅ حصر الدور مطابقةً لبَوّابة الـ API. عزل المصنع نفسه يفرضه الـ API من التوكن:
+    //    موظف المصنع لا يستقبل من GetById إلا سائقًا يتبع مصنعه، وأي معرّف آخر يعود
+    //    404 — فالفحص هنا ليس ضروريًا، وتكراره في Web يخالف قاعدة «الـ API هو المرجع».
     [HttpGet]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Details(int id)
     {
         var user = await _userApiService.GetUserByIdAsync(id);
@@ -278,7 +286,7 @@ public class UsersController : BaseController
 
             if (result.Success)
             {
-                TempData[TempDataSuccess] = "✅ تم تحديث المستخدم بنجاح.";
+                TempData[TempDataSuccess] = "تم تحديث المستخدم بنجاح.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -310,7 +318,7 @@ public class UsersController : BaseController
 
             if (result.Success)
             {
-                TempData[TempDataSuccess] = "✅ تم حذف المستخدم بنجاح.";
+                TempData[TempDataSuccess] = "تم حذف المستخدم بنجاح.";
             }
             else
             {

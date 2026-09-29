@@ -41,13 +41,9 @@ public class AuthService : IAuthService
         if (string.IsNullOrEmpty(request.Password) || request.Password.Length < PasswordPolicy.MinimumLength)
             throw new BusinessException(Messages.PasswordMinLength);
 
-        // ✅ التحقق من وجود البريد الإلكتروني قبل الاستخدام
-        if (!string.IsNullOrWhiteSpace(request.Email))
-        {
-            var emailExists = await _unitOfWork.Users.EmailExistsAsync(request.Email);
-            if (emailExists)
-                throw new ConflictException(Messages.EmailAlreadyExists);
-        }
+        // ✅ تطبيع البريد وفحص تفرّده في خطوة واحدة: كان البريد يُخزَّن كما وصل
+        //    بينما الدخول يقصّ المسافات، فيُحفظ " ali@x.com" ويستحيل الدخول به.
+        var normalizedEmail = await EmailValidationHelper.EnsureUniqueAsync(_unitOfWork, request.Email);
 
         var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
             _unitOfWork, request.Phone);
@@ -56,7 +52,7 @@ public class AuthService : IAuthService
         var user = new User
         {
             FullName = request.FullName,
-            Email = request.Email,  // ✅ يمكن أن يكون null
+            Email = normalizedEmail,  // ✅ يمكن أن يكون null
             PasswordHash = _passwordHasher.Hash(request.Password),
             Phone = normalizedPhone,
             WhatsApp = normalizedWhatsApp,

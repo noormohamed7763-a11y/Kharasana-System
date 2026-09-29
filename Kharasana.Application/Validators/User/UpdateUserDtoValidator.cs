@@ -13,11 +13,9 @@ public class UpdateUserDtoValidator : AbstractValidator<UpdateUserDto>
         RuleFor(x => x.FullName).FullName();
 
         // ✅ البريد اختياري، وغيابه يعني «أبقِ الحالي» لا «امسحه» (انظر UpdateUserDto.Email).
-        //    سقف 256 يطابق UserConfiguration.Email: بدون سقف يصل نصّ أطول إلى العمود
-        //    فيرمي SQL Server الخطأ 8152 (اقتطاع) فيصير الرد 500 بدل 400.
+        //    الصيغة والسقف 256 (وسبب السقف: الخطأ 8152) في ValidationRules.Email.
         RuleFor(x => x.Email)
-            .EmailAddress().WithMessage(Messages.InvalidEmail)
-            .MaximumLength(256).WithMessage(Messages.EmailMaxLength)
+            .Email()
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x.Phone).YemeniPhone();
@@ -25,7 +23,7 @@ public class UpdateUserDtoValidator : AbstractValidator<UpdateUserDto>
         RuleFor(x => x.WhatsApp).YemeniWhatsApp();
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage("الدور غير صالح.")
+            .Role()
             .NotEqual(UserRole.Admin).WithMessage(Messages.CannotChangeToAdmin);
     }
 }

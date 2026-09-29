@@ -1,9 +1,11 @@
+using Kharasana.Web.Common;
 using Kharasana.Web.Configuration;
 using Kharasana.Application.Common;
 using Kharasana.Web.ViewModels.Settings;
 using Kharasana.Web.ViewModels.Factories;
 using Kharasana.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
@@ -13,43 +15,16 @@ namespace Kharasana.Web.Services.Api
     {
         private readonly ApiClient _apiClient;
         private readonly ApiSettings _apiSettings;
+        private readonly ILogger<SettingsApiService> _logger;
 
-        private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
-        private const long MaxFileSizeInBytes = 5 * 1024 * 1024; // 5 MB
-
-        public SettingsApiService(ApiClient apiClient, IOptions<ApiSettings> apiSettings)
+        public SettingsApiService(
+            ApiClient apiClient,
+            IOptions<ApiSettings> apiSettings,
+            ILogger<SettingsApiService> logger)
         {
             _apiClient = apiClient;
             _apiSettings = apiSettings.Value;
-        }
-
-        private string? BuildLogoUrl(string? logo)
-        {
-            if (string.IsNullOrWhiteSpace(logo))
-                return null;
-
-            // الـ DTO يعيد رابطاً مطلقاً الآن (مطلب الرابط المطلق)
-            if (logo.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            {
-                // إن كان الرابط من أصل الـ API نفسه، نعيد توجيهه عبر وسيط نفس الأصل
-                // (FilesController) ليبقى img-src 'self' في CSP سليماً.
-                if (Uri.TryCreate(logo, UriKind.Absolute, out var absolute)
-                    && Uri.TryCreate(_apiSettings.FilesOrigin, UriKind.Absolute, out var origin)
-                    && string.Equals(absolute.Authority, origin.Authority, StringComparison.OrdinalIgnoreCase))
-                {
-                    var path = absolute.AbsolutePath;
-                    return path.StartsWith("/", StringComparison.Ordinal) ? $"/Files/factories{path}" : null;
-                }
-
-                // رابط مطلق لأصل خارجي (نادر) — نمرّره كما هو
-                return logo;
-            }
-
-            if (!logo.StartsWith("/", StringComparison.Ordinal))
-                return null;
-
-            // الآن نخدم الملفات عبر FilesController على نفس أصل الويب
-            return $"/Files/factories{logo}";
+            _logger = logger;
         }
 
         public async Task<FactorySettingsViewModel?> GetMySettingsAsync()
@@ -57,7 +32,17 @@ namespace Kharasana.Web.Services.Api
             var response = await _apiClient.GetAsync<ApiResponse<FactoryDto>>("Settings");
 
             if (response == null || !response.Success || response.Data == null)
+            {
+                // كان الرجوع null صامتًا: المستخدم يرى «تعذر تحميل بيانات المصنع» بلا سبب
+                // في السجل. رسالة الـ API العربية لا تُعرض (العقد مع المتحكّم null أو كيان)
+                // لكنها تُسجَّل الآن.
+                _logger.LogWarning(
+                    "تعذر تحميل إعدادات المصنع: Success={Success} Data={Data} Message={Message}",
+                    response?.Success,
+                    response?.Data == null ? "null" : "ok",
+                    response?.Message);
                 return null;
+            }
 
             var dto = response.Data;
 
@@ -68,7 +53,7 @@ namespace Kharasana.Web.Services.Api
                 OwnerName = dto.OwnerName,
                 Phone = dto.Phone,
                 Area = dto.Area,
-                Logo = BuildLogoUrl(dto.Logo),
+                Logo = LogoFiles.BuildUrl(dto.Logo, _apiSettings),
                 IsActive = dto.IsActive
             };
         }
@@ -80,11 +65,20 @@ namespace Kharasana.Web.Services.Api
 
             var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant();
 
-            if (string.IsNullOrEmpty(extension) || !AllowedExtensions.Contains(extension))
+            if (string.IsNullOrEmpty(extension) || !LogoFiles.AllowedExtensions.Contains(extension))
+            {
+                _logger.LogWarning("رُفض رفع شعار: امتداد غير مسموح {Extension}", extension);
                 return null;
+            }
 
-            if (file.Length > MaxFileSizeInBytes)
+            if (file.Length > LogoFiles.MaxFileSizeInBytes)
+            {
+                _logger.LogWarning(
+                    "رُفض رفع شعار: الحجم {Length} بايت يتجاوز الحد {Max} بايت",
+                    file.Length,
+                    LogoFiles.MaxFileSizeInBytes);
                 return null;
+            }
 
             await using var stream = file.OpenReadStream();
 
@@ -105,20 +99,33 @@ namespace Kharasana.Web.Services.Api
                         if (jsonElement.TryGetProperty("logo", out var logoProp))
                         {
                             var logo = logoProp.GetString();
-                            return BuildLogoUrl(logo);
+                            return LogoFiles.BuildUrl(logo, _apiSettings);
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        // ✅ مسار بديل مقصود لا سهو: Data قد لا تكون JsonElement إن غيّر
+                        //    مُحوِّل التسلسل شكله — فتُقرأ الخاصية بالانعكاس بدل الانفجار.
+                        //    لا يُعاد رمي الاستثناء: العقد مع المتحكّم هو null عند الفشل.
+                        _logger.LogDebug(ex, "تعذّرت قراءة logo من JsonElement — محاولة بالانعكاس");
                         var logo = response.Data.GetType().GetProperty("logo")?.GetValue(response.Data) as string;
                         if (!string.IsNullOrEmpty(logo))
-                            return BuildLogoUrl(logo);
+                            return LogoFiles.BuildUrl(logo, _apiSettings);
                     }
                 }
+                else
+                {
+                    _logger.LogWarning(
+                        "فشل رفع الشعار: Success={Success} Message={Message}",
+                        response?.Success,
+                        response?.Message);
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // في حالة حدوث خطأ، نعيد null
+                // كان `catch { }` عارية: تبتلع رسالة الـ API العربية (ومنها 409) فيرى
+                // المستخدم فشلًا بلا سبب. القيمة المُعادة تبقى null — العقد مع المتحكّم.
+                _logger.LogError(ex, "خطأ في رفع شعار المصنع");
             }
 
             return null;
@@ -129,10 +136,21 @@ namespace Kharasana.Web.Services.Api
             try
             {
                 var response = await _apiClient.DeleteAsync<ApiResponse<object>>("Settings/logo");
-                return response != null && response.Success;
+
+                if (response == null || !response.Success)
+                {
+                    _logger.LogWarning(
+                        "فشل حذف الشعار: Response={Response} Message={Message}",
+                        response == null ? "null" : "Success=false",
+                        response?.Message);
+                    return false;
+                }
+
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "خطأ في حذف شعار المصنع");
                 return false;
             }
         }

@@ -215,13 +215,21 @@ document.addEventListener('keydown', function (e) {
 
         const filter = btn.dataset.filter;
 
-        document.querySelectorAll('#factoryOrdersTableBody tr[data-status]').forEach(function (row) {
-            if (filter === 'All' || row.dataset.status === filter) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+        const rows = document.querySelectorAll('#factoryOrdersTableBody tr[data-status]');
+        let visibleCount = 0;
+
+        rows.forEach(function (row) {
+            const show = filter === 'All' || row.dataset.status === filter;
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
         });
+
+        // نتيجة فارغة بعد التصفية: القائمة ليست فارغة (وإلا ظهرت رسالة "لا توجد طلبات
+        // مسجلة") لكن لا صف يطابق الفلتر — فبدون هذا يبقى الجدول فارغًا بلا تفسير.
+        const emptyRow = document.getElementById('factoryOrdersFilterEmpty');
+        if (emptyRow) {
+            emptyRow.classList.toggle('d-none', !(rows.length > 0 && visibleCount === 0));
+        }
 
         document.querySelectorAll('.order-filter-btn').forEach(function (b) {
             b.classList.remove('active', 'btn-primary');
@@ -239,6 +247,12 @@ document.addEventListener('keydown', function (e) {
     document.addEventListener('click', async function (e) {
         const btn = e.target.closest('.btn-toggle-active');
         if (!btn) return;
+
+        // ✅ حارس طلب جارٍ: كل نداء يقلب الحالة على الخادم (IsActive = !IsActive)، فالنقر
+        //    المزدوج كان يرسل POSTين ويعيد السجل إلى حالته الأولى بينما تعرض الواجهة
+        //    نتيجة النقرة الأخيرة وحدها — فيفترق ما تراه العين عمّا في قاعدة البيانات.
+        if (btn.dataset.busy === 'true') return;
+        btn.dataset.busy = 'true';
 
         const driverId = btn.dataset.driverId;
         const isActive = btn.dataset.isActive === 'true';
@@ -282,6 +296,8 @@ document.addEventListener('keydown', function (e) {
             btn.classList.add(isActive ? 'text-danger' : 'text-success');
             if (icon) icon.className = 'bi ' + (isActive ? 'bi-stop-circle' : 'bi-play-circle');
             showToast('خطأ', 'تعذر تحديث حالة السائق. حاول مرة أخرى.', 'danger');
+        } finally {
+            btn.dataset.busy = 'false';
         }
     });
 })();
@@ -381,7 +397,19 @@ document.addEventListener('keydown', function (e) {
 
     document.addEventListener('mouseover', function (e) {
         const link = e.target.closest('a[href]');
-        if (!link) return;
+
+        // ✅ HTMLAnchorElement فقط: مرساة SVG تُعيد href كائنًا (SVGAnimatedString) لا
+        //    نصًّا، فيُحوَّل إلى "[object SVGAnimatedString]" ويُرسَل طلبًا بلا معنى.
+        if (!(link instanceof HTMLAnchorElement)) return;
+
+        // ✅ روابط نفس الأصل فقط: الطلب الخارجي يحجبه CSP (connect-src 'self') فيظهر
+        //    خطأ في طرفية المتصفح بلا أي فائدة، ويكشف نطاق الصفحة لطرف ثالث.
+        if (link.origin !== location.origin) return;
+
+        // مرساة داخل الصفحة أو رابط تنزيل — لا تحميل مسبق لهما
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#')) return;
+        if (link.hasAttribute('download')) return;
 
         const url = link.href;
         if (!url || url === location.href) return;
@@ -397,25 +425,6 @@ document.addEventListener('keydown', function (e) {
             }).catch(function () {});
         }, 100);
     });
-})();
-
-// ==========================
-// Request Deduplication — تجنب طلبات مكررة
-// ==========================
-(function () {
-    const pending = new Map();
-
-    window.kharasanaFetch = function (url, options) {
-        const key = url + (options?.method || 'GET');
-        if (pending.has(key)) return pending.get(key);
-
-        const promise = fetch(url, options).finally(function () {
-            pending.delete(key);
-        });
-
-        pending.set(key, promise);
-        return promise;
-    };
 })();
 
 // ==========================

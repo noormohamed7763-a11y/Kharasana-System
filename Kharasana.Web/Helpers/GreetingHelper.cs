@@ -1,5 +1,3 @@
-using System;
-
 namespace Kharasana.Web.Helpers
 {
     /// <summary>

@@ -333,16 +333,15 @@ namespace Kharasana.Web.Controllers
         // Helpers — تقليل التكرار عبر الأفعال
         // ============================================================
 
-        /// <summary>تحقق من صحة المعرّف؛ يُعيد BadRequest إذا غير صالح.</summary>
-        private bool EnsureValidId(int id)
-        {
-            if (id <= 0)
-            {
-                TempData[TempDataError] = AppMessages.Error.InvalidId;
-                return false;
-            }
-            return true;
-        }
+        /// <summary>
+        /// تحقق من صحة المعرّف؛ يُعيد BadRequest بصيغة JSON إذا كان غير صالح.
+        ///
+        /// <para>⚠️ لا يكتب TempData: مستدعياته الثمانية كلها أفعال AJAX تُعيد
+        /// <see cref="AjaxInvalidId"/>، والـ JS يقرأ الرسالة من الـ JSON. والكتابة في
+        /// TempData هنا كانت تُبقي الرسالة حتى أول صفحة كاملة تالية فتظهر في غير
+        /// موضعها عبر <c>_Alerts</c> (وهي تُقرأ وتُفرَّغ عند كل عرض كامل).</para>
+        /// </summary>
+        private bool EnsureValidId(int id) => id > 0;
 
         /// <summary>تحقق أن FactoryEmployee يملك صلاحية تعديل الطلب؛ يُعيد BadRequest إذا لا.</summary>
         private async Task<IActionResult?> EnsureCanModifyOrderAsync(int id)
@@ -363,6 +362,11 @@ namespace Kharasana.Web.Controllers
         private IActionResult AjaxFail(string message) =>
             BadRequest(new { success = false, message });
 
+        /// <summary>
+        /// فشل عام في فعل AJAX: الرسالة العامة عمدًا ولا يُمرَّر نصّ الاستثناء إلى العميل
+        /// (التفاصيل تُسجَّل في الـ logger عند موضع النداء). <paramref name="ex"/> غير
+        /// مستعمل عن قصد — لا تُحوِّل هذا إلى <c>ex.Message</c>.
+        /// </summary>
         private IActionResult AjaxFail(Exception ex) =>
             BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
 

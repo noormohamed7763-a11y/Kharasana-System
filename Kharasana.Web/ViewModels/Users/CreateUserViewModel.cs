@@ -7,7 +7,11 @@ namespace Kharasana.Web.ViewModels.Users;
 public class CreateUserViewModel
 {
     [Required(ErrorMessage = "الاسم الكامل مطلوب.")]
-    [StringLength(150, ErrorMessage = "الاسم لا يزيد عن 150 حرف.")]
+    // ✅ 200 لا 150: العمود Users.FullName = nvarchar(200) (UserConfiguration:16)،
+    //    وValidationRules.FullName() تسقُفه 200 برسالة واحدة (NameMaxLength).
+    //    كان 150 هنا أضيق من الاثنين، فيمنع المتصفح اسمًا يقبله الخادم — وبرسالة
+    //    تخالف رسالة الخادم لنفس الحقل (رقمان متناقضان).
+    [StringLength(200, ErrorMessage = "الاسم الكامل يجب ألا يزيد عن 200 حرف.")]
     [Display(Name = "الاسم الكامل")]
     public string FullName { get; set; } = string.Empty;
 

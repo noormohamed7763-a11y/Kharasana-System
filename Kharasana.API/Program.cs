@@ -25,6 +25,10 @@ public class Program
 
     public static async Task Main(string[] args)
     {
+        // ✅ أول سطر: تثبيت الثقافة قبل بناء أي خدمة — يمنع التقويم الهجري
+        //    وأرقام/فواصل ثقافة الجهاز من تسرّب إلى الردود (انظر AppCulture).
+        AppCulture.Configure();
+
         var builder = WebApplication.CreateBuilder(args);
 
         // تسجيل دائم في ملفات (Logs/) — يحافظ على أخطاء الإنتاج بعد وقوعها

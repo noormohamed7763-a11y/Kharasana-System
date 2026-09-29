@@ -45,6 +45,10 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.TotalPrice)
             .HasPrecision(18, 2);
 
+        // ✅ لقطة اسم النوع — نفس سقف ConcreteType.Name (100) كي لا يُقتطع الاسم عند الحفظ.
+        builder.Property(o => o.ConcreteTypeNameSnapshot)
+            .HasMaxLength(100);
+
         builder.Property(o => o.TruckPlate)
             .HasMaxLength(30);
 

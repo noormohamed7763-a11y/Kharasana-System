@@ -25,6 +25,20 @@ public static class AppMessages
         public const string OrderCannotChangeStatus = "لا تملك صلاحية تغيير حالة هذا الطلب.";
         public const string DriverNotInFactory = "السائق المحدد لا يعمل في مصنعك أو غير متاح.";
         public const string OrderCannotUpdateInStatus = "لا يمكن تعديل الطلب في حالته الحالية.";
+
+        /// <summary>تعذّر الوصول إلى الـ API أصلًا (ردّ فارغ) — لا خطأ من الخادم.</summary>
+        public const string MainServerUnreachable = "تعذر الاتصال بالخادم الرئيسي. يرجى المحاولة مرة أخرى.";
+
+        /// <summary>فشل غير مصنَّف في طبقة الويب.</summary>
+        public const string UnexpectedError = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
+
+        /// <summary>
+        /// ⚠️ نصّ موجّه للمطوّر لا للمستخدم النهائي — يظهر في شاشة المستخدم عند فشل
+        /// الاتصال بالـ API. نُقل إلى الكتالوج <b>بحرفه</b> عند توحيد نصوص
+        /// <c>UserApiService</c>؛ تغيير صياغته تغييرٌ لنصّ يراه المستخدم فيحتاج قرارًا
+        /// مستقلًا، فلا تُعِد صياغته من تلقاء نفسك.
+        /// </summary>
+        public const string ApiNotRunning = "خطأ في الاتصال بالخادم. تأكد من تشغيل الـ API.";
     }
 
     /// <summary>رسائل النجاح.</summary>
@@ -79,7 +93,7 @@ public static class AppMessages
         public const string Cancelled = "تعذر إلغاء الطلب. حاول مرة أخرى.";
         public const string DeliveryStarted = "تعذر بدء التوصيل. حاول مرة أخرى.";
         public const string Delivered = "تعذر تسجيل التسليم. حاول مرة أخرى.";
-        public const string Closed = "تعذر إغلاق الطلب. حاول مرة أخرة.";
+        public const string Closed = "تعذر إغلاق الطلب. حاول مرة أخرى.";
         public const string InvalidLogin = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
         public const string InvalidLogo = "يرجى اختيار صورة صالحة.";
         public const string InvalidId = "المعرّف المطلوب غير صحيح.";

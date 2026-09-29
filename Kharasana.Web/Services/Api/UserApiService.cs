@@ -1,4 +1,5 @@
 using Kharasana.Application.Common;
+using Kharasana.Web.Localization;
 using Kharasana.Web.ViewModels.Users;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Application.DTOs.User;
@@ -25,7 +26,7 @@ public class UserApiService : IUserApiService
                 return new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "تعذر الاتصال بالخادم الرئيسي. يرجى المحاولة مرة أخرى."
+                    Message = AppMessages.Common.MainServerUnreachable
                 };
             }
 
@@ -36,7 +37,7 @@ public class UserApiService : IUserApiService
             return new ApiResponse<object>
             {
                 Success = false,
-                Message = "خطأ في الاتصال بالخادم. تأكد من تشغيل الـ API."
+                Message = AppMessages.Common.ApiNotRunning
             };
         }
         catch (ApiServiceException) { throw; }
@@ -45,7 +46,7 @@ public class UserApiService : IUserApiService
             return new ApiResponse<object>
             {
                 Success = false,
-                Message = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
+                Message = AppMessages.Common.UnexpectedError
             };
         }
     }
@@ -54,7 +55,9 @@ public class UserApiService : IUserApiService
         string? search,
         int? factoryId)
     {
-        // تنفيذ متسلسل — لا نجعل ApiClient يشارك رأس Authorization بين طلبات متزامنة
+        // تنفيذ متسلسل. لا خطر من التوازي: ApiClient يضيف رأس Authorization على
+        // HttpRequestMessage نفسه لا على DefaultRequestHeaders — وطلب التوازي هنا
+        // تغيير سلوكي لم يُطلب، فيبقى التسلسل كما هو.
         string CountQuery(string role) =>
             $"Users?pageNumber=1&pageSize=1&Role={role}"
             + (string.IsNullOrWhiteSpace(search) ? "" : $"&Search={Uri.EscapeDataString(search)}")
@@ -152,7 +155,7 @@ public class UserApiService : IUserApiService
                 return new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "تعذر الاتصال بالخادم الرئيسي. يرجى المحاولة مرة أخرى."
+                    Message = AppMessages.Common.MainServerUnreachable
                 };
             }
 
@@ -163,7 +166,7 @@ public class UserApiService : IUserApiService
             return new ApiResponse<object>
             {
                 Success = false,
-                Message = "خطأ في الاتصال بالخادم. تأكد من تشغيل الـ API."
+                Message = AppMessages.Common.ApiNotRunning
             };
         }
         catch (ApiServiceException) { throw; }
@@ -172,7 +175,7 @@ public class UserApiService : IUserApiService
             return new ApiResponse<object>
             {
                 Success = false,
-                Message = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
+                Message = AppMessages.Common.UnexpectedError
             };
         }
     }
@@ -188,7 +191,7 @@ public class UserApiService : IUserApiService
                 return new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "تعذر الاتصال بالخادم الرئيسي. يرجى المحاولة مرة أخرى."
+                    Message = AppMessages.Common.MainServerUnreachable
                 };
             }
 
@@ -199,7 +202,7 @@ public class UserApiService : IUserApiService
             return new ApiResponse<object>
             {
                 Success = false,
-                Message = "خطأ في الاتصال بالخادم. تأكد من تشغيل الـ API."
+                Message = AppMessages.Common.ApiNotRunning
             };
         }
         catch (ApiServiceException) { throw; }
@@ -208,7 +211,7 @@ public class UserApiService : IUserApiService
             return new ApiResponse<object>
             {
                 Success = false,
-                Message = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
+                Message = AppMessages.Common.UnexpectedError
             };
         }
     }

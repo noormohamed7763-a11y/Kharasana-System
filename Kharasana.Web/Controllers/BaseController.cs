@@ -59,21 +59,24 @@ namespace Kharasana.Web.Controllers
         protected bool IsLoggedIn =>
             !string.IsNullOrEmpty(Token);
 
-    public override void OnActionExecuting(ActionExecutingContext context)
-    {
-        // CSP nonce — يُعرض في الـ Views للسماح بـ scripts داخلية بدون unsafe-inline
-        if (HttpContext.Items.TryGetValue("CspNonce", out var nonceObj) &&
-            nonceObj is string nonce)
+        public override void OnActionExecuting(ActionExecutingContext context)
         {
-            ViewBag.CspNonce = nonce;
-        }
+            // CSP nonce — يُعرض في الـ Views للسماح بـ scripts داخلية بدون unsafe-inline
+            if (HttpContext.Items.TryGetValue("CspNonce", out var nonceObj) &&
+                nonceObj is string nonce)
+            {
+                ViewBag.CspNonce = nonce;
+            }
 
-        ViewBag.UserName = FullName;
+            ViewBag.UserName = FullName;
             ViewBag.UserRole = Role;
             ViewBag.FactoryId = FactoryId;
             ViewBag.FactoryIsActive = FactoryIsActive;
             ViewBag.FactoryLogo = HttpContext.Session.GetString("FactoryLogo");
-            ViewBag.IsLoggedIn = IsLoggedIn;
+
+            // (أُزيل ViewBag.IsLoggedIn: كان يُكتب ولا يقرأه أي view. الخاصية IsLoggedIn
+            //  نفسها حيّة وتُستعمل في AccountController وHomeController — المحذوف نسخة
+            //  الـViewBag وحدها.)
 
             base.OnActionExecuting(context);
         }

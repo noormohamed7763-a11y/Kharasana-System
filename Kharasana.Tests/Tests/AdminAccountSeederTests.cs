@@ -5,13 +5,11 @@ using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Tests.TestData;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
 namespace Kharasana.Tests.Tests;
 

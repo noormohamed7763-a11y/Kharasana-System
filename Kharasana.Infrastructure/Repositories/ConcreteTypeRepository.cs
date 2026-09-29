@@ -8,12 +8,9 @@ namespace Kharasana.Infrastructure.Repositories;
 public class ConcreteTypeRepository
     : GenericRepository<ConcreteType>, IConcreteTypeRepository
 {
-    // ❌ تم إزالة _context المكرر واستخدام base._context
-
     public ConcreteTypeRepository(KharasanaDbContext context)
         : base(context)
     {
-        // ✅ لا حاجة لإعادة تعريف _context
     }
 
     public async Task<IEnumerable<ConcreteType>> GetAllWithFactoryAsync()

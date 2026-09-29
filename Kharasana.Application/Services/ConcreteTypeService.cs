@@ -145,6 +145,17 @@ public class ConcreteTypeService : IConcreteTypeService
         if (currentFactoryId.HasValue && concreteType.FactoryId != currentFactoryId.Value)
             throw new ForbiddenException(Messages.FactoryEmployeeFactoryMismatch);
 
+        // ✅ المصنع موقوف أو مؤرشف — لا يُسمح بأرشفة أنواعه.
+        //    كانت هذه البوابة في CreateAsync و UpdateAsync فقط، فيبقى الحذف مفتوحًا
+        //    لمصنعٍ موقوف: موظفه يمنع من التعديل ثم يملك الحذف — نفس الأثر على الكتالوج.
+        //    الشرط هنا للجميع (بما فيهم المدير) مطابقةً لسلوك UpdateAsync.
+        var factory = await _unitOfWork.Factories.GetByIdIncludingDeletedAsync(concreteType.FactoryId);
+        if (factory != null && factory.IsDeleted)
+            throw new BusinessException(Messages.FactoryArchived);
+
+        if (factory is { IsActive: false })
+            throw new BusinessException(Messages.FactoryInactive);
+
         // ✅ حذف ناعم: لا يُحذف الصف فعليًا حتى تبقى الطلبات التاريخية التي تشير إليه سليمة،
         //    ويختفي من الاستعلامات العادية عبر فلتر الاستعلام العام (!IsDeleted)
         concreteType.IsDeleted = true;

@@ -5,6 +5,7 @@ using Kharasana.Web.Services;
 using Kharasana.Web.Services.Api;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Application.Common.Logging;
+using Kharasana.Application.Common;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Controllers;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -17,6 +18,10 @@ namespace Kharasana.Web
     {
         public static void Main(string[] args)
         {
+            // ✅ أول سطر: تثبيت الثقافة قبل بناء أي خدمة — يمنع التقويم الهجري من
+            //    إفشال ربط <input type="date"> (انظر AppCulture).
+            AppCulture.Configure();
+
             var builder = WebApplication.CreateBuilder(args);
 
             // تسجيل دائم في ملفات (Logs/) — يحافظ على أخطاء الإنتاج بعد وقوعها
@@ -34,7 +39,16 @@ namespace Kharasana.Web
                 options.IdleTimeout = TimeSpan.FromHours(2);
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+
+                // ✅ Always خارج بيئة التطوير: SameAsRequest تُسقط علم Secure متى وصل الطلب
+                //    عبر HTTP (خلف وكيل لا يمرّر X-Forwarded-Proto مثلًا)، فتخرج كوكي الجلسة
+                //    بلا علم Secure وتُرسَل على أي طلب HTTP لاحق. الإنتاج خلف HTTPS دائمًا
+                //    (UseHttpsRedirection + HSTS)، والتطوير المحلي يحتاج SameAsRequest
+                //    ليعمل على http://localhost.
+                options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+                    ? CookieSecurePolicy.SameAsRequest
+                    : CookieSecurePolicy.Always;
+
                 options.Cookie.SameSite = SameSiteMode.Lax;
             });
 

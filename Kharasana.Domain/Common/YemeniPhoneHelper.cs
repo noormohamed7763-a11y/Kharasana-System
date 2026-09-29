@@ -1,5 +1,3 @@
-using System.Linq;
-
 namespace Kharasana.Domain.Common;
 
 /// <summary>

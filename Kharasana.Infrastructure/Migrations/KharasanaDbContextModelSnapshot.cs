@@ -176,6 +176,13 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Property<int>("ConcreteTypeId")
                         .HasColumnType("int");
 
+                    b.Property<string>("ConcreteTypeNameSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ConcreteTypeStrengthSnapshot")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 

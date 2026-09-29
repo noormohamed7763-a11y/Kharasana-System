@@ -99,6 +99,52 @@ public class ConcreteTypeServiceTests : IDisposable
             .WithMessage(Messages.FactoryInactive);
     }
 
+    // ─────────────────────────────────────────────
+    // ①″  بوابة المصنع على الأرشفة — كانت مفتوحة قبل هذا الحارس:
+    //     موظف المصنع الموقوف يُمنع من التعديل ثم يملك الحذف، ونفس الأثر على الكتالوج.
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Delete_InactiveFactory_ThrowsFactoryInactive()
+    {
+        // Arrange — مصنع موقوف فيه نوع نشط
+        _context.Factories.Add(TestDataSeeder.CreateFactory(107, "موقوفة_للحذف", isActive: false));
+        _context.ConcreteTypes.Add(TestDataSeeder.CreateConcreteType(204, 107, "C25"));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _service.DeleteAsync(204, currentFactoryId: 107);
+
+        // Assert — رُفض الحذف، ولم يُؤرشف النوع فعلًا
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.FactoryInactive);
+
+        var stored = await _context.ConcreteTypes
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstAsync(x => x.ConcreteTypeId == 204);
+
+        stored.IsDeleted.Should().BeFalse();
+        stored.IsActive.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Delete_ArchivedFactory_ThrowsFactoryArchived()
+    {
+        // Arrange — مصنع مؤرشف يحمل نوعًا سليمًا
+        _context.Factories.Add(
+            TestDataSeeder.CreateFactory(108, "مؤرشفة_للحذف", isActive: false, isDeleted: true));
+        _context.ConcreteTypes.Add(TestDataSeeder.CreateConcreteType(205, 108, "C30"));
+        await _context.SaveChangesAsync();
+
+        // Act — المدير يحذف النوع (لا يُمرَّر مصنع، فالحارس على حالة المصنع لا على العزل)
+        var act = () => _service.DeleteAsync(205);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.FactoryArchived);
+    }
+
     [Fact]
     public async Task GetAll_FiltersByFactory()
     {

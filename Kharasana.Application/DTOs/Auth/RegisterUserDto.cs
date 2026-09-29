@@ -1,30 +1,31 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 using Kharasana.Application.Common;
-using Kharasana.Domain.Enums;
 using Kharasana.Domain.Validation;
 
 namespace Kharasana.Application.DTOs.Auth;
 
 public class RegisterUserDto
 {
-    [Required(ErrorMessage = "الاسم الكامل مطلوب.")]
+    [Required(ErrorMessage = Messages.FullNameRequired)]
     [MaxLength(200)]
     public string FullName { get; set; } = string.Empty;
 
     // ✅ تم إزالة [Required] وجعل البريد الإلكتروني اختيارياً
-    [YemeniEmail(ErrorMessage = "البريد الإلكتروني غير صالح.")]
+    [YemeniEmail(ErrorMessage = Messages.InvalidEmail)]
     public string? Email { get; set; }
 
     // ✅ الحد الأدنى للطول من المصدر الوحيد PasswordPolicy.MinimumLength — كان 6 هنا
     // ومكتوباً 8 في ValidationRules.Password (ورسالة الخطأ تقول «8»)، فكان التسجيل العام
     // يقبل كلمة مرور أقصر مما تطلبه بقية المسارات. وُحّد الرقم الآن على 8.
-    [Required(ErrorMessage = "كلمة المرور مطلوبة.")]
+    [Required(ErrorMessage = Messages.PasswordRequired)]
     [MinLength(PasswordPolicy.MinimumLength, ErrorMessage = Messages.PasswordMinLength)]
     public string Password { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "تأكيد كلمة المرور مطلوب.")]
-    [Compare(nameof(Password), ErrorMessage = "كلمتا المرور غير متطابقتين.")]
+    [Required(ErrorMessage = Messages.ConfirmPasswordRequired)]
+    // ✅ نصّ عدم التطابق من الرسائل المشتركة: كان هنا «كلمتا المرور غير متطابقتين.»
+    //    بينما المُدقّق و AuthService يرميان Messages.PasswordsNotMatch — أي رسالتين
+    //    لنفس الخطأ في الطلب الواحد، يتغيّر أيّهما يظهر بحسب أي طبقة تلتقطه أولاً.
+    [Compare(nameof(Password), ErrorMessage = Messages.PasswordsNotMatch)]
     public string ConfirmPassword { get; set; } = string.Empty;
 
     // ✅ التحقق من صيغة الهاتف يتم في AuthService عبر PhoneValidationHelper (بقاعدة YemeniPhoneHelper).

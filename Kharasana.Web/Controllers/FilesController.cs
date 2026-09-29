@@ -1,3 +1,4 @@
+using Kharasana.Web.Common;
 using Kharasana.Web.Configuration;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Services.Api;
@@ -19,8 +20,6 @@ public class FilesController : BaseController
 
     /// <summary>البادئة الوحيدة المسموح بتمريرها عبر هذا الوسيط.</summary>
     private const string FactoryLogoPrefix = "Images/Factories/";
-
-    private static readonly string[] AllowedLogoExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
 
     public FilesController(
         ApiClient apiClient,
@@ -53,7 +52,7 @@ public class FilesController : BaseController
         if (segments.Any(segment => segment is "." or ".."))
             return NotFound();
 
-        if (!AllowedLogoExtensions.Contains(Path.GetExtension(normalized).ToLowerInvariant()))
+        if (!LogoFiles.AllowedExtensions.Contains(Path.GetExtension(normalized).ToLowerInvariant()))
             return NotFound();
 
         // الملفات الثابتة على API تُخدم من جذر المضيف (ليس تحت /api/)
@@ -86,7 +85,12 @@ public class FilesController : BaseController
 
         // ✅ ETag مُرمَّز بدل المسار الخام: اسم الملف يأتي من المسار، وترويسة HTTP لا تقبل
         //    محارف التحكّم (CR/LF) ولا علامات التنصيص غير المُرمَّزة.
-        Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
+        //
+        // ✅ private لا public: الطلب يحمل Authorization من الجلسة، و«public» تسمح صراحةً
+        //    لذاكرة وسيطة مشتركة بتخزين الردّ وخدمته لمستخدم آخر (RFC 9111 §3.5 يمنع ذلك
+        //    افتراضًا إلا إذا سمحت الترويسة به). «private» تُبقي الفائدة كاملة — متصفح
+        //    المستخدم يخزّن الشعار سنة — وتمنع الوسائط المشتركة من رؤيته.
+        Response.Headers["Cache-Control"] = "private, max-age=31536000, immutable";
         Response.Headers["ETag"] = $"\"{Uri.EscapeDataString(normalized)}\"";
         Response.ContentType = contentType;
 

@@ -22,9 +22,33 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     /// <paramref name="trackChanges"/> = false للقراءة فقط (AsNoTracking)،
     /// و true لمسارات التعديل حيث يعتمد الحفظ على كشف EF للتغييرات.
     /// </summary>
+    /// <remarks>
+    /// ✅ <c>IgnoreQueryFilters</c> هنا مقصود، مع إعادة تطبيق فلتر الطلبات يدويًا بعده.
+    ///
+    /// السبب: <c>Client</c> و<c>Factory</c> و<c>ConcreteType</c> علاقات <b>إلزامية</b>
+    /// (مفاتيحها غير قابلة للعدم)، فيُترجم <c>Include</c> عليها إلى INNER JOIN. وفلتر
+    /// الحذف الناعم الخاص بالكيان المرجعي كان يُطبَّق على هذا الانضمام، فيُسقط
+    /// <b>صف الطلب نفسه</b> لا صف الكيان المرجعي وحده — أي أن أرشفة نوع خرسانة واحد
+    /// كانت تُمحي طلباته التاريخية من القوائم والتفاصيل وملخصات العملاء بلا أي خطأ ظاهر.
+    ///
+    /// و<c>Driver</c> علاقة اختيارية (LEFT JOIN) فلا تُسقط الصف، لكن الفلتر كان يُفرغ
+    /// مرجعها: طلب مُسلَّم لسائق مؤرشف كان يُعرض بلا اسم سائق ولا هاتف ولا رقم شاحنة،
+    /// فيضيع أثر التسليم. وتجاوز الفلتر يعيده.
+    ///
+    /// وتجاوز الفلتر آمن لأن الصف المحذوف ناعمًا ما زال موجودًا فعليًا في الجدول،
+    /// فيبقى الكيان المرجعي مُعرَّفًا بمعرّفه واسمه كما كان وقت الطلب — وهو نفس المبدأ
+    /// المُطبَّق في <see cref="GetCountByConcreteTypeAsync"/>.
+    ///
+    /// ⚠️ ومقابل ذلك يُعاد فرض فلتر الطلبات صراحةً (<c>!o.IsDeleted</c>) لأن
+    /// <c>IgnoreQueryFilters</c> يلغي فلاتر <b>كل</b> الكيانات في الاستعلام لا مجموعة
+    /// واحدة؛ فبدونه تصير كل مسارات القراءة والتعديل هذه بابًا خلفيًا للطلبات المحذوفة.
+    /// الحارس: OrderRepositoryQueryFilterTests.
+    /// </remarks>
     private IQueryable<Order> OrdersWithDetails(bool trackChanges)
     {
         var query = _context.Orders
+            .IgnoreQueryFilters()
+            .Where(o => !o.IsDeleted)
             .Include(o => o.Client)
             .Include(o => o.Factory)
             .Include(o => o.ConcreteType)

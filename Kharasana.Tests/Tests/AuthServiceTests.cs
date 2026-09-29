@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Auth;
@@ -535,6 +534,93 @@ public class AuthServiceTests : IDisposable
         // Assert — 409 (لا حساب ثانٍ بنفس البريد) — العقد المُعلن في AuthController.Register
         await act.Should().ThrowAsync<ConflictException>()
             .WithMessage(Messages.EmailAlreadyExists);
+    }
+
+    // ─────────────────────────────────────────────
+    // تطبيع البريد عند التسجيل — يطابق ما يفعله مسار الدخول (EmailValidationHelper)
+    // ─────────────────────────────────────────────
+
+    /// <summary>
+    /// العلّة: الدخول يقصّ المسافات الطرفية من المُعرّف، والتسجيل كان يخزّن البريد كما
+    /// وصل — فيُحفظ <c>" spaced@test.local "</c> بمسافاته ويستحيل الدخول به للأبد.
+    /// </summary>
+    [Fact]
+    public async Task Register_EmailWithSurroundingSpaces_StoredTrimmedAndLoginSucceeds()
+    {
+        // Arrange
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل بمسافات",
+            Email = "  spaced-register@test.local  ",
+            Phone = "771120006",
+            Password = TestDataSeeder.TestPassword,
+            ConfirmPassword = TestDataSeeder.TestPassword
+        };
+
+        // Act
+        await _authService.RegisterAsync(dto);
+
+        // Assert — المخزَّن مقصوص
+        var created = await _context.Users.SingleAsync(u => u.Phone == "967771120006");
+        created.Email.Should().Be("spaced-register@test.local");
+
+        // Assert — والدخول بالمُعرّف كما يكتبه المستخدم عادةً ينجح
+        var login = await _authService.LoginAsync(MakeLogin("spaced-register@test.local"));
+        login.Success.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// فحص التفرّد كان يقارن النصّ الخام، فبريد بمسافة يبدو «غير مكرر» ويُنشأ حساب ثانٍ
+    /// بنفس البريد فعليًا.
+    /// </summary>
+    [Fact]
+    public async Task Register_EmailWithSpaces_IsDetectedAsDuplicateOfTrimmedEmail()
+    {
+        // Arrange — البريد مسجّل مسبقاً بلا مسافات
+        _context.Users.Add(TestDataSeeder.CreateUser(
+            122, "عميل مسجّل", UserRole.Client,
+            phone: "771120007", email: "taken@test.local"));
+        await _context.SaveChangesAsync();
+
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل مكرر بمسافات",
+            Email = "  taken@test.local  ",
+            Phone = "771120008",
+            Password = TestDataSeeder.TestPassword,
+            ConfirmPassword = TestDataSeeder.TestPassword
+        };
+
+        // Act
+        var act = () => _authService.RegisterAsync(dto);
+
+        // Assert
+        await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage(Messages.EmailAlreadyExists);
+    }
+
+    /// <summary>
+    /// بريد من مسافات وحدها لا يُخزَّن كنص أبيض يُفسد فحص التفرّد لاحقاً — يصير «لا بريد».
+    /// </summary>
+    [Fact]
+    public async Task Register_WhitespaceOnlyEmail_StoresNull()
+    {
+        // Arrange
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل بلا بريد",
+            Email = "   ",
+            Phone = "771120009",
+            Password = TestDataSeeder.TestPassword,
+            ConfirmPassword = TestDataSeeder.TestPassword
+        };
+
+        // Act
+        await _authService.RegisterAsync(dto);
+
+        // Assert
+        var created = await _context.Users.SingleAsync(u => u.Phone == "967771120009");
+        created.Email.Should().BeNull();
     }
 
     public void Dispose() => _context.Dispose();

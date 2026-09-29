@@ -23,12 +23,14 @@ namespace Kharasana.Tests.Tests;
 public class FactoryServiceTests : IDisposable
 {
     private readonly KharasanaDbContext _context;
+    private readonly FakeImageStorage _imageStorage;
     private readonly FactoryService _service;
 
     public FactoryServiceTests()
     {
         _context = TestDataSeeder.CreateContext();
-        _service = new FactoryService(new UnitOfWork(_context), new FakeImageStorage());
+        _imageStorage = new FakeImageStorage();
+        _service = new FactoryService(new UnitOfWork(_context), _imageStorage);
     }
 
     [Fact]
@@ -247,16 +249,139 @@ public class FactoryServiceTests : IDisposable
         stored.Area.Should().Be("عدن");
     }
 
+    /// <summary>
+    /// رفع شعار مرفوض لا يجوز أن يمحو الشعار القائم.
+    ///
+    /// <para><b>العلّة التي يمنعها:</b> كان <c>UploadLogoAsync</c> يحذف ملف الشعار القديم
+    /// <b>قبل</b> استدعاء <c>SaveImageAsync</c> — وهي التي تتحقق من الامتداد والحجم وبصمة
+    /// المحتوى وترمي عند الرفض. فرفع ملف ‎.pdf‎ أو أكبر من 5 ميجابايت كان يمحو الشعار من
+    /// القرص ويردّ 400، بينما <c>factory.Logo</c> ما زال في قاعدة البيانات يشير إلى الملف
+    /// المحذوف — صورة مكسورة بلا رجعة.</para>
+    /// </summary>
+    [Fact]
+    public async Task UploadLogo_WhenTheNewFileIsRejected_KeepsTheExistingLogoIntact()
+    {
+        _context.Factories.Add(TestDataSeeder.CreateFactory(70, "بشعار"));
+        await _context.SaveChangesAsync();
+
+        var factory = await _context.Factories.FirstAsync(f => f.FactoryId == 70);
+        factory.Logo = "/Images/Factories/old.png";
+        await _context.SaveChangesAsync();
+
+        _imageStorage.FailNextSave = true;
+
+        var act = () => _service.UploadLogoAsync(70, new MemoryStream([1, 2, 3]), "bad.pdf", 3);
+
+        await act.Should().ThrowAsync<BusinessException>();
+
+        _imageStorage.Operations.Should().BeEmpty(
+            "ملف مرفوض يعني ألّا يُمَس الشعار القديم إطلاقاً");
+
+        var stored = await _context.Factories.AsNoTracking().FirstAsync(f => f.FactoryId == 70);
+        stored.Logo.Should().Be("/Images/Factories/old.png");
+    }
+
+    /// <summary>الحذف لا يسبق نجاح الحفظ — وإلا صار أي فشل لاحق مُدمّراً للشعار القائم.</summary>
+    [Fact]
+    public async Task UploadLogo_OnSuccess_StoresTheNewFileBeforeDeletingTheOldOne()
+    {
+        _context.Factories.Add(TestDataSeeder.CreateFactory(71, "بشعار٢"));
+        await _context.SaveChangesAsync();
+
+        var factory = await _context.Factories.FirstAsync(f => f.FactoryId == 71);
+        factory.Logo = "/Images/Factories/old.png";
+        await _context.SaveChangesAsync();
+
+        var returned = await _service.UploadLogoAsync(71, new MemoryStream([1, 2, 3]), "new.png", 3);
+
+        _imageStorage.Operations.Should().Equal(
+            "save:/Images/Factories/new.png",
+            "delete:/Images/Factories/old.png");
+
+        returned.Should().Be("/Images/Factories/new.png");
+
+        var stored = await _context.Factories.AsNoTracking().FirstAsync(f => f.FactoryId == 71);
+        stored.Logo.Should().Be("/Images/Factories/new.png");
+    }
+
+    /// <summary>حذف الشعار يُفرّغ الحقل في قاعدة البيانات ثم يحذف الملف — لا العكس.</summary>
+    [Fact]
+    public async Task DeleteLogo_ClearsTheStoredPathAndThenRemovesTheFile()
+    {
+        _context.Factories.Add(TestDataSeeder.CreateFactory(72, "بشعار٣"));
+        await _context.SaveChangesAsync();
+
+        var factory = await _context.Factories.FirstAsync(f => f.FactoryId == 72);
+        factory.Logo = "/Images/Factories/old.png";
+        await _context.SaveChangesAsync();
+
+        await _service.DeleteLogoAsync(72);
+
+        _imageStorage.Operations.Should().Equal("delete:/Images/Factories/old.png");
+
+        var stored = await _context.Factories.AsNoTracking().FirstAsync(f => f.FactoryId == 72);
+        stored.Logo.Should().BeNull();
+    }
+
+    /// <summary>
+    /// أرشفة المصنع تُفرّغ الشعار وتؤرشف في قاعدة البيانات ثم تحذف الملف — لا العكس.
+    /// نفس علّة ترتيب الحذف في <c>UploadLogoAsync</c>: الحذف قبل التثبيت يجعل أي فشل
+    /// في <c>SaveChanges</c> يُتلف الملف بينما الصف لم يتغيّر بعد.
+    /// </summary>
+    [Fact]
+    public async Task Delete_ClearsTheLogoAndArchivesBeforeRemovingTheFile()
+    {
+        _context.Factories.Add(TestDataSeeder.CreateFactory(73, "بشعار٤"));
+        await _context.SaveChangesAsync();
+
+        var factory = await _context.Factories.FirstAsync(f => f.FactoryId == 73);
+        factory.Logo = "/Images/Factories/old.png";
+        await _context.SaveChangesAsync();
+
+        await _service.DeleteAsync(73);
+
+        _imageStorage.Operations.Should().Equal("delete:/Images/Factories/old.png");
+
+        // ← المصنع صار مؤرشفاً، وفلتر الاستعلام العام يستبعده، فلا بدّ من تجاوزه للقراءة.
+        var stored = await _context.Factories.AsNoTracking()
+            .IgnoreQueryFilters()
+            .FirstAsync(f => f.FactoryId == 73);
+        stored.Logo.Should().BeNull();
+        stored.IsDeleted.Should().BeTrue();
+        stored.IsActive.Should().BeFalse();
+    }
+
     public void Dispose() => _context.Dispose();
 }
 
 /// <summary>
-/// تنفيذ وهمي لـ IImageStorageService للاختبارات (بدون ملفات فعلية)
+/// تنفيذ وهمي لـ IImageStorageService للاختبارات (بدون ملفات فعلية).
+///
+/// <para>يسجّل عملياته بترتيبها في <see cref="Operations"/> كي يمكن إثبات أن الحذف لا
+/// يسبق نجاح الحفظ، ويمكن جعله يرفض الحفظ عبر <see cref="FailNextSave"/> لمحاكاة ملف
+/// مرفوض (امتداد أو حجم أو بصمة محتوى) كما تفعل الخدمة الحقيقية.</para>
 /// </summary>
 internal class FakeImageStorage : IImageStorageService
 {
-    public Task<string> SaveImageAsync(System.IO.Stream stream, string fileName, long fileSize, string subFolder)
-        => Task.FromResult($"/images/{subFolder}/{fileName}");
+    /// <summary>سجل مرتّب: <c>save:المسار</c> أو <c>delete:المسار</c>.</summary>
+    public List<string> Operations { get; } = [];
 
-    public void DeleteImage(string? imagePath) { }
+    /// <summary>عند ضبطه يرمي الحفظ استثناءً بدل أن ينجح.</summary>
+    public bool FailNextSave { get; set; }
+
+    public Task<string> SaveImageAsync(System.IO.Stream stream, string fileName, long fileSize, string subFolder)
+    {
+        if (FailNextSave)
+            return Task.FromException<string>(new BusinessException("الملف المرفوع غير صالح."));
+
+        var path = $"/Images/{subFolder}/{fileName}";
+        Operations.Add($"save:{path}");
+        return Task.FromResult(path);
+    }
+
+    public void DeleteImage(string? imagePath)
+    {
+        if (!string.IsNullOrWhiteSpace(imagePath))
+            Operations.Add($"delete:{imagePath}");
+    }
 }

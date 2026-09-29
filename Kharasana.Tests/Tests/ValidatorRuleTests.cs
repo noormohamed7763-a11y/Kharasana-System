@@ -1,5 +1,4 @@
 using FluentValidation;
-using FluentAssertions;
 using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Auth;
 using Kharasana.Application.DTOs.ConcreteType;
@@ -13,7 +12,6 @@ using Kharasana.Application.Validators.Order;
 using Kharasana.Application.Validators.User;
 using Kharasana.Domain.Enums;
 using Kharasana.Domain.Validation;
-using Xunit;
 
 namespace Kharasana.Tests.Tests;
 

@@ -55,7 +55,6 @@ public class UserRepository : GenericRepository<User>, IUserRepository
         return ids.ToHashSet();
     }
 
-    // ✅ التعديل هنا: دعم استثناء المستخدم الحالي عند التحديث
     public async Task<bool> FactoryHasAccountAsync(int factoryId, int? excludeUserId = null)
     {
         var query = _context.Users.Where(u => u.FactoryId == factoryId && u.Role == UserRole.FactoryEmployee);
