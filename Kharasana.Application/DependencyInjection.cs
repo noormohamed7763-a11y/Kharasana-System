@@ -16,7 +16,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IConcreteTypeService, ConcreteTypeService>();
         services.AddScoped<IOrderService, OrderService>();
-        services.AddScoped<IUserService, UserService>(); // ✅ تمت إضافة هذا السطر
+        services.AddScoped<IUserService, UserService>();
         services.AddScoped<IReportService, ReportService>();
 
         // FluentValidation

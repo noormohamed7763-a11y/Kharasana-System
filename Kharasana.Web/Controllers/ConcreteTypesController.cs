@@ -322,6 +322,14 @@ public class ConcreteTypesController : BaseController
     [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Delete(int id)
     {
+        // نفس بوابة Create/Edit: الحالة في الجلسة تُقرأ عند الدخول فقط، فإن أُوقف المصنع
+        // بعد تسجيل الدخول بقيت قديمة هنا — والحارس النهائي في ConcreteTypeService.DeleteAsync.
+        if (IsFactoryInactive())
+        {
+            TempData[TempDataWarning] = "مصنعك غير نشط حالياً، لذا لا يمكنك حذف أنواع الخرسانة.";
+            return RedirectToAction(nameof(Index));
+        }
+
         try
         {
             var success = await _concreteTypeService.DeleteAsync(id);

@@ -281,6 +281,16 @@
                         </tr>
                     }
 
+                    @* حالة فارغة ثانية ومختلفة: القائمة أعلاه غير فارغة، لكن لا صف يطابق
+                       الفلتر المختار. الفرع السابق لا يعمل هنا (RecentOrders.Any() صحيحة)،
+                       فكانت الأزرار تُفرّغ الجدول بلا أي رسالة — يظهرها site.js عند الحاجة. *@
+                    <tr id="factoryOrdersFilterEmpty" class="d-none">
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-funnel display-6 d-block mb-2"></i>
+                            لا توجد طلبات بهذه الحالة
+                        </td>
+                    </tr>
+
                 </tbody>
 
             </table>

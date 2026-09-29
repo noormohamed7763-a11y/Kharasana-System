@@ -1,12 +1,11 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Kharasana.Domain.Enums;
 
 namespace Kharasana.Web.ViewModels.Orders
 {
     public class EditOrderViewModel
     {
-        public int OrderId { get; set; }  // ✅ أضيفت هذه الخاصية
+        public int OrderId { get; set; }
 
         [Required(ErrorMessage = "نوع الخرسانة مطلوب")]
         public int ConcreteTypeId { get; set; }
@@ -28,10 +27,12 @@ namespace Kharasana.Web.ViewModels.Orders
         public string? SiteDescription { get; set; }
 
         [Required(ErrorMessage = "نوع البلاطة مطلوب")]
-        public SlabType SlabType { get; set; }  // ✅ تغيير من int? إلى SlabType
+        public SlabType SlabType { get; set; }
 
         [Required(ErrorMessage = "الكمية مطلوبة")]
-        [Range(typeof(decimal), "0.1", "100000", ErrorMessage = "الكمية يجب أن تكون بين 0.1 و 100,000 م³")]
+        // ✅ السقف 1000 لا 100000 — نفس سبب CreatePhoneOrderViewModel:
+        //    مطابقةُ سقف ValidationRules.Quantity() الذي يرفض ما فوق 1000.
+        [Range(typeof(decimal), "0.1", "1000", ErrorMessage = "الكمية يجب أن تكون بين 0.1 و 1000 م³")]
         public decimal Quantity { get; set; }
 
         public bool NeedPump { get; set; }
@@ -41,7 +42,7 @@ namespace Kharasana.Web.ViewModels.Orders
         public DateTime? PouringDate { get; set; }
 
         [Required(ErrorMessage = "طريقة النقل مطلوبة")]
-        public TransportMethod TransportMethod { get; set; }  // ✅ تغيير من int? إلى TransportMethod
+        public TransportMethod TransportMethod { get; set; }
 
         [StringLength(1000, ErrorMessage = "الملاحظات لا تزيد عن 1000 حرف")]
         public string? Notes { get; set; }

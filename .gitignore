@@ -21,7 +21,10 @@ appsettings.Production*.json
 appsettings.Staging*.json
 
 # Publish profiles — .pubxml.user stores machine-specific WebDeploy credentials
-# (plaintext/encrypted password + destination connection strings). Never commit.
+# (plaintext/encrypted password + destination connection strings), and .pubxml itself
+# carries the deployment target (site URL, MSDeploy endpoint, IIS app path, user name).
+# Neither belongs in the repository. Never commit.
+*.pubxml
 *.pubxml.user
 
 # Logs
@@ -41,6 +44,7 @@ Kharasana.API/wwwroot/Images/Factories/*
 # Temporary Agent & Review files
 .claude/
 .ua/
+.kilo/
 WEB_LAYER_CODE_REVIEW.md
 
 # Documents folder

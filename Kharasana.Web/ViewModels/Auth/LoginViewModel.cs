@@ -13,7 +13,7 @@ namespace Kharasana.Web.ViewModels.Auth
         [Display(Name = "كلمة المرور")]
         public string Password { get; set; } = string.Empty;
 
-        [Display(Name = "تذكرني")]
-        public bool RememberMe { get; set; }
+        // أُزيلت خاصية RememberMe: لم تكن تُقرأ في AccountController.Login ولا تُرسَل
+        // في AuthApiService.LoginAsync، فكانت مربع اختيار بلا أثر على عمر الجلسة.
     }
 }

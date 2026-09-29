@@ -87,13 +87,10 @@
                             <span asp-validation-for="Password" class="text-danger"></span>
                         </div>
 
-                        <!-- تذكرني -->
-                        <div class="form-check mb-4">
-                            <input asp-for="RememberMe" class="form-check-input" id="rememberMe" />
-                            <label asp-for="RememberMe" class="form-check-label" for="rememberMe">
-                                تذكرني على هذا الجهاز
-                            </label>
-                        </div>
+                        @* أُزيل خيار «تذكرني»: كان وعدًا وظيفيًا غير منفّذ — لا
+                           AccountController.Login ولا AuthApiService.LoginAsync يقرآن
+                           العلم أو يرسلانه، وسلوك الجلسة واحد سواء وُضعت علامة أم لا.
+                           إبقاء مربع اختيار لا أثر له يضلّل المستخدم. *@
 
                         <!-- زر الدخول -->
                         <button type="submit" class="btn btn-login w-100" id="loginButton">

@@ -112,25 +112,14 @@ namespace Kharasana.Web.Services.Api
         }
 
         /// <summary>
-        /// جلب جميع العملاء
+        /// جلب أنواع الخرسانة.
         ///
-        /// <para>التصفية على الخادم (<c>isActive=true</c>) بدل تصفية صفحة واحدة في الذاكرة.</para>
-        /// </summary>
-        public async Task<List<LookupDto>> GetClientsAsync()
-        {
-            return await FetchUserLookupAsync(
-                "clients",
-                $"Users?role={(int)UserRole.Client}&isActive=true",
-                u => new LookupDto
-                {
-                    Id = u.UserId,
-                    Name = u.FullName,
-                    FactoryId = u.FactoryId
-                });
-        }
-
-        /// <summary>
-        /// جلب أنواع الخرسانة
+        /// <para>⚠️ خلافًا لـ<see cref="FetchUserLookupAsync"/> لا يُطرح الاستثناء هنا بل
+        /// تُعاد قائمة فارغة — وهذا مقصود لا سهو: كل مواضع النداء في <c>OrdersController</c>
+        /// تقع إما داخل <c>try</c> الإجراء وإما داخل كتل <c>catch</c> نفسها، فرمي
+        /// <see cref="ApiServiceException"/> هناك يستبدل رسالة عربية صريحة برسالة عامة.
+        /// والثمن — منسدلة فارغة عند تعذّر الوصول — مقبول لأن رسالة الخطأ الأصلية معروضة
+        /// في الصفحة نفسها.</para>
         /// </summary>
         public async Task<List<LookupDto>> GetConcreteTypesAsync()
         {

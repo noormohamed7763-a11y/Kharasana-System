@@ -12,7 +12,6 @@ public interface IFactoryService
     Task<bool> DeleteAsync(int id);
     Task<bool> RestoreAsync(int id);
 
-    // ✅ جديد: إدارة شعار المصنع
     Task<string> UploadLogoAsync(int id, Stream fileStream, string originalFileName, long fileLength);
     Task<bool> DeleteLogoAsync(int id);
 }

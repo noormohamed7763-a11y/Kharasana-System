@@ -31,9 +31,10 @@ namespace Kharasana.Web.Controllers
         }
 
         /// <summary>
-        /// صفحة منع الوصول — تُستدعى من تكوين Cookie Authentication
-        /// (AccessDeniedPath) عندما يكون المستخدم مسجّلاً لكنه لا يملك صلاحية
-        /// للصفحة المطلوبة. تعيد استخدام صفحة الخطأ القياسية بحالة 403.
+        /// صفحة منع الوصول (403). <b>لا يناظرها تكوين ASP.NET Authorization</b>: هذا
+        /// المشروع لا يسجّل أي AuthenticationScheme (انظر Program.cs) والحراسة كلها عبر
+        /// <see cref="SessionAuthorizeAttribute"/>. الفعل باقٍ كصفحة 403 صريحة يمكن
+        /// توجيه المستخدم إليها، ولا شيء يحوّل إليه تلقائيًا اليوم.
         /// </summary>
         [HttpGet]
         public IActionResult AccessDenied()
@@ -59,6 +60,14 @@ namespace Kharasana.Web.Controllers
                     ModelState.AddModelError("", AppMessages.Error.InvalidLogin);
                     return View(model);
                 }
+
+                // ✅ تفريغ الجلسة قبل كتابة الهوية الجديدة إلزامي: معرّف الجلسة (SessionId)
+                //    لا يُدوَّر في ASP.NET Core، فأي مفتاح متبقٍّ من حسابٍ سابق ينتقل إلى
+                //    الحساب الجديد. الأثر الفعلي: مديرٌ يسجّل الدخول بعد موظف مصنع كان
+                //    يحمل FactoryId قديمًا — فيُقيَّد في تعيين السائقين (OrderWorkflow)
+                //    ويُعرض له اسم مصنعٍ وشعاره ليسا مصنعه.
+                //    TempData لا يتأثر: مزوّده في هذا المشروع كوكي لا جلسة (انظر Program.cs).
+                HttpContext.Session.Clear();
 
                 HttpContext.Session.SetString("Token", result.Token);
                 HttpContext.Session.SetString("FullName", result.FullName);

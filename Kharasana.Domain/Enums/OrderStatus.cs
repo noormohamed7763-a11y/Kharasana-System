@@ -9,7 +9,16 @@ namespace Kharasana.Domain.Enums;
 public enum OrderStatus
 {
     /// <summary>
-    /// جديد - تم إنشاء الطلب
+    /// <b>قيمة تاريخية لا يُسنِدها النظام.</b> الطلبات تُنشأ بـ <see cref="Pending"/>
+    /// منذ أن صار الإنشاء يمرّ بمراجعة موظف المصنع (انظر <c>OrderService.Commands</c>).
+    ///
+    /// <para>سبب بقائها: قيمتها <c>0</c> وهي الافتراضية في CLR، فقد تحملها صفوف قديمة
+    /// في قاعدة البيانات. ولهذا تعاملها كل مواضع المقارنة كـ <see cref="Pending"/>
+    /// (<c>status == New || status == Pending</c>)، ويمنحها <see cref="OrderStatusHelper"/>
+    /// انتقالات <see cref="Pending"/> نفسها بدل تركها بلا انتقالات.</para>
+    ///
+    /// <para><b>لا تُحذف</b> قبل migration يعيد إسناد الصفوف القديمة إلى <c>Pending</c>
+    /// وإلا قُئرت تلك الصفوف بقيمة لا وجود لها.</para>
     /// </summary>
     New = 0,
 

@@ -13,7 +13,10 @@
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
+    <!-- ✅ 10.0.10 لا 10.0.9: كان Kharasana.Web على 10.0.10 وهذا على 10.0.9، فيحصل
+         الـ API على نسخة والويب على أخرى لنفس الحزمة. وُحّدت على الأعلى (ترقية لا
+         تخفيض) لأن حزم ASP.NET Core تُصلح ثغرات في إصدارات الـ patch. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

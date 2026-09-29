@@ -67,12 +67,8 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(dto.Email) && string.IsNullOrWhiteSpace(dto.Phone))
             throw new BusinessException(Messages.EmailOrPhoneRequired);
 
-        if (!string.IsNullOrWhiteSpace(dto.Email))
-        {
-            var emailExists = await _unitOfWork.Users.EmailExistsAsync(dto.Email);
-            if (emailExists)
-                throw new ConflictException(Messages.EmailAlreadyExists);
-        }
+        // ✅ تطبيع البريد وفحص تفرّده في خطوة واحدة (انظر EmailValidationHelper)
+        var normalizedEmail = await EmailValidationHelper.EnsureUniqueAsync(_unitOfWork, dto.Email);
 
         var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
             _unitOfWork, dto.Phone);
@@ -87,7 +83,7 @@ public class UserService : IUserService
         var user = new User
         {
             FullName = dto.FullName,
-            Email = dto.Email,
+            Email = normalizedEmail,
             PasswordHash = _passwordHasher.Hash(dto.Password),
             Phone = normalizedPhone,
             WhatsApp = normalizedWhatsApp,
@@ -154,20 +150,17 @@ public class UserService : IUserService
         // ✅ البريد: غيابه (null/فراغ) يعني «أبقِ الحالي». كان UpdateUserDto بلا حقل
         //    Email أصلاً فيُهمَل ما يرسله الويب صامتاً مع رسالة نجاح. والفحص يستثني
         //    المستخدم نفسه، وإلا اصطدم ببريده الحالي وفشل أي تعديل آخر.
-        if (!string.IsNullOrWhiteSpace(dto.Email))
-        {
-            var emailTaken = await _unitOfWork.Users.EmailExistsAsync(dto.Email, excludeUserId: id);
-            if (emailTaken)
-                throw new ConflictException(Messages.EmailAlreadyExists);
-        }
+        //    والتطبيع (قصّ المسافات) قبل الحفظ يجعل البريد المخزَّن مطابقاً لما يقصّه الدخول.
+        var normalizedEmail = await EmailValidationHelper.EnsureUniqueAsync(
+            _unitOfWork, dto.Email, excludeUserId: id);
 
         var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
             _unitOfWork, dto.Phone, currentPhone: user.Phone);
         var normalizedWhatsApp = PhoneValidationHelper.NormalizeOrThrow(dto.WhatsApp) ?? user.WhatsApp;
 
         user.FullName = dto.FullName;
-        if (!string.IsNullOrWhiteSpace(dto.Email))
-            user.Email = dto.Email;
+        if (normalizedEmail != null)
+            user.Email = normalizedEmail;
         user.Phone = normalizedPhone;
         user.WhatsApp = normalizedWhatsApp;
         user.ProfileImage = dto.ProfileImage;

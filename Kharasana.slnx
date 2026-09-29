@@ -5,4 +5,5 @@
   <Project Path="Kharasana.Domain/Kharasana.Domain.csproj" />
   <Project Path="Kharasana.Infrastructure/Kharasana.Infrastructure.csproj" />
   <Project Path="Kharasana.Tests/Kharasana.Tests.csproj" />
+  <Project Path="Kharasana.IntegrationTests/Kharasana.IntegrationTests.csproj" />
 </Solution>

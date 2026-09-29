@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using Kharasana.Domain.Enums;
 using Kharasana.Web.Helpers;
 
@@ -10,9 +9,6 @@ public class OrderDto
     // ============================================================
     // BASIC INFO
     // ============================================================
-    [JsonPropertyName("id")]
-    public int Id { get; set; }
-
     [JsonPropertyName("orderId")]
     public int OrderId { get; set; }
 
@@ -96,18 +92,12 @@ public class OrderDto
     [JsonPropertyName("slabType")]
     public SlabType SlabType { get; set; }
 
-    [JsonPropertyName("slabTypeDisplay")]
-    public string? SlabTypeDisplay { get; set; }
-
 
     // ============================================================
     // TRANSPORT INFO
     // ============================================================
     [JsonPropertyName("transportMethod")]
     public TransportMethod TransportMethod { get; set; }
-
-    [JsonPropertyName("transportMethodDisplay")]
-    public string? TransportMethodDisplay { get; set; }
 
     [JsonPropertyName("needPump")]
     public bool NeedPump { get; set; }
@@ -168,8 +158,6 @@ public class OrderDto
     /// تُنتج نصاً متناقضاً بين شاشة الطلبات ولوحة المعلومات لنفس الطلب.</para>
     /// </summary>
     public string StatusArabic => Status.GetArabicName();
-
-    public int StatusInt => (int)Status;
 
     /// <summary>
     /// تاريخ الصب بصيغة dd/MM/yyyy جاهزة للعرض

@@ -268,7 +268,7 @@ Kharasana.Web/
 │   ├── DashboardController.cs   # لوحات التحكم التفاعلية (أدمن ومصانع)
 │   ├── OrdersController.cs      # إدارة وجداول وعرض تفاصيل الطلبات
 │   ├── OrderWorkflowController.cs # معالجة مسار اعتماد وتسليم الطلبات
-│   ├── FactoryController.cs     # شاشات إدارة ومتابعة المصانع
+│   ├── FactoriesController.cs   # شاشات إدارة ومتابعة المصانع
 │   ├── ConcreteTypesController.cs # شاشات إدارة أنواع الخرسانة
 │   ├── UsersController.cs       # شاشات المستخدمين والموظفين
 │   ├── ClientsController.cs     # شاشات إدارة العملاء
@@ -337,16 +337,47 @@ Kharasana.Tests/
 ├── TestData/                    # بذور البيانات التجريبية والمولّدات
 │   └── TestDataSeeder.cs        # بيانات اختبارية متكاملة لجميع السيناريوهات
 └── Tests/                       # فئات الاختبارات المنطقية (xUnit & FluentAssertions)
-    ├── AuthServiceTests.cs      # اختبارات المصادقة وتوليد التوكن
-    ├── OrderServiceTests.cs     # اختبارات قواعد الطلبات وصلاحيات المصانع
-    ├── FactoryServiceTests.cs   # اختبارات إدارة المصانع والأرشفة
-    ├── ConcreteTypeServiceTests.cs # اختبارات أنواع الخرسانة
-    ├── UserServiceTests.cs      # اختبارات إدارة المستخدمين وتغيير كلمات المرور
-    ├── DashboardServiceTests.cs # اختبارات حساب مؤشرات الأداء والـ KPIs
-    ├── ReportServiceTests.cs    # اختبارات دقة التقارير المالية والإنتاجية
-    ├── PaginationParamsTests.cs # اختبارات حدود الترقيم وحجم الصفحات
-    └── UniqueConstraintDetectorTests.cs # اختبارات كشف انتهاك قيود التفرّد (أرقام أخطاء SQL Server)
+    ├── AuthServiceTests.cs      # المصادقة وتوليد التوكن وقفل الحساب
+    ├── UserServiceTests.cs      # إدارة المستخدمين وتغيير كلمات المرور
+    ├── FactoryServiceTests.cs   # إدارة المصانع والأرشفة
+    ├── ConcreteTypeServiceTests.cs # أنواع الخرسانة
+    ├── OrderServiceTests.cs     # قواعد الطلبات وصلاحيات المصانع
+    ├── OrderServiceTrackingTests.cs # سلوك تتبّع EF في مسارات تعديل الطلبات
+    ├── OrderRepositoryQueryFilterTests.cs # فلتر الحذف الناعم في قراءات الطلبات
+    ├── OrderConcreteTypeSnapshotTests.cs # لقطتا نوع الخرسانة المحفوظتان على الطلب
+    ├── OrderStatusMapTests.cs   # خريطة حالات الطلب وانتقالاتها
+    ├── ReportServiceTests.cs    # دقة التقارير المالية والإنتاجية
+    ├── DashboardServiceTests.cs # حساب مؤشرات الأداء والـ KPIs
+    ├── PaginationParamsTests.cs # حدود الترقيم وحجم الصفحات
+    ├── PasswordPolicyTests.cs   # سياسة كلمة المرور
+    ├── ValidatorWiringTests.cs  # توصيل المدقّقات فعلياً (انعكاس على تجميعة التطبيق)
+    ├── ValidatorRuleTests.cs    # قواعد المدقّقات نفسها
+    ├── ValidationRulesUnificationTests.cs # توحيد قواعد التحقق المشتركة بين المدقّقات
+    ├── FormValidationScriptsTests.cs # سكربتات التحقق في الواجهة
+    ├── RateLimitWiringTests.cs  # توصيل سياسات حد المعدل
+    ├── UniqueConstraintDetectorTests.cs # كشف انتهاك قيود التفرّد (أرقام أخطاء SQL Server)
+    ├── ApiErrorResponseFactoryTests.cs # توحيد شكل استجابة الخطأ
+    ├── AdminAccountSeederTests.cs # بذرة حساب مدير النظام
+    └── AppCultureTests.cs       # الثقافة العربية (التقويم والتنسيق)
 ```
+
+---
+
+#### 7. طبقة اختبارات التكامل: `Kharasana.IntegrationTests` (SQL Server Integration Tests)
+تحرس ما يعجز InMemory عن إثباته — الفهارس الفريدة المُرشَّحة، وقيود المفاتيح الأجنبية، وسلوك `RowVersion` الفعلي. تُتخطّى كلها بـ`Skip` صريح إن غاب متغيّر البيئة، فلا تُسقط بناء من لا خادم لديه.
+```text
+Kharasana.IntegrationTests/
+├── Infrastructure/              # تهيئة الخادم وعزل قواعد البيانات
+│   ├── SqlServerFactAttribute.cs # سمة [SqlServerFact] — تُعلن Skip من بانيها عند غياب المتغيّر
+│   ├── SqlServerTestEnvironment.cs # المصدر الوحيد لسلسلة الاتصال (KHARASANA_TEST_SQLSERVER)
+│   └── SqlServerTestDatabase.cs # قاعدة معزولة باسم فريد + تطبيق الترحيلات الفعلية ثم حذفها
+├── TestData/
+│   └── IntegrationSeed.cs       # بذور بيانات سيناريوهات التكامل
+└── Tests/
+    ├── SchemaConstraintTests.cs # الفهرس المُرشَّح · FK Restrict · RowVersion
+    └── QueryFilterOnSqlServerTests.cs # حارس فلتر الحذف الناعم في القراءة ومسار التعديل
+```
+> التفاصيل الكاملة وحدود التغطية في `SQL_SERVER_INTEGRATION_TESTING.md`.
 
 ---
 
@@ -460,9 +491,9 @@ dotnet run
 dotnet test Kharasana.slnx
 ```
 - يعتمد المشروع على **xUnit** و **FluentAssertions**.
-- حالياً يوجد **128 اختباراً ناجحاً** تغطي كافة العمليات المنطقية الأساسية (التحقق من صحة الطلبات، قفل الحسابات، آليات الحذف الناعم والتحديثات).
+- حالياً يوجد **282 اختباراً ناجحاً** موزّعة على 22 ملفاً تغطي كافة العمليات المنطقية الأساسية (التحقق من صحة الطلبات، قفل الحسابات، آليات الحذف الناعم والتحديثات).
 - هذه اختبارات **InMemory** لمنطق الخدمات فقط، ولا تُثبت سلوك SQL Server الفعلي (الفهارس الفريدة المُرشَّحة، المفاتيح الأجنبية، `RowVersion`) — انظر `SQL_SERVER_INTEGRATION_TESTING.md`.
-- يوجد تكامل مستمر (CI) في `.github/workflows/ci.yml` يعمل على `master`: يستعيد ويبني ثم ينفذ `dotnet test Kharasana.slnx` في وضع Release. الـ CI يشغّل نفس اختبارات InMemory هذه، ولا يشغّل أي اختبار تكامل على SQL Server حقيقي.
+- يوجد تكامل مستمر (CI) في `.github/workflows/ci.yml` يعمل على `master`: يستعيد ويبني ثم ينفذ `dotnet test Kharasana.slnx` في وضع Release. ويشغّل CI حاوية `mcr.microsoft.com/mssql/server:2022-latest` ويمرّر سلسلة اتصالها في المتغيّر `KHARASANA_TEST_SQLSERVER`، فتعمل اختبارات التكامل الثمانية على SQL Server حقيقي لا على InMemory.
 
 ---
 
@@ -486,6 +517,7 @@ dotnet test Kharasana.slnx
 
 - ملف نشر جاهز للاستضافة عبر **SiteAsp / runasp.net**:
   `Kharasana.API/Properties/PublishProfiles/site89235-WebDeploy.pubxml`
+  **ملاحظة:** هذا الملف **غير مُتتبَّع في Git** — يستثنيه `.gitignore` مع `*.pubxml.user` لأن كليهما يحمل هدف النشر وبيانات اعتماد WebDeploy. يوجد محلياً على أجهزة من نشر سابقاً، ولا يصل إلى أي مستنسخ جديد؛ أنشئه عبر Visual Studio عند الحاجة.
 - التكوين الحساس (سلسلة الاتصال + مفتاح JWT) يُحقن وقت النشر الفعلي لتأمين الحسابات.
 
 ---

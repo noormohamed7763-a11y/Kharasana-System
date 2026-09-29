@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Order;
+using Kharasana.Application.Validators.Common;
 using Kharasana.Domain.Common;
 
 namespace Kharasana.Application.Validators.Order;
@@ -10,31 +11,27 @@ public class PhoneOrderDtoValidator : AbstractValidator<PhoneOrderDto>
     public PhoneOrderDtoValidator()
     {
         RuleFor(x => x.ClientPhone)
-            .NotEmpty().WithMessage("رقم هاتف العميل مطلوب.")
+            .NotEmpty().WithMessage(Messages.ClientPhoneRequired)
             .Must(YemeniPhoneHelper.IsValid)
             .WithMessage(Messages.InvalidYemeniPhone);
 
-        RuleFor(x => x.FactoryId).GreaterThan(0).WithMessage("يجب تحديد المصنع.");
-        RuleFor(x => x.ConcreteTypeId).GreaterThan(0).WithMessage("يجب تحديد نوع الخرسانة.");
-        RuleFor(x => x.Quantity).GreaterThan(0).WithMessage("الكمية يجب أن تكون أكبر من صفر.");
-        RuleFor(x => x.TransportMethod).IsInEnum().WithMessage("طريقة النقل غير صالحة.");
-        RuleFor(x => x.SlabType).IsInEnum().WithMessage("نوع الصبة غير صالح.");
+        // ✅ نفس قواعد CreateOrderDtoValidator من المصدر الواحد — كانت هنا نصوصاً صريحة
+        //    وثمّة ثوابت، أي نسختين من القاعدة الواحدة قابلتين للانحراف.
+        RuleFor(x => x.FactoryId).FactoryId();
+        RuleFor(x => x.ConcreteTypeId).ConcreteTypeId();
+        RuleFor(x => x.Quantity).Quantity();
+        RuleFor(x => x.TransportMethod).TransportMethod();
+        RuleFor(x => x.SlabType).SlabType();
 
         // ✅ سقوف النصوص الحرة = أطوال الأعمدة في OrderConfiguration/UserConfiguration.
         //    كانت غائبة، فالنص الأطول يتجاوز العمود ويرمي SQL Server الخطأ 8152
         //    (اقتطاع) فيصير الرد 500 بدل 400 برسالة عربية.
         //    MaximumLength يتجاهل القيم الفارغة/غير المرسلة فلا حاجة لشرط When.
-        RuleFor(x => x.ClientFullName)
-            .MaximumLength(200).WithMessage(Messages.NameMaxLength);
-        RuleFor(x => x.ProjectName)
-            .MaximumLength(200).WithMessage(Messages.ProjectNameMaxLength);
-        RuleFor(x => x.ProjectOwnerName)
-            .MaximumLength(200).WithMessage(Messages.ProjectOwnerNameMaxLength);
-        RuleFor(x => x.SiteArea)
-            .MaximumLength(100).WithMessage(Messages.SiteAreaMaxLength);
-        RuleFor(x => x.SiteDescription)
-            .MaximumLength(500).WithMessage(Messages.SiteDescriptionMaxLength);
-        RuleFor(x => x.Notes)
-            .MaximumLength(1000).WithMessage(Messages.NotesMaxLength);
+        RuleFor(x => x.ClientFullName).CappedAt(200, Messages.NameMaxLength);
+        RuleFor(x => x.ProjectName).ProjectName();
+        RuleFor(x => x.ProjectOwnerName).ProjectOwnerName();
+        RuleFor(x => x.SiteArea).SiteArea();
+        RuleFor(x => x.SiteDescription).SiteDescription();
+        RuleFor(x => x.Notes).Notes();
     }
 }

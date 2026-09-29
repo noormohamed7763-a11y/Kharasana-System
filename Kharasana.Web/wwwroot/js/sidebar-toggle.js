@@ -2,7 +2,6 @@
     const wrapper = document.querySelector(".wrapper");
     const desktopToggle = document.getElementById("sidebarToggle");
     const mobileToggle = document.getElementById("sidebarMobileToggle");
-    const STORAGE_KEY = "kharasana_sidebar_collapsed";
 
     const isMobileViewport = () => window.innerWidth <= 992;
 
@@ -19,8 +18,12 @@
     // Desktop: الـ Sidebar ثابت وموسّع دائماً (260px) — لا نستعيد الحالة المحفوظة.
     // Mobile: لا نطبق sidebar-collapsed أبداً (يتعارض مع off-canvas sidebar-mobile-open).
     // نزيل أي حالة مطوية متبقية من جلسة سابقة على كلا النوعين.
+    //
+    // ولا نكتب شيئاً في localStorage: الحالة لا تُقرأ في أي موضع (الحذف أعلاه هو كل
+    // الاستعمال)، وكانت الكتابة بلا try/catch تُرمي SecurityError حين يُحجب تخزين
+    // الموقع (وضع خاص/حجب بيانات) فيتوقف معالج DOMContentLoaded كاملاً — أي يتعطل
+    // زر الشريط الجانبي على الجوال مع كل معالجات الإغلاق.
     wrapper.classList.remove("sidebar-collapsed");
-    localStorage.setItem(STORAGE_KEY, "0");
     syncAriaState();
 
     desktopToggle?.addEventListener("click", function () {
@@ -65,7 +68,6 @@
         if (isMobileViewport()) {
             // On mobile: remove collapsed, use off-canvas only
             wrapper.classList.remove("sidebar-collapsed");
-            localStorage.setItem(STORAGE_KEY, "0");
         }
         // On desktop: لا يوجد collapsed — الـ Sidebar موسّع دائماً
         if (!isMobileViewport() && wrapper.classList.contains("sidebar-mobile-open")) {

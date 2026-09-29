@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Kharasana.Domain.Enums;
 
 namespace Kharasana.Web.ViewModels.Dashboard

@@ -19,7 +19,7 @@ public class RegisterClientValidator : AbstractValidator<RegisterUserDto>
         //    كانت هنا NotEmpty() فتتعارض مع قرار جعل البريد اختيارياً وتُفشل
         //    تسجيل أي عميل بلا بريد — صُحّحت لتطابق نية الـ DTO.
         RuleFor(x => x.Email)
-            .EmailAddress().WithMessage(Messages.InvalidEmail)
+            .Email()
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x.Password).Password();
@@ -27,7 +27,7 @@ public class RegisterClientValidator : AbstractValidator<RegisterUserDto>
         // ✅ رسالة عدم التطابق من الرسائل المشتركة — تطابق ما ترميه AuthService
         //    (كان هنا نصّ مختلف قليلاً: «كلمتا المرور غير متطابقتين.»)
         RuleFor(x => x.ConfirmPassword)
-            .NotEmpty().WithMessage("تأكيد كلمة المرور مطلوب.")
+            .NotEmpty().WithMessage(Messages.ConfirmPasswordRequired)
             .Equal(x => x.Password).WithMessage(Messages.PasswordsNotMatch);
 
         RuleFor(x => x.Phone).YemeniPhone();

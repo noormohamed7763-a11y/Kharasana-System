@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Kharasana.Application.DTOs.ConcreteType;
+using Kharasana.Application.Validators.Common;
 
 namespace Kharasana.Application.Validators.ConcreteType;
 
@@ -7,9 +8,9 @@ public class CreateConcreteTypeDtoValidator : AbstractValidator<CreateConcreteTy
 {
     public CreateConcreteTypeDtoValidator()
     {
-        RuleFor(x => x.FactoryId).GreaterThan(0).WithMessage("يجب تحديد المصنع.");
-        RuleFor(x => x.Name).NotEmpty().WithMessage("اسم نوع الخرسانة مطلوب.").MaximumLength(100);
-        RuleFor(x => x.Strength).GreaterThan(0).WithMessage("قيمة المقاومة غير صالحة.");
-        RuleFor(x => x.UnitPrice).GreaterThan(0).WithMessage("السعر يجب أن يكون أكبر من صفر.");
+        RuleFor(x => x.FactoryId).FactoryId();
+        RuleFor(x => x.Name).ConcreteTypeName();
+        RuleFor(x => x.Strength).ConcreteTypeStrength();
+        RuleFor(x => x.UnitPrice).ConcreteTypeUnitPrice();
     }
 }

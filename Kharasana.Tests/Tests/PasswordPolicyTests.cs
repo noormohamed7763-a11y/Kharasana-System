@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
-using FluentAssertions;
 using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Auth;
 using Kharasana.Application.DTOs.User;
@@ -8,7 +7,6 @@ using Kharasana.Application.Validators.Auth;
 using Kharasana.Application.Validators.User;
 using Kharasana.Domain.Enums;
 using Kharasana.Domain.Validation;
-using Xunit;
 
 namespace Kharasana.Tests.Tests;
 

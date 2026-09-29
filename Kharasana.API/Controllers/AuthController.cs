@@ -30,12 +30,19 @@ public class AuthController : ControllerBase
     /// <summary>
     /// تسجيل مستخدم جديد (دور Client فقط).
     /// </summary>
+    /// <remarks>
+    /// محمية بنفس سياسة الدخول «login»: 10 محاولات في الدقيقة لكل عنوان IP.
+    /// إعادة استخدام السياسة مقصودة لا سهو — التسجيل نقطة مجهولة بلا توكن، وردّها
+    /// 409 (بريد/هاتف مسجَّل) مقابل 201 يكشف للمجهول ما هو مسجَّل في النظام،
+    /// فحاجزها يجب ألا يقلّ عن حاجز الدخول. الحاجز العام (100/دقيقة) وحده أوسع من أن يمنعه.
+    /// </remarks>
     /// <param name="dto">بيانات التسجيل: الاسم، الهاتف، كلمة المرور... إلخ.</param>
     /// <response code="201">تم إنشاء الحساب بنجاح.</response>
     /// <response code="400">بيانات غير صالحة (كلمة المرور، الهاتف، البريد... إلخ).</response>
     /// <response code="409">الحساب موجود مسبقاً — بريد إلكتروني أو رقم هاتف مسجّل.</response>
     /// <response code="429">تجاوز حد المحاولات المسموح في الدقيقة.</response>
     [HttpPost("register")]
+    [EnableRateLimiting("login")]
     [ServiceFilter(typeof(ValidationFilter<RegisterUserDto>))]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
     {

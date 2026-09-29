@@ -121,6 +121,41 @@ public static class Messages
     public const string NameMaxLength = "الاسم الكامل يجب ألا يزيد عن 200 حرف.";
     public const string FullNameRequired = "الاسم الكامل مطلوب.";
     public const string PasswordRequired = "كلمة المرور مطلوبة.";
+    public const string ConfirmPasswordRequired = "تأكيد كلمة المرور مطلوب.";
+
+    #endregion
+
+    #region Factory / ConcreteType / User Validation Messages
+
+    // المصنع
+    public const string FactoryNameRequired = "اسم المصنع مطلوب.";
+    public const string FactoryNameMaxLength = "اسم المصنع يجب ألا يزيد عن 200 حرف.";
+    public const string FactoryAreaRequired = "المنطقة مطلوبة.";
+
+    /// <summary>
+    /// نفس نصّ <see cref="SiteAreaMaxLength"/> عمداً، لكنه منفصلٌ عنه: صياغة منطقة
+    /// الموقع ورسالة منطقة المصنع حقلان مستقلان، فلا يجوز أن يغيّر أحدهما الآخر.
+    /// </summary>
+    public const string FactoryAreaMaxLength = "المنطقة يجب ألا تزيد عن 100 حرف.";
+    public const string FactoryAddressRequired = "العنوان مطلوب.";
+    public const string FactoryAddressMaxLength = "العنوان يجب ألا يزيد عن 300 حرف.";
+    public const string FactoryOwnerNameMaxLength = "اسم المالك يجب ألا يزيد عن 200 حرف.";
+
+    // نوع الخرسانة
+    public const string ConcreteTypeNameRequired = "اسم نوع الخرسانة مطلوب.";
+    public const string ConcreteTypeNameMaxLength = "اسم نوع الخرسانة يجب ألا يزيد عن 100 حرف.";
+    public const string ConcreteTypeStrengthInvalid = "قيمة المقاومة غير صالحة.";
+    public const string ConcreteTypePriceMustBePositive = "السعر يجب أن يكون أكبر من صفر.";
+
+    // المستخدم والسائق
+    public const string InvalidRole = "الدور غير صالح.";
+    public const string InvalidOrderStatus = "حالة الطلب غير صالحة.";
+    public const string InvalidDriverStatus = "حالة السائق غير صالحة.";
+    public const string LoginIdentifierRequired = "يجب إدخال البريد الإلكتروني أو رقم الهاتف.";
+    public const string DriverRequired = "يجب تحديد السائق.";
+    public const string ClientPhoneRequired = "رقم هاتف العميل مطلوب.";
+    public const string TruckPlateRequired = "رقم لوحة الشاحنة مطلوب.";
+    public const string TruckPlateMaxLength = "رقم لوحة الشاحنة يجب ألا يزيد عن 30 حرفًا.";
 
     #endregion
 
@@ -159,6 +194,7 @@ public static class Messages
     public const string PumpRequiresFloorNumber = "عند اختيار مضخة، يجب تحديد رقم الطابق.";
     public const string FloorNumberMustBeNonNegative = "رقم الطابق يجب أن يكون صفر أو أكبر (الأرضي = 0).";
     public const string RejectionReasonPrefix = "سبب الرفض: {0}";
+    public const string RejectionReasonMaxLength = "سبب الرفض لا يجب أن يتجاوز 500 حرف.";
     public const string UnitPriceMustBePositive = "سعر المتر يجب أن يكون أكبر من صفر.";
     public const string CannotUpdatePriceAtThisStage = "لا يمكن تعديل السعر في هذه المرحلة من الطلب.";
     public const string NotAuthorizedToApproveOrder = "غير مخول لاعتماد الطلب.";

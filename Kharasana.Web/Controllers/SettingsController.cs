@@ -1,5 +1,6 @@
 ﻿using Kharasana.Application.Common;
 using Kharasana.Web.Filters;
+using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -34,7 +35,7 @@ namespace Kharasana.Web.Controllers
         {
             if (logoFile == null || logoFile.Length == 0)
             {
-                TempData[TempDataError] = "يرجى اختيار صورة صالحة.";
+                TempData[TempDataError] = AppMessages.Error.InvalidLogo;
                 return RedirectToAction(nameof(Index));
             }
 
@@ -65,7 +66,7 @@ namespace Kharasana.Web.Controllers
             }
 
             TempData[success ? TempDataSuccess : TempDataError] =
-                success ? "تم حذف الشعار بنجاح." : "تعذر حذف الشعار.";
+                success ? AppMessages.Success.LogoDeleted : AppMessages.Error.LogoDelete;
 
             return RedirectToAction(nameof(Index));
         }

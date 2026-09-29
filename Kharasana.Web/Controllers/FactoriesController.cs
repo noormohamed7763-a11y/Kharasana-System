@@ -28,16 +28,18 @@ public class FactoriesController : BaseController
     }
 
     [HttpGet]
+    // ✅ حصر الأدوار مطابقةً لبَوّابة الـ API (AdminOrFactoryEmployeeOrClient): الموظف
+    //    يستقبل مصنعه وحده والعميل المصانع النشطة — العزل مفروض في الـ API من التوكن.
+    //    وبدونه يصل السائق إلى النداء فيردّ 403؛ يلتقطه UnhandledExceptionFilter فلا
+    //    تُعرض صفحة 500، لكن الحصر هنا يجعل الرفض نظيفاً وبلا رحلة ذهاب وعودة.
+    [SessionAuthorize(Roles.AdminOrFactoryEmployeeOrClient)]
     public async Task<IActionResult> Index()
     {
-        _logger.LogInformation(">>> FactoriesController.Index START");
         var result = await _factoryService.GetAllAsync();
-        _logger.LogInformation(">>> FactoriesController.Index AFTER API, Succeeded={Succeeded}", result.Succeeded);
 
         if (!result.Succeeded)
             TempData[TempDataError] = result.Message;
 
-        _logger.LogInformation(">>> FactoriesController.Index BEFORE View");
         return View(result.Data ?? new List<FactoryListItemViewModel>());
     }
 
@@ -81,6 +83,7 @@ public class FactoriesController : BaseController
     }
 
     [HttpGet]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployeeOrClient)]
     public async Task<IActionResult> Details(int id)
     {
         var result = await _factoryService.GetByIdAsync(id);
@@ -261,12 +264,13 @@ public class FactoriesController : BaseController
         }
         catch (Exception ex)
         {
+            // ✅ لا يُعاد ex.Message إلى العميل: هذا الرد JSON يقرأه المتصفح مباشرة،
+            //    ونصّ الاستثناء الخام قد يحمل أسماء جداول أو مسارات. التفصيل يبقى في السجل.
             _logger.LogError(ex, "خطأ غير متوقع في إنشاء حساب المصنع");
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
                 success = false,
-                message = AppMessages.Common.OperationFailed,
-                detail = ex.Message
+                message = AppMessages.Common.OperationFailed
             });
         }
     }

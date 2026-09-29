@@ -349,8 +349,8 @@ public class DriverApiService : IDriverApiService
                     + (factoryId.HasValue ? $"&factoryId={factoryId.Value}" : "");
 
                 // ✅ تنفيذ متوازي — 3x أسرع من التنفيذ المتتالي
-                // ApiClient يضيف رأس Authorization لكل طلب عبر DelegatingHandler
-                // لذا لا يوجد مخاطرة على DefaultRequestHeaders بين الطلبات المتزامنة
+                // ApiClient يضيف رأس Authorization على HttpRequestMessage نفسه في SendAsync،
+                // لا على DefaultRequestHeaders — فلا مخاطرة بين الطلبات المتزامنة
                 var availableTask = _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(DriverStatus.Available), token);
                 var busyTask = _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(DriverStatus.Busy), token);
                 var offlineTask = _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(DriverStatus.Offline), token);

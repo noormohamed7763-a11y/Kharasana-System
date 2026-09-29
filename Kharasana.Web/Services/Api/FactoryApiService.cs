@@ -23,37 +23,6 @@ namespace Kharasana.Web.Services.Api
             _apiSettings = apiSettings.Value;
         }
 
-        private string? BuildLogoUrl(string? logo)
-        {
-            if (string.IsNullOrWhiteSpace(logo))
-                return null;
-
-            // الـ DTO يعيد رابطاً مطلقاً الآن (مطلب الرابط المطلق)
-            if (logo.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            {
-                // إن كان الرابط من أصل الـ API نفسه، نعيد توجيهه عبر وسيط نفس الأصل
-                // (FilesController) ليبقى img-src 'self' في CSP سليماً.
-                if (Uri.TryCreate(logo, UriKind.Absolute, out var absolute)
-                    && Uri.TryCreate(_apiSettings.FilesOrigin, UriKind.Absolute, out var origin)
-                    && string.Equals(absolute.Authority, origin.Authority, StringComparison.OrdinalIgnoreCase))
-                {
-                    var path = absolute.AbsolutePath;
-                    return path.StartsWith("/", StringComparison.Ordinal) ? $"/Files/factories{path}" : null;
-                }
-
-                // رابط مطلق لأصل خارجي (نادر) — نمرّره كما هو
-                return logo;
-            }
-
-            // دفاع ضد قيم غير صالحة في DB (اسم ملف عارٍ بلا "/")
-            if (!logo.StartsWith("/", StringComparison.Ordinal))
-                return null;
-
-            // الآن نخدم الملفات عبر FilesController على نفس أصل الويب
-            // المسار المتوقع في العروض: /Files/factories/Images/Factories/...
-            return $"/Files/factories{logo}";
-        }
-
         private static FactoryListItemViewModel MapListItem(FactoryDto dto, string? logoUrl) => new()
         {
             FactoryId = dto.FactoryId,
@@ -76,7 +45,7 @@ namespace Kharasana.Web.Services.Api
                     return ServiceResult<List<FactoryListItemViewModel>>.Fail(ResponseMessage(response, AppMessages.Common.OperationFailed));
 
                 return ServiceResult<List<FactoryListItemViewModel>>.Ok(
-                    response.Data.Select(d => MapListItem(d, BuildLogoUrl(d.Logo))).ToList());
+                    response.Data.Select(d => MapListItem(d, LogoFiles.BuildUrl(d.Logo, _apiSettings))).ToList());
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
@@ -95,7 +64,7 @@ namespace Kharasana.Web.Services.Api
                     return ServiceResult<List<FactoryListItemViewModel>>.Fail(ResponseMessage(response, AppMessages.Common.OperationFailed));
 
                 return ServiceResult<List<FactoryListItemViewModel>>.Ok(
-                    response.Data.Select(d => MapListItem(d, BuildLogoUrl(d.Logo))).ToList());
+                    response.Data.Select(d => MapListItem(d, LogoFiles.BuildUrl(d.Logo, _apiSettings))).ToList());
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
@@ -127,7 +96,7 @@ namespace Kharasana.Web.Services.Api
                     Address = dto.Address,
                     Latitude = dto.Latitude,
                     Longitude = dto.Longitude,
-                    Logo = BuildLogoUrl(dto.Logo),
+                    Logo = LogoFiles.BuildUrl(dto.Logo, _apiSettings),
                     IsActive = dto.IsActive
                 };
 
@@ -255,7 +224,7 @@ namespace Kharasana.Web.Services.Api
                     return ServiceResult<string>.Fail(ResponseMessage(response, AppMessages.Error.LogoUpload));
 
                 var logo = ExtractLogoPath(response.Data);
-                return ServiceResult<string>.Ok(BuildLogoUrl(logo) ?? string.Empty, AppMessages.Success.LogoUpdated);
+                return ServiceResult<string>.Ok(LogoFiles.BuildUrl(logo, _apiSettings) ?? string.Empty, AppMessages.Success.LogoUpdated);
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)

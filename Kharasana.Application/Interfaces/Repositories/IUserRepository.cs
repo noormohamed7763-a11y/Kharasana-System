@@ -16,7 +16,10 @@ public interface IUserRepository : IGenericRepository<User>
     Task<bool> EmailExistsAsync(string email, int? excludeUserId = null);
     Task<bool> PhoneExistsAsync(string phone);
 
-    // ✅ التعديل هنا: إضافة المعامل الاختياري لتوافق التطبيق في Repository
+    /// <summary>
+    /// هل للمصنع حساب موظف؟ <paramref name="excludeUserId"/> يستثني المستخدم نفسه عند
+    /// التعديل — نفس دور المعامل في <see cref="EmailExistsAsync"/>.
+    /// </summary>
     Task<bool> FactoryHasAccountAsync(int factoryId, int? excludeUserId = null);
 
     /// <summary>

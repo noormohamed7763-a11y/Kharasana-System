@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Kharasana.Domain.Enums;
 
 namespace Kharasana.Web.ViewModels.Orders
@@ -6,6 +6,15 @@ namespace Kharasana.Web.ViewModels.Orders
     /// <summary>
     /// نموذج إنشاء طلب هاتفي - يستخدمه موظف المصنع عند استقبال طلب عبر الهاتف
     /// </summary>
+    /// <remarks>
+    /// لا يحمل هذا النموذج حقول «نوع خرسانة مخصص»: الـ API ينشئ الطلب على
+    /// <c>ConcreteTypeId</c> قائم في قاعدة البيانات (<c>Order.ConcreteTypeId</c> إلزامي)،
+    /// فالنوع الجديد يُنشأ أولًا من صفحة «أنواع الخرسانة»
+    /// (<c>ConcreteTypes/_CreateForm</c> مع <c>concrete-type.js</c>) ثم يُختار هنا.
+    /// كانت هنا ثلاث خصائص (<c>IsCustomConcrete</c>/<c>CustomConcreteName</c>/
+    /// <c>CustomConcreteStrength</c>) لا يقرأها أي View ولا يُمرّرها أي mapping —
+    /// أُزيلت لأنها كانت تَعِد بحقل يُسقَط صامتًا أثناء التحويل إلى <c>PhoneOrderDto</c>.
+    /// </remarks>
     public class CreatePhoneOrderViewModel
     {
         // ============================================================
@@ -36,32 +45,7 @@ namespace Kharasana.Web.ViewModels.Orders
 
 
         // ============================================================
-        // 3. CUSTOM CONCRETE - نوع الخرسانة المخصص (✅ جديد)
-        // ============================================================
-
-        /// <summary>
-        /// هل المستخدم اختار "أخرى"؟
-        /// </summary>
-        [Display(Name = "نوع مخصص")]
-        public bool IsCustomConcrete { get; set; }
-
-        /// <summary>
-        /// اسم النوع المخصص (يظهر فقط عند اختيار "أخرى")
-        /// </summary>
-        [Display(Name = "اسم النوع المخصص")]
-        [StringLength(100, ErrorMessage = "اسم النوع لا يزيد عن 100 حرف")]
-        public string? CustomConcreteName { get; set; }
-
-        /// <summary>
-        /// مقاومة النوع المخصص (يظهر فقط عند اختيار "أخرى")
-        /// </summary>
-        [Display(Name = "المقاومة (MPa)")]
-        [Range(1, 100, ErrorMessage = "المقاومة بين 1 و 100 MPa")]
-        public int? CustomConcreteStrength { get; set; }
-
-
-        // ============================================================
-        // 4. PROJECT INFO - معلومات المشروع
+        // 3. PROJECT INFO - معلومات المشروع
         // ============================================================
 
         [Display(Name = "اسم المشروع")]
@@ -82,7 +66,7 @@ namespace Kharasana.Web.ViewModels.Orders
 
 
         // ============================================================
-        // 5. CONCRETE INFO - معلومات الخرسانة
+        // 4. CONCRETE INFO - معلومات الخرسانة
         // ============================================================
 
         [Required(ErrorMessage = "نوع البلاطة مطلوب")]
@@ -90,13 +74,17 @@ namespace Kharasana.Web.ViewModels.Orders
         public SlabType SlabType { get; set; }
 
         [Required(ErrorMessage = "الكمية مطلوبة")]
-        [Range(typeof(decimal), "0.1", "100000", ErrorMessage = "الكمية يجب أن تكون بين 0.1 و 100,000 م³")]
+        // ✅ السقف 1000 لا 100000: ValidationRules.Quantity() يرفض ما فوق 1000 برسالة
+        //    سياسة صريحة («الكمية كبيرة جداً (أقصى حد هو 1000 متر مكعب)»)، فكانت
+        //    100000 تَعِد في المتصفح بكمية يرفضها الخادم بعد رحلة كاملة.
+        //    الحد الأدنى 0.1 أضيق من شرط الـAPI (> 0) فاتجاهه آمن، وتُرك كما هو.
+        [Range(typeof(decimal), "0.1", "1000", ErrorMessage = "الكمية يجب أن تكون بين 0.1 و 1000 م³")]
         [Display(Name = "الكمية (م³)")]
         public decimal Quantity { get; set; }
 
 
         // ============================================================
-        // 6. TRANSPORT INFO - معلومات النقل
+        // 5. TRANSPORT INFO - معلومات النقل
         // ============================================================
 
         [Display(Name = "بحاجة مضخة")]
@@ -117,7 +105,7 @@ namespace Kharasana.Web.ViewModels.Orders
 
 
         // ============================================================
-        // 7. NOTES - ملاحظات
+        // 6. NOTES - ملاحظات
         // ============================================================
 
         [Display(Name = "ملاحظات")]
@@ -126,7 +114,7 @@ namespace Kharasana.Web.ViewModels.Orders
 
 
         // ============================================================
-        // 8. HELPER PROPERTIES - خصائص مساعدة للـ View
+        // 7. HELPER PROPERTIES - خصائص مساعدة للـ View
         // ============================================================
 
         /// <summary>
@@ -139,13 +127,5 @@ namespace Kharasana.Web.ViewModels.Orders
         /// </summary>
         public bool IsPhoneValid => !string.IsNullOrWhiteSpace(ClientPhone) &&
                                      System.Text.RegularExpressions.Regex.IsMatch(ClientPhone, @"^[0-9]{7,15}$");
-
-        /// <summary>
-        /// هل النوع المخصص مكتمل؟
-        /// </summary>
-        public bool IsCustomConcreteValid => IsCustomConcrete &&
-                                             !string.IsNullOrWhiteSpace(CustomConcreteName) &&
-                                             CustomConcreteStrength.HasValue &&
-                                             CustomConcreteStrength.Value > 0;
     }
 }

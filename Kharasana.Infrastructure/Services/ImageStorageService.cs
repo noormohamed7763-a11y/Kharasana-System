@@ -39,6 +39,17 @@ public class ImageStorageService : IImageStorageService
         if (!IsValidMimeType(fileStream, extension))
             throw new BusinessException("نوع محتوى الملف غير صالح أو لا يتطابق مع الامتداد.");
 
+        // ✅ حارس اجتياز المسار على اسم المجلد: الوسيط جزء من عقد الواجهة، ولو مرّره
+        //    مستدعٍ من مدخلات المستخدم لصار ".." أو مسار مطلق يكتب خارج مجلد الصور.
+        //    المستدعي الحالي يمرّر "Factories" ثابتة — الحارس يمنع الانحدار مستقبلاً.
+        if (string.IsNullOrWhiteSpace(folderName)
+            || folderName.Contains("..", StringComparison.Ordinal)
+            || folderName.IndexOfAny('/', '\\') >= 0
+            || Path.IsPathRooted(folderName))
+        {
+            throw new BusinessException("مجلد تخزين الصور غير صالح.");
+        }
+
         // ✅ مسار wwwroot موحّد بين الحفظ والحذف — كان الحفظ يستخدم GetCurrentDirectory()
         //    والحذف ContentRootPath، فيختلف المسار المُحلَّل بينهما عند غياب WebRootPath
         //    (يُحفظ الملف في مكان ويُبحث عنه في آخر).
@@ -74,11 +85,20 @@ public class ImageStorageService : IImageStorageService
             var headerBytes = reader.ReadBytes(12);
             fileStream.Position = 0;
 
+            // ملف أقصر من 4 بايت لا يكون صورة بصيغة مدعومة أصلاً.
+            if (headerBytes.Length < 4)
+                return false;
+
             return extension switch
             {
                 ".png" => headerBytes[0] == 0x89 && headerBytes[1] == 0x50 && headerBytes[2] == 0x4E && headerBytes[3] == 0x47,
                 ".jpg" or ".jpeg" => headerBytes[0] == 0xFF && headerBytes[1] == 0xD8,
-                ".webp" => headerBytes[0] == 0x52 && headerBytes[1] == 0x49 && headerBytes[2] == 0x46 && headerBytes[3] == 0x46,
+                // ✅ "RIFF" وحدها لا تكفي: كل ملفات AVI و WAV تبدأ بها أيضاً، فكان ملف
+                //    فيديو مُعاد تسميته إلى ‎.webp‎ يمرّ من فحص البصمة. بصمة WebP الحقيقية
+                //    هي "RIFF" في 0..3 و"WEBP" في 8..11 — وأي ملف WebP سليم لا يقل عن 12 بايت.
+                ".webp" => headerBytes.Length >= 12
+                           && headerBytes[0] == 0x52 && headerBytes[1] == 0x49 && headerBytes[2] == 0x46 && headerBytes[3] == 0x46
+                           && headerBytes[8] == 0x57 && headerBytes[9] == 0x45 && headerBytes[10] == 0x42 && headerBytes[11] == 0x50,
                 _ => false
             };
         }

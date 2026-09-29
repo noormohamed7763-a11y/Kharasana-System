@@ -38,6 +38,15 @@ public class Order
 
     public decimal TotalPrice { get; set; }
 
+    // ✅ لقطتان تاريخيتان لنوع الخرسانة وقت إنشاء الطلب — على نمط UnitPrice أعلاه.
+    //    بدونهما كان تغيير اسم النوع أو مقاومته في الكتالوج يُعيد كتابة عرض الطلبات
+    //    القديمة: طلب سُعِّر وبِيع باسم «C30» يظهر لاحقًا باسم النوع الجديد.
+    //    قابلتان للفراغ كي تبقى صفوف ما قبل الترحيل صالحة، ويسقط العرض عند غيابهما
+    //    إلى النوع الحالي (انظر MapToOrderDto/MapToDetailsDto).
+    public string? ConcreteTypeNameSnapshot { get; set; }
+
+    public int? ConcreteTypeStrengthSnapshot { get; set; }
+
     public DateTime? PouringDate { get; set; }
     public TransportMethod TransportMethod { get; set; }
 
