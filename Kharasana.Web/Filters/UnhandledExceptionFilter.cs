@@ -1,8 +1,10 @@
 using Kharasana.Web.Controllers;
 using Kharasana.Web.Localization;
+using Kharasana.Web.Models;
 using Kharasana.Web.Services.Api;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace Kharasana.Web.Filters;
@@ -11,9 +13,14 @@ namespace Kharasana.Web.Filters;
 /// فلتر عالمي لالتقاط ApiServiceException الهاربة من أي controller action.
 /// يضمن أن المستخدم لا يرى صفحة خطأ 500 فارغة على أخطاء API المتوقعة.
 /// - AJAX/fetch → JSON { success=false, message }
-/// - GET → إعادة توجيه للصفحة السابقة مع TempData error
-/// - POST → إعادة توجيه للصفحة الرئيسية مع TempData error
-/// - 401 → إعادة توجيه لصفحة تسجيل الدخول
+/// - 401 → تفريغ الجلسة ثم إعادة توجيه لصفحة تسجيل الدخول
+/// - POST → إعادة توجيه إلى الصفحة السابقة مع TempData error
+/// - ما عدا ذلك (GET وغيره) → صفحة الخطأ في مكانها بلا إعادة توجيه
+///
+/// <para><b>ضمان عدم الدوران:</b> إعادة التوجيه محصورة في POST، والهدف يُطلَب
+/// بعدها بـ GET — وردّ الفلتر على الطلب الفاشل غير الـ POST هو عرض صفحة الخطأ
+/// نفسها لا إعادة توجيه. فتنتهي السلسلة عند خطوة واحدة مهما تكرّر الفشل، ولا
+/// يمكن أن تنشأ حلقة توجيه مهما كانت الصفحات فاشلة.</para>
 /// </summary>
 public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
 {
@@ -50,18 +57,25 @@ public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
             return Task.CompletedTask;
         }
 
+        var httpContext = context.HttpContext;
+
         // ── 401 Unauthorized → تسجيل الدخول ──
         if (apiEx.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
+            // ✅ تفريغ الجلسة قبل التوجيه إلزامي: صفحة الدخول تُحوِّل المسجَّل فورًا
+            //    إلى اللوحة (AccountController.Login)، فإن بقي توكن منتهٍ في الجلسة
+            //    عاد المستخدم إليها وفشل نداؤها من جديد: Login ↔ Dashboard بلا نهاية.
+            //    (ApiClient يفرّغها أيضًا عند 401؛ التفريغ هنا حارس ثانٍ مستقل عنه.)
+            httpContext.Session.Clear();
+
             context.Result = new RedirectToActionResult("Login", "Account", null);
             return Task.CompletedTask;
         }
 
-        // ── الباقي: إعادة توجيه مع رسالة الخطأ ──
-        var httpContext = context.HttpContext;
-
-        // الرسالة تُسلَّم عبر TempData لا HttpContext.Items: النتيجة إعادة توجيه،
-        // و Items لا يعبر إلى الطلب التالي فتضيع الرسالة قبل أن يقرأها Components/_Alerts.
+        // الرسالة تُسلَّم عبر TempData لا HttpContext.Items: فرع POST ينتهي بإعادة
+        // توجيه، و Items لا يعبر إلى الطلب التالي فتضيع الرسالة قبل أن يقرأها
+        // Components/_Alerts. وكذلك فرع صفحة الخطأ: لا يقرأ TempData هناك (تخطيطه
+        // null)، فتبقى الرسالة للصفحة التالية التي يفتحها المستخدم.
         // نفس الطريقة المتبعة في Program.cs (RateLimiter.OnRejected).
         var tempData = httpContext.RequestServices
             .GetRequiredService<ITempDataDictionaryFactory>()
@@ -70,29 +84,106 @@ public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
         tempData[BaseController.TempDataError] = apiEx.Message;
         tempData.Save();
 
-        var referrer = httpContext.Request.Headers["Referer"].FirstOrDefault();
-
-        // لا نعيد التوجيه لنفس المسار (حلقة لا نهائية).
-        // تسجيل الدخول هنا جلسة (Session["Token"]) لا ClaimsPrincipal —
-        // نفس الفحص المتبع في SessionAuthorizeAttribute و BaseController.IsLoggedIn.
-        var isLoggedIn = !string.IsNullOrWhiteSpace(httpContext.Session.GetString("Token"));
-
-        var safeRedirect = "/"
-            + (isLoggedIn ? "Dashboard" : "Account/Login");
-
-        // ✅ مسار محلي فقط: "‎//evil.com‎" و"‎/\evil.com‎" يفسّرهما المتصفح كرابط خارجي
-        //    مطلق (protocol-relative)، فـ StartsWith("/") وحده لا يمنع إعادة توجيه مفتوحة.
-        if (!string.IsNullOrWhiteSpace(referrer)
-            && referrer.StartsWith("/", StringComparison.Ordinal)
-            && !referrer.StartsWith("//", StringComparison.Ordinal)
-            && !referrer.StartsWith("/\\", StringComparison.Ordinal)
-            && !referrer.StartsWith(httpContext.Request.Path, StringComparison.OrdinalIgnoreCase))
+        // ── POST: نُعيد المستخدم إلى الصفحة السابقة مع رسالة الخطأ ──
+        //
+        // ⚠️ إعادة التوجيه محصورة في POST عمدًا: الهدف يُطلَب بعدها بـ GET، وردّ هذا
+        //    الفلتر على أي طلب فاشل آخر (GET خصوصًا) هو عرض صفحة الخطأ في مكانها بلا
+        //    إعادة توجيه — فلا تدور السلسلة أبدًا.
+        //
+        //    ما كان قبل ذلك: كل طلب فاشل — GET أيضًا — يُحوَّل إلى الصفحة السابقة،
+        //    وإلا إلى "/Dashboard". وحين تفشل اللوحة نفسها (نداء الـ API الذي تُبنى
+        //    عليه) يصير الهدف هو الصفحة الفاشلة ذاتها: تُطلَب من جديد، وتفشل، وتُحوَّل
+        //    إلى نفسها… حتى يعرض المتصفح ERR_TOO_MANY_REDIRECTS. وكان فحص Referer
+        //    لا ينقذ الموقف لأنه يقارن رابطًا مطلقًا (ما يرسله المتصفح فعلًا) بمسار
+        //    محلي، فيسقط الشرط ويهبط دائمًا على "/Dashboard" — أي على الصفحة الفاشلة.
+        if (HttpMethods.IsPost(httpContext.Request.Method))
         {
-            safeRedirect = referrer;
+            context.Result = new RedirectResult(ResolvePostRedirectTarget(httpContext));
+            return Task.CompletedTask;
         }
 
-        context.Result = new RedirectResult(safeRedirect);
+        // ── ما عدا ذلك: صفحة الخطأ في مكانها (بلا إعادة توجيه ⇒ بلا حلقة) ──
+        context.Result = BuildErrorResult(apiEx, context);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// نتيجة صفحة الخطأ نفسها التي يعرضها <c>HomeController.Error</c>، مبنيّة هنا
+    /// لإعادة استعمالها من الفلتر مباشرة بلا إعادة توجيه.
+    /// الرمز يُرفع إلى 500 إن جاء من الـ API رمز نجاح (يحدث حين يفشل تحليل ردّ ناجح
+    /// في ApiClient) فلا تُعلَن استجابة فاشلة بنجاح.
+    /// </summary>
+    private static ViewResult BuildErrorResult(ApiServiceException apiEx, ExceptionContext context)
+    {
+        var statusCode = (int)apiEx.StatusCode;
+        if (statusCode < StatusCodes.Status400BadRequest)
+            statusCode = StatusCodes.Status500InternalServerError;
+
+        return new ViewResult
+        {
+            ViewName = "Error",
+            ViewData = new ViewDataDictionary<ErrorViewModel>(
+                new EmptyModelMetadataProvider(),
+                context.ModelState)
+            {
+                Model = new ErrorViewModel
+                {
+                    RequestId = apiEx.TraceId,
+                    StatusCode = statusCode
+                }
+            },
+            StatusCode = statusCode
+        };
+    }
+
+    /// <summary>
+    /// هدف إعادة التوجيه بعد فشل طلب POST: الصفحة السابقة إن كانت محلية، وإلا
+    /// لوحة التحكم (أو صفحة الدخول لزائر غير مسجَّل).
+    /// </summary>
+    private static string ResolvePostRedirectTarget(HttpContext httpContext)
+    {
+        if (TryGetLocalReferrerPath(httpContext, out var referrerPath))
+            return referrerPath;
+
+        var isLoggedIn = !string.IsNullOrWhiteSpace(httpContext.Session.GetString("Token"));
+
+        return isLoggedIn ? "/Dashboard" : "/Account/Login";
+    }
+
+    /// <summary>
+    /// يستخرج مسارًا محليًا (بمعاملات الاستعلام) من ترويسة Referer إن كانت للطلب نفسه.
+    /// </summary>
+    private static bool TryGetLocalReferrerPath(HttpContext httpContext, out string path)
+    {
+        path = string.Empty;
+
+        var referrer = httpContext.Request.Headers.Referer.FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(referrer))
+            return false;
+
+        // المتصفح يرسل رابطًا مطلقًا: يُقبل فقط إذا كان مضيفه مضيف الطلب نفسه،
+        // وإلا صار الفلتر بابًا لإعادة توجيه مفتوحة إلى موقع خارجي.
+        if (Uri.TryCreate(referrer, UriKind.Absolute, out var uri))
+        {
+            if (!string.Equals(uri.Authority, httpContext.Request.Host.Value, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            path = uri.PathAndQuery;
+            return true;
+        }
+
+        // بعض العملاء يرسلون مسارًا نسبيًا. ✅ مسار محلي فقط: "‎//evil.com‎" و"‎/\evil.com‎"
+        // يفسّرهما المتصفح كرابط خارجي مطلق (protocol-relative)، فـ StartsWith("/")
+        // وحده لا يمنع إعادة توجيه مفتوحة.
+        if (!referrer.StartsWith('/')
+            || referrer.StartsWith("//", StringComparison.Ordinal)
+            || referrer.StartsWith("/\\", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        path = referrer;
+        return true;
     }
 
     private static bool IsAjaxRequest(HttpContext context)
