@@ -54,12 +54,12 @@
                 <!-- الاسم والدور -->
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="detail-label">الاسم الكامل</div>
+                        <div class="detail-label"><i class="bi bi-person me-2"></i>الاسم الكامل</div>
                         <div class="detail-value">@Model.FullName</div>
                     </div>
 
                     <div class="col-md-6">
-                        <div class="detail-label">الدور</div>
+                        <div class="detail-label"><i class="bi bi-person-badge me-2"></i>الدور</div>
 
                         <div class="detail-value">
                             @await Html.PartialAsync(
@@ -78,7 +78,7 @@
                 <!-- البريد الإلكتروني والهاتف -->
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="detail-label">البريد الإلكتروني</div>
+                        <div class="detail-label"><i class="bi bi-envelope me-2"></i>البريد الإلكتروني</div>
 
                         <div class="detail-value">
                             @(string.IsNullOrWhiteSpace(Model.Email)
@@ -88,7 +88,7 @@
                     </div>
 
                     <div class="col-md-6">
-                        <div class="detail-label">رقم الهاتف</div>
+                        <div class="detail-label"><i class="bi bi-telephone me-2"></i>رقم الهاتف</div>
 
                         <div class="detail-value" dir="ltr">
                             @(string.IsNullOrWhiteSpace(Model.Phone)
@@ -103,7 +103,7 @@
                 <!-- الواتساب والحالة -->
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="detail-label">رقم الواتساب</div>
+                        <div class="detail-label"><i class="bi bi-whatsapp me-2"></i>رقم الواتساب</div>
 
                         <div class="detail-value" dir="ltr">
                             @(string.IsNullOrWhiteSpace(Model.WhatsApp)
@@ -113,7 +113,7 @@
                     </div>
 
                     <div class="col-md-6">
-                        <div class="detail-label">الحالة</div>
+                        <div class="detail-label"><i class="bi bi-info-circle me-2"></i>الحالة</div>
 
                         <div class="detail-value">
                             @await Html.PartialAsync(
@@ -224,7 +224,7 @@
     <!-- العودة إلى القائمة + طباعة تقرير السائق -->
     <div class="d-flex gap-2 mt-3">
         <a asp-action="Index"
-           class="btn btn-outline-secondary">
+           class="btn btn-outline-secondary btn-lg px-5">
             <i class="bi bi-arrow-right"></i>
             العودة إلى القائمة
         </a>
@@ -234,7 +234,7 @@
         {
             <a asp-action="DriverReport"
                asp-route-id="@Model.UserId"
-               class="btn btn-primary"
+               class="btn btn-primary btn-lg px-5"
                target="_blank">
                 <i class="bi bi-printer"></i>
                 طباعة تقرير

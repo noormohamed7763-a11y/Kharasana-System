@@ -17,6 +17,12 @@
     box-shadow: var(--shadow-sm);
     padding: var(--card-padding);
     margin-bottom: var(--section-gap);
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.erp-section-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .erp-section-title {
@@ -111,7 +117,7 @@
    عناصرها المباشرة هي الكروت فقط (بدون أغلفة col-*). */
 .summary-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
     gap: var(--space-4);
 }
 

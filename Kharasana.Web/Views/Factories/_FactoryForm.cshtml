@@ -12,13 +12,13 @@
     </div>
 
     <div class="col-xl-6 col-md-6">
-        <label asp-for="FactoryName" class="form-label"></label>
+        <label asp-for="FactoryName" class="form-label fw-bold"><i class="bi bi-building me-2"></i>اسم المصنع</label>
         <input asp-for="FactoryName" class="form-control" placeholder="أدخل اسم المصنع الرسمي" />
         <span asp-validation-for="FactoryName" class="text-danger"></span>
     </div>
 
     <div class="col-xl-6 col-md-6">
-        <label asp-for="OwnerName" class="form-label"></label>
+        <label asp-for="OwnerName" class="form-label fw-bold"><i class="bi bi-person-badge me-2"></i>اسم المالك</label>
         <input asp-for="OwnerName" class="form-control" placeholder="أدخل اسم مالك المصنع أو المسؤول" />
         <span asp-validation-for="OwnerName" class="text-danger"></span>
     </div>
@@ -32,19 +32,19 @@
     </div>
 
     <div class="col-xl-4 col-md-4">
-        <label asp-for="Phone" class="form-label"></label>
+        <label asp-for="Phone" class="form-label fw-bold"><i class="bi bi-telephone me-2"></i>رقم الهاتف</label>
         <input asp-for="Phone" class="form-control text-start" placeholder="01xxxxxx أو 7xxxxxxxx" dir="ltr" />
         <span asp-validation-for="Phone" class="text-danger"></span>
     </div>
 
     <div class="col-xl-4 col-md-4">
-        <label asp-for="WhatsApp" class="form-label"></label>
+        <label asp-for="WhatsApp" class="form-label fw-bold"><i class="bi bi-whatsapp me-2"></i>رقم الواتساب</label>
         <input asp-for="WhatsApp" class="form-control text-start" placeholder="9677xxxxxxxx" dir="ltr" />
         <span asp-validation-for="WhatsApp" class="text-danger"></span>
     </div>
 
     <div class="col-xl-4 col-md-4">
-        <label asp-for="Email" class="form-label"></label>
+        <label asp-for="Email" class="form-label fw-bold"><i class="bi bi-envelope me-2"></i>البريد الإلكتروني</label>
         <input asp-for="Email" class="form-control text-start" placeholder="factory@domain.com" dir="ltr" />
         <span asp-validation-for="Email" class="text-danger"></span>
     </div>
@@ -58,25 +58,25 @@
     </div>
 
     <div class="col-xl-6 col-md-6">
-        <label asp-for="Area" class="form-label"></label>
+        <label asp-for="Area" class="form-label fw-bold"><i class="bi bi-map me-2"></i>المنطقة</label>
         <input asp-for="Area" class="form-control" placeholder="مثال: الحصبة، دار سلم، صناع..." />
         <span asp-validation-for="Area" class="text-danger"></span>
     </div>
 
     <div class="col-xl-6 col-md-6">
-        <label asp-for="Address" class="form-label"></label>
+        <label asp-for="Address" class="form-label fw-bold"><i class="bi bi-geo-alt me-2"></i>العنوان</label>
         <input asp-for="Address" class="form-control" placeholder="الشارع الرئيسي، بجوار..." />
         <span asp-validation-for="Address" class="text-danger"></span>
     </div>
 
     <div class="col-xl-6 col-md-6">
-        <label asp-for="Latitude" class="form-label"></label>
+        <label asp-for="Latitude" class="form-label fw-bold"><i class="bi bi-compass me-2"></i>خط العرض (Latitude)</label>
         <input asp-for="Latitude" class="form-control text-start" placeholder="15.369411" dir="ltr" />
         <span asp-validation-for="Latitude" class="text-danger"></span>
     </div>
 
     <div class="col-xl-6 col-md-6">
-        <label asp-for="Longitude" class="form-label"></label>
+        <label asp-for="Longitude" class="form-label fw-bold"><i class="bi bi-compass me-2"></i>خط الطول (Longitude)</label>
         <input asp-for="Longitude" class="form-control text-start" placeholder="44.191006" dir="ltr" />
         <span asp-validation-for="Longitude" class="text-danger"></span>
     </div>

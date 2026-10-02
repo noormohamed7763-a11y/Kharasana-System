@@ -26,42 +26,42 @@
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label asp-for="FullName" class="form-label"></label>
+                    <label asp-for="FullName" class="form-label fw-bold"><i class="bi bi-person me-2"></i>الاسم الكامل</label>
                     <input asp-for="FullName" class="form-control" />
                     <span asp-validation-for="FullName" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label asp-for="LicenseNumber" class="form-label"></label>
+                    <label asp-for="LicenseNumber" class="form-label fw-bold"><i class="bi bi-card-text me-2"></i>رقم رخصة القيادة</label>
                     <input asp-for="LicenseNumber" class="form-control" placeholder="اختياري" />
                     <span asp-validation-for="LicenseNumber" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label asp-for="Phone" class="form-label"></label>
+                    <label asp-for="Phone" class="form-label fw-bold"><i class="bi bi-telephone me-2"></i>رقم الهاتف</label>
                     <input asp-for="Phone" class="form-control" />
                     <span asp-validation-for="Phone" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label asp-for="Email" class="form-label"></label>
+                    <label asp-for="Email" class="form-label fw-bold"><i class="bi bi-envelope me-2"></i>البريد الإلكتروني</label>
                     <input asp-for="Email" class="form-control" placeholder="اختياري" />
                     <span asp-validation-for="Email" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label asp-for="Password" class="form-label"></label>
+                    <label asp-for="Password" class="form-label fw-bold"><i class="bi bi-lock me-2"></i>كلمة المرور</label>
                     <input asp-for="Password" type="password" class="form-control" />
                     <span asp-validation-for="Password" class="text-danger"></span>
                 </div>
             </div>
 
-            <div class="d-flex gap-2 mt-3">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check-lg"></i> حفظ
+            <div class="d-flex gap-2 mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary btn-lg px-5">
+                    <i class="bi bi-save me-1"></i> حفظ السائق
                 </button>
-                <a asp-action="Index" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-lg"></i> إلغاء
+                <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-5">
+                    <i class="bi bi-x-circle me-1"></i> إلغاء
                 </a>
             </div>
         </form>
