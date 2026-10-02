@@ -1,0 +1,41 @@
+/* Print Stylesheet for Kharasana ERP */
+@media print {
+    /* Hide non-printable elements */
+    .sidebar,
+    .navbar-top,
+    .dashboard-header, /* Standard header - printable tickets have their own */
+    .action-buttons-container,
+    .d-flex.gap-2, /* Often holds action buttons */
+    .no-print {
+        display: none !important;
+    }
+
+    /* Ensure content takes full width */
+    .wrapper,
+    .main-content,
+    .content-body,
+    .dashboard-page {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Basic typography for print */
+    body {
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 12pt;
+    }
+
+    /* Print ticket specific adjustments */
+    .print-delivery-ticket {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    /* Ensure backgrounds and colors print */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}

@@ -1,14 +1,11 @@
 @model Kharasana.Web.ViewModels.Clients.ClientsIndexViewModel
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.Models.Components.Search
+@using Kharasana.Web.ViewModels.Clients
 
 @{
     ViewData["Title"] = "إدارة العملاء";
-
-    var totalClients = Model.PagedClients?.TotalCount ?? 0;
-    var totalOrders = Model.PagedClients?.Items?.Sum(c => c.OrdersCount) ?? 0;
-    var totalQuantity = Model.PagedClients?.Items?.Sum(c => c.TotalQuantity) ?? 0;
-    var activeClients = Model.PagedClients?.Items?.Count(c => c.OrdersCount > 0) ?? 0;
+    var stats = Model.Stats ?? new ClientStatsViewModel();
 }
 
 <div class="dashboard-page">
@@ -33,7 +30,7 @@
                         new SummaryCardViewModel
                         {
                             Title = "إجمالي العملاء",
-                            Value = totalClients.ToString(),
+                            Value = stats.TotalClients.ToString(),
                             Icon = "bi-people",
                             IconClass = "kpi-icon-primary"
                         })
@@ -42,7 +39,7 @@
                         new SummaryCardViewModel
                         {
                             Title = "عملاء لديهم طلبات",
-                            Value = activeClients.ToString(),
+                            Value = stats.ActiveClientsCount.ToString(),
                             Icon = "bi-person-check",
                             IconClass = "kpi-icon-success"
                         })
@@ -50,8 +47,8 @@
                         "~/Views/Shared/Components/_SummaryCard.cshtml",
                         new SummaryCardViewModel
                         {
-                            Title = "إجمالي الطلبات (هذه الصفحة)",
-                            Value = totalOrders.ToString(),
+                            Title = "إجمالي الطلبات",
+                            Value = stats.TotalOrders.ToString(),
                             Icon = "bi-box-seam",
                             IconClass = "kpi-icon-info"
                         })
@@ -59,8 +56,8 @@
                         "~/Views/Shared/Components/_SummaryCard.cshtml",
                         new SummaryCardViewModel
                         {
-                            Title = "إجمالي الكمية (هذه الصفحة)",
-                            Value = totalQuantity.ToString("N0") + " م³",
+                            Title = "إجمالي الكمية",
+                            Value = stats.TotalQuantity.ToString("N0") + " م³",
                             Icon = "bi-truck",
                             IconClass = "kpi-icon-warning"
                         })
@@ -97,24 +94,16 @@
     }
 
     <!-- الترقيم -->
-    @if (Model.PagedClients != null && Model.PagedClients.TotalCount > 0)
+    @await Html.PartialAsync("~/Views/Shared/Components/_Pagination.cshtml", new PaginationViewModel
     {
-        var pageCount = (int)Math.Ceiling(Model.PagedClients.TotalCount / (double)Model.PageSize);
-
-        <nav class="mt-4" aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-                @for (int p = 1; p <= pageCount; p++)
-                {
-                    <li class="page-item @(p == Model.PageNumber ? "active" : "")">
-                        <a class="page-link"
-                           asp-action="Index"
-                           asp-route-pageNumber="@p"
-                           asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search">@p</a>
-                    </li>
-                }
-            </ul>
-        </nav>
-    }
+        CurrentPage = Model.PageNumber,
+        TotalPages = (int)Math.Ceiling(Model.PagedClients.TotalCount / (double)Model.PageSize),
+        PageSize = Model.PageSize,
+        TotalCount = Model.PagedClients.TotalCount,
+        RouteValues = new Dictionary<string, string>
+        {
+            { "search", Model.Search ?? string.Empty }
+        }
+    })
 
 </div>

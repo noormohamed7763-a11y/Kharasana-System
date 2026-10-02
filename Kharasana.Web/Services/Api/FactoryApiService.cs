@@ -39,7 +39,8 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                var response = await _apiClient.GetAsync<ApiResponse<List<FactoryDto>>>("Factories");
+                // إضافة الترتيب التنازلي لضمان ظهور المصانع الجديدة في الأعلى
+                var response = await _apiClient.GetAsync<ApiResponse<List<FactoryDto>>>("Factories?SortBy=Id&Order=Desc");
 
                 if (response == null || !response.Success || response.Data == null)
                     return ServiceResult<List<FactoryListItemViewModel>>.Fail(ResponseMessage(response, AppMessages.Common.OperationFailed));

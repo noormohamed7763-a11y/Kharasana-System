@@ -73,8 +73,8 @@ public class DriverApiService : IDriverApiService
             errorFallback: _ => null,
             action: async token =>
             {
-                // ✅ بناء رابط الطلب
-                var query = $"Users?role={(int)UserRole.Driver}&PageNumber={pageNumber}&PageSize={pageSize}";
+                // ✅ بناء رابط الطلب مع الترتيب الافتراضي (الأحدث أولاً)
+                var query = $"Users?role={(int)UserRole.Driver}&PageNumber={pageNumber}&PageSize={pageSize}&SortBy=Id&Order=Desc";
 
                 if (!string.IsNullOrWhiteSpace(search))
                     query += $"&Search={Uri.EscapeDataString(search)}";

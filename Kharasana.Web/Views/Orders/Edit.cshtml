@@ -123,7 +123,7 @@
                         <i class="bi bi-calendar-event"></i> تاريخ الصب
                         <span class="text-danger">*</span>
                     </label>
-                    <input asp-for="PouringDate" class="form-control form-control-lg" type="date" />
+                    <input asp-for="PouringDate" class="form-control" type="date" />
                     <span asp-validation-for="PouringDate" class="text-danger"></span>
                     <small class="text-muted">تاريخ صب الخرسانة</small>
                 </div>
@@ -162,7 +162,7 @@
                     <label asp-for="FloorNumber" class="form-label fw-bold">
                         <i class="bi bi-building"></i> رقم الطابق
                     </label>
-                    <input asp-for="FloorNumber" class="form-control form-control-lg" type="number" min="0" placeholder="اختياري" />
+                    <input asp-for="FloorNumber" class="form-control" type="number" min="0" placeholder="اختياري" />
                     <span asp-validation-for="FloorNumber" class="text-danger"></span>
                     <small class="text-muted">حقل اختياري</small>
                 </div>
@@ -181,7 +181,7 @@
                     <label asp-for="ProjectName" class="form-label fw-bold">
                         <i class="bi bi-tag"></i> اسم المشروع
                     </label>
-                    <input asp-for="ProjectName" class="form-control form-control-lg" placeholder="اسم المشروع (اختياري)" />
+                    <input asp-for="ProjectName" class="form-control" placeholder="اسم المشروع (اختياري)" />
                     <span asp-validation-for="ProjectName" class="text-danger"></span>
                     <small class="text-muted">حقل اختياري</small>
                 </div>
@@ -190,7 +190,7 @@
                     <label asp-for="ProjectOwnerName" class="form-label fw-bold">
                         <i class="bi bi-person-badge"></i> اسم مالك المشروع
                     </label>
-                    <input asp-for="ProjectOwnerName" class="form-control form-control-lg" placeholder="اسم المالك (اختياري)" />
+                    <input asp-for="ProjectOwnerName" class="form-control" placeholder="اسم المالك (اختياري)" />
                     <span asp-validation-for="ProjectOwnerName" class="text-danger"></span>
                     <small class="text-muted">حقل اختياري</small>
                 </div>
@@ -199,7 +199,7 @@
                     <label asp-for="SiteArea" class="form-label fw-bold">
                         <i class="bi bi-geo-alt"></i> المنطقة
                     </label>
-                    <input asp-for="SiteArea" class="form-control form-control-lg" placeholder="المنطقة (اختياري)" />
+                    <input asp-for="SiteArea" class="form-control" placeholder="المنطقة (اختياري)" />
                     <span asp-validation-for="SiteArea" class="text-danger"></span>
                     <small class="text-muted">حقل اختياري</small>
                 </div>
@@ -208,7 +208,7 @@
                     <label asp-for="SiteDescription" class="form-label fw-bold">
                         <i class="bi bi-file-text"></i> وصف الموقع
                     </label>
-                    <input asp-for="SiteDescription" class="form-control form-control-lg" placeholder="وصف الموقع (اختياري)" />
+                    <input asp-for="SiteDescription" class="form-control" placeholder="وصف الموقع (اختياري)" />
                     <span asp-validation-for="SiteDescription" class="text-danger"></span>
                     <small class="text-muted">حقل اختياري</small>
                 </div>
@@ -238,7 +238,7 @@
                     <label asp-for="Notes" class="form-label fw-bold">
                         <i class="bi bi-pencil"></i> ملاحظات
                     </label>
-                    <textarea asp-for="Notes" rows="4" class="form-control form-control-lg" placeholder="أي ملاحظات إضافية حول الطلب..."></textarea>
+                    <textarea asp-for="Notes" rows="4" class="form-control" placeholder="أي ملاحظات إضافية حول الطلب..."></textarea>
                     <span asp-validation-for="Notes" class="text-danger"></span>
                     <small class="text-muted">حقل اختياري</small>
                 </div>
@@ -255,15 +255,15 @@
             <div class="row bg-light p-3 rounded-3">
                 <div class="col-md-4 mb-2">
                     <label class="form-label fw-bold text-muted">سعر المتر (ر.ي)</label>
-                    <input type="text" class="form-control form-control-lg bg-white" id="unitPricePreview" value="@(ViewBag.UnitPrice?.ToString("N0") ?? "-")" readonly />
+                    <input type="text" class="form-control bg-white" id="unitPricePreview" value="@(ViewBag.UnitPrice?.ToString("N0") ?? "-")" readonly />
                 </div>
                 <div class="col-md-4 mb-2">
                     <label class="form-label fw-bold text-muted">الكمية (م³)</label>
-                    <input type="text" class="form-control form-control-lg bg-white" id="quantityPreview" value="@Model.Quantity" readonly />
+                    <input type="text" class="form-control bg-white" id="quantityPreview" value="@Model.Quantity" readonly />
                 </div>
                 <div class="col-md-4 mb-2">
                     <label class="form-label fw-bold text-primary">الإجمالي (ر.ي)</label>
-                    <input type="text" class="form-control form-control-lg bg-white text-primary fw-bold" id="totalPricePreview" readonly />
+                    <input type="text" class="form-control bg-white text-primary fw-bold" id="totalPricePreview" readonly />
                 </div>
             </div>
             <small class="text-muted mt-2 d-block">يتم تحديث الإجمالي تلقائياً عند تغيير الكمية</small>
