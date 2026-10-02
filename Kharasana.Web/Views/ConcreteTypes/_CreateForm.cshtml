@@ -36,7 +36,7 @@
     @if ((string?)ViewBag.UserRole == Roles.Admin)
     {
         <div class="col-md-6">
-            <label asp-for="FactoryId" class="form-label"></label>
+            <label asp-for="FactoryId" class="form-label fw-bold"><i class="bi bi-building me-2"></i>@Html.DisplayNameFor(m => m.FactoryId)</label>
 
             <select asp-for="FactoryId"
                     asp-items="Model.Factories"
@@ -64,7 +64,7 @@
             <div class="col-md-6">
 
                 <label asp-for="SelectedConcreteCode"
-                       class="form-label fw-bold"></label>
+                       class="form-label fw-bold"><i class="bi bi-box-seam me-2"></i>@Html.DisplayNameFor(m => m.SelectedConcreteCode)</label>
 
                 <select asp-for="SelectedConcreteCode"
                         class="form-select"
@@ -151,7 +151,7 @@
             <div class="col-md-6">
 
                 <label asp-for="CustomName"
-                       class="form-label fw-bold"></label>
+                       class="form-label fw-bold"><i class="bi bi-pencil me-2"></i>@Html.DisplayNameFor(m => m.CustomName)</label>
 
                 <input asp-for="CustomName"
                        class="form-control"
@@ -165,7 +165,7 @@
             <div class="col-md-6">
 
                 <label asp-for="CustomStrength"
-                       class="form-label fw-bold"></label>
+                       class="form-label fw-bold"><i class="bi bi-rulers me-2"></i>@Html.DisplayNameFor(m => m.CustomStrength)</label>
 
                 <div class="input-group">
 
@@ -210,7 +210,7 @@
     <div class="col-md-6">
 
         <label asp-for="UnitPrice"
-               class="form-label"></label>
+               class="form-label fw-bold"><i class="bi bi-cash-stack me-2"></i>@Html.DisplayNameFor(m => m.UnitPrice)</label>
 
         <div class="input-group">
 
@@ -251,7 +251,7 @@
     <div class="col-12">
 
         <label asp-for="ImageUrl"
-               class="form-label"></label>
+               class="form-label fw-bold"><i class="bi bi-image me-2"></i>@Html.DisplayNameFor(m => m.ImageUrl)</label>
 
         <input asp-for="ImageUrl"
                class="form-control"
@@ -265,7 +265,7 @@
     <div class="col-12">
 
         <label asp-for="Description"
-               class="form-label"></label>
+               class="form-label fw-bold"><i class="bi bi-text-paragraph me-2"></i>@Html.DisplayNameFor(m => m.Description)</label>
 
         <textarea asp-for="Description"
                   rows="4"

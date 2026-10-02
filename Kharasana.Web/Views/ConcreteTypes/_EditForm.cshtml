@@ -21,7 +21,7 @@
     <div class="col-md-6">
 
         <label asp-for="Name"
-               class="form-label fw-bold"></label>
+               class="form-label fw-bold"><i class="bi bi-box-seam me-2"></i>@Html.DisplayNameFor(m => m.Name)</label>
 
         <input asp-for="Name"
                class="form-control"
@@ -35,7 +35,7 @@
     <div class="col-md-6">
 
         <label asp-for="Strength"
-               class="form-label fw-bold"></label>
+               class="form-label fw-bold"><i class="bi bi-rulers me-2"></i>@Html.DisplayNameFor(m => m.Strength)</label>
 
         <div class="input-group">
 
@@ -71,7 +71,7 @@
     <div class="col-md-6">
 
         <label asp-for="UnitPrice"
-               class="form-label fw-bold"></label>
+               class="form-label fw-bold"><i class="bi bi-cash-stack me-2"></i>@Html.DisplayNameFor(m => m.UnitPrice)</label>
 
         <div class="input-group">
 
@@ -140,7 +140,7 @@
     <div class="col-md-12">
 
         <label asp-for="ImageUrl"
-               class="form-label fw-bold"></label>
+               class="form-label fw-bold"><i class="bi bi-image me-2"></i>@Html.DisplayNameFor(m => m.ImageUrl)</label>
 
         <input asp-for="ImageUrl"
                class="form-control"
@@ -168,7 +168,7 @@
     <div class="col-12">
 
         <label asp-for="Description"
-               class="form-label fw-bold"></label>
+               class="form-label fw-bold"><i class="bi bi-text-paragraph me-2"></i>@Html.DisplayNameFor(m => m.Description)</label>
 
         <textarea asp-for="Description"
                   rows="5"

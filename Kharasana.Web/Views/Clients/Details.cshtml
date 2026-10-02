@@ -38,12 +38,12 @@
                 <!-- الاسم والهاتف -->
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="detail-label">الاسم</div>
+                        <div class="detail-label"><i class="bi bi-person me-2"></i>الاسم</div>
                         <div class="detail-value fw-bold">@Model.FullName</div>
                     </div>
 
                     <div class="col-md-6">
-                        <div class="detail-label">رقم الهاتف</div>
+                        <div class="detail-label"><i class="bi bi-telephone me-2"></i>رقم الهاتف</div>
                         <div class="detail-value" dir="ltr">@(Model.Phone ?? "-")</div>
                     </div>
                 </div>
@@ -53,12 +53,12 @@
                 <!-- البريد والواتساب -->
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="detail-label">البريد الإلكتروني</div>
+                        <div class="detail-label"><i class="bi bi-envelope me-2"></i>البريد الإلكتروني</div>
                         <div class="detail-value" dir="ltr">@(Model.Email ?? "-")</div>
                     </div>
 
                     <div class="col-md-6">
-                        <div class="detail-label">واتساب</div>
+                        <div class="detail-label"><i class="bi bi-whatsapp me-2"></i>واتساب</div>
                         <div class="detail-value" dir="ltr">@(Model.WhatsApp ?? "-")</div>
                     </div>
                 </div>
@@ -68,7 +68,7 @@
                 <!-- الحالة والمعرف -->
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="detail-label">الحالة</div>
+                        <div class="detail-label"><i class="bi bi-toggle-on me-2"></i>الحالة</div>
                         <div class="detail-value">
                             @await Html.PartialAsync(
                             "~/Views/Shared/Components/_StatusBadge.cshtml",
@@ -81,7 +81,7 @@
                     </div>
 
                     <div class="col-md-6">
-                        <div class="detail-label">معرف العميل</div>
+                        <div class="detail-label"><i class="bi bi-hash me-2"></i>معرف العميل</div>
                         <div class="detail-value">#@Model.UserId</div>
                     </div>
                 </div>
@@ -100,7 +100,7 @@
 
                 <div class="row">
                     <div class="col-md-6 col-lg-12 mb-3">
-                        <div class="detail-label">عدد الطلبات</div>
+                        <div class="detail-label"><i class="bi bi-receipt me-2"></i>عدد الطلبات</div>
                         <div class="detail-value">
                             @await Html.PartialAsync(
                             "~/Views/Shared/Components/_StatusBadge.cshtml",
@@ -113,12 +113,12 @@
                     </div>
 
                     <div class="col-md-6 col-lg-12 mb-3">
-                        <div class="detail-label">إجمالي الكمية</div>
+                        <div class="detail-label"><i class="bi bi-rulers me-2"></i>إجمالي الكمية</div>
                         <div class="detail-value fw-bold">@Model.TotalQuantity.ToString("N2") م³</div>
                     </div>
 
                     <div class="col-lg-12">
-                        <div class="detail-label">آخر طلب</div>
+                        <div class="detail-label"><i class="bi bi-clock-history me-2"></i>آخر طلب</div>
                         <div class="detail-value">
                             @(Model.LastOrderDate.HasValue
                                 ? Model.LastOrderDate.Value.ToString("yyyy-MM-dd HH:mm")
@@ -133,7 +133,7 @@
 
     <!-- العودة إلى القائمة -->
     <div class="d-flex gap-2 mt-3">
-        <a asp-action="Index" class="btn btn-outline-secondary">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-5">
             <i class="bi bi-arrow-right"></i> العودة إلى القائمة
         </a>
     </div>
