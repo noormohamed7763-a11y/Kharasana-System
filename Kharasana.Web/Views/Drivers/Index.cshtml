@@ -1,6 +1,7 @@
 @model Kharasana.Web.ViewModels.Drivers.DriversIndexViewModel
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.Models.Components.Search
+@using Kharasana.Web.ViewModels.Components
 
 @{
     ViewData["Title"] = "إدارة السائقين";
@@ -123,24 +124,21 @@
         <partial name="_DriverTable" model="Model.PagedDrivers.Items" />
     }
 
-    @if (Model.PagedDrivers != null && Model.PagedDrivers.TotalCount > 0)
+    <!-- الترقيم -->
+    @await Html.PartialAsync("~/Views/Shared/Components/_Pagination.cshtml", new PaginationViewModel
     {
-        var pageCount = (int)Math.Ceiling(Model.PagedDrivers.TotalCount / (double)Model.PageSize);
-
-        <nav class="mt-4">
-            <ul class="pagination justify-content-center">
-                @for (int p = 1; p <= pageCount; p++)
-                {
-                    <li class="page-item @(p == Model.PageNumber ? "active" : "")">
-                        <a class="page-link"
-                           asp-action="Index"
-                           asp-route-pageNumber="@p"
-                           asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search">@p</a>
-                    </li>
-                }
-            </ul>
-        </nav>
-    }
+        CurrentPage = Model.PageNumber,
+        TotalPages = (int)Math.Ceiling(Model.PagedDrivers.TotalCount / (double)Model.PageSize),
+        PageSize = Model.PageSize,
+        TotalCount = Model.PagedDrivers.TotalCount,
+        RouteValues = new Dictionary<string, string>
+        {
+            { "search", Model.Search ?? string.Empty }
+        }
+    })
 
 </div>
+
+@section Scripts {
+    <script src="~/js/driver.js" asp-append-version="true"></script>
+}

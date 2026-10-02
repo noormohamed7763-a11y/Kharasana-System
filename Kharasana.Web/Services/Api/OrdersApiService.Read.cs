@@ -22,7 +22,7 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                var query = $"Orders?PageNumber={pageNumber}&PageSize={pageSize}";
+                var query = $"Orders?PageNumber={pageNumber}&PageSize={pageSize}&SortBy=Id&Order=Desc";
                 if (!string.IsNullOrWhiteSpace(search))
                     query += $"&Search={Uri.EscapeDataString(search)}";
                 if (factoryId.HasValue)

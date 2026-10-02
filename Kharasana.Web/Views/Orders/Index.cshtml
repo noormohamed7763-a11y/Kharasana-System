@@ -268,104 +268,19 @@
     }
 
     <!-- PAGINATION -->
-    @if (Model.PagedOrders != null && Model.PagedOrders.TotalCount > 0)
+    @await Html.PartialAsync("~/Views/Shared/Components/_Pagination.cshtml", new PaginationViewModel
     {
-        var pageCount = (int)Math.Ceiling(Model.PagedOrders.TotalCount / (double)Model.PageSize);
-        var currentPage = Model.PageNumber;
-
-        <nav class="mt-4" aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-                @if (currentPage > 1)
-                {
-                    <li class="page-item">
-                        <a class="page-link" asp-action="Index"
-                           asp-route-pageNumber="@(currentPage - 1)"
-                           asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search"
-                           asp-route-status="@((int?)Model.StatusFilter)"
-                           asp-route-factoryId="@Model.FactoryIdFilter"
-                           aria-label="الصفحة السابقة">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </li>
-                }
-
-                @{
-                    int startPage = Math.Max(1, currentPage - 2);
-                    int endPage = Math.Min(pageCount, currentPage + 2);
-
-                    if (startPage > 1)
-                    {
-                        <li class="page-item">
-                            <a class="page-link" asp-action="Index"
-                               asp-route-pageNumber="1"
-                               asp-route-pageSize="@Model.PageSize"
-                               asp-route-search="@Model.Search"
-                               asp-route-status="@((int?)Model.StatusFilter)"
-                               asp-route-factoryId="@Model.FactoryIdFilter">1</a>
-                        </li>
-                        if (startPage > 2)
-                        {
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        }
-                    }
-
-                    for (int p = startPage; p <= endPage; p++)
-                    {
-                        <li class="page-item @(p == currentPage ? "active" : "")">
-                            <a class="page-link"
-                               asp-action="Index"
-                               asp-route-pageNumber="@p"
-                               asp-route-pageSize="@Model.PageSize"
-                               asp-route-search="@Model.Search"
-                               asp-route-status="@((int?)Model.StatusFilter)"
-                               asp-route-factoryId="@Model.FactoryIdFilter">@p</a>
-                        </li>
-                    }
-
-                    if (endPage < pageCount)
-                    {
-                        if (endPage < pageCount - 1)
-                        {
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        }
-                        <li class="page-item">
-                            <a class="page-link" asp-action="Index"
-                               asp-route-pageNumber="@pageCount"
-                               asp-route-pageSize="@Model.PageSize"
-                               asp-route-search="@Model.Search"
-                               asp-route-status="@((int?)Model.StatusFilter)"
-                               asp-route-factoryId="@Model.FactoryIdFilter">@pageCount</a>
-                        </li>
-                    }
-                }
-
-                @if (currentPage < pageCount)
-                {
-                    <li class="page-item">
-                        <a class="page-link" asp-action="Index"
-                           asp-route-pageNumber="@(currentPage + 1)"
-                           asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search"
-                           asp-route-status="@((int?)Model.StatusFilter)"
-                           asp-route-factoryId="@Model.FactoryIdFilter"
-                           aria-label="الصفحة التالية">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    </li>
-                }
-            </ul>
-        </nav>
-
-        <div class="text-center text-muted mt-2 small">
-            عرض @(((currentPage - 1) * Model.PageSize) + 1) - @(Math.Min(currentPage * Model.PageSize, Model.PagedOrders.TotalCount))
-            من إجمالي @Model.PagedOrders.TotalCount طلب
-            @if (!string.IsNullOrWhiteSpace(Model.Search))
-            {
-                <span> - نتائج البحث: "@Model.Search"</span>
-            }
-        </div>
-    }
+        CurrentPage = Model.PageNumber,
+        TotalPages = (int)Math.Ceiling(Model.PagedOrders.TotalCount / (double)Model.PageSize),
+        PageSize = Model.PageSize,
+        TotalCount = Model.PagedOrders.TotalCount,
+        RouteValues = new Dictionary<string, string>
+        {
+            { "search", Model.Search ?? string.Empty },
+            { "status", ((int?)Model.StatusFilter)?.ToString() ?? string.Empty },
+            { "factoryId", Model.FactoryIdFilter?.ToString() ?? string.Empty }
+        }
+    })
 
 </div>
 

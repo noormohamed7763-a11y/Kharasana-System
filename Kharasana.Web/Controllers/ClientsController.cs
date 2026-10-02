@@ -32,16 +32,22 @@ public class ClientsController : BaseController
                 ? FactoryId
                 : null;
 
-        var pagedClients =
-            await _clientApiService.GetClientsAsync(
+        var pagedClientsTask =
+            _clientApiService.GetClientsAsync(
                 pageNumber,
                 pageSize,
                 search,
                 factoryId);
 
+        var statsTask =
+            _clientApiService.GetClientStatsAsync(factoryId);
+
+        await Task.WhenAll(pagedClientsTask, statsTask);
+
         var vm = new ClientsIndexViewModel
         {
-            PagedClients = pagedClients,
+            PagedClients = await pagedClientsTask,
+            Stats = await statsTask,
             Search = search,
             PageNumber = pageNumber,
             PageSize = pageSize

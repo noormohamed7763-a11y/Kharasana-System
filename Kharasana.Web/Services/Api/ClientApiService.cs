@@ -34,7 +34,7 @@ public class ClientApiService : IClientApiService
         try
         {
             var query =
-                $"Orders/customers?PageNumber={pageNumber}&PageSize={pageSize}";
+                $"Orders/customers?PageNumber={pageNumber}&PageSize={pageSize}&SortBy=Id&Order=Desc";
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -93,6 +93,39 @@ public class ClientApiService : IClientApiService
         }
     }
 
+
+    // ============================================================
+    // GET CLIENT STATS
+    // ============================================================
+    public async Task<ClientStatsViewModel?> GetClientStatsAsync(
+        int? factoryId = null)
+    {
+        try
+        {
+            var query = "Orders/customers/stats";
+
+            if (factoryId.HasValue)
+            {
+                query += $"?FactoryId={factoryId.Value}";
+            }
+
+            var response =
+                await _apiClient.GetAsync<ApiResponse<ClientStatsViewModel>>(query);
+
+            if (response == null || !response.Success || response.Data == null)
+            {
+                _logger.LogWarning("فشل GetClientStatsAsync.");
+                return null;
+            }
+
+            return response.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "استثناء في GetClientStatsAsync");
+            return null;
+        }
+    }
 
     // ============================================================
     // GET DETAILS

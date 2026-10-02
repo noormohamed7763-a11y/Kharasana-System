@@ -14,6 +14,8 @@ public interface IClientApiService
         string? search = null,
         int? factoryId = null);
 
+    Task<ClientStatsViewModel?> GetClientStatsAsync(int? factoryId = null);
+
     // ============================================================
     // GET DETAILS
     // ============================================================
