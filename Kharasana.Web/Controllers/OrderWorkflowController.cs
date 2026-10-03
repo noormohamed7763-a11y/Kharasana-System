@@ -51,10 +51,10 @@ namespace Kharasana.Web.Controllers
 
                 var result = await _ordersApiService.SavePriceAsync(id, dto.UnitPrice);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.PriceSaved);
+                if (result.Succeeded)
+                    return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.PriceSave);
+                return AjaxFail(result.Message);
             }
             catch (ApiServiceException ex)
             {
@@ -85,10 +85,10 @@ namespace Kharasana.Web.Controllers
 
                 var result = await _ordersApiService.ApproveOrderAsync(id);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.Approved);
+                if (result.Succeeded)
+                    return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.Approved);
+                return AjaxFail(result.Message);
             }
             catch (ApiServiceException ex)
             {
@@ -122,10 +122,10 @@ namespace Kharasana.Web.Controllers
 
                 var result = await _ordersApiService.RejectOrderAsync(id, dto.Reason ?? string.Empty);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.Rejected);
+                if (result.Succeeded)
+                    return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.Rejected);
+                return AjaxFail(result.Message);
             }
             catch (ApiServiceException ex)
             {
@@ -156,10 +156,10 @@ namespace Kharasana.Web.Controllers
 
                 var result = await _ordersApiService.CancelOrderAsync(id);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.Cancelled);
+                if (result.Succeeded)
+                    return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.Cancelled);
+                return AjaxFail(result.Message);
             }
             catch (ApiServiceException ex)
             {
@@ -190,10 +190,10 @@ namespace Kharasana.Web.Controllers
 
                 var result = await _ordersApiService.StartDeliveryAsync(id);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.DeliveryStarted);
+                if (result.Succeeded)
+                    return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.DeliveryStarted);
+                return AjaxFail(result.Message);
             }
             catch (ApiServiceException ex)
             {
@@ -224,10 +224,10 @@ namespace Kharasana.Web.Controllers
 
                 var result = await _ordersApiService.DeliverOrderAsync(id);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.Delivered);
+                if (result.Succeeded)
+                    return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.Delivered);
+                return AjaxFail(result.Message);
             }
             catch (ApiServiceException ex)
             {
@@ -258,10 +258,10 @@ namespace Kharasana.Web.Controllers
 
                 var result = await _ordersApiService.CloseOrderAsync(id);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.Closed);
+                if (result.Succeeded)
+                    return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.Closed);
+                return AjaxFail(result.Message);
             }
             catch (ApiServiceException ex)
             {
@@ -312,10 +312,10 @@ namespace Kharasana.Web.Controllers
 
                 var ok = await _ordersApiService.AssignDriverAsync(id, model);
 
-                if (!ok)
-                    return AjaxFail(AppMessages.Error.DriverAssign);
+                if (ok.Succeeded)
+                    return AjaxSuccess(ok.Message);
 
-                return AjaxSuccess(AppMessages.Success.DriverAssigned);
+                return AjaxFail(ok.Message);
             }
             catch (ApiServiceException ex)
             {

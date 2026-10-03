@@ -1,0 +1,14 @@
+<!-- ============================================================
+7. SUBMIT - أزرار الإرسال
+============================================================ -->
+<div class="d-flex flex-wrap gap-3 mt-4 pt-3 border-top">
+    <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn">
+        <i class="bi bi-save"></i> حفظ التغييرات
+    </button>
+    @* ✅ التأكيد عبر Modal الموحد (site.js) بدل confirm() — الرابط يحمل
+        data-confirm فالنقرة الأولى تفتح الـ Modal، والثانية تُكمل التنقل *@
+    <a asp-action="Details" asp-route-id="@ViewBag.OrderId" class="btn btn-outline-secondary btn-lg px-5" id="cancelOrderBtn"
+       data-confirm="هل أنت متأكد من إلغاء التعديلات؟ سيتم فقدان التغييرات غير المحفوظة.">
+        <i class="bi bi-x-circle"></i> إلغاء
+    </a>
+</div>

@@ -16,14 +16,13 @@
     var statusArabic = Model.Status.GetArabicName();
     var statusCssClass = Model.Status.GetCssClass();
 
-    var availableDrivers = ViewBag.AvailableDrivers as List<LookupDto> ?? new List<LookupDto>();
     var factoryId = ViewBag.FactoryId ?? 0;
-
-    var transportName = Model.TransportMethod.GetDisplayName();
 
     var slabName = Enum.IsDefined(typeof(SlabType), Model.SlabType)
         ? ((SlabType)Model.SlabType).GetDisplayName()
         : "غير محدد";
+
+    var transportName = Model.TransportMethod.GetDisplayName();
 }
 
 <div class="dashboard-page dashboard-page--print-ticket">
@@ -291,7 +290,7 @@
                     <button class="btn btn-primary btn-lg" id="savePriceBtn" data-order-id="@Model.OrderId">
                         <i class="bi bi-save"></i> حفظ السعر
                     </button>
-                    <span id="priceMessage" class="ms-3"></span>
+                    <span id="priceMessage" class="ms-3" role="status" aria-live="polite"></span>
                 </div>
             </div>
         </div>
@@ -324,7 +323,7 @@
     }
 
     <!-- ============================================================
-    ACTIONS - الإجراءات (مرتبة هرمياً)
+    ACTIONS - الإجراءات (مرتبة هرمياً) — مُقسَّم إلى Partial
     ============================================================ -->
     <div class="erp-section-card border-2 border-warning">
         <div class="erp-section-title text-warning">
@@ -332,101 +331,12 @@
             الإجراءات
         </div>
         <div class="erp-section-content">
-            <div id="actionMessage" class="alert d-none"></div>
-            <div class="action-buttons-container">
-
-                <!-- Primary Action - الإجراء الرئيسي -->
-                @if ((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin)
-                {
-                    if (Model.Status == OrderStatus.Pending && Model.UnitPrice > 0)
-                    {
-                        <button class="btn btn-success btn-lg action-primary" data-action="approve" data-order-id="@Model.OrderId">
-                            <i class="bi bi-check-circle"></i> قبول الطلب
-                        </button>
-                        <small class="text-muted d-block mb-3">قبول الطلب من قبل المصنع بعد المراجعة</small>
-                    }
-                }
-
-                <!-- Secondary Actions - الإجراءات الثانوية (مجمعة) -->
-                <div class="action-secondary-group">
-                    @* الرفض متاح للمدير ولموظف مصنع الطلب نفسه فقط — مطابقةً لصلاحية API Reject *@
-                    @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin) &&
-                         (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending))
-                    {
-                        <button class="btn btn-outline-danger" data-action="reject" data-order-id="@Model.OrderId">
-                            <i class="bi bi-x-circle"></i> رفض الطلب
-                        </button>
-                    }
-
-                    @if (Model.Status != OrderStatus.Rejected && Model.Status != OrderStatus.Cancelled && Model.Status != OrderStatus.Delivered && Model.Status != OrderStatus.Closed)
-                    {
-                        <button class="btn btn-outline-warning" data-action="cancel" data-order-id="@Model.OrderId">
-                            <i class="bi bi-ban"></i> إلغاء الطلب
-                        </button>
-                    }
-
-                    @if (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending)
-                    {
-                        <a asp-action="Edit" asp-route-id="@Model.OrderId" class="btn btn-outline-primary">
-                            <i class="bi bi-pencil"></i> تعديل
-                        </a>
-                    }
-
-                    @if (ViewBag.UserRole == Roles.Admin)
-                    {
-                        <form asp-action="Delete" method="post" class="d-inline" data-ajax-delete="true">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@Model.OrderId" />
-                            <button type="submit" class="btn btn-outline-danger">
-                                <i class="bi bi-trash"></i> حذف
-                            </button>
-                        </form>
-                    }
-                </div>
-
-                <!-- Delivery Actions - إجراءات التوصيل (مجموعة منفصلة) -->
-                @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin || ViewBag.UserRole == Roles.Driver) ||
-                                Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered)
-                {
-                    <div class="action-delivery-group">
-                        @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin) && Model.Status == OrderStatus.Approved && Model.DriverId == null && Model.TransportMethod == TransportMethod.FactoryTransport)
-                        {
-                            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#assignDriverModal">
-                                <i class="bi bi-truck"></i> تعيين سائق
-                            </button>
-                        }
-
-                        @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin || ViewBag.UserRole == Roles.Driver) && Model.Status == OrderStatus.Approved && Model.DriverId != null)
-                        {
-                            <button class="btn btn-primary" data-action="start-delivery" data-order-id="@Model.OrderId">
-                                <i class="bi bi-play-circle"></i> بدء التوصيل
-                            </button>
-                        }
-
-                        @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin || ViewBag.UserRole == Roles.Driver) && Model.Status == OrderStatus.OnTheWay)
-                        {
-                            <button class="btn btn-success" data-action="deliver" data-order-id="@Model.OrderId">
-                                <i class="bi bi-check2-circle"></i> تم التسليم
-                            </button>
-                        }
-
-                        @* الإغلاق متاح للمدير ولموظف مصنع الطلب نفسه فقط — مطابقةً لصلاحية API Close *@
-                        @if (((ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId) || ViewBag.UserRole == Roles.Admin) &&
-                             Model.Status == OrderStatus.Delivered)
-                        {
-                            <button class="btn btn-secondary" data-action="close" data-order-id="@Model.OrderId">
-                                <i class="bi bi-lock"></i> إغلاق الطلب
-                            </button>
-                        }
-                    </div>
-                }
-
-            </div>
+            @await Html.PartialAsync("~/Views/Orders/_OrderActions.cshtml", Model)
         </div>
     </div>
 
     <!-- ============================================================
-    TIMELINE - دورة حياة الطلب
+    TIMELINE - دورة حياة الطلب — مُقسَّم إلى Partial
     ============================================================ -->
     <div class="erp-section-card">
         <div class="erp-section-title">
@@ -434,77 +344,7 @@
             دورة حياة الطلب
         </div>
         <div class="erp-section-content">
-            <ul class="timeline">
-
-                <li class="completed">
-                    <span class="timeline-icon">✓</span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">تم إنشاء الطلب</div>
-                        <div class="timeline-date">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
-                    </div>
-                </li>
-
-                <li class="@(Model.UnitPrice > 0 ? "completed" : "")">
-                    <span class="timeline-icon">@(Model.UnitPrice > 0 ? "✓" : "○")</span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">تم تحديد السعر</div>
-                        <div class="timeline-date">
-                            @(Model.UnitPrice > 0 ? $"{Model.UnitPrice:N0} ر.ي / م³" : "في انتظار التسعير")
-                        </div>
-                    </div>
-                </li>
-
-                <li class="@(Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "completed" : "")">
-                    <span class="timeline-icon">@(Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "✓" : "○")</span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">موافقة المصنع</div>
-                        <div class="timeline-date">
-                            @(Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "تمت الموافقة" : "في انتظار موافقة المصنع")
-                        </div>
-                    </div>
-                </li>
-
-                <li class="@(Model.DriverId != null ? "completed" : "")">
-                    <span class="timeline-icon">@(Model.DriverId != null ? "✓" : "○")</span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">تم تعيين السائق</div>
-                        <div class="timeline-date">
-                            @(Model.DriverId != null ? Model.DriverName : "غير معين")
-                        </div>
-                    </div>
-                </li>
-
-                <li class="@(Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "completed" : "")">
-                    <span class="timeline-icon">@(Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "✓" : "○")</span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">في الطريق</div>
-                        <div class="timeline-date">
-                            @(Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "تم" : "في انتظار البدء")
-                        </div>
-                    </div>
-                </li>
-
-                <li class="@(Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "completed" : "")">
-                    <span class="timeline-icon">@(Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? "✓" : "○")</span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">تم التسليم</div>
-                        <div class="timeline-date">
-                            @(Model.Status == OrderStatus.Delivered || Model.Status == OrderStatus.Closed ? Model.DeliveredAt?.ToString("yyyy-MM-dd HH:mm") ?? "تم" : "في انتظار التسليم")
-                        </div>
-                    </div>
-                </li>
-
-                <li class="@(Model.Status == OrderStatus.Closed ? "completed" : "")">
-                    <span class="timeline-icon">@(Model.Status == OrderStatus.Closed ? "✓" : "○")</span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">تم إغلاق الطلب</div>
-                        <div class="timeline-date">
-                            @(Model.Status == OrderStatus.Closed ? Model.ClosedAt?.ToString("yyyy-MM-dd HH:mm") ?? "تم" : "في انتظار الإغلاق")
-                        </div>
-                    </div>
-                </li>
-
-            </ul>
+            @await Html.PartialAsync("~/Views/Orders/_OrderTimeline.cshtml", Model)
         </div>
     </div>
 
@@ -525,138 +365,14 @@
     }
 
     <!-- ============================================================
-    MODAL - تعيين سائق
+    MODAL - تعيين سائق — مُقسَّم إلى Partial
     ============================================================ -->
-    <div class="modal fade" id="assignDriverModal" tabindex="-1" aria-labelledby="assignDriverModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="modal-title fw-bold" id="assignDriverModalLabel">
-                        <i class="bi bi-truck"></i> تعيين سائق للطلب
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form data-ajax-assign="true" asp-controller="OrderWorkflow" asp-action="AssignDriver" asp-route-id="@Model.OrderId" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@Model.OrderId" />
-                        <div class="mb-3">
-                            <label class="form-label fw-bold" for="driverSelect">
-                                اختر السائق <span class="text-danger">*</span>
-                            </label>
-                            <select id="driverSelect" name="DriverId" class="form-select form-select-lg" required>
-                                <option value="">-- اختر سائق --</option>
-                                @if (availableDrivers.Any())
-                                {
-                                    foreach (var driver in availableDrivers)
-                                    {
-                                        <option value="@driver.Id">@driver.Name</option>
-                                    }
-                                }
-                                else
-                                {
-                                    <option value="" disabled>لا يوجد سائقون متاحون في المصنع</option>
-                                }
-                            </select>
-                            <small class="text-muted">يعرض فقط السائقين المتاحين في مصنعك</small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold" for="truckPlateInput">رقم لوحة الشاحنة</label>
-                            <input id="truckPlateInput" name="TruckPlate" class="form-control form-control-lg" placeholder="اختياري - مثال: س ص ص 1234" />
-                            <small class="text-muted">حقل اختياري - يمكن تركه فارغاً</small>
-                        </div>
-                        <div id="assignMessage" class="alert d-none"></div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-check-circle"></i> تعيين
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    @await Html.PartialAsync("~/Views/Orders/_AssignDriverModal.cshtml", Model)
 
     <!-- ============================================================
-    PRINTABLE DELIVERY TICKET - بوليصة الصب والتسليم الرسمية (للطباعة فقط)
+    PRINTABLE DELIVERY TICKET - بوليصة الصب والتسليم — مُقسَّم إلى Partial
     ============================================================ -->
-    <div class="print-delivery-ticket d-none d-print-block">
-        <div class="ticket-header text-center">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="text-start">
-                    @* اسم المصنع الحقيقي من الطلب — كانت لافتة عامة ثابتة
-                       ("مصنع خرسانة جاهزة") فتخرج البوليصة بلا هوية مصدرها. *@
-                    <h5 class="fw-bold mb-1">@(string.IsNullOrWhiteSpace(Model.FactoryName) ? "مصنع خرسانة جاهزة" : Model.FactoryName)</h5>
-                    <div class="text-muted small">سند توريد وبوليصة صب</div>
-                </div>
-                <div>
-                    <h2 class="ticket-title">بوليصة صب وتسليم خرسانة</h2>
-                    <div class="mt-1">
-                        <strong>رقم الطلب:</strong> #@Model.OrderNumber
-                    </div>
-                </div>
-                <div class="text-end">
-                    <div class="small"><strong>تاريخ الصب:</strong> @(Model.PouringDate?.ToString("yyyy-MM-dd") ?? Model.CreatedAt.ToString("yyyy-MM-dd"))</div>
-                    <div class="small"><strong>وقت الطباعة:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-3 mb-3">
-            <div class="col-6">
-                <table class="ticket-table">
-                    <tbody>
-                        <tr><th>اسم العميل</th><td>@(Model.ClientName ?? "غير محدد")</td></tr>
-                        <tr><th>رقم الهاتف</th><td dir="ltr">@(Model.ClientPhone ?? "-")</td></tr>
-                        <tr><th>اسم المشروع</th><td>@(Model.ProjectName ?? "-")</td></tr>
-                        <tr><th>مالك المشروع</th><td>@(Model.ProjectOwnerName ?? "-")</td></tr>
-                        <tr><th>منطقة الموقع</th><td>@(Model.SiteArea ?? "-")</td></tr>
-                        <tr><th>وصف الموقع</th><td>@(Model.SiteDescription ?? "-")</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="col-6">
-                <table class="ticket-table">
-                    <tbody>
-                        <tr><th>صنف الخرسانة</th><td class="fw-bold">@Model.ConcreteTypeName</td></tr>
-                        <tr><th>الكمية المصرحة</th><td class="fw-bold">@Model.Quantity م³</td></tr>
-                        <tr><th>العنصر الإنشائي</th><td>@slabName</td></tr>
-                        <tr><th>مضخة خرسانية</th><td>@(Model.NeedPump ? $"نعم (طابق {Model.FloorNumber})" : "بدون مضخة")</td></tr>
-                        <tr><th>طريقة النقل</th><td>@transportName</td></tr>
-                        <tr><th>السائق والشاحنة</th><td>@(Model.DriverName ?? "غير معين") @(string.IsNullOrEmpty(Model.TruckPlate) ? "" : $"({Model.TruckPlate})")</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        @if (!string.IsNullOrEmpty(Model.Notes))
-        {
-            <div class="p-2 border mb-3 small">
-                <strong>ملاحظات إضافية:</strong> @Model.Notes
-            </div>
-        }
-
-        <div class="ticket-signatures">
-            <div class="row text-center">
-                <div class="col-4 ticket-sig-box">
-                    <div class="fw-bold">مسؤول محطة الخلط</div>
-                    <div class="ticket-sig-line"></div>
-                    <small class="text-muted d-block mt-1">الاسم والختم</small>
-                </div>
-                <div class="col-4 ticket-sig-box">
-                    <div class="fw-bold">سائق الشاحنة</div>
-                    <div class="ticket-sig-line"></div>
-                    <small class="text-muted d-block mt-1">توقيع السائق</small>
-                </div>
-                <div class="col-4 ticket-sig-box">
-                    <div class="fw-bold">المستلم / مهندس الموقع</div>
-                    <div class="ticket-sig-line"></div>
-                    <small class="text-muted d-block mt-1">توقيع استلام الكمية</small>
-                </div>
-            </div>
-        </div>
-    </div>
+    @await Html.PartialAsync("~/Views/Orders/_DeliveryTicket.cshtml", Model)
 
 </div>
 

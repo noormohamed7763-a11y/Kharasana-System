@@ -1,0 +1,83 @@
+@model Kharasana.Web.ViewModels.Orders.OrderDto
+@using Kharasana.Domain.Enums
+
+@{
+    // دورة حياة الطلب — كل مرحلة تُظهر ✓ عند تحققها و○ في انتظارها.
+    // الحالات المنتهية (OnTheWay/Delivered/Closed) تُكمل المراحل السابقة
+    // لأن الطلب لا يصل إليها إلا بعد المرور بباقي المراحل.
+    var isApprovedOrLater = Model.Status is OrderStatus.Approved or OrderStatus.OnTheWay or OrderStatus.Delivered or OrderStatus.Closed;
+    var isOnWayOrLater = Model.Status is OrderStatus.OnTheWay or OrderStatus.Delivered or OrderStatus.Closed;
+    var isDeliveredOrLater = Model.Status is OrderStatus.Delivered or OrderStatus.Closed;
+}
+
+<ul class="timeline">
+
+    <li class="completed">
+        <span class="timeline-icon">✓</span>
+        <div class="timeline-content">
+            <div class="timeline-title">تم إنشاء الطلب</div>
+            <div class="timeline-date">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+        </div>
+    </li>
+
+    <li class="@(Model.UnitPrice > 0 ? "completed" : "")">
+        <span class="timeline-icon">@(Model.UnitPrice > 0 ? "✓" : "○")</span>
+        <div class="timeline-content">
+            <div class="timeline-title">تم تحديد السعر</div>
+            <div class="timeline-date">
+                @(Model.UnitPrice > 0 ? $"{Model.UnitPrice:N0} ر.ي / م³" : "في انتظار التسعير")
+            </div>
+        </div>
+    </li>
+
+    <li class="@(isApprovedOrLater ? "completed" : "")">
+        <span class="timeline-icon">@(isApprovedOrLater ? "✓" : "○")</span>
+        <div class="timeline-content">
+            <div class="timeline-title">موافقة المصنع</div>
+            <div class="timeline-date">
+                @(isApprovedOrLater ? "تمت الموافقة" : "في انتظار موافقة المصنع")
+            </div>
+        </div>
+    </li>
+
+    <li class="@(Model.DriverId != null ? "completed" : "")">
+        <span class="timeline-icon">@(Model.DriverId != null ? "✓" : "○")</span>
+        <div class="timeline-content">
+            <div class="timeline-title">تم تعيين السائق</div>
+            <div class="timeline-date">
+                @(Model.DriverId != null ? Model.DriverName : "غير معين")
+            </div>
+        </div>
+    </li>
+
+    <li class="@(isOnWayOrLater ? "completed" : "")">
+        <span class="timeline-icon">@(isOnWayOrLater ? "✓" : "○")</span>
+        <div class="timeline-content">
+            <div class="timeline-title">في الطريق</div>
+            <div class="timeline-date">
+                @(isOnWayOrLater ? "تم" : "في انتظار البدء")
+            </div>
+        </div>
+    </li>
+
+    <li class="@(isDeliveredOrLater ? "completed" : "")">
+        <span class="timeline-icon">@(isDeliveredOrLater ? "✓" : "○")</span>
+        <div class="timeline-content">
+            <div class="timeline-title">تم التسليم</div>
+            <div class="timeline-date">
+                @(isDeliveredOrLater ? Model.DeliveredAt?.ToString("yyyy-MM-dd HH:mm") ?? "تم" : "في انتظار التسليم")
+            </div>
+        </div>
+    </li>
+
+    <li class="@(Model.Status == OrderStatus.Closed ? "completed" : "")">
+        <span class="timeline-icon">@(Model.Status == OrderStatus.Closed ? "✓" : "○")</span>
+        <div class="timeline-content">
+            <div class="timeline-title">تم إغلاق الطلب</div>
+            <div class="timeline-date">
+                @(Model.Status == OrderStatus.Closed ? Model.ClosedAt?.ToString("yyyy-MM-dd HH:mm") ?? "تم" : "في انتظار الإغلاق")
+            </div>
+        </div>
+    </li>
+
+</ul>

@@ -3,6 +3,7 @@
 @using Kharasana.Web.Models.Components.Search
 @using Kharasana.Domain.Enums
 @using Kharasana.Web.Helpers
+@using Kharasana.Web.ViewModels.Components
 
 @{
     ViewData["Title"] = "إدارة الطلبات";
@@ -165,6 +166,7 @@
             <div class="table-responsive">
                 @Html.AntiForgeryToken()
                 <table class="erp-table erp-table--sticky-head" id="ordersTable">
+                    <caption class="visually-hidden">قائمة طلبات الخرسانة — الرقم، العميل، النوع، الكمية، السعر، الحالة، السائق</caption>
                     <thead>
                         <tr>
                             <th>#</th>
@@ -236,6 +238,7 @@
                                     {
                                         <button type="button" class="btn btn-light border text-success"
                                                 data-action="approve" data-order-id="@order.OrderId"
+                                                data-confirm="هل أنت متأكد من موافقة العميل على هذا الطلب؟"
                                                 aria-label="اعتماد الطلب" data-bs-toggle="tooltip">
                                             <i class="bi bi-check-circle"></i>
                                         </button>
@@ -244,6 +247,7 @@
                                     {
                                         <button type="button" class="btn btn-light border text-warning"
                                                 data-action="cancel" data-order-id="@order.OrderId"
+                                                data-confirm="⚠️ هل أنت متأكد من إلغاء هذا الطلب؟"
                                                 aria-label="إلغاء الطلب" data-bs-toggle="tooltip">
                                             <i class="bi bi-x-circle"></i>
                                         </button>

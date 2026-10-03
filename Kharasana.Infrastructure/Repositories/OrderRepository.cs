@@ -124,7 +124,9 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     /// </summary>
     private IQueryable<CustomerSummaryDto> CustomerSummaryQuery(int? factoryId)
     {
-        var query = OrdersWithDetails(trackChanges: false);
+        var query = _context.Orders
+            .IgnoreQueryFilters()
+            .Where(o => !o.IsDeleted);
 
         if (factoryId.HasValue)
             query = query.Where(o => o.FactoryId == factoryId.Value);
@@ -135,8 +137,6 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
                 o.ClientId,
                 o.Client.FullName,
                 o.Client.Phone,
-                // بيانات الحساب تُقرأ من الرسم نفسه: بديلها نداء Users/{id} وهو محجوز
-                // على موظف المصنع (يرى سائقي مصنعه فقط) فيفشل لصفحة عميل.
                 o.Client.Email,
                 o.Client.WhatsApp,
                 o.Client.IsActive

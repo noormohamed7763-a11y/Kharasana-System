@@ -1,6 +1,7 @@
 @model Kharasana.Web.ViewModels.Users.UsersIndexViewModel
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.Models.Components.Search
+@using Kharasana.Web.ViewModels.Components
 @using System.Linq
 
 @{
@@ -105,6 +106,7 @@
         <div class="form-card">
             <div class="table-responsive">
                 <table class="erp-table erp-table--sticky-cols">
+                    <caption class="visually-hidden">قائمة المستخدمين — الاسم، الدور، الهاتف، الحالة، الإجراءات</caption>
                     <thead>
                         <tr>
                             <th class="col-index text-nowrap">#</th>
@@ -227,55 +229,24 @@
         </div>
     }
 
-    <!-- الترقيم -->
+    <!-- الترقيم — المكون الموحّد: نطاق محدود (±2 صفحة) بدل كل الأرقام،
+         مع aria-current="page" للصفحة الحالية -->
     @if (Model.PagedUsers != null && Model.PagedUsers.TotalCount > 0)
     {
-        var pageCount = (int)Math.Ceiling(Model.PagedUsers.TotalCount / (double)Model.PageSize);
-
-        <nav class="mt-4" aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-                @if (Model.PageNumber > 1)
+        @await Html.PartialAsync(
+            "~/Views/Shared/Components/_Pagination.cshtml",
+            new PaginationViewModel
+            {
+                CurrentPage = Model.PageNumber,
+                TotalPages = (int)Math.Ceiling(Model.PagedUsers.TotalCount / (double)Model.PageSize),
+                PageSize = Model.PageSize,
+                TotalCount = Model.PagedUsers.TotalCount,
+                AspAction = "Index",
+                RouteValues = new Dictionary<string, string>
                 {
-                    <li class="page-item">
-                        <a class="page-link"
-                           asp-action="Index"
-                           asp-route-pageNumber="@(Model.PageNumber - 1)"
-                           asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search"
-                           aria-label="الصفحة السابقة">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </li>
+                    ["search"] = Model.Search ?? string.Empty
                 }
-
-                @for (int p = 1; p <= pageCount; p++)
-                {
-                    <li class="page-item @(p == Model.PageNumber ? "active" : "")">
-                        <a class="page-link"
-                           asp-action="Index"
-                           asp-route-pageNumber="@p"
-                           asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search">
-                            @p
-                        </a>
-                    </li>
-                }
-
-                @if (Model.PageNumber < pageCount)
-                {
-                    <li class="page-item">
-                        <a class="page-link"
-                           asp-action="Index"
-                           asp-route-pageNumber="@(Model.PageNumber + 1)"
-                           asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search"
-                           aria-label="الصفحة التالية">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    </li>
-                }
-            </ul>
-        </nav>
+            })
     }
 
 </div>

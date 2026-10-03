@@ -307,18 +307,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const orderId = this.dataset.orderId;
             const token = getRequestVerificationToken();
 
-            const confirmMessages = {
-                approve: 'هل أنت متأكد من موافقة العميل على هذا الطلب؟',
-                reject: 'هل أنت متأكد من رفض هذا الطلب؟',
-                cancel: '⚠️ هل أنت متأكد من إلغاء هذا الطلب؟',
-                'start-delivery': 'هل أنت متأكد من بدء التوصيل؟',
-                deliver: 'هل أنت متأكد من تسليم الطلب؟',
-                close: 'هل أنت متأكد من إغلاق هذا الطلب؟'
-            };
-
-            if (confirmMessages[action] && !confirm(confirmMessages[action])) {
-                return;
-            }
+            // ✅ التأكيد بات يحدث قبل هذا المعالج: الأزرار تحمل data-confirm
+            //    فالنقرة الأولى تفتح Modal التأكيد الموحد (site.js) بدل
+            //    confirm() التقليدية، ولا يصل النقر إلى هنا إلا بعد التأكيد.
 
             if (action === 'reject') {
                 const reason = prompt('يرجى كتابة سبب الرفض (اختياري):');
@@ -383,13 +374,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // 6. DELETE ORDER - حذف الطلب مع تأكيد (form)
     // ============================================================
 
+    // ✅ تأكيد حذف الطلب بات يحدث في site.js عبر data-confirm على النموذج
+    //    (بدل confirm() التقليدية) — هذا المعالج يبقى فقط لحالة تحميل الزر.
     document.querySelectorAll('form[data-ajax-delete="true"]').forEach(form => {
-        form.addEventListener('submit', function (e) {
-            if (!confirm('⚠️ هل أنت متأكد من حذف هذا الطلب؟\nلا يمكن التراجع عن هذا الإجراء.')) {
-                e.preventDefault();
-                return;
-            }
-
+        form.addEventListener('submit', function () {
             const submitBtn = this.querySelector('button[type="submit"]');
             if (submitBtn) {
                 const originalText = submitBtn.innerHTML;

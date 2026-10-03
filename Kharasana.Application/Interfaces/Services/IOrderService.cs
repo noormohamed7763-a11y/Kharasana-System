@@ -39,23 +39,23 @@ public interface IOrderService
     // ============================================================
     // 3. PRICING & WORKFLOW
     // ============================================================
-    Task<bool> SetPriceAsync(int id, decimal unitPrice, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> SetPriceAsync(int id, decimal unitPrice, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> ApproveOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> ApproveOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> RejectOrderAsync(int id, string? reason, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> RejectOrderAsync(int id, string? reason, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> CancelOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> CancelOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> AssignDriverAsync(int id, AssignDriverDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> AssignDriverAsync(int id, AssignDriverDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> StartDeliveryAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> StartDeliveryAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> DeliverOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> DeliverOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> CloseOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> CloseOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> UpdateStatusAsync(int id, UpdateOrderStatusDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> UpdateStatusAsync(int id, UpdateOrderStatusDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
 
     Task<bool> DeleteOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 }

@@ -142,6 +142,30 @@
                 عند رفع شعار جديد، سيتم حذف الشعار القديم تلقائياً.
             </div>
         </div>
+
+        <!-- 3. تنظيف ملفات الصور اليتيمة -->
+        <div class="erp-section-card">
+            <h5 class="fw-bold mb-3">
+                <i class="bi bi-trash text-primary me-2"></i>
+                تنظيف ملفات الصور
+            </h5>
+
+            <p class="text-muted small mb-3">
+                <i class="bi bi-info-circle me-1"></i>
+                مع مرور الوقت، قد تبقى ملفات صور غير مرتبطة بأي مصنع أو مستخدم
+                (بعد حذف شعار أو صورة حساب). هذا الإجراء يفحص مجلد الصور ويحذف
+                الملفات اليتيمة فقط — لا يمس أي ملف مستخدم حالياً.
+            </p>
+
+            <form asp-action="CleanupImages" method="post" id="cleanupImagesForm"
+                  data-confirm="هل أنت متأكد من تشغيل تنظيف ملفات الصور؟ سيتم حذف الملفات غير المرتبطة فقط.">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-secondary" id="cleanupImagesBtn">
+                    <i class="bi bi-broom me-1"></i>
+                    تشغيل التنظيف الآن
+                </button>
+            </form>
+        </div>
     }
 </div>
 

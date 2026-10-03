@@ -19,10 +19,14 @@ namespace Kharasana.API.Controllers;
 public class SettingsController : ControllerBase
 {
     private readonly IFactoryService _factoryService;
+    private readonly IImageCleanupService _imageCleanupService;
 
-    public SettingsController(IFactoryService factoryService)
+    public SettingsController(
+        IFactoryService factoryService,
+        IImageCleanupService imageCleanupService)
     {
         _factoryService = factoryService;
+        _imageCleanupService = imageCleanupService;
     }
 
     /// <summary>
@@ -89,5 +93,30 @@ public class SettingsController : ControllerBase
         await _factoryService.DeleteLogoAsync(caller.FactoryId.Value);
 
         return Ok(ApiResponse.Ok(Messages.FactoryLogoDeletedSuccessfully));
+    }
+
+    /// <summary>
+    /// فحص مجلد الصور وحذف الملفات اليتيمة (غير المرتبطة بأي مصنع أو مستخدم).
+    /// </summary>
+    /// <remarks>
+    /// تشغيل يدوي من صفحة الإعدادات. تُجرى العملية في الخادم المضيف للـ API
+    /// حيث يقع مجلد wwwroot/Images فعليًا.
+    /// </remarks>
+    /// <response code="200">تم الفحص والحذف — يرجع عدد الملفات المحذوفة.</response>
+    /// <response code="401">لا يوجد مصنع مرتبط بالحساب.</response>
+    [HttpPost("cleanup-images")]
+    public async Task<IActionResult> CleanupImages()
+    {
+        var caller = User.GetCallerContext();
+        if (caller.FactoryId is null)
+            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+
+        var deletedCount = await _imageCleanupService.CleanupOrphanedImagesAsync();
+
+        return Ok(ApiResponse.Ok(
+            new { deletedCount },
+            deletedCount == 0
+                ? "لم يُعثر على ملفات صور يتيمة."
+                : $"تم حذف {deletedCount} ملف صورة يتيم."));
     }
 }

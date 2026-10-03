@@ -154,5 +154,48 @@ namespace Kharasana.Web.Services.Api
                 return false;
             }
         }
+
+        /// <summary>
+        /// تشغيل تنظيف ملفات الصور اليتيمة في الخادم المضيف للـ API.
+        /// يُرجع عدد الملفات المحذوفة، أو -1 عند الفشل.
+        /// </summary>
+        public async Task<int> CleanupImagesAsync()
+        {
+            try
+            {
+                var response = await _apiClient.PostAsync<ApiResponse<object>>("Settings/cleanup-images", new { });
+
+                if (response == null || !response.Success || response.Data == null)
+                {
+                    _logger.LogWarning(
+                        "فشل تنظيف الصور: Response={Response} Message={Message}",
+                        response == null ? "null" : "Success=false",
+                        response?.Message);
+                    return -1;
+                }
+
+                try
+                {
+                    var jsonElement = (JsonElement)response.Data;
+                    if (jsonElement.TryGetProperty("deletedCount", out var countProp))
+                        return countProp.GetInt32();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "تعذّرت قراءة deletedCount من JsonElement — محاولة بالانعكاس");
+                    var count = response.Data.GetType().GetProperty("deletedCount")
+                        ?.GetValue(response.Data);
+                    if (count is int deleted)
+                        return deleted;
+                }
+
+                return -1;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "خطأ في تنظيف ملفات الصور اليتيمة");
+                return -1;
+            }
+        }
     }
 }

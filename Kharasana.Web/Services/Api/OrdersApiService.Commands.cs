@@ -127,7 +127,7 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         // DELETE ORDER - حذف طلب
         // ============================================================
-        public async Task<bool> DeleteOrderAsync(int id)
+        public async Task<ServiceResult> DeleteOrderAsync(int id)
         {
             _logger.LogInformation("حذف الطلب {Id}", id);
 

@@ -71,5 +71,24 @@ namespace Kharasana.Web.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        /// <summary>
+        /// تشغيل يدوي لتنظيف ملفات الصور اليتيمة — تحذف ملفات الصور
+        /// غير المرتبطة بأي مصنع أو مستخدم من مجلد التخزين.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CleanupImages()
+        {
+            var deletedCount = await _settingsApiService.CleanupImagesAsync();
+
+            if (deletedCount >= 0)
+                TempData[TempDataSuccess] = string.Format(
+                    AppMessages.Success.ImagesCleaned, deletedCount);
+            else
+                TempData[TempDataError] = AppMessages.Error.ImagesCleanup;
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

@@ -36,8 +36,12 @@ public class OrderServiceTests : IDisposable
 
         // نحتاج IPasswordHasher لـ CreatePhoneOrder — نستخدم BCrypt الحقيقي
         var passwordHasher = new PasswordHasher();
+        var orderHelper = new OrderHelperService(_unitOfWork);
+        var orderQueryService = new OrderQueryService(_unitOfWork, orderHelper);
+        var orderCommandService = new OrderCommandService(_unitOfWork, passwordHasher);
+        var orderWorkflowService = new OrderWorkflowService(_unitOfWork);
         _orderService = new OrderService(
-            passwordHasher, _unitOfWork);
+            passwordHasher, _unitOfWork, orderQueryService, orderCommandService, orderWorkflowService);
     }
 
     // ─────────────────────────────────────────────
@@ -56,7 +60,7 @@ public class OrderServiceTests : IDisposable
             order.OrderId, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
 
         // Assert
-        result.Should().BeTrue();
+        result.Succeeded.Should().BeTrue();
         var updated = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
         updated!.Status.Should().Be(OrderStatus.Approved);
     }
@@ -664,7 +668,7 @@ public class OrderServiceTests : IDisposable
             callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
 
         // Assert
-        result.Should().BeTrue();
+        result.Succeeded.Should().BeTrue();
         var updated = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
         updated!.Status.Should().Be(OrderStatus.Rejected);
     }
@@ -1114,8 +1118,13 @@ public class OrderServiceTests : IDisposable
 
         // استخدام UnitOfWork الذي يرمي DbUpdateConcurrencyException لمحاكاة التعارض
         var concurrencyUoW = new ConcurrencyTestingUnitOfWork(_context);
+        var passwordHasher = new PasswordHasher();
+        var orderHelper = new OrderHelperService(concurrencyUoW);
+        var orderQueryService = new OrderQueryService(concurrencyUoW, orderHelper);
+        var orderCommandService = new OrderCommandService(concurrencyUoW, passwordHasher);
+        var orderWorkflowService = new OrderWorkflowService(concurrencyUoW);
         var orderService = new OrderService(
-            new PasswordHasher(), concurrencyUoW);
+            passwordHasher, concurrencyUoW, orderQueryService, orderCommandService, orderWorkflowService);
 
         // Act — محاكاة تعارض RowVersion عند حفظ الطلب
         var act = () => orderService.ApproveOrderAsync(

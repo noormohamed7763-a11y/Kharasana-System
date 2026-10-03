@@ -39,6 +39,29 @@ public class FormValidationScriptsTests
     // 1. صفحات النماذج تحمّل السكربت
     // ─────────────────────────────────────────────
 
+    /// <summary>
+    /// أسماء الجزئيات الحاوية لحقول <c>asp-for</c>، مفتوحةً بمجلدها.
+    /// الجزئية تُعرض من صفحة في مجلدها نفسه (لا تُشارَك عبر المجلدات).
+    /// </summary>
+    private static Dictionary<string, HashSet<string>> FormPartialNamesByFolder(IEnumerable<string> views)
+        => views
+            .Where(IsPartial)
+            .Where(file => File.ReadAllText(file).Contains(InputTagHelper, StringComparison.Ordinal))
+            .GroupBy(file => Path.GetDirectoryName(file) ?? string.Empty)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(f => Path.GetFileNameWithoutExtension(f) ?? string.Empty)
+                      .ToHashSet(StringComparer.Ordinal));
+
+    /// <summary>
+    /// هل الصفحة تستضيف نموذج إدخال؟ مباشرةً (<c>asp-for</c> في نصها)
+    /// أو عبر جزئية فيها حقول من مجلدها — كما في صفحات الطلبات المُقسّمة.
+    /// </summary>
+    private static bool HostsFormFields(string file, string text, Dictionary<string, HashSet<string>> partialNamesByFolder)
+        => text.Contains(InputTagHelper, StringComparison.Ordinal)
+           || (partialNamesByFolder.TryGetValue(Path.GetDirectoryName(file)!, out var names)
+               && names.Any(name => text.Contains(name, StringComparison.Ordinal)));
+
     [Fact]
     public void FormViews_LoadTheValidationScriptsPartial()
     {
@@ -48,11 +71,13 @@ public class FormValidationScriptsTests
         // ونجح الاختبار بلا أن يفحص شيئاً.
         views.Should().NotBeEmpty($"{ViewsRoot} يجب أن يحتوي ملفات .cshtml");
 
+        var partialNamesByFolder = FormPartialNamesByFolder(views);
+
         var formViews = views
             .Where(file => !IsPartial(file))
             .Where(file => File.ReadAllText(file) is var text
                            && text.Contains(FormTag, StringComparison.Ordinal)
-                           && text.Contains(InputTagHelper, StringComparison.Ordinal))
+                           && HostsFormFields(file, text, partialNamesByFolder))
             .ToList();
 
         formViews.Should().NotBeEmpty("يوجد في المشروع نماذج إدخال فعلية");

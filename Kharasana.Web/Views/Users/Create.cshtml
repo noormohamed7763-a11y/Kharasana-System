@@ -91,7 +91,9 @@
                         <span class="text-danger">*</span> <i class="bi bi-person-badge me-2"></i>@Html.DisplayNameFor(m => m.Role)
                     </label>
                     <select asp-for="Role" class="form-select"
-                            asp-items="Html.GetEnumSelectList<UserRole>().Where(r => r.Value != ((int)UserRole.None).ToString())">
+                            asp-items="Html.GetEnumSelectList<UserRole>().Where(r => r.Value != ((int)UserRole.None).ToString())"
+                            data-role-driver="@UserRole.Driver"
+                            data-role-employee="@UserRole.FactoryEmployee">
                         <option value="">-- اختر الدور --</option>
                     </select>
                     <span asp-validation-for="Role" class="text-danger small"></span>
@@ -142,31 +144,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-
-    <script nonce="@ViewBag.CspNonce">
-        $(document).ready(function () {
-            function toggleFields(role) {
-                var isDriver = role === '@UserRole.Driver.ToString()';
-                var isEmployee = role === '@UserRole.FactoryEmployee.ToString()';
-
-                $('#licenseNumberGroup').toggle(isDriver);
-                $('#driverStatusGroup').toggle(isDriver);
-                $('#factoryGroup').toggle(isDriver || isEmployee);
-
-                if (isDriver || isEmployee) {
-                    $('#factoryRequired').show();
-                    $('#factoryNote').show();
-                } else {
-                    $('#factoryRequired').hide();
-                    $('#factoryNote').hide();
-                }
-            }
-
-            $('#Role').change(function () {
-                toggleFields($(this).val());
-            });
-
-            toggleFields($('#Role').val());
-        });
-    </script>
+    <script src="~/js/users.js" asp-append-version="true"></script>
 }
