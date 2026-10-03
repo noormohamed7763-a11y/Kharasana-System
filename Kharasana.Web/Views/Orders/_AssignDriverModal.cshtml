@@ -1,0 +1,57 @@
+@model Kharasana.Web.ViewModels.Orders.OrderDto
+@using Kharasana.Web.ViewModels.Shared
+
+@{
+    var availableDrivers = ViewBag.AvailableDrivers as List<LookupDto> ?? new List<LookupDto>();
+}
+
+<div class="modal fade" id="assignDriverModal" tabindex="-1" aria-labelledby="assignDriverModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold" id="assignDriverModalLabel">
+                    <i class="bi bi-truck"></i> تعيين سائق للطلب
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <form data-ajax-assign="true" asp-controller="OrderWorkflow" asp-action="AssignDriver" asp-route-id="@Model.OrderId" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.OrderId" />
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="driverSelect">
+                            اختر السائق <span class="text-danger">*</span>
+                        </label>
+                        <select id="driverSelect" name="DriverId" class="form-select form-select-lg" required>
+                            <option value="">-- اختر سائق --</option>
+                            @if (availableDrivers.Any())
+                            {
+                                foreach (var driver in availableDrivers)
+                                {
+                                    <option value="@driver.Id">@driver.Name</option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="" disabled>لا يوجد سائقون متاحون في المصنع</option>
+                            }
+                        </select>
+                        <small class="text-muted">يعرض فقط السائقين المتاحين في مصنعك</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="truckPlateInput">رقم لوحة الشاحنة</label>
+                        <input id="truckPlateInput" name="TruckPlate" class="form-control form-control-lg" placeholder="اختياري - مثال: س ص ص 1234" />
+                        <small class="text-muted">حقل اختياري - يمكن تركه فارغاً</small>
+                    </div>
+                    <div id="assignMessage" class="alert d-none" role="status" aria-live="polite" aria-atomic="true"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> تعيين
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IImageStorageService, ImageStorageService>();
+        services.AddScoped<IImageCleanupService, ImageCleanupService>();
 
         return services;
     }

@@ -32,7 +32,12 @@ public class OrderConcreteTypeSnapshotTests : IDisposable
     {
         _context = TestDataSeeder.CreateContext();
         _unitOfWork = new UnitOfWork(_context);
-        _orderService = new OrderService(new PasswordHasher(), _unitOfWork);
+        var passwordHasher = new PasswordHasher();
+        var orderHelper = new OrderHelperService(_unitOfWork);
+        var orderQueryService = new OrderQueryService(_unitOfWork, orderHelper);
+        var orderCommandService = new OrderCommandService(_unitOfWork, passwordHasher);
+        var orderWorkflowService = new OrderWorkflowService(_unitOfWork);
+        _orderService = new OrderService(passwordHasher, _unitOfWork, orderQueryService, orderCommandService, orderWorkflowService);
     }
 
     public void Dispose() => _context.Dispose();

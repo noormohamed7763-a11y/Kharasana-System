@@ -52,6 +52,16 @@ namespace Kharasana.Web
                 options.Cookie.SameSite = SameSiteMode.Lax;
             });
 
+            // Authentication & Authorization
+            builder.Services.AddAuthentication("WebCookie")
+                .AddCookie("WebCookie", options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                });
+
+            builder.Services.AddAuthorization();
+
             // HttpContext Accessor
             builder.Services.AddHttpContextAccessor();
 

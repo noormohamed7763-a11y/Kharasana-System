@@ -182,7 +182,7 @@ namespace Kharasana.Web.Controllers
                 }
 
                 var ok = await _ordersApiService.DeleteOrderAsync(id);
-                if (!ok)
+                if (!ok.Succeeded)
                 {
                     TempData[TempDataError] = AppMessages.Error.Deleted;
                 }

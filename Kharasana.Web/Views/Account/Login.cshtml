@@ -65,6 +65,7 @@
                                 <input asp-for="EmailOrPhone"
                                        class="form-control"
                                        placeholder="أدخل البريد الإلكتروني أو رقم الهاتف"
+                                       autocomplete="username"
                                        required />
                             </div>
                             <span asp-validation-for="EmailOrPhone" class="text-danger"></span>
@@ -81,6 +82,7 @@
                                        id="passwordInput"
                                        class="form-control"
                                        placeholder="********"
+                                       autocomplete="current-password"
                                        required />
                                 <button type="button"
                                         id="togglePassword"

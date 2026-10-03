@@ -1,0 +1,23 @@
+<!-- ============================================================
+6. PRICE PREVIEW - معاينة السعر (للقراءة فقط)
+============================================================ -->
+<div class="form-section-title mt-3">
+    <i class="bi bi-currency-dollar"></i>
+    <span>معاينة السعر</span>
+</div>
+
+<div class="row bg-light p-3 rounded-3">
+    <div class="col-md-4 mb-2">
+        <label class="form-label fw-bold text-muted">سعر المتر (ر.ي)</label>
+        <input type="text" class="form-control bg-white" id="unitPricePreview" value="@(ViewBag.UnitPrice?.ToString("N0") ?? "-")" readonly />
+    </div>
+    <div class="col-md-4 mb-2">
+        <label class="form-label fw-bold text-muted">الكمية (م³)</label>
+        <input type="text" class="form-control bg-white" id="quantityPreview" value="@Model.Quantity" readonly />
+    </div>
+    <div class="col-md-4 mb-2">
+        <label class="form-label fw-bold text-primary">الإجمالي (ر.ي)</label>
+        <input type="text" class="form-control bg-white text-primary fw-bold" id="totalPricePreview" readonly />
+    </div>
+</div>
+<small class="text-muted mt-2 d-block">يتم تحديث الإجمالي تلقائياً عند تغيير الكمية</small>

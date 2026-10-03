@@ -116,6 +116,9 @@ public static class AppMessages
             "تم إنشاء الطلب وإنشاء حساب للعميل. سلّم العميل البيانات التالية الآن — لن تُعرض كلمة المرور مرة أخرى: " +
             "الهاتف: {0} | كلمة المرور المؤقتة: {1}";
 
+        /// <summary>تنظيف ملفات الصور اليتيمة من صفحة الإعدادات. {0} = عدد الملفات المحذوفة.</summary>
+        public const string ImagesCleaned = "تم تنظيف ملفات الصور اليتيمة: حُذف {0} ملف.";
+
         // ——— المستخدمون
         public const string UserCreated = "تم إنشاء المستخدم بنجاح.";
         public const string UserUpdated = "تم تحديث المستخدم بنجاح.";
@@ -208,6 +211,9 @@ public static class AppMessages
 
         // ——— التقارير
         public const string ReportsLoad = "تعذر تحميل بيانات التقارير.";
+
+        // ——— تنظيف الصور
+        public const string ImagesCleanup = "تعذر تنظيف ملفات الصور. حاول مرة أخرى.";
     }
 
     /// <summary>رسائل التحقق من صحة الإدخال.</summary>

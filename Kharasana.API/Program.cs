@@ -196,7 +196,15 @@ public class Program
             .AddDbContextCheck<KharasanaDbContext>();
 
         // Controllers
-        builder.Services.AddControllers();
+        builder.Services.AddControllers(options =>
+        {
+            options.Filters.Add<GlobalValidationActionFilter>();
+        });
+
+                // تسجيل الفلتر الخاص (لضمان توافق المتحكمات القديمة)
+        builder.Services.AddScoped(typeof(ValidationFilter<>));
+
+
 
         // توحيد شكل خطأ 400: فلتر [ApiController] المدمج يعمل بترتيب -2000 (قبل فلتر
         // FluentValidation) فيردّ ValidationProblemDetails بصيغة RFC 7807 بلا حقل message،
@@ -209,9 +217,8 @@ public class Program
                 context => ApiErrorResponseFactory.FromModelState(context.ModelState);
         });
 
-        // تسجيل الفلتر العام للتحقق كخدمة مفتوحة النوع —
-        // يُحقن IValidator<T> تلقائياً عند الاستخدام عبر [ServiceFilter(typeof(ValidationFilter<T>))]
-        builder.Services.AddScoped(typeof(ValidationFilter<>));
+        // تسجيل الفلتر العام للتحقق كخدمة مفتوحة النوع — يُحقن IValidator<T> تلقائياً عند الاستخدام عبر [ServiceFilter(typeof(ValidationFilter<T>))]
+        // builder.Services.AddScoped(typeof(ValidationFilter<>));
 
         // Response Compression — تقليل حجم الاستجابات
         builder.Services.AddResponseCompression(options =>

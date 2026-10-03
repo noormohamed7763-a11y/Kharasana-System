@@ -12,7 +12,7 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         // SAVE PRICE - حفظ سعر المتر
         // ============================================================
-        public async Task<bool> SavePriceAsync(int id, decimal unitPrice)
+        public async Task<ServiceResult> SavePriceAsync(int id, decimal unitPrice)
         {
             _logger.LogInformation("حفظ سعر الطلب {Id}: {UnitPrice}", id, unitPrice);
 
@@ -26,7 +26,7 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         // APPROVE ORDER - موافقة العميل على الطلب
         // ============================================================
-        public async Task<bool> ApproveOrderAsync(int id)
+        public async Task<ServiceResult> ApproveOrderAsync(int id)
         {
             _logger.LogInformation("اعتماد الطلب {Id}", id);
 
@@ -40,7 +40,7 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         // REJECT ORDER - رفض الطلب مع سبب (اختياري)
         // ============================================================
-        public async Task<bool> RejectOrderAsync(int id, string? reason)
+        public async Task<ServiceResult> RejectOrderAsync(int id, string? reason)
         {
             _logger.LogInformation("رفض الطلب {Id}. السبب: {Reason}", id, reason ?? "بلا سبب");
 
@@ -54,7 +54,7 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         // CANCEL ORDER - إلغاء الطلب
         // ============================================================
-        public async Task<bool> CancelOrderAsync(int id)
+        public async Task<ServiceResult> CancelOrderAsync(int id)
         {
             _logger.LogInformation("إلغاء الطلب {Id}", id);
 
@@ -68,7 +68,7 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         // START DELIVERY - بدء التوصيل
         // ============================================================
-        public async Task<bool> StartDeliveryAsync(int id)
+        public async Task<ServiceResult> StartDeliveryAsync(int id)
         {
             _logger.LogInformation("بدء توصيل الطلب {Id}", id);
 
@@ -82,7 +82,7 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         // DELIVER ORDER - تم تسليم الطلب
         // ============================================================
-        public async Task<bool> DeliverOrderAsync(int id)
+        public async Task<ServiceResult> DeliverOrderAsync(int id)
         {
             _logger.LogInformation("تسجيل تسليم الطلب {Id}", id);
 
@@ -96,7 +96,7 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         // CLOSE ORDER - إغلاق الطلب
         // ============================================================
-        public async Task<bool> CloseOrderAsync(int id)
+        public async Task<ServiceResult> CloseOrderAsync(int id)
         {
             _logger.LogInformation("إغلاق الطلب {Id}", id);
 
@@ -110,7 +110,7 @@ namespace Kharasana.Web.Services.Api
         // ============================================================
         // ASSIGN DRIVER - تعيين سائق
         // ============================================================
-        public async Task<bool> AssignDriverAsync(int id, AssignDriverViewModel model)
+        public async Task<ServiceResult> AssignDriverAsync(int id, AssignDriverViewModel model)
         {
             _logger.LogInformation("إسناد سائق للطلب {Id}", id);
 

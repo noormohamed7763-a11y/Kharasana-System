@@ -30,19 +30,19 @@
 
                 <div class="col-md-6 mb-3">
                     <label asp-for="Email" class="form-label fw-bold"><i class="bi bi-envelope me-2"></i>البريد الإلكتروني</label>
-                    <input asp-for="Email" class="form-control" autocomplete="email" />
+                    <input asp-for="Email" type="email" class="form-control" autocomplete="email" />
                     <span asp-validation-for="Email" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6 mb-3">
                     <label asp-for="Phone" class="form-label fw-bold"><i class="bi bi-telephone me-2"></i>رقم الهاتف</label>
-                    <input asp-for="Phone" class="form-control" autocomplete="tel" />
+                    <input asp-for="Phone" type="tel" class="form-control" autocomplete="tel" />
                     <span asp-validation-for="Phone" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6 mb-3">
                     <label asp-for="WhatsApp" class="form-label fw-bold"><i class="bi bi-whatsapp me-2"></i>رقم الواتساب</label>
-                    <input asp-for="WhatsApp" class="form-control" autocomplete="tel" />
+                    <input asp-for="WhatsApp" type="tel" class="form-control" autocomplete="tel" />
                     <span asp-validation-for="WhatsApp" class="text-danger"></span>
                 </div>
 

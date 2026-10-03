@@ -1,5 +1,6 @@
 using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
+using Kharasana.Web.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Kharasana.Web.Services.Api
@@ -32,7 +33,7 @@ namespace Kharasana.Web.Services.Api
         /// <param name="successDetail">تفاصيل رسالة النجاح، بلا بادئة النجاح.</param>
         /// <param name="call">نداء الـ API الفعلي (يُنفَّذ داخل try ليشمل الشبكة والتسلسل).</param>
         /// <param name="id">معرّف الطلب — للتسجيل فقط.</param>
-        private async Task<bool> ExecuteOrderActionAsync(
+        private async Task<ServiceResult> ExecuteOrderActionAsync(
             string operation,
             string successDetail,
             Func<Task<ApiResponse<object>?>> call,
@@ -45,23 +46,23 @@ namespace Kharasana.Web.Services.Api
                 if (response == null)
                 {
                     _logger.LogWarning("{Operation}: ردّ الـ API فارغ للمعرّف {Id}", operation, id);
-                    return false;
+                    return ServiceResult.Fail(AppMessages.Common.OperationFailed);
                 }
 
                 if (!response.Success)
                 {
                     _logger.LogWarning("فشل {Operation} للمعرّف {Id}. الرسالة: {Message}", operation, id, response.Message);
-                    return false;
+                    return ServiceResult.Fail(response.Message);
                 }
 
                 _logger.LogInformation("{Operation}: {Detail}", operation, successDetail);
-                return true;
+                return ServiceResult.Ok(successDetail);
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "استثناء في {Operation} للمعرّف {Id}: {Message}", operation, id, ex.Message);
-                return false;
+                return ServiceResult.Fail(AppMessages.Common.OperationFailed);
             }
         }
     }

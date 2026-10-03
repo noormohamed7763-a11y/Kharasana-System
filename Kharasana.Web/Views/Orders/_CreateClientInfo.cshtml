@@ -1,0 +1,30 @@
+@model Kharasana.Web.ViewModels.Orders.CreatePhoneOrderViewModel
+
+<!-- ============================================================
+1. CLIENT INFO - معلومات العميل
+============================================================ -->
+<div class="form-section-title">
+    <i class="bi bi-person-circle"></i>
+    <span>معلومات العميل</span>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="ClientPhone" class="form-label fw-bold">
+            <i class="bi bi-telephone me-2"></i> رقم الهاتف
+            <span class="text-danger">*</span>
+        </label>
+        <input asp-for="ClientPhone" class="form-control" placeholder="مثال: 771234567" dir="ltr" autocomplete="tel" />
+        <span asp-validation-for="ClientPhone" class="text-danger"></span>
+        <small class="text-muted">رقم هاتف العميل (إلزامي)</small>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label asp-for="ClientFullName" class="form-label fw-bold">
+            <i class="bi bi-person me-2"></i> الاسم الكامل للعميل
+        </label>
+        <input asp-for="ClientFullName" class="form-control" placeholder="اختياري - يُملأ إذا كان العميل جديداً" />
+        <span asp-validation-for="ClientFullName" class="text-danger"></span>
+        <small class="text-muted">مطلوب فقط عند إنشاء عميل جديد</small>
+    </div>
+</div>

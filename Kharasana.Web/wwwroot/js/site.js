@@ -3,6 +3,7 @@
 // ==========================
 (function () {
     let pendingForm = null;
+    let pendingButton = null;
     let confirmModal = null;
 
     function ensureModal() {
@@ -32,6 +33,7 @@
 
         modal.addEventListener('hidden.bs.modal', function () {
             pendingForm = null;
+            pendingButton = null;
         });
 
         document.getElementById('confirmModalYes').addEventListener('click', function () {
@@ -39,6 +41,15 @@
             if (pendingForm) {
                 pendingForm.submit();
                 pendingForm = null;
+            } else if (pendingButton) {
+                // ✅ تنفيذ مؤجل لزر [data-confirm]: النقر الأول فتح الـ Modal،
+                //    وهذا النقر (من داخل الـ Modal) يُنفّذ الإجراء. العلامة
+                //    __confirming تمنع إعادة فتح الـ Modal في نفس الزر.
+                const btn = pendingButton;
+                pendingButton = null;
+                btn.dataset.confirming = 'true';
+                btn.click();
+                delete btn.dataset.confirming;
             }
         });
     }
@@ -50,8 +61,26 @@
         e.preventDefault();
         const message = form.getAttribute('data-confirm');
         pendingForm = form;
+        pendingButton = null;
         ensureModal();
         document.getElementById('confirmModalBody').textContent = message || 'هل أنت متأكد؟';
+        confirmModal.show();
+    }, true);
+
+    // أزرار [data-confirm]: النقر الأول يفتح الـ Modal بدل confirm()،
+    // والنقر الثاني (من زر «تأكيد» في الـ Modal) يُكمل الإجراء الأصلي.
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest ? e.target.closest('button[data-confirm]') : null;
+        if (!btn) return;
+        if (btn.dataset.confirming === 'true') return; // نقر التأكيد من داخل الـ Modal
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingForm = null;
+        pendingButton = btn;
+        ensureModal();
+        document.getElementById('confirmModalBody').textContent =
+            btn.getAttribute('data-confirm') || 'هل أنت متأكد؟';
         confirmModal.show();
     }, true);
 })();

@@ -17,13 +17,22 @@ public partial class OrderService : IOrderService
 {
     private readonly IPasswordHasher _passwordHasher;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOrderQueryService _orderQueryService;
+    private readonly IOrderCommandService _orderCommandService;
+    private readonly IOrderWorkflowService _orderWorkflowService;
 
     public OrderService(
         IPasswordHasher passwordHasher,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IOrderQueryService orderQueryService,
+        IOrderCommandService orderCommandService,
+        IOrderWorkflowService orderWorkflowService)
     {
         _passwordHasher = passwordHasher;
         _unitOfWork = unitOfWork;
+        _orderQueryService = orderQueryService;
+        _orderCommandService = orderCommandService;
+        _orderWorkflowService = orderWorkflowService;
     }
 
     // ============================================================

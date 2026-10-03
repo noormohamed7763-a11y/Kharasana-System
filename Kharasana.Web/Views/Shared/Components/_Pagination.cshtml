@@ -5,7 +5,7 @@
     var currentPage = Model.CurrentPage;
     var pageCount = Model.TotalPages;
 
-    <nav class="mt-4" aria-label="Page navigation">
+    <nav class="mt-4" aria-label="التنقل بين الصفحات">
         <ul class="pagination justify-content-center">
             @if (currentPage > 1)
             {
@@ -48,7 +48,8 @@
                     pRouteData["pageNumber"] = p.ToString();
                     pRouteData["pageSize"] = Model.PageSize.ToString();
 
-                    <li class="page-item @(p == currentPage ? "active" : "")">
+                    <li class="page-item @(p == currentPage ? "active" : "")"
+                        @(p == currentPage ? "aria-current=\"page\"" : "")>
                         <a class="page-link"
                            asp-action="@Model.AspAction"
                            asp-all-route-data="pRouteData">@p</a>

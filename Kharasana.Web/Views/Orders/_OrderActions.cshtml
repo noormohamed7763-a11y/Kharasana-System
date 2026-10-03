@@ -1,0 +1,110 @@
+@model Kharasana.Web.ViewModels.Orders.OrderDto
+@using Kharasana.Domain.Enums
+
+@{
+    // الدور والمصنع يُقرآن من الجلسة عبر ViewBag (لا يوجد ClaimsPrincipal في هذا التطبيق)
+    var factoryId = ViewBag.FactoryId ?? 0;
+    var isOrderFactory = ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId;
+    var isAdmin = ViewBag.UserRole == Roles.Admin;
+    var isDriver = ViewBag.UserRole == Roles.Driver;
+    var canManage = isOrderFactory || isAdmin;
+
+    // ✅ التأكيد عبر Modal الموحد (site.js) بدل confirm() — كل زر يحمل
+    //    data-confirm فالنقرة الأولى تفتح الـ Modal، والثانية تُنفّذ الإجراء.
+}
+
+@* منطقة إعلان نتائج الإجراءات — aria-live يُخبر القارئ الصوتيّ
+    بنجاح العملية أو فشلها دون إعادة تحميل الصفحة (تحديث AJAX) *@
+<div id="actionMessage" class="alert d-none" role="status" aria-live="polite" aria-atomic="true"></div>
+<div class="action-buttons-container">
+
+    <!-- Primary Action - الإجراء الرئيسي -->
+    @if (canManage && Model.Status == OrderStatus.Pending && Model.UnitPrice > 0)
+    {
+        <button class="btn btn-success btn-lg action-primary" data-action="approve" data-order-id="@Model.OrderId"
+                data-confirm="هل أنت متأكد من موافقة العميل على هذا الطلب؟">
+            <i class="bi bi-check-circle"></i> قبول الطلب
+        </button>
+        <small class="text-muted d-block mb-3">قبول الطلب من قبل المصنع بعد المراجعة</small>
+    }
+
+    <!-- Secondary Actions - الإجراءات الثانوية (مجمعة) -->
+    <div class="action-secondary-group">
+        @* الرفض متاح للمدير ولموظف مصنع الطلب نفسه فقط — مطابقةً لصلاحية API Reject *@
+        @if (canManage && (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending))
+        {
+            <button class="btn btn-outline-danger" data-action="reject" data-order-id="@Model.OrderId"
+                    data-confirm="هل أنت متأكد من رفض هذا الطلب؟">
+                <i class="bi bi-x-circle"></i> رفض الطلب
+            </button>
+        }
+
+        @if (Model.Status is not (OrderStatus.Rejected or OrderStatus.Cancelled or OrderStatus.Delivered or OrderStatus.Closed))
+        {
+            <button class="btn btn-outline-warning" data-action="cancel" data-order-id="@Model.OrderId"
+                    data-confirm="⚠️ هل أنت متأكد من إلغاء هذا الطلب؟">
+                <i class="bi bi-ban"></i> إلغاء الطلب
+            </button>
+        }
+
+        @if (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.OrderId" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> تعديل
+            </a>
+        }
+
+        @if (isAdmin)
+        {
+            <form asp-action="Delete" method="post" class="d-inline"
+                  data-ajax-delete="true"
+                  data-confirm="⚠️ هل أنت متأكد من حذف هذا الطلب؟">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.OrderId" />
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="bi bi-trash"></i> حذف
+                </button>
+            </form>
+        }
+    </div>
+
+    <!-- Delivery Actions - إجراءات التوصيل (مجموعة منفصلة) -->
+    @if (canManage || isDriver ||
+         Model.Status == OrderStatus.Approved || Model.Status == OrderStatus.OnTheWay || Model.Status == OrderStatus.Delivered)
+    {
+        <div class="action-delivery-group">
+            @if (canManage && Model.Status == OrderStatus.Approved && Model.DriverId == null && Model.TransportMethod == TransportMethod.FactoryTransport)
+            {
+                <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#assignDriverModal">
+                    <i class="bi bi-truck"></i> تعيين سائق
+                </button>
+            }
+
+            @if ((canManage || isDriver) && Model.Status == OrderStatus.Approved && Model.DriverId != null)
+            {
+                <button class="btn btn-primary" data-action="start-delivery" data-order-id="@Model.OrderId"
+                        data-confirm="هل أنت متأكد من بدء التوصيل؟">
+                    <i class="bi bi-play-circle"></i> بدء التوصيل
+                </button>
+            }
+
+            @if ((canManage || isDriver) && Model.Status == OrderStatus.OnTheWay)
+            {
+                <button class="btn btn-success" data-action="deliver" data-order-id="@Model.OrderId"
+                        data-confirm="هل أنت متأكد من تسليم الطلب؟">
+                    <i class="bi bi-check2-circle"></i> تم التسليم
+                </button>
+            }
+
+            @* الإغلاق متاح للمدير ولموظف مصنع الطلب نفسه فقط — مطابقةً لصلاحية API Close *@
+            @if (canManage && Model.Status == OrderStatus.Delivered)
+            {
+                <button class="btn btn-secondary" data-action="close" data-order-id="@Model.OrderId"
+                        data-confirm="هل أنت متأكد من إغلاق هذا الطلب؟">
+                    <i class="bi bi-lock"></i> إغلاق الطلب
+                </button>
+            }
+        </div>
+    }
+
+</div>

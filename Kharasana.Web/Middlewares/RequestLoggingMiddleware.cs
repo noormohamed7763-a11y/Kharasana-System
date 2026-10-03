@@ -16,6 +16,7 @@ public sealed class RequestLoggingMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<RequestLoggingMiddleware> _logger;
     private readonly HashSet<string> _staticExtensions;
+    private const int SlowRequestThresholdMs = 1000;
 
     public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
     {
@@ -66,6 +67,13 @@ public sealed class RequestLoggingMiddleware
             // حالة لم يقم أحد برفع استثناء لها صراحة (مثل خطأ من وسيط آخر دون throw)
             _logger.LogWarning(
                 "انتهى الطلب بخطأ خادم: {Method} {Path} ← {StatusCode} بعد {DurationMs} مللي ثانية (التتبّع={TraceId})",
+                method, path, statusCode, sw.ElapsedMilliseconds, traceId);
+        }
+        else if (sw.ElapsedMilliseconds > SlowRequestThresholdMs)
+        {
+            // تنبيه للطلبات البطيئة — تساعد على تحديد اختناقات الأداء
+            _logger.LogWarning(
+                "طلب بطيء: {Method} {Path} ← {StatusCode} بعد {DurationMs} مللي ثانية (التتبّع={TraceId})",
                 method, path, statusCode, sw.ElapsedMilliseconds, traceId);
         }
         else

@@ -16,6 +16,11 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IConcreteTypeService, ConcreteTypeService>();
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IOrderQueryService, OrderQueryService>();
+        services.AddScoped<IOrderCommandService, OrderCommandService>();
+        services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
+        services.AddScoped<IOrderHelperService, OrderHelperService>();
+        services.AddScoped<IOrderHelperService, OrderHelperService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IReportService, ReportService>();
 

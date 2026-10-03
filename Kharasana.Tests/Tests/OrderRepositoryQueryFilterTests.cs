@@ -163,7 +163,15 @@ public class OrderRepositoryQueryFilterTests : IDisposable
     {
         await SeedOrderGraphAsync(concreteTypeDeleted: true);
 
-        IOrderService service = new OrderService(new PasswordHasher(), new UnitOfWork(_context));
+        var uow = new UnitOfWork(_context);
+        var passwordHasher = new PasswordHasher();
+        var orderHelper = new OrderHelperService(uow);
+        IOrderService service = new OrderService(
+            passwordHasher,
+            uow,
+            new OrderQueryService(uow, orderHelper),
+            new OrderCommandService(uow, passwordHasher),
+            new OrderWorkflowService(uow));
 
         var result = await service.GetPagedAsync(
             factoryId: null, clientId: null, driverId: null,

@@ -1,0 +1,68 @@
+<!-- ============================================================
+DESKTOP STICKY ESTIMATOR PANEL - حاسبة وملخص التكلفة لشاشات الكمبيوتر
+(لا نموذج: عناصرها كلها بلا قيمة أولية — تُحدَّث من سكريبت الصفحة)
+============================================================ -->
+<div class="col-lg-4 col-xl-4">
+    <div class="order-estimator-sticky">
+        <div class="estimator-header">
+            <h5 class="estimator-title">
+                <i class="bi bi-calculator-fill"></i>
+                ملخص وتكلفة الطلب
+            </h5>
+            <span class="estimator-badge">حساب فوري</span>
+        </div>
+
+        <div class="estimator-body">
+            <div class="estimator-row">
+                <span class="estimator-label"><i class="bi bi-person me-1"></i> العميل:</span>
+                <span class="estimator-value estimator-value--clamp text-truncate" id="summaryClientName">لم يُحدد بعد</span>
+            </div>
+
+            <div class="estimator-row">
+                <span class="estimator-label"><i class="bi bi-box-seam me-1"></i> الصنف:</span>
+                <span class="estimator-value estimator-value--clamp text-truncate" id="summaryConcreteName">-- اختر النوع --</span>
+            </div>
+
+            <div class="estimator-row">
+                <span class="estimator-label"><i class="bi bi-tag me-1"></i> سعر المتر:</span>
+                <span class="estimator-value" id="summaryUnitPrice">-</span>
+            </div>
+
+            <div class="estimator-row">
+                <span class="estimator-label"><i class="bi bi-rulers me-1"></i> الكمية:</span>
+                <span class="estimator-value" id="summaryQuantity">-</span>
+            </div>
+
+            <div class="estimator-row">
+                <span class="estimator-label"><i class="bi bi-truck me-1"></i> النقل:</span>
+                <span class="estimator-value" id="summaryTransport">نقل المصنع</span>
+            </div>
+
+            <div class="estimator-row">
+                <span class="estimator-label"><i class="bi bi-water me-1"></i> المضخة:</span>
+                <span class="estimator-value" id="summaryPump">لا</span>
+            </div>
+        </div>
+
+        <!-- إجمالي التكلفة التقديرية للخرسانة -->
+        <div class="estimator-total-box">
+            <div class="estimator-total-label">تكلفة الخرسانة التقديرية</div>
+            <div class="estimator-total-amount" id="summaryTotalAmount">0 <small style="font-size: 0.9rem; font-weight: normal;">ر.ي</small></div>
+        </div>
+
+        <div class="estimator-note">
+            <i class="bi bi-info-circle me-1"></i>
+            الحساب فوري ومبني على سعر المتر للصنف والكمية المحددة. قد تُضاف تكلفة النقل أو المضخة بالاتفاق.
+        </div>
+
+        <!-- أزرار الإجراء السريع في اللوحة الثابتة -->
+        <div class="estimator-actions">
+            <button type="submit" class="btn btn-primary btn-lg shadow-sm" id="stickySubmitBtn">
+                <i class="bi bi-check-circle"></i> إنشاء الطلب الآن
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right"></i> إلغاء والعودة
+            </a>
+        </div>
+    </div>
+</div><!-- /.col-lg-4 -->

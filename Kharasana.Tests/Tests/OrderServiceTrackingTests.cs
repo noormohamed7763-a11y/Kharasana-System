@@ -35,7 +35,13 @@ public class OrderServiceTrackingTests : IDisposable
     {
         _seedContext = TestDataSeeder.CreateContext(_dbName);
         _context = TestDataSeeder.CreateContext(_dbName);
-        _orderService = new OrderService(new PasswordHasher(), new UnitOfWork(_context));
+        var passwordHasher = new PasswordHasher();
+        var uow = new UnitOfWork(_context);
+        var orderHelper = new OrderHelperService(uow);
+        var orderQueryService = new OrderQueryService(uow, orderHelper);
+        var orderCommandService = new OrderCommandService(uow, passwordHasher);
+        var orderWorkflowService = new OrderWorkflowService(uow);
+        _orderService = new OrderService(passwordHasher, uow, orderQueryService, orderCommandService, orderWorkflowService);
     }
 
     /// <summary>
