@@ -96,8 +96,14 @@ public static class ValidationRules
 
     /// <summary>
     /// عنوان المصنع: مطلوب وسقفه 300.
-    /// <b>ملاحظة:</b> العمود (<c>FactoryConfiguration.Address</c>) يسع 500 — السقف 300
-    /// هو السلوك القائم منذ البداية ولم يُغيَّر هنا (تضييق مقصود أو سهو، يحتاج قراراً).
+    /// <b>سقف مزدوج مقصود (بقرار 2026-10-03):</b> العمود
+    /// (<c>FactoryConfiguration.Address</c>) يسع 500 والسقف هنا 300،
+    /// ولا يُوحَّدان بقصد. المُدقّق هو خط الدفاع الأول برسالة ودّية
+    /// (300 حرف عربي ≈ 150 كلمة — أكثر من أي عنوان مصنع عمليًا)،
+    /// والعمود 500 سعة احتياطية لا تُصل إليها المسارات الرسمية.
+    /// تضييق العمود إلى 300 يحتاج <c>ALTER COLUMN</c> يفشل إن وُجد
+    /// عنوان أطول في بيانات تشغيلية — والاتصال غير متاح هنا لفحصها
+    /// — فالمكسب الصفري لا يبرّر المخاطرة.
     /// </summary>
     public static IRuleBuilderOptions<T, string?> FactoryAddress<T>(this IRuleBuilder<T, string?> builder)
         => builder.RequiredCappedAt(300, Messages.FactoryAddressRequired, Messages.FactoryAddressMaxLength);
