@@ -105,7 +105,10 @@ public class FactoryService : IFactoryService
         factory.Latitude = dto.Latitude;
         factory.Longitude = dto.Longitude;
         // ⚠️ لا نعدل factory.Logo هنا إطلاقاً — إدارة الشعار أصبحت مسؤولية UploadLogoAsync/DeleteLogoAsync فقط
-        factory.IsActive = dto.IsActive;
+        // IsActive قابل للقيم الفارغة: يُعدَّل فقط حين يُرسَل صراحةً، وإلا تبقى
+        // الحالة الحالية — جسمًا بلا isActive كان يُوقف المصنع صامتًا (فخ عقد الـAPI).
+        if (dto.IsActive.HasValue)
+            factory.IsActive = dto.IsActive.Value;
         factory.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Factories.Update(factory);
