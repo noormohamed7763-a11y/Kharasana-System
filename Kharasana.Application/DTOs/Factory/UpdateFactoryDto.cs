@@ -22,5 +22,13 @@ public class UpdateFactoryDto
 
     public string? Logo { get; set; }
 
-    public bool IsActive { get; set; }
+    /// <summary>
+    /// تشغيل/إيقاف المصنع — <b>يُعدَّل فقط حين يُرسَل صراحةً</b>.
+    /// كان <c>bool</c> غير قابل للقيم الفارغة: جسم PUT لا يحوي <c>isActive</c>
+    /// (أو يحمله <c>null</c> في JSON) كان يُسند <c>false</c> فيُوقف المصنع
+    /// <b>صامتًا</b> دون قصد. الويب سليم لأن الـcheckbox يُرسله دائمًا،
+    /// لكن عقد الـAPI كان فخًا لكل مستدعٍ آخر. الآن <c>null</c> = إبقاء
+    /// الحالة الحالية دون تغيير.
+    /// </summary>
+    public bool? IsActive { get; set; }
 }

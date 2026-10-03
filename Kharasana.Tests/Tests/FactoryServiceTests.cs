@@ -250,6 +250,63 @@ public class FactoryServiceTests : IDisposable
     }
 
     /// <summary>
+    /// تحديث بلا <c>IsActive</c> لا يوقف المصنع صامتًا.
+    ///
+    /// <para><b>العلّة التي يمنعها:</b> كان <c>UpdateFactoryDto.IsActive</c>
+    /// <c>bool</c> غير قابل للقيم الفارغة، فيُسند <c>false</c> افتراضيًا —
+    /// فجسم PUT لا يحوي <c>isActive</c> (أو يحمله <c>null</c> في JSON) كان
+    /// يُوقف المصنع <b>دون قصد</b>. جعله <c>bool?</c> يجعل الغياب = إبقاء
+    /// الحالة الحالية، ويُعدَّل الحقل فقط حين يُرسَل صراحةً.</para>
+    /// </summary>
+    [Fact]
+    public async Task Update_WithoutIsActive_KeepsTheCurrentActivation()
+    {
+        // Arrange — مصنع نشط
+        _context.Factories.Add(TestDataSeeder.CreateFactory(80, "مصنع_نشط"));
+        await _context.SaveChangesAsync();
+
+        // Act — جسم لا يحوي IsActive إطلاقًا
+        var result = await _service.UpdateAsync(80, new UpdateFactoryDto
+        {
+            FactoryName = "مصنع_نشط",
+            Area = "صنعاء",
+            Address = "شارع جديد"
+        });
+
+        // Assert — نجح التعديل وبقي المصنع نشطًا
+        result.Should().BeTrue();
+
+        var stored = await _context.Factories.AsNoTracking().FirstAsync(f => f.FactoryId == 80);
+        stored.IsActive.Should().BeTrue("جسم بلا isActive لا يجوز أن يوقف المصنع صامتًا");
+        stored.Area.Should().Be("صنعاء");
+    }
+
+    /// <summary>
+    /// إرسال <c>IsActive = false</c> صراحةً يوقف المصنع فعلاً —
+    /// الإصلاح لا يُفقد الوظيفة، بل يمنع الإيقاف <b>غير المقصود</b> فقط.
+    /// </summary>
+    [Fact]
+    public async Task Update_WithIsActiveFalse_StopsTheFactory()
+    {
+        // Arrange
+        _context.Factories.Add(TestDataSeeder.CreateFactory(81, "مصنع_سيتوقف"));
+        await _context.SaveChangesAsync();
+
+        // Act
+        await _service.UpdateAsync(81, new UpdateFactoryDto
+        {
+            FactoryName = "مصنع_سيتوقف",
+            Area = "عدن",
+            Address = "شارع جديد",
+            IsActive = false
+        });
+
+        // Assert
+        var stored = await _context.Factories.AsNoTracking().FirstAsync(f => f.FactoryId == 81);
+        stored.IsActive.Should().BeFalse("إرسال false صريح يجب أن يوقف المصنع");
+    }
+
+    /// <summary>
     /// رفع شعار مرفوض لا يجوز أن يمحو الشعار القائم.
     ///
     /// <para><b>العلّة التي يمنعها:</b> كان <c>UploadLogoAsync</c> يحذف ملف الشعار القديم
