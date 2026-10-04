@@ -283,6 +283,8 @@ namespace Kharasana.Infrastructure.Migrations
 
                     b.HasIndex("Status");
 
+                    b.HasIndex("FactoryId", "CreatedAt");
+
                     b.HasIndex("FactoryId", "Status");
 
                     b.ToTable("Orders", (string)null);

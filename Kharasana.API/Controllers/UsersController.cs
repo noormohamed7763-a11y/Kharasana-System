@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Kharasana.API.Common;
 using Kharasana.API.Extensions;
 using Kharasana.Application.Common;
@@ -23,7 +24,8 @@ namespace Kharasana.API.Controllers;
 /// تُعيد فحص الدور بنفسها (دفاع في العمق).</para>
 /// </remarks>
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Authorize] // حد أدنى: توكن صالح
 public class UsersController : ControllerBase
 {

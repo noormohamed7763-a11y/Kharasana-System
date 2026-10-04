@@ -1,4 +1,5 @@
-﻿using Kharasana.API.Common;
+﻿using Asp.Versioning;
+using Kharasana.API.Common;
 using Kharasana.API.Extensions;
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
@@ -14,7 +15,8 @@ namespace Kharasana.API.Controllers;
 /// لا يوجد أي إمكانية لتعديل بيانات المصنع الأساسية هنا؛ هذا من صلاحيات Admin فقط عبر FactoriesController.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Authorize(Roles = Roles.FactoryEmployee)]
 public class SettingsController : ControllerBase
 {

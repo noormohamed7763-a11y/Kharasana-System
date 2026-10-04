@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Kharasana.API.Common;
 using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Report;
@@ -11,7 +12,8 @@ namespace Kharasana.API.Controllers;
 /// تقارير الطلبات الإحصائية — مخصصة لدور Admin فقط.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Authorize(Roles = Roles.Admin)]
 public class ReportsController : ControllerBase
 {

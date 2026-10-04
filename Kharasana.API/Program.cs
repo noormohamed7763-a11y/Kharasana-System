@@ -1,3 +1,5 @@
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Kharasana.API.Common;
 using Kharasana.API.Middlewares;
 using Kharasana.Application;
@@ -74,6 +76,19 @@ public class Program
         // Register Layers
         builder.Services.AddApplication();
         builder.Services.AddInfrastructure(builder.Configuration);
+
+        // Add API Versioning
+        builder.Services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionReader = new Asp.Versioning.UrlSegmentApiVersionReader();
+        }).AddMvc().AddApiExplorer(options =>
+        {
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
 
         // ============================================================
         // 2. JWT Authentication — مع فحص صارم على المفتاح المُعرَّف
