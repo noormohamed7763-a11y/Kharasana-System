@@ -1,5 +1,4 @@
-using Kharasana.Application.Common;
-using Kharasana.Application.DTOs.Order;
+using Kharasana.Web.DTOs.Order;
 using Kharasana.Domain.Enums;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
@@ -376,9 +375,5 @@ namespace Kharasana.Web.Controllers
         // ============================================================
         // DTOs
         // ============================================================
-        public class SavePriceDto
-        {
-            public decimal UnitPrice { get; set; }
-        }
     }
 }

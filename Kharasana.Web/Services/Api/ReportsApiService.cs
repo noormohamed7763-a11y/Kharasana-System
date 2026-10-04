@@ -1,7 +1,6 @@
 using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Reports;
-using Kharasana.Application.DTOs.Report;
 using Microsoft.Extensions.Logging;
 
 namespace Kharasana.Web.Services.Api;

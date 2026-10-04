@@ -128,9 +128,9 @@
     @await Html.PartialAsync("~/Views/Shared/Components/_Pagination.cshtml", new PaginationViewModel
     {
         CurrentPage = Model.PageNumber,
-        TotalPages = (int)Math.Ceiling(Model.PagedDrivers.TotalCount / (double)Model.PageSize),
+        TotalPages = Model.PagedDrivers != null ? (int)Math.Ceiling(Model.PagedDrivers.TotalCount / (double)Model.PageSize) : 0,
         PageSize = Model.PageSize,
-        TotalCount = Model.PagedDrivers.TotalCount,
+        TotalCount = Model.PagedDrivers?.TotalCount ?? 0,
         RouteValues = new Dictionary<string, string>
         {
             { "search", Model.Search ?? string.Empty }
