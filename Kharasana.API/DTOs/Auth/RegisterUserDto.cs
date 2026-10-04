@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Kharasana.Application.Common;
 using Kharasana.Domain.Validation;
 
-namespace Kharasana.Application.DTOs.Auth;
+namespace Kharasana.API.DTOs.Auth;
 
 public class RegisterUserDto
 {

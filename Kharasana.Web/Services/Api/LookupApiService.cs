@@ -1,8 +1,8 @@
 using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Shared;
-using Kharasana.Application.DTOs.ConcreteType;
-using Kharasana.Application.DTOs.User;
+using Kharasana.Web.ViewModels.ConcreteTypes;
+using Kharasana.Web.ViewModels.Users;
 using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
 

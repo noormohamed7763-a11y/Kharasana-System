@@ -1,4 +1,4 @@
-namespace Kharasana.Application.DTOs.Auth;
+namespace Kharasana.API.DTOs.Auth;
 
 public class LoginRequestDto
 {

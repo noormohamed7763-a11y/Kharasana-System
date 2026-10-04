@@ -1,4 +1,3 @@
-using Kharasana.Application.DTOs.Report;
 using Kharasana.Domain.Enums;
 
 namespace Kharasana.Web.ViewModels.Reports;

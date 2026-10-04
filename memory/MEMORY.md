@@ -1,0 +1,20 @@
+- [المستخدم: كل الرسائل بالعربية](user-prefers-arabic-messages.md) — exception/log/comments/UI بالعربية دائماً
+- [DB drift — idempotent indexes](kharasana-db-drift-idempotent-indexes.md) — dev DB has hand-tuned indexes EF doesn't track; guard new migration index creation
+- [Socket exception & logo pipeline](kharasana-socket-exception-and-logo-pipeline.md) — API port 5000 sits in Docker/Hyper-V reserved range (4925-5124) → 10013; logo chain OK; prefer fixes that keep port 5000
+- [API content-root traps](kharasana-api-content-root-traps.md) — launching `dotnet Kharasana.API.dll` from repo root silently drops appsettings.json (Jwt expiry=0, IDX10208); start from bin folder or with --contentRoot
+- [FilesController streaming fix](kharasana-filescontroller-streaming-fix.md) — `using+FileResult` disposes stream before MVC result runs; use `CopyToAsync` inside action instead
+- [OrderDto duplication](orderdto-duplication.md) — Application vs Web DTOs have different shapes; Web controllers must use Web DTOs, not Application DTOs
+- [EF tracking: قراءة مُتتبَّعة لمسارات التعديل](kharasana-ef-tracking-read-for-update.md) — `AsNoTracking`+`Include` ثم `Update` تُرفق الرسم البياني كاملاً Modified (كتابات زائدة، و500 عند إسناد سائق)
+- [Understand-Anything install](understand-anything-install.md) — أداة تحليل المشاريع مثبّتة ومربوطة كمهارات في Claude Code و Copilot (9 مهارات understand*)
+- [خطة الجلسة القادمة: تحسين الواجهات](ui-improvement-plan-next-session.md) — تحسين شامل لكل صفحات الويب، صفحة صفحة بطلب المستخدم
+- [بنود معلّقة بعد جولة المراجعة](kharasana-pending-defects-after-review.md) — البنود المفتوحة (§32، IsActive، Logo، ToLower، التاريخ، Address) + المُغلق الموثّق، وفيه §35 الأمن و§36 سلامة الملفات
+- [خطة المرحلة القادمة من الدليل المرجعي](kharasana-next-phase-guide-plan.md) — **P0 مكتمل** (P0.1/P0.2/P0.3 مُنجَزة ومُتحقَّقة)؛ المتبقي P2؛ **أرقام الدليل قديمة: 282 وحدة + 8 تكامل**
+- [InMemory يكشف سقوط الصف بسبب فلتر الحذف الناعم](kharasana-inmemory-reproduces-queryfilter-drops.md) — يمكن كتابة حارس فلتر استعلام بـ InMemory؛ الإلزامي يُسقط الصف والاختياري يُفرّغ المرجع
+- [حالة تقسيم الخدمات والمتحكّمات](kharasana-split-refactor-status.md) — المُنجَز في جولة `partial class`، وسبب ترك `OrderWorkflowController` بلا تقسيم، والقاعدة «التقط الأصل قبل الكتابة»
+- [فلتر الاستثناء العالمي في Web](kharasana-web-apiserviceexception-global-filter.md) — `ApiServiceException` الهاربة تُلتقَط عالميًا ⇒ **لا صفحة 500**؛ لا تشخّص «دور يصل فعلًا ⇒ 500»
+- [حلقة ERR_TOO_MANY_REDIRECTS بعد الدخول](kharasana-web-redirect-loop-after-login.md) — **ترحيلان معلَّقان** ⇒ 500 من `/api/Orders` ⇒ الفلتر يُعيد التوجيه إلى الصفحة الفاشلة (`Referer` لا يُحدَّث عبر التحويلات)
+- [ثابتان باسم Unauthorized](kharasana-two-unauthorized-constants.md) — Application = صلاحية، Web = جلسة؛ نفس الاسم ≠ نفس الثابت، افحص `using` قبل الحكم
+- [فخّ الالتزام: مشروع غير متعقَّب يذكره slnx](kharasana-untracked-worktree-traps.md) — worktree كيلو القديم **أُزيل** و`.kilo/` مُستثنى؛ **وفخّ `slnx` أُغلق بكومّت 2026-09-29** (الدرس الباقي: `git add -u` لا يرى الجديد)
+- [جولة المراجعة طبقة طبقة (جارية)](kharasana-audit-findings-2026-09-29.md) — 11 بندًا بأدلّة ملف:سطر · **بدأ الإصلاح**: فجوة عقد قائمة الطلبات (ClientPhone/PouringDate) + رسالة خاطئة + 5 بنود نصية/تنظيمية — بناء 0/0 · 282 ناجحًا؛ **لا commit**
+- [نتائج مسح التنظيف والتوحيد](kharasana-cleanup-phase-findings.md) — الكود **نظيف** (بناء 0/0 · 282 ناجحًا)؛ اللغة والتوحيد مُغلَقان؛ **وفيه تصحيح بنود سابقة خاطئة (CS1998 · الاستيرادات)**؛ بنود التوحيد الثلاثة مؤجَّلة بقرار لأن 46/50 ملفًا في طبقة الويب المُنتظِر إعادة تصميم
+- [نمط الفصل التام بين DTOs](kharasana-dto-separation-pattern.md) — فصل تام بين طبقتي التطبيق والويب مع تعيين يدوي وتكرار مقصود للنماذج

@@ -1,5 +1,5 @@
 ﻿using Kharasana.API.Common;
-using Kharasana.Application.DTOs.Auth;
+using Kharasana.API.DTOs.Auth;
 using Kharasana.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -46,7 +46,17 @@ public class AuthController : ControllerBase
     [ServiceFilter(typeof(ValidationFilter<RegisterUserDto>))]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
     {
-        var result = await _authService.RegisterAsync(dto);
+        var applicationDto = new Application.DTOs.Auth.RegisterUserDto
+        {
+            FullName = dto.FullName,
+            Email = dto.Email,
+            Password = dto.Password,
+            ConfirmPassword = dto.ConfirmPassword,
+            Phone = dto.Phone,
+            WhatsApp = dto.WhatsApp
+        };
+
+        var result = await _authService.RegisterAsync(applicationDto);
         return StatusCode(StatusCodes.Status201Created, result);
     }
 
@@ -63,7 +73,13 @@ public class AuthController : ControllerBase
     [ServiceFilter(typeof(ValidationFilter<LoginRequestDto>))]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
     {
-        var result = await _authService.LoginAsync(dto);
+        var applicationDto = new Application.DTOs.Auth.LoginRequestDto
+        {
+            EmailOrPhone = dto.EmailOrPhone,
+            Password = dto.Password
+        };
+
+        var result = await _authService.LoginAsync(applicationDto);
         return Ok(result);
     }
 }
