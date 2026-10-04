@@ -34,7 +34,7 @@ namespace Kharasana.Tests.Integration
             };
 
             // Act
-            var response = await _client.PostAsJsonAsync("/api/Auth/register", dto);
+            var response = await _client.PostAsJsonAsync("/api/v1/Auth/register", dto);
 
             // Assert
             if (response.StatusCode != HttpStatusCode.Created)

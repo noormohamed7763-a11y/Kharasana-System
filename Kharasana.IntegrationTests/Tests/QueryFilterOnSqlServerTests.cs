@@ -23,31 +23,48 @@ namespace Kharasana.IntegrationTests.Tests;
 public class QueryFilterOnSqlServerTests
 {
     /// <summary>
-    /// الرسم السليم كاملًا: مصنع 1، عميل 100، نوع خرسانة 1، سائق 200، طلب 1.
+    /// الرسم السليم كاملًا: مصنع، عميل، سائق، نوع خرسانة، طلب.
+    /// تُرجع المعرفات，以便 Tests التالية يمكنها الوصول للكيانات عبرها.
     /// </summary>
-    private static async Task SeedOrderGraphAsync(SqlServerTestDatabase database)
+    private static async Task<(int FactoryId, int ClientId, int DriverId, int ConcreteTypeId, int OrderId)>
+        SeedOrderGraphAsync(SqlServerTestDatabase database)
     {
         await using var seed = database.CreateContext();
 
-        seed.Factories.Add(IntegrationSeed.Factory(1, "مصنع_فلتر"));
-        seed.Users.Add(IntegrationSeed.Client(100, "عميل_فلتر"));
-        seed.Users.Add(IntegrationSeed.Driver(200, "سائق_فلتر", factoryId: 1));
-        seed.ConcreteTypes.Add(IntegrationSeed.ConcreteType(1, 1, "C30"));
-        seed.Orders.Add(IntegrationSeed.Order(1, 100, 1, 1, driverId: 200));
+        var factory = IntegrationSeed.Factory("مصنع_فلتر");
+        seed.Factories.Add(factory);
+        await seed.SaveChangesAsync();
+
+        var client = IntegrationSeed.Client("عميل_فلتر");
+        seed.Users.Add(client);
+        await seed.SaveChangesAsync();
+
+        var driver = IntegrationSeed.Driver("سائق_فلتر", factory.FactoryId);
+        seed.Users.Add(driver);
+        await seed.SaveChangesAsync();
+
+        var concreteType = IntegrationSeed.ConcreteType(factory.FactoryId, "C30");
+        seed.ConcreteTypes.Add(concreteType);
+        await seed.SaveChangesAsync();
+
+        var order = IntegrationSeed.Order(client.UserId, factory.FactoryId, concreteType.ConcreteTypeId, driver.UserId);
+        seed.Orders.Add(order);
 
         await seed.SaveChangesAsync();
+
+        return (factory.FactoryId, client.UserId, driver.UserId, concreteType.ConcreteTypeId, order.OrderId);
     }
 
     [SqlServerFact]
     public async Task Order_OfArchivedConcreteType_IsStillReturned()
     {
         await using var database = await SqlServerTestDatabase.CreateAsync();
-        await SeedOrderGraphAsync(database);
+        var ids = await SeedOrderGraphAsync(database);
 
         // أرشفة نوع الخرسانة — هنا كان الطلب يختفي.
         await using (var archive = database.CreateContext())
         {
-            var concreteType = await archive.ConcreteTypes.FirstAsync(c => c.ConcreteTypeId == 1);
+            var concreteType = await archive.ConcreteTypes.FirstAsync(c => c.ConcreteTypeId == ids.ConcreteTypeId);
             concreteType.IsDeleted = true;
             await archive.SaveChangesAsync();
         }
@@ -73,14 +90,14 @@ public class QueryFilterOnSqlServerTests
     public async Task Order_OfArchivedFactoryAndArchivedClient_IsStillReturned()
     {
         await using var database = await SqlServerTestDatabase.CreateAsync();
-        await SeedOrderGraphAsync(database);
+        var ids = await SeedOrderGraphAsync(database);
 
         await using (var archive = database.CreateContext())
         {
-            var factory = await archive.Factories.FirstAsync(f => f.FactoryId == 1);
+            var factory = await archive.Factories.FirstAsync(f => f.FactoryId == ids.FactoryId);
             factory.IsDeleted = true;
 
-            var client = await archive.Users.FirstAsync(u => u.UserId == 100);
+            var client = await archive.Users.FirstAsync(u => u.UserId == ids.ClientId);
             client.IsDeleted = true;
 
             await archive.SaveChangesAsync();
@@ -107,11 +124,11 @@ public class QueryFilterOnSqlServerTests
     public async Task SoftDeletedOrder_IsStillExcluded()
     {
         await using var database = await SqlServerTestDatabase.CreateAsync();
-        await SeedOrderGraphAsync(database);
+        var ids = await SeedOrderGraphAsync(database);
 
         await using (var archive = database.CreateContext())
         {
-            var order = await archive.Orders.FirstAsync(o => o.OrderId == 1);
+            var order = await archive.Orders.FirstAsync(o => o.OrderId == ids.OrderId);
             order.IsDeleted = true;
             await archive.SaveChangesAsync();
         }
@@ -135,11 +152,11 @@ public class QueryFilterOnSqlServerTests
     public async Task SoftDeletedOrder_IsNotReadableForUpdate()
     {
         await using var database = await SqlServerTestDatabase.CreateAsync();
-        await SeedOrderGraphAsync(database);
+        var ids = await SeedOrderGraphAsync(database);
 
         await using (var archive = database.CreateContext())
         {
-            var order = await archive.Orders.FirstAsync(o => o.OrderId == 1);
+            var order = await archive.Orders.FirstAsync(o => o.OrderId == ids.OrderId);
             order.IsDeleted = true;
             await archive.SaveChangesAsync();
         }
@@ -147,8 +164,8 @@ public class QueryFilterOnSqlServerTests
         await using var context = database.CreateContext();
         var repository = new OrderRepository(context);
 
-        var forUpdate = await repository.GetByIdWithDetailsForUpdateAsync(1);
-        var forRead = await repository.GetByIdWithDetailsAsync(1);
+        var forUpdate = await repository.GetByIdWithDetailsForUpdateAsync(ids.OrderId);
+        var forRead = await repository.GetByIdWithDetailsAsync(ids.OrderId);
 
         forUpdate.Should().BeNull();
         forRead.Should().BeNull();

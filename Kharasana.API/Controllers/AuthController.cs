@@ -1,5 +1,6 @@
-﻿using Kharasana.API.Common;
-using Kharasana.API.DTOs.Auth;
+using Asp.Versioning;
+using Kharasana.API.Common;
+using Kharasana.Application.DTOs.Auth;
 using Kharasana.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,9 +15,18 @@ namespace Kharasana.API.Controllers;
 /// الجسمان هنا محميّان بـ <c>ValidationFilter</c> (كان <c>RegisterClientValidator</c>
 /// و<c>LoginRequestDtoValidator</c> مكتوبين ولا يُشغَّلان إطلاقاً). الحد الأدنى لطول
 /// كلمة المرور من <c>PasswordPolicy.MinimumLength</c>، وتُعيد الخدمة فحصه بنفسها.
+///
+/// <para><b>جسم الطلب من طبقة Application لا من <c>Kharasana.API.DTOs</c> — وهذا مقصود:</b>
+/// الفاحصات تُسجَّل في DI عبر <c>AddValidatorsFromAssemblyContaining</c> على أنواع طبقة
+/// Application، و<c>ValidationFilter&lt;T&gt;</c> يطلب <c>IValidator&lt;T&gt;</c> بنوع الجسم
+/// نفسه. نسخة DTO منفصلة في طبقة API تجعل الفلتر يطلب <c>IValidator&lt;API.DTOs...&gt;</c>
+/// غير المسجَّل، فيفشل إنشاء الفلتر ويُردّ 500 على كل تسجيل ودخول — وهو ما كان يحدث.
+/// وبقيّة المتحكّمات كلها تستقبل أنواع طبقة Application، فهذا هو النمط الموحَّد.
+/// يحرس ذلك <c>ValidatorWiringTests</c>.</para>
 /// </remarks>
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [AllowAnonymous] // لا يحتاج توكن للوصول إلى التسجيل والدخول
 public class AuthController : ControllerBase
 {
@@ -46,17 +56,7 @@ public class AuthController : ControllerBase
     [ServiceFilter(typeof(ValidationFilter<RegisterUserDto>))]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
     {
-        var applicationDto = new Application.DTOs.Auth.RegisterUserDto
-        {
-            FullName = dto.FullName,
-            Email = dto.Email,
-            Password = dto.Password,
-            ConfirmPassword = dto.ConfirmPassword,
-            Phone = dto.Phone,
-            WhatsApp = dto.WhatsApp
-        };
-
-        var result = await _authService.RegisterAsync(applicationDto);
+        var result = await _authService.RegisterAsync(dto);
         return StatusCode(StatusCodes.Status201Created, result);
     }
 
@@ -73,13 +73,7 @@ public class AuthController : ControllerBase
     [ServiceFilter(typeof(ValidationFilter<LoginRequestDto>))]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
     {
-        var applicationDto = new Application.DTOs.Auth.LoginRequestDto
-        {
-            EmailOrPhone = dto.EmailOrPhone,
-            Password = dto.Password
-        };
-
-        var result = await _authService.LoginAsync(applicationDto);
+        var result = await _authService.LoginAsync(dto);
         return Ok(result);
     }
 }

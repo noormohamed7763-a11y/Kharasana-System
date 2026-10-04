@@ -14,13 +14,13 @@ namespace Kharasana.IntegrationTests.TestData;
 /// </summary>
 internal static class IntegrationSeed
 {
-    public static Factory Factory(int id, string name, bool isDeleted = false)
+    public static Factory Factory(string name, bool isDeleted = false)
         => new()
         {
-            FactoryId = id,
+            // FactoryId يُترك فارغاً ليُنشئه SQL Server تلقائياً
             FactoryName = name,
             OwnerName = "المالك " + name,
-            Phone = $"050{id:D6}",
+            Phone = $"050{Guid.NewGuid().ToString("N").Substring(0, 6)}", // رقم عشوائي
             Area = "صنعاء",
             Address = $"شارع {name}",
             IsActive = true,
@@ -28,28 +28,28 @@ internal static class IntegrationSeed
             CreatedAt = DateTime.UtcNow
         };
 
-    public static User Client(int id, string fullName, bool isDeleted = false)
+    public static User Client(string fullName, bool isDeleted = false)
         => new()
         {
-            UserId = id,
+            // UserId يُترك فارغاً ليُنشئه SQL Server تلقائياً
             FullName = fullName,
             Role = UserRole.Client,
-            Phone = $"077{id:D7}",
-            Email = $"client{id}@integration.test",
+            Phone = $"077{Guid.NewGuid().ToString("N").Substring(0, 7)}", // رقم عشوائي
+            Email = $"client{Guid.NewGuid().ToString("N").Substring(0, 5)}@integration.test",
             PasswordHash = "integration-test-hash",
             IsActive = true,
             IsDeleted = isDeleted,
             CreatedAt = DateTime.UtcNow
         };
 
-    public static User Driver(int id, string fullName, int factoryId, bool isDeleted = false)
+    public static User Driver(string fullName, int factoryId, bool isDeleted = false)
         => new()
         {
-            UserId = id,
+            // UserId يُترك فارغاً ليُنشئه SQL Server تلقائياً
             FullName = fullName,
             Role = UserRole.Driver,
             FactoryId = factoryId,
-            Phone = $"077{id:D7}",
+            Phone = $"077{Guid.NewGuid().ToString("N").Substring(0, 7)}",
             PasswordHash = "integration-test-hash",
             IsActive = true,
             IsDeleted = isDeleted,
@@ -58,10 +58,10 @@ internal static class IntegrationSeed
         };
 
     public static ConcreteType ConcreteType(
-        int id, int factoryId, string name, bool isDeleted = false)
+        int factoryId, string name, bool isDeleted = false)
         => new()
         {
-            ConcreteTypeId = id,
+            // ConcreteTypeId يُترك فارغاً
             FactoryId = factoryId,
             Name = name,
             Strength = 25,
@@ -72,11 +72,11 @@ internal static class IntegrationSeed
         };
 
     public static Order Order(
-        int orderId, int clientId, int factoryId, int concreteTypeId, int? driverId = null)
+        int clientId, int factoryId, int concreteTypeId, int? driverId = null)
         => new()
         {
-            OrderId = orderId,
-            OrderNumber = $"ORD-IT-{orderId:D8}",
+            // OrderId يُترك فارغاً
+            OrderNumber = $"ORD-IT-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}",
             ClientId = clientId,
             FactoryId = factoryId,
             ConcreteTypeId = concreteTypeId,

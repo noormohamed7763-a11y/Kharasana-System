@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Kharasana.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,8 @@ namespace Kharasana.API.Controllers;
 /// إسناد سائق، توصيل، إغلاق، رفض وإلغاء — مع عزل البيانات بحسب دور المتصل.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Authorize]
 public partial class OrdersController : ControllerBase
 {
