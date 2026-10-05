@@ -73,6 +73,7 @@ namespace Kharasana.Web.Controllers
                 HttpContext.Session.SetString("Token", result.Token);
                 HttpContext.Session.SetString("FullName", result.FullName);
                 HttpContext.Session.SetString("Role", result.Role);
+                HttpContext.Session.SetInt32("UserId", result.UserId); // Added
 
                 if (result.FactoryId.HasValue)
                 {

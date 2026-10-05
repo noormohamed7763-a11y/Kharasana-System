@@ -1,0 +1,42 @@
+@model Kharasana.Web.ViewModels.FactoryRegistration.FactoryRegistrationRequestsIndexViewModel
+
+@{
+    ViewData["Title"] = "طلبات تسجيل المصانع";
+}
+
+<div class="dashboard-page">
+    <div class="page-header mb-4">
+        <h3>طلبات تسجيل المصانع</h3>
+        <p class="text-muted">مراجعة واعتماد طلبات المصانع الجديدة</p>
+    </div>
+
+    <div class="form-card">
+        <table class="erp-table">
+            <thead>
+                <tr>
+                    <th>المصنع</th>
+                    <th>المالك</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>الحالة</th>
+                    <th>التاريخ</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var request in Model.PagedRequests?.Items ?? Enumerable.Empty<Kharasana.Web.ViewModels.FactoryRegistration.RegistrationRequestListItemViewModel>())
+                {
+                    <tr>
+                        <td>@request.FactoryName</td>
+                        <td>@request.OwnerName</td>
+                        <td>@request.Email</td>
+                        <td><span class="status-badge @request.StatusClass">@request.StatusText</span></td>
+                        <td>@request.CreatedAt.ToShortDateString()</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-primary">تفاصيل</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

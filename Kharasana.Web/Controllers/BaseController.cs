@@ -35,6 +35,9 @@ namespace Kharasana.Web.Controllers
         protected int? FactoryId =>
             HttpContext.Session.GetInt32("FactoryId");
 
+        protected int? CurrentUserId =>
+            HttpContext.Session.GetInt32("UserId");
+
         /// <summary>
         /// هل الكيان المطلوب معزول عن المستخدم الحالي؟
         /// صحيح إذا كان المستخدم موظف مصنعٍ والكيان يتبع مصنعاً مختلفاً —

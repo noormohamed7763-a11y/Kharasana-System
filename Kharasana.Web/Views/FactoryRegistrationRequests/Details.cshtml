@@ -1,0 +1,43 @@
+@model Kharasana.Web.ViewModels.FactoryRegistration.RegistrationRequestDetailsViewModel
+
+@{
+    ViewData["Title"] = "تفاصيل طلب التسجيل";
+}
+
+<div class="dashboard-page">
+    <div class="page-header mb-4">
+        <h3>تفاصيل طلب تسجيل: @Model.FactoryName</h3>
+    </div>
+
+    <div class="form-card">
+        <dl class="row">
+            <dt class="col-sm-3">اسم المصنع</dt>
+            <dd class="col-sm-9">@Model.FactoryName</dd>
+
+            <dt class="col-sm-3">المالك</dt>
+            <dd class="col-sm-9">@Model.OwnerName</dd>
+
+            <dt class="col-sm-3">البريد الإلكتروني</dt>
+            <dd class="col-sm-9">@Model.Email</dd>
+
+            <dt class="col-sm-3">الهاتف</dt>
+            <dd class="col-sm-9">@Model.Phone</dd>
+
+            <dt class="col-sm-3">الحالة</dt>
+            <dd class="col-sm-9">@Model.Status</dd>
+        </dl>
+
+        <div class="mt-4">
+            <form asp-action="Approve" asp-route-id="@Model.Id" method="post" style="display:inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success">قبول</button>
+            </form>
+            <form asp-action="Reject" asp-route-id="@Model.Id" method="post" style="display:inline;">
+                @Html.AntiForgeryToken()
+                <input type="text" name="reason" placeholder="سبب الرفض (اختياري)" class="form-control d-inline-block w-auto" />
+                <button type="submit" class="btn btn-danger">رفض</button>
+            </form>
+            <a asp-action="Index" class="btn btn-secondary">رجوع</a>
+        </div>
+    </div>
+</div>
