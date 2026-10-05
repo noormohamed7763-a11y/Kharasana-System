@@ -132,6 +132,6 @@ public partial class OrdersController
 
         await _orderService.DeleteOrderAsync(id, caller.UserId, caller.Role, caller.FactoryId);
 
-        return Ok(ApiResponse.Ok(Messages.OrderDeletedSuccessfully));
+        return Ok(ApiResponse.Ok(Messages.OrderArchivedSuccessfully));
     }
 }

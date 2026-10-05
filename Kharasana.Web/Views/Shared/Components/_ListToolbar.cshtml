@@ -18,7 +18,7 @@
     var actionName = string.IsNullOrWhiteSpace(Model.ActionName) ? "Index" : Model.ActionName;
 }
 
-<div class="form-card mb-3 p-3">
+<div class="form-card mb-3 p-3 shadow-sm">
     <form method="get" asp-action="@actionName" asp-controller="@Model.ControllerName">
         @if (Model.PageSize.HasValue)
         {
@@ -34,7 +34,7 @@
             @foreach (var filter in Model.Filters)
             {
                 <div class="@filter.ColumnClass">
-                    <select class="form-select form-select-sm"
+                    <select class="form-select"
                             id="@filter.Id"
                             name="@(string.IsNullOrWhiteSpace(filter.Name) ? null : filter.Name)"
                             aria-label="@(string.IsNullOrWhiteSpace(filter.AriaLabel) ? null : filter.AriaLabel)"
@@ -59,11 +59,11 @@
             }
 
             <div class="@Model.ActionsColumnClass d-flex gap-2">
-                <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                <button type="submit" class="btn btn-primary flex-fill">
                     <i class="bi bi-search me-1"></i> @Model.SubmitText
                 </button>
                 <a asp-action="@actionName" asp-controller="@Model.ControllerName"
-                   class="btn btn-outline-secondary btn-sm flex-fill" title="إلغاء الفلاتر">
+                   class="btn btn-outline-secondary flex-fill" title="إلغاء الفلاتر">
                     <i class="bi bi-arrow-counterclockwise me-1"></i> @Model.ResetText
                 </a>
             </div>

@@ -85,17 +85,28 @@ textarea {
     outline-offset: 2px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    html {
-        scroll-behavior: auto;
-    }
 
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-    }
+/* ==========================================================
+   KHARASANA ERP - UI/UX General Enhancements
+   ========================================================== */
+
+/* تحسين تفاعل البطاقات (Elevation) */
+.form-card,
+.erp-section-card {
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.form-card:hover, .erp-section-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+/* تحسين استجابة الأزرار */
+.btn {
+    transition: all var(--transition);
+    font-weight: 500;
+}
+
+.btn:active {
+    transform: translateY(1px);
 }

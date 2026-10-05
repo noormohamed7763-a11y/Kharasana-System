@@ -38,21 +38,30 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task BeginTransactionAsync()
     {
+        if (_currentTransaction != null)
+        {
+            await _currentTransaction.DisposeAsync();
+        }
         _currentTransaction = await _context.Database.BeginTransactionAsync();
     }
 
     public async Task CommitTransactionAsync()
     {
-        await _currentTransaction!.CommitAsync();
-        _currentTransaction.Dispose();
+        if (_currentTransaction == null) throw new InvalidOperationException("لا توجد معاملة نشطة للالتزام بها.");
+
+        await _currentTransaction.CommitAsync();
+        await _currentTransaction.DisposeAsync();
         _currentTransaction = null;
     }
 
     public async Task RollbackTransactionAsync()
     {
-        await _currentTransaction!.RollbackAsync();
-        _currentTransaction.Dispose();
-        _currentTransaction = null;
+        if (_currentTransaction != null)
+        {
+            await _currentTransaction.RollbackAsync();
+            await _currentTransaction.DisposeAsync();
+            _currentTransaction = null;
+        }
     }
 
     public virtual async Task<int> SaveChangesAsync()
@@ -68,6 +77,10 @@ public class UnitOfWork : IUnitOfWork
         catch (DbUpdateException ex) when (UniqueConstraintDetector.IsUniqueViolation(ex))
         {
             throw new ConflictException(Messages.DuplicateValueConflict);
+        }
+        catch (Exception)
+        {
+            throw;
         }
     }
 

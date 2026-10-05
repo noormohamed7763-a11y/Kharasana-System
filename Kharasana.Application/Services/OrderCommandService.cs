@@ -44,13 +44,9 @@ public class OrderCommandService : IOrderCommandService
 
         int clientId;
 
-        if (currentRole == UserRole.Admin)
+        if (currentRole is UserRole.Admin or UserRole.FactoryEmployee)
         {
-            clientId = await ResolveClientIdForStaffOrderAsync(dto.ClientId);
-        }
-        else if (currentRole == UserRole.FactoryEmployee)
-        {
-            if (!currentUserFactoryId.HasValue || dto.FactoryId != currentUserFactoryId.Value)
+            if (currentRole == UserRole.FactoryEmployee && (!currentUserFactoryId.HasValue || dto.FactoryId != currentUserFactoryId.Value))
                 throw new ForbiddenException(Messages.FactoryEmployeeFactoryMismatch);
 
             clientId = await ResolveClientIdForStaffOrderAsync(dto.ClientId);
@@ -129,7 +125,7 @@ public class OrderCommandService : IOrderCommandService
             };
 
             await _unitOfWork.Users.AddAsync(client);
-            await _unitOfWork.SaveChangesAsync();
+            // تمت إزالة SaveChangesAsync هنا ليتم الحفظ في النهاية مع الطلب
         }
         else if (client.Role == UserRole.Client)
         {
@@ -237,7 +233,7 @@ public class OrderCommandService : IOrderCommandService
         if (order.Status is OrderStatus.Delivered or OrderStatus.Closed)
             throw new BusinessException(Messages.CannotCancelDeliveredOrClosedOrder);
 
-        ReleaseDriverAsync(order);
+        ReleaseDriver(order);
 
         order.IsDeleted = true;
         order.UpdatedAt = DateTime.UtcNow;
@@ -281,7 +277,7 @@ public class OrderCommandService : IOrderCommandService
         return order;
     }
 
-    private void ReleaseDriverAsync(Order order)
+    private void ReleaseDriver(Order order)
     {
         if (!order.DriverId.HasValue)
             return;
