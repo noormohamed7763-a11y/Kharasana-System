@@ -1,0 +1,1 @@
+- [نظام تسجيل المصانع الجديد](kharasana-factory-registration-workflow.md) — مشروع

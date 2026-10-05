@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<IOrderHelperService, OrderHelperService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IFactoryRegistrationRequestService, FactoryRegistrationRequestService>();
 
         // FluentValidation
         services.AddValidatorsFromAssemblyContaining<RegisterClientValidator>();

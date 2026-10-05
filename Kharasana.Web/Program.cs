@@ -132,6 +132,7 @@ namespace Kharasana.Web
             builder.Services.AddScoped<IDriverApiService, DriverApiService>();
             builder.Services.AddScoped<ISettingsApiService, SettingsApiService>();
             builder.Services.AddScoped<IReportsApiService, ReportsApiService>();
+            builder.Services.AddScoped<IFactoryRegistrationRequestApiService, FactoryRegistrationRequestApiService>();
 
             var app = builder.Build();
 

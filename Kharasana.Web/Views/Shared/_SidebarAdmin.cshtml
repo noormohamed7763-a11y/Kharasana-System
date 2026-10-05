@@ -32,6 +32,12 @@
             </a>
         </li>
         <li>
+            <a asp-controller="FactoryRegistrationRequests" asp-action="Index" class="@isActiveCtrl("FactoryRegistrationRequests")">
+                <i class="bi bi-envelope-plus"></i>
+                <span>طلبات التسجيل</span>
+            </a>
+        </li>
+        <li>
             <a asp-controller="Factories" asp-action="Archived" class="@(currentController.Equals("Factories", StringComparison.OrdinalIgnoreCase) && currentAction.Equals("Archived", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
                 <i class="bi bi-archive"></i>
                 <span>أرشيف المصانع</span>

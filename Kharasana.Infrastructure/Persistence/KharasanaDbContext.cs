@@ -19,6 +19,10 @@ public class KharasanaDbContext : DbContext
 
     public DbSet<Order> Orders { get; set; }
 
+    public DbSet<FactoryRegistrationRequest> FactoryRegistrationRequests { get; set; }
+
+    public DbSet<ActivationToken> ActivationTokens { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Apply all IEntityTypeConfiguration<T> classes automatically

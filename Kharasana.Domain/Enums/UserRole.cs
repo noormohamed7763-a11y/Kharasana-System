@@ -23,6 +23,9 @@ public enum UserRole
     [Display(Name = "مدير النظام")]
     Admin = 1,
 
+    [Display(Name = "مدير مصنع")]
+    FactoryAdmin = 5,
+
     [Display(Name = "موظف مصنع")]
     FactoryEmployee = 2,
 
