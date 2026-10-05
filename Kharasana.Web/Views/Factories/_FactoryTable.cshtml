@@ -1,14 +1,14 @@
 @model IEnumerable<Kharasana.Web.ViewModels.Factories.FactoryListItemViewModel>
 @using Kharasana.Web.Models.Components
 
-<div class="form-card">
+<div class="form-card shadow-sm">
     <div class="table-responsive">
         @* بلا كلاسات Bootstrap للجداول: كان `table table-hover` و`table-light`
            يعيدان فرض خلفية رأس رمادية من Bootstrap على رأس الجدول، فتفوز على
            `--table-header-bg` في tables.css بخاصية الوراثة الأعلى — أي أن رأس هذا
            الجدول وحده كان خارج نظام الألوان. `form-card` وعناوين الجدول هنا هما
            نفس ما تستعمله بقية جداول القوائم. *@
-        <table class="erp-table erp-table--sticky-cols align-middle mb-0" id="factoriesTable">
+        <table class="table table-hover align-middle erp-table erp-table--sticky-cols mb-0" id="factoriesTable">
             <thead>
                 <tr>
                     <th class="col-index text-nowrap">#</th>

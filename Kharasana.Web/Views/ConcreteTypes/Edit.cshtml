@@ -16,7 +16,7 @@
             Description = $"تعديل بيانات نوع الخرسانة: {Model.Name}"
         })
 
-    <div class="form-card">
+    <div class="form-card shadow-sm">
         <form asp-action="Edit" asp-route-id="@Model.ConcreteTypeId" method="post" id="editConcreteTypeForm">
             @Html.AntiForgeryToken()
 

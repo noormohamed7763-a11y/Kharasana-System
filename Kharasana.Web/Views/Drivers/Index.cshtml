@@ -68,27 +68,28 @@
                         })
     </div>
 
-    <!-- Status Bar — توزيع حالات السائقين -->
-    <div class="d-flex align-items-center gap-3 mb-3 p-3 bg-light rounded flex-wrap">
-        <span class="text-muted small fw-bold d-flex align-items-center gap-1">
-            <i class="bi bi-bar-chart-line"></i> توزيع الحالات
-        </span>
-        <div class="progress progress--status-bar flex-1">
-            <div class="progress-bar bg-success" style="width: @(Model.TotalDrivers > 0 ? (int)((double)Model.AvailableDrivers / Model.TotalDrivers * 100) : 0)%"></div>
-            <div class="progress-bar bg-warning" style="width: @(Model.TotalDrivers > 0 ? (int)((double)Model.BusyDrivers / Model.TotalDrivers * 100) : 0)%"></div>
-            <div class="progress-bar bg-secondary" style="width: @(Model.TotalDrivers > 0 ? (int)((double)Model.OfflineDrivers / Model.TotalDrivers * 100) : 0)%"></div>
+    <!-- Status Bar & Quick Filters — توزيع حالات السائقين والفلاتر السريعة -->
+    <div class="form-card shadow-sm p-3 mb-3">
+        <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+            <span class="text-muted small fw-bold d-flex align-items-center gap-1">
+                <i class="bi bi-bar-chart-line"></i> توزيع الحالات
+            </span>
+            <div class="progress progress--status-bar flex-grow-1">
+                <div class="progress-bar bg-success" style="width: @(Model.TotalDrivers > 0 ? (int)((double)Model.AvailableDrivers / Model.TotalDrivers * 100) : 0)%"></div>
+                <div class="progress-bar bg-warning" style="width: @(Model.TotalDrivers > 0 ? (int)((double)Model.BusyDrivers / Model.TotalDrivers * 100) : 0)%"></div>
+                <div class="progress-bar bg-secondary" style="width: @(Model.TotalDrivers > 0 ? (int)((double)Model.OfflineDrivers / Model.TotalDrivers * 100) : 0)%"></div>
+            </div>
+            <span class="small"><span class="text-success">●</span> متاح <strong>@Model.AvailableDrivers</strong></span>
+            <span class="small"><span class="text-warning">●</span> مشغول <strong>@Model.BusyDrivers</strong></span>
+            <span class="small"><span class="text-secondary">●</span> غير متصل <strong>@Model.OfflineDrivers</strong></span>
         </div>
-        <span class="small"><span class="text-success">●</span> متاح <strong>@Model.AvailableDrivers</strong></span>
-        <span class="small"><span class="text-warning">●</span> مشغول <strong>@Model.BusyDrivers</strong></span>
-        <span class="small"><span class="text-secondary">●</span> غير متصل <strong>@Model.OfflineDrivers</strong></span>
-    </div>
 
-    <!-- Quick Filters — فلاتر سريعة -->
-    <div class="d-flex gap-2 mb-3 flex-wrap">
-        <button type="button" class="btn btn-sm btn-outline-primary driver-filter-btn active" data-filter="All">الكل <span class="badge bg-light text-dark">@Model.TotalDrivers</span></button>
-        <button type="button" class="btn btn-sm btn-outline-success driver-filter-btn" data-filter="Available">متاح <span class="badge bg-light text-dark">@Model.AvailableDrivers</span></button>
-        <button type="button" class="btn btn-sm btn-outline-warning driver-filter-btn" data-filter="Busy">مشغول <span class="badge bg-light text-dark">@Model.BusyDrivers</span></button>
-        <button type="button" class="btn btn-sm btn-outline-secondary driver-filter-btn" data-filter="Offline">غير متصل <span class="badge bg-light text-dark">@Model.OfflineDrivers</span></button>
+        <div class="d-flex gap-2 flex-wrap pt-3 border-top">
+            <button type="button" class="btn btn-sm btn-outline-primary driver-filter-btn active" data-filter="All">الكل <span class="badge bg-light text-dark">@Model.TotalDrivers</span></button>
+            <button type="button" class="btn btn-sm btn-outline-success driver-filter-btn" data-filter="Available">متاح <span class="badge bg-light text-dark">@Model.AvailableDrivers</span></button>
+            <button type="button" class="btn btn-sm btn-outline-warning driver-filter-btn" data-filter="Busy">مشغول <span class="badge bg-light text-dark">@Model.BusyDrivers</span></button>
+            <button type="button" class="btn btn-sm btn-outline-secondary driver-filter-btn" data-filter="Offline">غير متصل <span class="badge bg-light text-dark">@Model.OfflineDrivers</span></button>
+        </div>
     </div>
 
     <!-- شريط البحث الموحّد -->

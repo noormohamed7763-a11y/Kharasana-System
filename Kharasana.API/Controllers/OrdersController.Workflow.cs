@@ -13,7 +13,7 @@ namespace Kharasana.API.Controllers;
 public partial class OrdersController
 {
     // ============================================================
-    // 7. SET PRICE
+    // 7. تحديد السعر
     // ============================================================
     /// <summary>حفظ/تحديث سعر الطلب.</summary>
     /// <param name="id">معرّف الطلب.</param>
