@@ -236,21 +236,12 @@ public class FactoriesController : BaseController
 
         try
         {
-            var response = await _userService.CreateAsync(model);
+            await _userService.CreateAsync(model);
 
-            if (response.Success)
+            return Ok(new
             {
-                return Ok(new
-                {
-                    success = true,
-                    message = response.Message ?? AppMessages.Success.AccountCreated
-                });
-            }
-
-            return BadRequest(new
-            {
-                success = false,
-                message = response.Message ?? AppMessages.Error.AccountCreate
+                success = true,
+                message = AppMessages.Success.AccountCreated
             });
         }
         catch (ApiServiceException ex)
@@ -264,8 +255,6 @@ public class FactoriesController : BaseController
         }
         catch (Exception ex)
         {
-            // ✅ لا يُعاد ex.Message إلى العميل: هذا الرد JSON يقرأه المتصفح مباشرة،
-            //    ونصّ الاستثناء الخام قد يحمل أسماء جداول أو مسارات. التفصيل يبقى في السجل.
             _logger.LogError(ex, "خطأ غير متوقع في إنشاء حساب المصنع");
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {

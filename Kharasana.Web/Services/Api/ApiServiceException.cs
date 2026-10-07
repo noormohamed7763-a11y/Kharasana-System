@@ -10,19 +10,36 @@ namespace Kharasana.Web.Services.Api;
 public sealed class ApiServiceException : Exception
 {
     public HttpStatusCode StatusCode { get; }
-    public string? ApiResponseMessage { get; }
+    public ApiError Error { get; }
+    public object[]? MessageArgs { get; }
     public string? TraceId { get; }
 
+    public ApiServiceException(
+        HttpStatusCode statusCode,
+        ApiError error,
+        object[]? messageArgs = null,
+        string? traceId = null,
+        Exception? innerException = null)
+        : base(error.FormatMessage(messageArgs ?? Array.Empty<object>()), innerException)
+    {
+        StatusCode = statusCode;
+        Error = error;
+        MessageArgs = messageArgs;
+        TraceId = traceId;
+    }
+
+    // Constructor للتوافقية
     public ApiServiceException(
         HttpStatusCode statusCode,
         string userMessage,
         string? apiResponseMessage = null,
         string? traceId = null,
         Exception? innerException = null)
-        : base(userMessage, innerException)
+        : base(userMessage, null)
     {
         StatusCode = statusCode;
-        ApiResponseMessage = apiResponseMessage;
+        Error = new ApiError("UNKNOWN_ERROR", userMessage, null, apiResponseMessage);
         TraceId = traceId;
+        MessageArgs = null;
     }
 }

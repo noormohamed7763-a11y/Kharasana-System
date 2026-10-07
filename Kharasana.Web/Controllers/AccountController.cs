@@ -57,21 +57,16 @@ namespace Kharasana.Web.Controllers
 
             try
             {
+                // الخدمة ترمي استثناءً إذا فشل تسجيل الدخول
                 var result = await _authService.LoginAsync(model);
 
-                if (result == null)
-                {
-                    ModelState.AddModelError("", AppMessages.Error.InvalidLogin);
-                    return View(model);
-                }
-
-                // ✅ تفريغ الجلسة قبل كتابة الهوية الجديدة إلزامي
+                // تفريغ الجلسة قبل كتابة الهوية الجديدة إلزامي
                 HttpContext.Session.Clear();
 
                 // إصدار المطالبات (Claims)
                 var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name, result.FullName),
+                    new Claim(ClaimTypes.Name, result!.FullName),
                     new Claim(ClaimTypes.NameIdentifier, result.UserId.ToString()),
                     new Claim(ClaimTypes.Role, result.Role)
                 };
@@ -95,14 +90,11 @@ namespace Kharasana.Web.Controllers
 
                 await HttpContext.SignInAsync("WebCookie", new ClaimsPrincipal(claimsIdentity), authProperties);
 
-                // تخزين البيانات التي لا تزال تحتاجها الجلسة (مثل الشعار والاسم)
-                // يفضل نقلها للـ Claims مستقبلاً لكن لتقليل التغييرات الآن سنبقيها هنا
                 if (result.FactoryId.HasValue)
                 {
                     await CacheFactoryInfoAsync();
                 }
 
-                // ✅ تحذير بعد تسجيل الدخول
                 if (!string.IsNullOrWhiteSpace(result.Notification))
                     TempData[TempDataWarning] = result.Notification;
 
@@ -115,7 +107,8 @@ namespace Kharasana.Web.Controllers
             }
             catch (ApiServiceException ex)
             {
-                ModelState.AddModelError("", ex.Message);
+                // نبقى في صفحة الدخول ونعرض الرسالة الموحدة
+                ModelState.AddModelError(string.Empty, ex.Error.FormatMessage(ex.MessageArgs ?? Array.Empty<object>()));
                 return View(model);
             }
         }

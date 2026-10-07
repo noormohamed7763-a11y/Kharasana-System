@@ -2,6 +2,7 @@ using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Orders;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace Kharasana.Web.Services.Api
 {
@@ -54,13 +55,16 @@ namespace Kharasana.Web.Services.Api
                 if (!response.Success)
                 {
                     _logger.LogWarning("فشل CreatePhoneOrderAsync. الرسالة: {Message}", response.Message);
-                    return null;
+                    throw new ApiServiceException(
+                        HttpStatusCode.BadRequest,
+                        new ApiError("ORDER_CREATE_FAILED", response.Message ?? "فشل إنشاء الطلب."),
+                        new object[] { model.ClientPhone ?? "غير معروف" });
                 }
 
                 if (response.Data?.Order == null)
                 {
                     _logger.LogWarning("CreatePhoneOrderAsync: بيانات الطلب في الردّ فارغة");
-                    return null;
+                    throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
                 }
 
                 // ✅ لا نسجّل كلمة المرور المؤقتة إطلاقاً — تُعرض في الواجهة مرة واحدة فقط
@@ -75,7 +79,7 @@ namespace Kharasana.Web.Services.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "استثناء في CreatePhoneOrderAsync: {Message}", ex.Message);
-                return null;
+                throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
             }
         }
 
@@ -110,7 +114,10 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                 {
                     _logger.LogWarning("فشل UpdateOrderAsync للمعرّف {Id}. الرسالة: {Message}", id, response?.Message);
-                    return null;
+                    throw new ApiServiceException(
+                        HttpStatusCode.BadRequest,
+                        ApiErrorCatalog.OrderStatusConflict, // أو خطأ عام حسب الرد
+                        new object[] { id, response?.Message ?? "حالة غير معروفة" });
                 }
 
                 _logger.LogInformation("UpdateOrderAsync: عُدّل الطلب {Id}", id);
@@ -120,7 +127,7 @@ namespace Kharasana.Web.Services.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "استثناء في UpdateOrderAsync للمعرّف {Id}: {Message}", id, ex.Message);
-                return null;
+                throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
             }
         }
 

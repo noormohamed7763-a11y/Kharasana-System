@@ -26,52 +26,33 @@ public class DriversController : BaseController
     // ============================================================
     public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20, string? search = null)
     {
+        int? factoryId = RoleValue == UserRole.FactoryEmployee ? FactoryId : null;
+
+        var pagedDrivers = await _driverApiService.GetDriversAsync(pageNumber, pageSize, search, factoryId);
+
+        var counts = (Available: 0, Busy: 0, Offline: 0);
         try
         {
-            int? factoryId = RoleValue == UserRole.FactoryEmployee ? FactoryId : null;
-
-            var pagedDrivers = await _driverApiService.GetDriversAsync(pageNumber, pageSize, search, factoryId);
-
-            // أعداد الحالة عبر كل الصفحات — فشلها لا ينبغي أن يُسقط الصفحة بعد أن حمّلنا القائمة
-            var counts = (Available: 0, Busy: 0, Offline: 0);
-            if (pagedDrivers != null)
-            {
-                try
-                {
-                    counts = await _driverApiService.GetStatusCountsAsync(search, factoryId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "تعذر جلب إحصاءات حالة السائقين — ستُعرض البطاقات بقيمة صفر.");
-                }
-            }
-
-            var vm = new DriversIndexViewModel
-            {
-                PagedDrivers = pagedDrivers,
-                Search = search,
-                PageNumber = pageNumber,
-                PageSize = pageSize,
-                TotalDrivers = pagedDrivers?.TotalCount ?? 0,
-                AvailableDrivers = counts.Available,
-                BusyDrivers = counts.Busy,
-                OfflineDrivers = counts.Offline
-            };
-
-            return View(vm);
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في تحميل قائمة السائقين StatusCode={StatusCode}", (int)ex.StatusCode);
-            TempData[TempDataError] = ex.Message;
-            return View(new DriversIndexViewModel());
+            counts = await _driverApiService.GetStatusCountsAsync(search, factoryId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "خطأ غير متوقع في تحميل قائمة السائقين");
-            TempData[TempDataError] = AppMessages.Common.OperationFailed;
-            return View(new DriversIndexViewModel());
+            _logger.LogWarning(ex, "تعذر جلب إحصاءات حالة السائقين — ستُعرض البطاقات بقيمة صفر.");
         }
+
+        var vm = new DriversIndexViewModel
+        {
+            PagedDrivers = pagedDrivers,
+            Search = search,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalDrivers = pagedDrivers?.TotalCount ?? 0,
+            AvailableDrivers = counts.Available,
+            BusyDrivers = counts.Busy,
+            OfflineDrivers = counts.Offline
+        };
+
+        return View(vm);
     }
 
     // ============================================================
@@ -80,43 +61,21 @@ public class DriversController : BaseController
     [HttpGet]
     public async Task<IActionResult> Details(int id)
     {
-        // ✅ التحقق من الصلاحية
         if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             TempData[TempDataError] = AppMessages.Common.DriversViewForbidden;
             return RedirectToAction(nameof(Index));
         }
 
-        try
+        var driver = await _driverApiService.GetByIdAsync(id);
+
+        if (IsFactoryIsolated(driver.FactoryId))
         {
-            var driver = await _driverApiService.GetByIdAsync(id);
-
-            if (driver == null)
-            {
-                TempData[TempDataError] = AppMessages.Common.NotFound;
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (IsFactoryIsolated(driver.FactoryId))
-            {
-                TempData[TempDataError] = AppMessages.Common.Forbidden;
-                return RedirectToAction(nameof(Index));
-            }
-
-            return View(driver);
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في تحميل بيانات السائق {DriverId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-            TempData[TempDataError] = ex.Message;
+            TempData[TempDataError] = AppMessages.Common.Forbidden;
             return RedirectToAction(nameof(Index));
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في تحميل بيانات السائق {DriverId}", id);
-            TempData[TempDataError] = AppMessages.Common.OperationFailed;
-            return RedirectToAction(nameof(Index));
-        }
+
+        return View(driver);
     }
 
     // ============================================================
@@ -131,12 +90,7 @@ public class DriversController : BaseController
             return RedirectToAction(nameof(Index));
         }
 
-        var model = new CreateDriverViewModel
-        {
-            FactoryId = FactoryId.Value
-        };
-
-        return View(model);
+        return View(new CreateDriverViewModel { FactoryId = FactoryId.Value });
     }
 
     // ============================================================
@@ -157,31 +111,10 @@ public class DriversController : BaseController
         if (!ModelState.IsValid)
             return View(model);
 
-        try
-        {
-            var (success, message) = await _driverApiService.CreateAsync(model);
+        await _driverApiService.CreateAsync(model);
 
-            if (!success)
-            {
-                ModelState.AddModelError(string.Empty, message ?? AppMessages.Error.DriverCreate);
-                return View(model);
-            }
-
-            TempData[TempDataSuccess] = AppMessages.Success.DriverAccountCreated;
-            return RedirectToAction(nameof(Index));
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في إنشاء سائق جديد StatusCode={StatusCode}", (int)ex.StatusCode);
-            TempData[TempDataError] = ex.Message;
-            return View(model);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في إنشاء سائق جديد");
-            TempData[TempDataError] = AppMessages.Common.OperationFailed;
-            return View(model);
-        }
+        TempData[TempDataSuccess] = AppMessages.Success.DriverAccountCreated;
+        return RedirectToAction(nameof(Index));
     }
 
     // ============================================================
@@ -190,44 +123,21 @@ public class DriversController : BaseController
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        // ✅ التحقق من الصلاحية
         if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             TempData[TempDataError] = AppMessages.Common.DriverEditForbidden;
             return RedirectToAction(nameof(Index));
         }
 
-        try
+        var model = await _driverApiService.GetForEditAsync(id);
+
+        if (IsFactoryIsolated(model.FactoryId))
         {
-            var model = await _driverApiService.GetForEditAsync(id);
-
-            if (model == null)
-            {
-                TempData[TempDataError] = AppMessages.Common.NotFound;
-                return RedirectToAction(nameof(Index));
-            }
-
-            // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if (IsFactoryIsolated(model.FactoryId))
-            {
-                TempData[TempDataError] = AppMessages.Common.Forbidden;
-                return RedirectToAction(nameof(Index));
-            }
-
-            return View(model);
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في تحميل بيانات السائق للتعديل {DriverId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-            TempData[TempDataError] = ex.Message;
+            TempData[TempDataError] = AppMessages.Common.Forbidden;
             return RedirectToAction(nameof(Index));
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في تحميل بيانات السائق للتعديل {DriverId}", id);
-            TempData[TempDataError] = AppMessages.Common.OperationFailed;
-            return RedirectToAction(nameof(Index));
-        }
+
+        return View(model);
     }
 
     // ============================================================
@@ -240,7 +150,6 @@ public class DriversController : BaseController
         if (id != model.UserId)
             return BadRequest();
 
-        // ✅ التحقق من الصلاحية
         if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             TempData[TempDataError] = AppMessages.Common.DriverEditForbidden;
@@ -250,42 +159,20 @@ public class DriversController : BaseController
         if (!ModelState.IsValid)
             return View(model);
 
-        try
+        if (RoleValue == UserRole.FactoryEmployee)
         {
-            // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if (RoleValue == UserRole.FactoryEmployee)
+            var existingDriver = await _driverApiService.GetByIdAsync(id);
+            if (IsFactoryIsolated(existingDriver.FactoryId))
             {
-                var existingDriver = await _driverApiService.GetByIdAsync(id);
-                if (existingDriver == null || IsFactoryIsolated(existingDriver.FactoryId))
-                {
-                    TempData[TempDataError] = AppMessages.Common.Forbidden;
-                    return RedirectToAction(nameof(Index));
-                }
+                TempData[TempDataError] = AppMessages.Common.Forbidden;
+                return RedirectToAction(nameof(Index));
             }
-
-            var (success, message) = await _driverApiService.UpdateAsync(id, model);
-
-            if (!success)
-            {
-                ModelState.AddModelError(string.Empty, message ?? AppMessages.Error.DriverUpdate);
-                return View(model);
-            }
-
-            TempData[TempDataSuccess] = AppMessages.Success.DriverUpdated;
-            return RedirectToAction(nameof(Index));
         }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في تعديل بيانات السائق {DriverId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-            TempData[TempDataError] = ex.Message;
-            return View(model);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في تعديل بيانات السائق {DriverId}", id);
-            TempData[TempDataError] = AppMessages.Common.OperationFailed;
-            return View(model);
-        }
+
+        await _driverApiService.UpdateAsync(id, model);
+
+        TempData[TempDataSuccess] = AppMessages.Success.DriverUpdated;
+        return RedirectToAction(nameof(Index));
     }
 
     // ============================================================
@@ -295,51 +182,26 @@ public class DriversController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        // ✅ التحقق من الصلاحية
         if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             TempData[TempDataError] = AppMessages.Common.DriverDeleteForbidden;
             return RedirectToAction(nameof(Index));
         }
 
-        try
+        if (RoleValue == UserRole.FactoryEmployee)
         {
-            // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if (RoleValue == UserRole.FactoryEmployee)
+            var driver = await _driverApiService.GetByIdAsync(id);
+            if (IsFactoryIsolated(driver.FactoryId))
             {
-                var driver = await _driverApiService.GetByIdAsync(id);
-                if (driver == null || IsFactoryIsolated(driver.FactoryId))
-                {
-                    TempData[TempDataError] = AppMessages.Common.Forbidden;
-                    return RedirectToAction(nameof(Index));
-                }
+                TempData[TempDataError] = AppMessages.Common.Forbidden;
+                return RedirectToAction(nameof(Index));
             }
-
-            var success = await _driverApiService.DeleteAsync(id);
-
-            if (!success)
-            {
-                TempData[TempDataError] = AppMessages.Error.DriverDelete;
-            }
-            else
-            {
-                TempData[TempDataSuccess] = AppMessages.Success.DriverDeleted;
-            }
-
-            return RedirectToAction(nameof(Index));
         }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في حذف السائق {DriverId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-            TempData[TempDataError] = ex.Message;
-            return RedirectToAction(nameof(Index));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في حذف السائق {DriverId}", id);
-            TempData[TempDataError] = AppMessages.Common.OperationFailed;
-            return RedirectToAction(nameof(Index));
-        }
+
+        await _driverApiService.DeleteAsync(id);
+
+        TempData[TempDataSuccess] = AppMessages.Success.DriverDeleted;
+        return RedirectToAction(nameof(Index));
     }
 
     // ============================================================
@@ -349,55 +211,22 @@ public class DriversController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateStatus(int id, DriverStatus driverStatus)
     {
-        // ✅ التحقق من الصلاحية
         if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return BadRequest(new { success = false, message = AppMessages.Common.PermissionDeniedShort });
-            }
+
             TempData[TempDataError] = AppMessages.Common.DriverStatusForbidden;
             return RedirectToAction(nameof(Index));
         }
 
-        try
-        {
-            var model = new UpdateDriverStatusViewModel { DriverStatus = driverStatus };
-            var success = await _driverApiService.UpdateStatusAsync(id, model);
+        await _driverApiService.UpdateStatusAsync(id, new UpdateDriverStatusViewModel { DriverStatus = driverStatus });
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return success
-                    ? Ok(new { success = true, message = AppMessages.Success.DriverStatusUpdatedShort })
-                    : BadRequest(new { success = false, message = AppMessages.Error.DriverStatusUpdateShort });
-            }
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return Ok(new { success = true, message = AppMessages.Success.DriverStatusUpdatedShort });
 
-            TempData[success ? TempDataSuccess : TempDataError] = success
-                ? AppMessages.Success.DriverStatusUpdated
-                : AppMessages.Error.DriverStatusUpdate;
-
-            return RedirectToAction(nameof(Index));
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في تحديث حالة السائق {DriverId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            TempData[TempDataError] = ex.Message;
-            return RedirectToAction(nameof(Index));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في تحديث حالة السائق {DriverId}", id);
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-            TempData[TempDataError] = AppMessages.Common.OperationFailed;
-            return RedirectToAction(nameof(Index));
-        }
+        TempData[TempDataSuccess] = AppMessages.Success.DriverStatusUpdated;
+        return RedirectToAction(nameof(Index));
     }
 
     // ============================================================
@@ -407,67 +236,38 @@ public class DriversController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleActive(int id)
     {
-        // ✅ التحقق من الصلاحية
         if (RoleValue != UserRole.Admin && RoleValue != UserRole.FactoryEmployee)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return BadRequest(new { success = false, message = AppMessages.Common.PermissionDeniedShort });
-            }
+
             TempData[TempDataError] = AppMessages.Common.DriverStatusForbidden;
             return RedirectToAction(nameof(Index));
         }
 
-        try
+        if (RoleValue == UserRole.FactoryEmployee)
         {
-            // ✅ التحقق من أن السائق يتبع نفس المصنع (للموظف فقط)
-            if (RoleValue == UserRole.FactoryEmployee)
+            var driver = await _driverApiService.GetByIdAsync(id);
+            if (IsFactoryIsolated(driver.FactoryId))
             {
-                var driver = await _driverApiService.GetByIdAsync(id);
-                if (driver == null || IsFactoryIsolated(driver.FactoryId))
-                {
-                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                    {
-                        return BadRequest(new { success = false, message = AppMessages.Common.Forbidden });
-                    }
-                    TempData[TempDataError] = AppMessages.Common.Forbidden;
-                    return RedirectToAction(nameof(Index));
-                }
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return BadRequest(new { success = false, message = AppMessages.Common.Forbidden });
+
+                TempData[TempDataError] = AppMessages.Common.Forbidden;
+                return RedirectToAction(nameof(Index));
             }
-
-            var isActive = await _driverApiService.ToggleActiveAsync(id);
-
-            var message = isActive
-                ? AppMessages.Success.DriverActivatedShort
-                : AppMessages.Success.DriverDeactivatedShort;
-
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return Ok(new { success = true, message });
-            }
-
-            TempData[TempDataSuccess] = message;
-            return RedirectToAction(nameof(Index));
         }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في تفعيل/إيقاف السائق {DriverId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            TempData[TempDataError] = ex.Message;
-            return RedirectToAction(nameof(Index));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في تفعيل/إيقاف السائق {DriverId}", id);
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
-            }
-            TempData[TempDataError] = AppMessages.Common.OperationFailed;
-            return RedirectToAction(nameof(Index));
-        }
+
+        var isActive = await _driverApiService.ToggleActiveAsync(id);
+
+        var message = isActive
+            ? AppMessages.Success.DriverActivatedShort
+            : AppMessages.Success.DriverDeactivatedShort;
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return Ok(new { success = true, message });
+
+        TempData[TempDataSuccess] = message;
+        return RedirectToAction(nameof(Index));
     }
 }

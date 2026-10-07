@@ -62,15 +62,7 @@ public class ClientsController : BaseController
     [HttpGet]
     public async Task<IActionResult> Details(int id)
     {
-        var model =
-            await _clientApiService.GetDetailsAsync(id);
-
-        if (model == null)
-        {
-            TempData[TempDataError] = AppMessages.Common.NotFound;
-            return RedirectToAction(nameof(Index));
-        }
-
+        var model = await _clientApiService.GetDetailsAsync(id);
         return View(model);
     }
 
@@ -96,17 +88,7 @@ public class ClientsController : BaseController
             return View(model);
         }
 
-        var success =
-            await _clientApiService.CreateAsync(model);
-
-        if (!success)
-        {
-            ModelState.AddModelError(
-                string.Empty,
-                AppMessages.Error.ClientAccountCreate);
-
-            return View(model);
-        }
+        await _clientApiService.CreateAsync(model);
 
         TempData[TempDataSuccess] =
             AppMessages.Success.ClientAccountCreated;
@@ -120,17 +102,7 @@ public class ClientsController : BaseController
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var model =
-            await _clientApiService.GetForEditAsync(id);
-
-        if (model == null)
-        {
-            TempData[TempDataError] =
-                AppMessages.Common.NotFound;
-
-            return RedirectToAction(nameof(Index));
-        }
-
+        var model = await _clientApiService.GetForEditAsync(id);
         return View(model);
     }
 
@@ -153,17 +125,7 @@ public class ClientsController : BaseController
             return View(model);
         }
 
-        var success =
-            await _clientApiService.UpdateAsync(id, model);
-
-        if (!success)
-        {
-            ModelState.AddModelError(
-                string.Empty,
-                AppMessages.Error.ClientUpdate);
-
-            return View(model);
-        }
+        await _clientApiService.UpdateAsync(id, model);
 
         TempData[TempDataSuccess] =
             AppMessages.Success.ClientUpdated;

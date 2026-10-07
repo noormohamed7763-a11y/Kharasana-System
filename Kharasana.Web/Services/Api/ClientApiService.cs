@@ -153,7 +153,10 @@ public class ClientApiService : IClientApiService
                     "GetDetailsAsync: تعذّر جلب العميل {ClientId}.",
                     clientId);
 
-                return null;
+                throw new ApiServiceException(
+                    HttpStatusCode.NotFound,
+                    ApiErrorCatalog.ClientNotFound,
+                    new object[] { clientId });
             }
 
             var customer = response.Data;
@@ -175,23 +178,20 @@ public class ClientApiService : IClientApiService
         }
         catch (ApiServiceException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            // 404 = لا توجد طلبات لهذا العميل: حالة متوقعة يعالجها
-            // ClientsController.Details بإعادة توجيه ورسالة، لا خطأ نظام.
             _logger.LogWarning(
-                "GetDetailsAsync: لا طلبات للعميل {ClientId}.",
+                "GetDetailsAsync: العميل {ClientId} غير موجود.",
                 clientId);
 
-            return null;
+            throw new ApiServiceException(
+                HttpStatusCode.NotFound,
+                ApiErrorCatalog.ClientNotFound,
+                new object[] { clientId });
         }
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "استثناء في GetDetailsAsync للعميل {ClientId}",
-                clientId);
-
-            return null;
+            _logger.LogError(ex, "استثناء في GetDetailsAsync للعميل {ClientId}", clientId);
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
         }
     }
 
@@ -221,14 +221,13 @@ public class ClientApiService : IClientApiService
                     "Users",
                     payload);
 
-            if (response == null ||
-                !response.Success)
+            if (response == null || !response.Success)
             {
-                _logger.LogWarning(
-                    "فشل CreateAsync. الرسالة: {Message}",
-                    response?.Message);
-
-                return false;
+                _logger.LogWarning("فشل CreateAsync. الرسالة: {Message}", response?.Message);
+                throw new ApiServiceException(
+                    HttpStatusCode.BadRequest,
+                    ApiErrorCatalog.ClientCreateFailed,
+                    new object[] { response?.Message ?? "سبب غير معروف" });
             }
 
             return true;
@@ -236,11 +235,8 @@ public class ClientApiService : IClientApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "استثناء في CreateAsync");
-
-            return false;
+            _logger.LogError(ex, "استثناء في CreateAsync");
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
         }
     }
 
@@ -258,15 +254,13 @@ public class ClientApiService : IClientApiService
                     ApiResponse<UserDto>
                 >($"Users/{clientId}");
 
-            if (response == null ||
-                !response.Success ||
-                response.Data == null)
+            if (response == null || !response.Success || response.Data == null)
             {
-                _logger.LogWarning(
-                    "GetForEditAsync: العميل {ClientId} غير موجود.",
-                    clientId);
-
-                return null;
+                _logger.LogWarning("GetForEditAsync: العميل {ClientId} غير موجود.", clientId);
+                throw new ApiServiceException(
+                    HttpStatusCode.NotFound,
+                    ApiErrorCatalog.ClientNotFound,
+                    new object[] { clientId });
             }
 
             var account = response.Data;
@@ -285,12 +279,8 @@ public class ClientApiService : IClientApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "استثناء في GetForEditAsync للعميل {ClientId}",
-                clientId);
-
-            return null;
+            _logger.LogError(ex, "استثناء في GetForEditAsync للعميل {ClientId}", clientId);
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
         }
     }
 
@@ -328,15 +318,13 @@ public class ClientApiService : IClientApiService
                     $"Users/{id}",
                     payload);
 
-            if (response == null ||
-                !response.Success)
+            if (response == null || !response.Success)
             {
-                _logger.LogWarning(
-                    "فشل UpdateAsync للعميل {Id}. الرسالة: {Message}",
-                    id,
-                    response?.Message);
-
-                return false;
+                _logger.LogWarning("فشل UpdateAsync للعميل {Id}. الرسالة: {Message}", id, response?.Message);
+                throw new ApiServiceException(
+                    HttpStatusCode.BadRequest,
+                    ApiErrorCatalog.ClientUpdateFailed,
+                    new object[] { id, response?.Message ?? "سبب غير معروف" });
             }
 
             return true;
@@ -344,12 +332,8 @@ public class ClientApiService : IClientApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "استثناء في UpdateAsync للعميل {Id}",
-                id);
-
-            return false;
+            _logger.LogError(ex, "استثناء في UpdateAsync للعميل {Id}", id);
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
         }
     }
 }

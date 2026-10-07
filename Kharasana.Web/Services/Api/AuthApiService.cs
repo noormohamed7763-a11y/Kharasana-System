@@ -33,19 +33,19 @@ namespace Kharasana.Web.Services.Api
                 if (response == null)
                 {
                     _logger.LogWarning("أعادت واجهة الدخول ردًّا فارغًا للمُعرّف {EmailOrPhone}", model.EmailOrPhone);
-                    return null;
+                    throw new ApiServiceException(System.Net.HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
                 }
 
                 if (!response.Success)
                 {
                     _logger.LogWarning("فشل تسجيل الدخول للمُعرّف {EmailOrPhone}. الرسالة: {Message}", model.EmailOrPhone, response.Message);
-                    return null;
+                    throw new ApiServiceException(System.Net.HttpStatusCode.Unauthorized, ApiErrorCatalog.InvalidLogin);
                 }
 
                 if (response.Data == null)
                 {
                     _logger.LogWarning("نجح تسجيل الدخول لكن بيانات الردّ فارغة للمُعرّف {EmailOrPhone}", model.EmailOrPhone);
-                    return null;
+                    throw new ApiServiceException(System.Net.HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
                 }
 
                 _logger.LogInformation("نجح تسجيل الدخول للمستخدم {FullName} (المعرّف: {UserId})", response.Data.FullName, response.Data.UserId);
@@ -55,7 +55,7 @@ namespace Kharasana.Web.Services.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "استثناء في LoginAsync للمُعرّف {EmailOrPhone}", model.EmailOrPhone);
-                return null;
+                throw new ApiServiceException(System.Net.HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
             }
         }
 

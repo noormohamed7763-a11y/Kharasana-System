@@ -2,6 +2,7 @@ using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.ConcreteTypes;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace Kharasana.Web.Services.Api;
 
@@ -18,107 +19,67 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
 
     public async Task<List<ConcreteTypeListItemViewModel>> GetAllAsync()
     {
-        try
+        var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeListItemViewModel>>>("ConcreteTypes");
+        if (response == null || !response.Success)
         {
-            var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeListItemViewModel>>>("ConcreteTypes");
-            return response?.Data ?? new List<ConcreteTypeListItemViewModel>();
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
         }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ في جلب أنواع الخرسانة.");
-            return new List<ConcreteTypeListItemViewModel>();
-        }
+        return response.Data ?? new List<ConcreteTypeListItemViewModel>();
     }
 
     public async Task<List<ConcreteTypeListItemViewModel>> GetArchivedAsync()
     {
-        try
+        var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeListItemViewModel>>>("ConcreteTypes/archived");
+        if (response == null || !response.Success)
         {
-            var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeListItemViewModel>>>("ConcreteTypes/archived");
-            return response?.Data ?? new List<ConcreteTypeListItemViewModel>();
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
         }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
+        return response.Data ?? new List<ConcreteTypeListItemViewModel>();
+    }
+
+    public async Task<ConcreteTypeViewModel> GetByIdAsync(int id)
+    {
+        var response = await _apiClient.GetAsync<ApiResponse<ConcreteTypeViewModel>>($"ConcreteTypes/{id}");
+        if (response == null || !response.Success || response.Data == null)
         {
-            _logger.LogError(ex, "خطأ في جلب أنواع الخرسانة المؤرشفة.");
-            return new List<ConcreteTypeListItemViewModel>();
+            throw new ApiServiceException(HttpStatusCode.NotFound, ApiErrorCatalog.ConcreteTypeNotFound, new object[] { id });
+        }
+        return response.Data;
+    }
+
+    public async Task CreateAsync(CreateConcreteTypeViewModel model)
+    {
+        var response = await _apiClient.PostAsync<ApiResponse<object>>("ConcreteTypes", model);
+        if (response == null || !response.Success)
+        {
+            throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.ConcreteTypeCreateFailed, new object[] { response?.Message ?? "سبب غير معروف" });
         }
     }
 
-    public async Task<ConcreteTypeViewModel?> GetByIdAsync(int id)
+    public async Task UpdateAsync(int id, UpdateConcreteTypeViewModel model)
     {
-        try
+        var response = await _apiClient.PutAsync<ApiResponse<object>>($"ConcreteTypes/{id}", model);
+        if (response == null || !response.Success)
         {
-            var response = await _apiClient.GetAsync<ApiResponse<ConcreteTypeViewModel>>($"ConcreteTypes/{id}");
-            return response?.Data;
-        }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ في جلب نوع الخرسانة {ConcreteTypeId}.", id);
-            return null;
+            throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.ConcreteTypeUpdateFailed, new object[] { id, response?.Message ?? "سبب غير معروف" });
         }
     }
 
-    public async Task<bool> CreateAsync(CreateConcreteTypeViewModel model)
+    public async Task DeleteAsync(int id)
     {
-        try
+        var response = await _apiClient.DeleteAsync<ApiResponse<object>>($"ConcreteTypes/{id}");
+        if (response == null || !response.Success)
         {
-            var response = await _apiClient.PostAsync<ApiResponse<object>>("ConcreteTypes", model);
-            return response != null && response.Success;
-        }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ في إنشاء نوع الخرسانة.");
-            return false;
+            throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.ConcreteTypeDeleteFailed, new object[] { id, response?.Message ?? "سبب غير معروف" });
         }
     }
 
-    public async Task<bool> UpdateAsync(int id, UpdateConcreteTypeViewModel model)
+    public async Task RestoreAsync(int id)
     {
-        try
+        var response = await _apiClient.PostAsync<ApiResponse<object>>($"ConcreteTypes/restore/{id}", new { });
+        if (response == null || !response.Success)
         {
-            var response = await _apiClient.PutAsync<ApiResponse<object>>($"ConcreteTypes/{id}", model);
-            return response != null && response.Success;
-        }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ في تحديث نوع الخرسانة {ConcreteTypeId}.", id);
-            return false;
-        }
-    }
-
-    public async Task<bool> DeleteAsync(int id)
-    {
-        try
-        {
-            var response = await _apiClient.DeleteAsync<ApiResponse<object>>($"ConcreteTypes/{id}");
-            return response != null && response.Success;
-        }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ في حذف نوع الخرسانة {ConcreteTypeId}.", id);
-            return false;
-        }
-    }
-
-    public async Task<bool> RestoreAsync(int id)
-    {
-        try
-        {
-            // POST بلا جسم — نفس نمط بقية أوامر الحالة في المشروع (ApiClient.PostAsync يرسل {}).
-            var response = await _apiClient.PostAsync<ApiResponse<object>>($"ConcreteTypes/restore/{id}", new { });
-            return response != null && response.Success;
-        }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ في استعادة نوع الخرسانة {ConcreteTypeId}.", id);
-            return false;
+            throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.ServerError);
         }
     }
 }
