@@ -213,4 +213,37 @@ public class AuthService : IAuthService
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync();
     }
+
+    public async Task<ApiResponse<object>> ActivateAccountAsync(string tokenHash)
+    {
+        var token = await _unitOfWork.ActivationTokens.GetByHashAsync(tokenHash);
+        if (token == null)
+            throw new BusinessException(Messages.ActivationTokenInvalid);
+
+        if (token.UsedAt.HasValue)
+            throw new BusinessException(Messages.ActivationTokenAlreadyUsed);
+
+        if (token.ExpiryDate < DateTime.UtcNow)
+            throw new BusinessException(Messages.ActivationTokenExpired);
+
+        if (token.RevokedAt.HasValue)
+            throw new BusinessException(Messages.ActivationTokenInvalid);
+
+        var user = await _unitOfWork.Users.GetByIdAsync(token.UserId);
+        if (user == null)
+            throw new BusinessException(Messages.UserNotFound);
+
+        user.IsActive = true;
+        token.UsedAt = DateTime.UtcNow;
+
+        _unitOfWork.Users.Update(user);
+        _unitOfWork.ActivationTokens.Update(token);
+        await _unitOfWork.SaveChangesAsync();
+
+        return new ApiResponse<object>
+        {
+            Success = true,
+            Message = Messages.RegisterSuccess // Or a more specific activation message if needed
+        };
+    }
 }

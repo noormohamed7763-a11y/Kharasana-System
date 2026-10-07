@@ -26,7 +26,7 @@ namespace Kharasana.Web.Controllers
             try
             {
                 int? factoryIdFilter = factoryId;
-                if (RoleValue == UserRole.FactoryEmployee)
+                if (IsFactoryUser)
                 {
                     factoryIdFilter = FactoryId;
                 }

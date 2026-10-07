@@ -10,20 +10,25 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // Services
-        services.AddScoped<IFactoryService, FactoryService>();
-        services.AddScoped<IDashboardService, DashboardService>();
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IConcreteTypeService, ConcreteTypeService>();
+        // 1. Order Services
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IOrderQueryService, OrderQueryService>();
         services.AddScoped<IOrderCommandService, OrderCommandService>();
         services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
         services.AddScoped<IOrderHelperService, OrderHelperService>();
-        services.AddScoped<IOrderHelperService, OrderHelperService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IReportService, ReportService>();
+
+        // 2. Factory & Registration Services
+        services.AddScoped<IFactoryService, FactoryService>();
         services.AddScoped<IFactoryRegistrationRequestService, FactoryRegistrationRequestService>();
+        services.AddScoped<IConcreteTypeService, ConcreteTypeService>();
+
+        // 3. User & Auth Services
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserService, UserService>();
+
+        // 4. Other Services
+        services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IReportService, ReportService>();
 
         // FluentValidation
         services.AddValidatorsFromAssemblyContaining<RegisterClientValidator>();

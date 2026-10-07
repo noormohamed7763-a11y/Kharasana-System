@@ -1,0 +1,2 @@
+- [CI Password Hardening](ci-password-hardening.md) — نقل كلمة مرور SQL Server إلى GitHub Secrets
+- [Factory Registration UI Fix](factory-registration-requests-ui-fix.md) — تصحيح عرض الحالة في طلبات المصانع

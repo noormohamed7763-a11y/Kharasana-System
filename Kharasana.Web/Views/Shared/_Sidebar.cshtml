@@ -1,9 +1,6 @@
-﻿@* TODO: refactor to use Claims instead of Session
-   — يتطلب تعديل AccountController لإضافة SignInAsync مع Claims،
-   ثم تحويل جميع Controllers المستخدمة Session للصلاحيات.
-   مؤجَّل لجلسة مستقلة. *@
+﻿@using System.Security.Claims
 @{
-    var role = Context.Session.GetString("Role") ?? "";
+    var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
 }
 
 @if (role == Roles.Admin)

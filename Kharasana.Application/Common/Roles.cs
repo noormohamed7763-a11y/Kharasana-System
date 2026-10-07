@@ -10,11 +10,14 @@ public static class Roles
 {
     // أدوار فردية
     public const string Admin = "Admin";
+    public const string FactoryAdmin = "FactoryAdmin";
     public const string FactoryEmployee = "FactoryEmployee";
     public const string Driver = "Driver";
     public const string Client = "Client";
 
     // التركيبات الفعلية الموجودة في [Authorize(Roles = ...)] — الفاصلة تعني «أو»
+    public const string AdminOrFactoryAdmin = "Admin,FactoryAdmin";
+    public const string AdminOrFactoryAdminOrFactoryEmployee = "Admin,FactoryAdmin,FactoryEmployee";
     public const string AdminOrFactoryEmployee = "Admin,FactoryEmployee";
     public const string AdminOrFactoryEmployeeOrClient = "Admin,FactoryEmployee,Client";
     public const string AdminOrFactoryEmployeeOrClientOrDriver = "Admin,FactoryEmployee,Client,Driver";

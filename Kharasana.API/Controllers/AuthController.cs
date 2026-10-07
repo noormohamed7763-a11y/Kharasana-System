@@ -9,20 +9,12 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace Kharasana.API.Controllers;
 
 /// <summary>
-/// تسجيل الدخول وإنشاء الحسابات — نقطة عامة (لا تتطلّب توكن).
+/// تسجيل الدخول وإنشاء الحسابات — نقطة عامة.
 /// </summary>
 /// <remarks>
-/// الجسمان هنا محميّان بـ <c>ValidationFilter</c> (كان <c>RegisterClientValidator</c>
-/// و<c>LoginRequestDtoValidator</c> مكتوبين ولا يُشغَّلان إطلاقاً). الحد الأدنى لطول
-/// كلمة المرور من <c>PasswordPolicy.MinimumLength</c>، وتُعيد الخدمة فحصه بنفسها.
-///
-/// <para><b>جسم الطلب من طبقة Application لا من <c>Kharasana.API.DTOs</c> — وهذا مقصود:</b>
-/// الفاحصات تُسجَّل في DI عبر <c>AddValidatorsFromAssemblyContaining</c> على أنواع طبقة
-/// Application، و<c>ValidationFilter&lt;T&gt;</c> يطلب <c>IValidator&lt;T&gt;</c> بنوع الجسم
-/// نفسه. نسخة DTO منفصلة في طبقة API تجعل الفلتر يطلب <c>IValidator&lt;API.DTOs...&gt;</c>
-/// غير المسجَّل، فيفشل إنشاء الفلتر ويُردّ 500 على كل تسجيل ودخول — وهو ما كان يحدث.
-/// وبقيّة المتحكّمات كلها تستقبل أنواع طبقة Application، فهذا هو النمط الموحَّد.
-/// يحرس ذلك <c>ValidatorWiringTests</c>.</para>
+/// هذا المتحكم محمي بـ <c>ValidationFilter</c> للتحقق من بيانات الطلبات.
+/// يتم الاعتماد على الـ DTOs الخاصة بطبقة التطبيق (Application) مباشرة لضمان عمل الفلتر
+/// بشكل صحيح مع الفاحصات (Validators) المسجلة في النظام.
 /// </remarks>
 [ApiController]
 [ApiVersion("1.0")]
@@ -74,6 +66,14 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
     {
         var result = await _authService.LoginAsync(dto);
+        return Ok(result);
+    }
+
+    [HttpPost("activate")]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> Activate([FromBody] string tokenHash)
+    {
+        var result = await _authService.ActivateAccountAsync(tokenHash);
         return Ok(result);
     }
 }

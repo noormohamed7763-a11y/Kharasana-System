@@ -87,6 +87,13 @@
 @media (min-width: 1920px) {
     .content-body .container,
     .main-content .container {
+        max-width: 1920px;
+    }
+}
+
+@media (min-width: 2560px) {
+    .content-body .container,
+    .main-content .container {
         max-width: 100%;
     }
 }

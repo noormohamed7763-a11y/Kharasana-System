@@ -65,5 +65,22 @@ namespace Kharasana.Web.Services.Api
             _logger.LogDebug("استُدعيت LogoutAsync");
             return Task.CompletedTask;
         }
+
+        public async Task<bool> ActivateAccountAsync(string tokenHash)
+        {
+            try
+            {
+                var response = await _apiClient.PostAsync<ApiResponse<object>>(
+                    "Auth/activate",
+                    tokenHash);
+
+                return response?.Success ?? false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "استثناء في ActivateAccountAsync");
+                return false;
+            }
+        }
     }
 }

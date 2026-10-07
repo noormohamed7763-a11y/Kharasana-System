@@ -77,6 +77,9 @@ public static class Messages
     public const string PasswordsNotMatch = "كلمة المرور وتأكيد كلمة المرور غير متطابقتين.";
     public const string InvalidCredentials = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
     public const string AccountLocked = "تم قفل الحساب بسبب محاولات دخول فاشلة متكررة. حاول مرة أخرى بعد 15 دقيقة.";
+    public const string ActivationTokenExpired = "رابط التفعيل انتهت صلاحيته.";
+    public const string ActivationTokenInvalid = "رابط التفعيل غير صالح.";
+    public const string ActivationTokenAlreadyUsed = "تم استخدام رابط التفعيل هذا مسبقاً.";
     public const string Unauthorized = "ليس لديك صلاحية لتنفيذ هذه العملية.";
     public const string InvalidOrExpiredToken = "التوكن غير موجود أو غير صالح أو منتهي الصلاحية.";
     public const string InvalidDriver = "المستخدم المحدد ليس سائقًا.";

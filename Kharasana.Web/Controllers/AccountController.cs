@@ -1,4 +1,7 @@
-﻿using Kharasana.Web.Filters;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
 using Kharasana.Web.Models;
@@ -62,40 +65,44 @@ namespace Kharasana.Web.Controllers
                     return View(model);
                 }
 
-                // ✅ تفريغ الجلسة قبل كتابة الهوية الجديدة إلزامي: معرّف الجلسة (SessionId)
-                //    لا يُدوَّر في ASP.NET Core، فأي مفتاح متبقٍّ من حسابٍ سابق ينتقل إلى
-                //    الحساب الجديد. الأثر الفعلي: مديرٌ يسجّل الدخول بعد موظف مصنع كان
-                //    يحمل FactoryId قديمًا — فيُقيَّد في تعيين السائقين (OrderWorkflow)
-                //    ويُعرض له اسم مصنعٍ وشعاره ليسا مصنعه.
-                //    TempData لا يتأثر: مزوّده في هذا المشروع كوكي لا جلسة (انظر Program.cs).
+                // ✅ تفريغ الجلسة قبل كتابة الهوية الجديدة إلزامي
                 HttpContext.Session.Clear();
 
-                HttpContext.Session.SetString("Token", result.Token);
-                HttpContext.Session.SetString("FullName", result.FullName);
-                HttpContext.Session.SetString("Role", result.Role);
-                HttpContext.Session.SetInt32("UserId", result.UserId); // Added
+                // إصدار المطالبات (Claims)
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, result.FullName),
+                    new Claim(ClaimTypes.NameIdentifier, result.UserId.ToString()),
+                    new Claim(ClaimTypes.Role, result.Role)
+                };
 
                 if (result.FactoryId.HasValue)
                 {
-                    HttpContext.Session.SetInt32("FactoryId", result.FactoryId.Value);
+                    claims.Add(new Claim("FactoryId", result.FactoryId.Value.ToString()));
+                }
 
-                    // تحميل اسم المصنع وشعاره مرة واحدة عند الدخول وتخزينهما في الجلسة
-                    // ليعرض الـ Navbar الشعار الدائري (مع بديل حرفي عند غيابه).
+                if (result.FactoryIsActive.HasValue)
+                {
+                    claims.Add(new Claim("FactoryIsActive", result.FactoryIsActive.Value.ToString()));
+                }
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2)
+                };
+
+                await HttpContext.SignInAsync("WebCookie", new ClaimsPrincipal(claimsIdentity), authProperties);
+
+                // تخزين البيانات التي لا تزال تحتاجها الجلسة (مثل الشعار والاسم)
+                // يفضل نقلها للـ Claims مستقبلاً لكن لتقليل التغييرات الآن سنبقيها هنا
+                if (result.FactoryId.HasValue)
+                {
                     await CacheFactoryInfoAsync();
                 }
 
-                // ✅ تخزين حالة المصنع في الجلسة لاستخدامها في الواجهة
-                // (إخفاء الإجراءات غير المسموحة + بانر دائم عند التعطيل) — بلا نداء API إضافي.
-                if (result.FactoryIsActive.HasValue)
-                {
-                    HttpContext.Session.SetInt32("FactoryIsActive", result.FactoryIsActive.Value ? 1 : 0);
-                }
-                else
-                {
-                    HttpContext.Session.Remove("FactoryIsActive");
-                }
-
-                // ✅ تحذير بعد تسجيل الدخول (مثل: المصنع غير نشط) — يُعرض عبر _Alerts في الصفحة التالية
+                // ✅ تحذير بعد تسجيل الدخول
                 if (!string.IsNullOrWhiteSpace(result.Notification))
                     TempData[TempDataWarning] = result.Notification;
 
@@ -138,14 +145,30 @@ namespace Kharasana.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [SessionAuthorize]
         public async Task<IActionResult> Logout()
         {
             await _authService.LogoutAsync();
-
+            await HttpContext.SignOutAsync("WebCookie");
             HttpContext.Session.Clear();
 
             return RedirectToAction(nameof(Login));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Activate(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return BadRequest("التوكن مفقود.");
+
+            var success = await _authService.ActivateAccountAsync(token);
+            if (success)
+            {
+                ViewBag.Message = "تم تفعيل الحساب بنجاح، يمكنك الآن تسجيل الدخول.";
+                return View("ActivateSuccess");
+            }
+
+            ViewBag.Message = "فشل تفعيل الحساب، الرابط قد يكون غير صالح أو منتهي الصلاحية.";
+            return View("ActivateError");
         }
     }
 }

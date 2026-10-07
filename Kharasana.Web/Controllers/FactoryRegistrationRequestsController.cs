@@ -1,4 +1,6 @@
+using Kharasana.Domain.Enums;
 using Kharasana.Web.Controllers;
+using Kharasana.Web.Filters;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.FactoryRegistration;
 using Kharasana.Application.Common;
@@ -6,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Kharasana.Web.Controllers
 {
+    [SessionAuthorize(Roles.Admin)]
     public class FactoryRegistrationRequestsController : BaseController
     {
         private readonly IFactoryRegistrationRequestApiService _apiService;
@@ -30,6 +33,13 @@ namespace Kharasana.Web.Controllers
                         OwnerName = r.ContactName,
                         Email = r.ContactEmail,
                         StatusText = r.Status.ToString(),
+                        StatusClass = r.Status switch
+                        {
+                            RegistrationStatus.Pending => "bg-warning",
+                            RegistrationStatus.Approved => "bg-success",
+                            RegistrationStatus.Rejected => "bg-danger",
+                            _ => "bg-secondary"
+                        },
                         CreatedAt = r.CreatedAt
                     }).ToList(),
                     TotalCount = requests.Count()
