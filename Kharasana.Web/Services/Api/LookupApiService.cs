@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Shared;
@@ -12,11 +13,13 @@ namespace Kharasana.Web.Services.Api
     {
         private readonly ApiClient _apiClient;
         private readonly ILogger<LookupApiService> _logger;
+        private readonly IMemoryCache _cache;
 
-        public LookupApiService(ApiClient apiClient, ILogger<LookupApiService> logger)
+        public LookupApiService(ApiClient apiClient, ILogger<LookupApiService> logger, IMemoryCache cache)
         {
             _apiClient = apiClient;
             _logger = logger;
+            _cache = cache;
         }
 
         /// <summary>حجم الصفحة عند الجلب — يطابق سقف الـ API (PaginationParams يقصّ كل طلب إلى 100).</summary>
@@ -123,36 +126,44 @@ namespace Kharasana.Web.Services.Api
         /// </summary>
         public async Task<List<LookupDto>> GetConcreteTypesAsync()
         {
-            try
+            const string cacheKey = "ConcreteTypes_Lookup";
+
+            return await _cache.GetOrCreateAsync(cacheKey, async entry =>
             {
-                _logger.LogInformation("جلب أنواع الخرسانة...");
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
+                entry.SlidingExpiration = TimeSpan.FromMinutes(5);
 
-                var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeDto>>>("ConcreteTypes");
-
-                if (response != null && response.Success && response.Data != null)
+                try
                 {
-                    var types = response.Data
-                        .Where(x => x.IsActive)
-                        .Select(x => new LookupDto
-                        {
-                            Id = x.ConcreteTypeId,
-                            Name = x.Name,
-                            UnitPrice = x.UnitPrice
-                        })
-                        .ToList();
+                    _logger.LogInformation("جلب أنواع الخرسانة من API (Cache Miss)...");
 
-                    _logger.LogInformation("وُجد {Count} نوع خرسانة", types.Count);
-                    return types;
+                    var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeDto>>>("ConcreteTypes");
+
+                    if (response != null && response.Success && response.Data != null)
+                    {
+                        var types = response.Data
+                            .Where(x => x.IsActive)
+                            .Select(x => new LookupDto
+                            {
+                                Id = x.ConcreteTypeId,
+                                Name = x.Name,
+                                UnitPrice = x.UnitPrice
+                            })
+                            .ToList();
+
+                        _logger.LogInformation("وُجد {Count} نوع خرسانة", types.Count);
+                        return types;
+                    }
+
+                    _logger.LogWarning("لا أنواع خرسانة من API.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "خطأ في جلب أنواع الخرسانة من API");
                 }
 
-                _logger.LogWarning("لا أنواع خرسانة.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ في جلب أنواع الخرسانة");
-            }
-
-            return new List<LookupDto>();
+                return new List<LookupDto>();
+            }) ?? new List<LookupDto>();
         }
     }
 }

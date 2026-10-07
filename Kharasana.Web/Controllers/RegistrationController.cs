@@ -30,10 +30,9 @@ namespace Kharasana.Web.Controllers
                 return View(dto);
             }
 
-            // سأفترض أن الخدمة موجودة، سنحتاج لربطها لاحقاً إذا لم تكن جاهزة للـ POST
             await _apiService.RegisterAsync(dto);
 
-            TempData["SuccessMessage"] = "تم إرسال طلب تسجيل المصنع بنجاح، سيتم مراجعته من قبل الإدارة.";
+            TempData[BaseController.TempDataSuccess] = "تم إرسال طلب تسجيل المصنع بنجاح، سيتم مراجعته من قبل الإدارة.";
             return RedirectToAction("Login", "Account");
         }
     }

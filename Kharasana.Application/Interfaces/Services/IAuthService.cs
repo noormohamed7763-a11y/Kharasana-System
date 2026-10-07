@@ -8,4 +8,6 @@ public interface IAuthService
     Task<ApiResponse<object>> RegisterAsync(RegisterUserDto request);
 
     Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginRequestDto request);
+
+    Task<ApiResponse<object>> ActivateAccountAsync(string tokenHash);
 }

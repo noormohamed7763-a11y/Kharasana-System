@@ -28,6 +28,7 @@ namespace Kharasana.Web
             builder.Logging.AddFileLogging();
 
             // Add services to the container.
+            builder.Services.AddMemoryCache();
             builder.Services.AddControllersWithViews(options =>
                 options.Filters.Add<UnhandledExceptionFilter>());
 

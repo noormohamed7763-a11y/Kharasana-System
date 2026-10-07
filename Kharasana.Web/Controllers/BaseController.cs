@@ -1,4 +1,5 @@
-﻿using Kharasana.Domain.Enums;
+﻿using System.Security.Claims;
+using Kharasana.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -16,35 +17,40 @@ namespace Kharasana.Web.Controllers
         public const string TempDataWarning = "Warning";
 
         protected string? Token =>
-            HttpContext.Session.GetString("Token");
+            HttpContext.Session.GetString("Token"); // Token لا يزال في الجلسة
 
         protected string? FullName =>
-            HttpContext.Session.GetString("FullName");
+            User.FindFirst(ClaimTypes.Name)?.Value;
 
         protected string? Role =>
-            HttpContext.Session.GetString("Role");
+            User.FindFirst(ClaimTypes.Role)?.Value;
 
         /// <summary>
-        /// الدور الحالي قيمةً من UserRole بدل مقارنة النصوص مباشرة —
-        /// يُحلَّل من نص الجلسة عند كل قراءة (الأقل تعديلاً على نقاط التخزين).
-        /// null إذا كانت القيمة غير معروفة (جلسة قديمة أو قيمة غير متوقعة).
+        /// الدور الحالي قيمةً من UserRole بدل مقارنة النصوص مباشرة.
+        /// null إذا كانت القيمة غير معروفة.
         /// </summary>
         protected UserRole? RoleValue =>
             Enum.TryParse(Role, ignoreCase: false, out UserRole role) ? role : null;
 
         protected int? FactoryId =>
-            HttpContext.Session.GetInt32("FactoryId");
+            int.TryParse(User.FindFirst("FactoryId")?.Value, out var id) ? id : null;
 
         protected int? CurrentUserId =>
-            HttpContext.Session.GetInt32("UserId");
+            int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : null;
 
         /// <summary>
         /// هل الكيان المطلوب معزول عن المستخدم الحالي؟
-        /// صحيح إذا كان المستخدم موظف مصنعٍ والكيان يتبع مصنعاً مختلفاً —
+        /// صحيح إذا كان المستخدم موظف أو مدير مصنعٍ والكيان يتبع مصنعاً مختلفاً —
         /// فعادةً يُقابَل برفض الوصول (Forbidden). للمدراء تعيد false دائماً.
         /// </summary>
         protected bool IsFactoryIsolated(int? entityFactoryId) =>
-            RoleValue == UserRole.FactoryEmployee && entityFactoryId != FactoryId;
+            IsFactoryUser && entityFactoryId != FactoryId;
+
+        /// <summary>
+        /// هل المستخدم الحالي مرتبط بمصنع (موظف أو مدير مصنع)؟
+        /// </summary>
+        protected bool IsFactoryUser =>
+            RoleValue == UserRole.FactoryEmployee || RoleValue == UserRole.FactoryAdmin;
 
         /// <summary>
         /// حالة المصنع (نشط/موقوف) من الجلسة — null للحسابات غير المرتبطة بمصنع.

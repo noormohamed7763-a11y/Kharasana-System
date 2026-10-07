@@ -29,14 +29,14 @@ jobs:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           ACCEPT_EULA: "Y"
-          MSSQL_SA_PASSWORD: "Kharasana_Test_2026"
+          MSSQL_SA_PASSWORD: "${{ secrets.MSSQL_SA_PASSWORD }}"
         ports:
           - 1433:1433
         # GitHub لا يبدأ الخطوات حتى تصير الحاوية «سليمة»، وهذا الفحص هو ما
         # يمنع فشل أول اختبار لأن SQL Server ما زال يستعد. والمساران معًا لأن
         # اسم مجلد أدوات sqlcmd اختلف بين إصدارات الصورة (tools18 / tools).
         options: >-
-          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Kharasana_Test_2026 -C -Q 'SELECT 1' || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Kharasana_Test_2026 -Q 'SELECT 1'"
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"${{ secrets.MSSQL_SA_PASSWORD }}\" -C -Q 'SELECT 1' || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"${{ secrets.MSSQL_SA_PASSWORD }}\" -Q 'SELECT 1'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 12
@@ -45,7 +45,7 @@ jobs:
     env:
       # المشروع يبني من هذه السلسلة اسم قاعدة معزولة لكل اختبار (SqlServerTestDatabase).
       # Database=master هنا مجرد أساس يستبدله الباني.
-      KHARASANA_TEST_SQLSERVER: "Server=localhost,1433;Database=master;User Id=sa;Password=Kharasana_Test_2026;TrustServerCertificate=True"
+      KHARASANA_TEST_SQLSERVER: "Server=localhost,1433;Database=master;User Id=sa;Password=${{ secrets.MSSQL_SA_PASSWORD }};TrustServerCertificate=True"
 
     steps:
       - name: Checkout

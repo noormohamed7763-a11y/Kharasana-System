@@ -75,8 +75,8 @@
        --table-row-hover جديد: كان التحويم بلون --surface-alt وهو بلون التخطيط
        نفسه تقريباً (#F8FAFC مقابل #FAFBFC)، فلا يُرى أثر للتحويم أصلاً. */
     --table-header-bg: var(--color-surface-low);
-    --table-stripe: #FAFBFC;
-    --table-row-hover: rgba(194, 75, 23, 0.09);
+    --table-stripe: var(--color-surface-alt);
+    --table-row-hover: var(--brand-cta-soft);
     --sticky-head-bg: var(--surface-alt);
 
     --success: var(--color-success);
@@ -183,8 +183,8 @@
 ============================================================ */
 @media (min-width: 992px) {
     :root {
-        --page-padding: 24px;
-        --card-padding: 20px;
-        --section-gap: 28px;
+        --page-padding: 40px;
+        --card-padding: 32px;
+        --section-gap: 40px;
     }
 }

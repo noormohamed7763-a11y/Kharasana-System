@@ -25,7 +25,7 @@ namespace Kharasana.Web.Controllers
             {
                 vm = await _dashboardApiService.GetAdminDashboardAsync();
             }
-            else if (RoleValue == UserRole.FactoryEmployee)
+            else if (IsFactoryUser)
             {
                 if (!FactoryId.HasValue)
                 {

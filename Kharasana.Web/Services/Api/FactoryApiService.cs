@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Kharasana.Web.Common;
 using Kharasana.Web.Configuration;
 using Kharasana.Web.Localization;
@@ -14,13 +15,16 @@ namespace Kharasana.Web.Services.Api
     {
         private readonly ApiClient _apiClient;
         private readonly ApiSettings _apiSettings;
+        private readonly IMemoryCache _cache;
 
         public FactoryApiService(
             ApiClient apiClient,
-            IOptions<ApiSettings> apiSettings)
+            IOptions<ApiSettings> apiSettings,
+            IMemoryCache cache)
         {
             _apiClient = apiClient;
             _apiSettings = apiSettings.Value;
+            _cache = cache;
         }
 
         private static FactoryListItemViewModel MapListItem(FactoryDto dto, string? logoUrl) => new()
@@ -37,22 +41,32 @@ namespace Kharasana.Web.Services.Api
 
         public async Task<ServiceResult<List<FactoryListItemViewModel>>> GetAllAsync()
         {
-            try
+            return await _cache.GetOrCreateAsync("Factories_All", async entry =>
             {
-                // إضافة الترتيب التنازلي لضمان ظهور المصانع الجديدة في الأعلى
-                var response = await _apiClient.GetAsync<ApiResponse<List<FactoryDto>>>("Factories?SortBy=Id&Order=Desc");
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
 
-                if (response == null || !response.Success || response.Data == null)
-                    return ServiceResult<List<FactoryListItemViewModel>>.Fail(ResponseMessage(response, AppMessages.Common.OperationFailed));
+                try
+                {
+                    var response = await _apiClient.GetAsync<ApiResponse<List<FactoryDto>>>("Factories?SortBy=Id&Order=Desc");
 
-                return ServiceResult<List<FactoryListItemViewModel>>.Ok(
-                    response.Data.Select(d => MapListItem(d, LogoFiles.BuildUrl(d.Logo, _apiSettings))).ToList());
-            }
-            catch (ApiServiceException) { throw; }
-            catch (Exception ex)
-            {
-                return ServiceResult<List<FactoryListItemViewModel>>.Fail(ex, AppMessages.Common.OperationFailed);
-            }
+                    if (response == null || !response.Success || response.Data == null)
+                        return ServiceResult<List<FactoryListItemViewModel>>.Fail(ResponseMessage(response, AppMessages.Common.OperationFailed));
+
+                    return ServiceResult<List<FactoryListItemViewModel>>.Ok(
+                        response.Data.Select(d => MapListItem(d, LogoFiles.BuildUrl(d.Logo, _apiSettings))).ToList());
+                }
+                catch (ApiServiceException) { throw; }
+                catch (Exception ex)
+                {
+                    return ServiceResult<List<FactoryListItemViewModel>>.Fail(ex, AppMessages.Common.OperationFailed);
+                }
+            }) ?? ServiceResult<List<FactoryListItemViewModel>>.Fail(AppMessages.Common.OperationFailed);
+        }
+
+        private void InvalidateCache()
+        {
+            _cache.Remove("Factories_All");
+            _cache.Remove("Factories_Archived");
         }
 
         public async Task<ServiceResult<List<FactoryListItemViewModel>>> GetArchivedAsync()
@@ -119,6 +133,7 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                     return ServiceResult.Fail(ResponseMessage(response, AppMessages.Error.Created));
 
+                InvalidateCache();
                 return ServiceResult.Ok(AppMessages.Success.Created);
             }
             catch (ApiServiceException) { throw; }
@@ -151,6 +166,8 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                     return ServiceResult.Fail(ResponseMessage(response, AppMessages.Error.Updated));
 
+                InvalidateCache();
+                _cache.Remove($"Factory_{id}");
                 return ServiceResult.Ok(AppMessages.Success.Updated);
             }
             catch (ApiServiceException) { throw; }
@@ -169,6 +186,8 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                     return ServiceResult.Fail(ResponseMessage(response, AppMessages.Error.Archived));
 
+                InvalidateCache();
+                _cache.Remove($"Factory_{id}");
                 return ServiceResult.Ok(AppMessages.Success.Archived);
             }
             catch (ApiServiceException) { throw; }
@@ -187,6 +206,8 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                     return ServiceResult.Fail(ResponseMessage(response, AppMessages.Error.Restored));
 
+                InvalidateCache();
+                _cache.Remove($"Factory_{id}");
                 return ServiceResult.Ok(AppMessages.Success.Restored);
             }
             catch (ApiServiceException) { throw; }
@@ -225,6 +246,9 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success || response.Data == null)
                     return ServiceResult<string>.Fail(ResponseMessage(response, AppMessages.Error.LogoUpload));
 
+                InvalidateCache();
+                _cache.Remove($"Factory_{id}");
+
                 var logo = ExtractLogoPath(response.Data);
                 return ServiceResult<string>.Ok(LogoFiles.BuildUrl(logo, _apiSettings) ?? string.Empty, AppMessages.Success.LogoUpdated);
             }
@@ -244,6 +268,8 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                     return ServiceResult.Fail(ResponseMessage(response, AppMessages.Error.LogoDelete));
 
+                InvalidateCache();
+                _cache.Remove($"Factory_{id}");
                 return ServiceResult.Ok(AppMessages.Success.LogoDeleted);
             }
             catch (ApiServiceException) { throw; }
