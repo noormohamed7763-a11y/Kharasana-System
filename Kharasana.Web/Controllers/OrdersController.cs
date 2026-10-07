@@ -34,6 +34,19 @@ namespace Kharasana.Web.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        private async Task ReloadConcreteTypesAsync()
+        {
+            try
+            {
+                var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
+                ViewBag.ConcreteTypes = concreteTypes;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "خطأ في تحميل أنواع الخرسانة");
+            }
+        }
+
         /// <summary>
         /// إعادة تحميل بيانات الطلب والقوائم المنسدلة بعد فشل التعديل، لعرض النموذج كاملاً.
         /// </summary>

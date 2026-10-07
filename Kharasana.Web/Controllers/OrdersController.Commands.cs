@@ -20,68 +20,31 @@ namespace Kharasana.Web.Controllers
         {
             if (!ModelState.IsValid)
             {
-                try
-                {
-                    var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
-                    ViewBag.ConcreteTypes = concreteTypes;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "خطأ في تحميل أنواع الخرسانة");
-                }
+                await ReloadConcreteTypesAsync();
                 return View(model);
             }
 
-            try
+            if (RoleValue == UserRole.FactoryEmployee && FactoryId.HasValue)
             {
-                if (RoleValue == UserRole.FactoryEmployee && FactoryId.HasValue)
-                {
-                    model.FactoryId = FactoryId.Value;
-                }
-
-                var created = await _ordersApiService.CreatePhoneOrderAsync(model);
-
-                if (created?.Order == null)
-                {
-                    TempData[TempDataError] = AppMessages.Common.OperationFailed;
-                    var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
-                    ViewBag.ConcreteTypes = concreteTypes;
-                    return View(model);
-                }
-
-                // ✅ إن أُنشئ حساب عميل جديد تُعرض كلمة المرور المؤقتة مرة واحدة فقط هنا.
-                //    TempData يعيش لدورة إعادة توجيه واحدة ثم يُقرأ ويُحذف في _Alerts،
-                //    فلا تظهر في تحديث الصفحة ولا في أي طلب لاحق.
-                if (!string.IsNullOrEmpty(created.NewClientTemporaryPassword))
-                {
-                    TempData[TempDataSuccess] = string.Format(
-                        AppMessages.Success.NewClientAccountCreated,
-                        created.NewClientPhone ?? model.ClientPhone,
-                        created.NewClientTemporaryPassword);
-                }
-                else
-                {
-                    TempData[TempDataSuccess] = AppMessages.Success.Created;
-                }
-
-                return RedirectToAction(nameof(Index));
+                model.FactoryId = FactoryId.Value;
             }
-            catch (ApiServiceException ex)
+
+            // الخدمة ترمي استثناءً إذا فشلت، والفلتر العالمي سيعالجه
+            var created = await _ordersApiService.CreatePhoneOrderAsync(model);
+
+            if (!string.IsNullOrEmpty(created?.NewClientTemporaryPassword))
             {
-                _logger.LogError(ex, "خطأ في إنشاء طلب جديد StatusCode={StatusCode}", (int)ex.StatusCode);
-                TempData[TempDataError] = ex.Message;
-                var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
-                ViewBag.ConcreteTypes = concreteTypes;
-                return View(model);
+                TempData[TempDataSuccess] = string.Format(
+                    AppMessages.Success.NewClientAccountCreated,
+                    created.NewClientPhone ?? model.ClientPhone,
+                    created.NewClientTemporaryPassword);
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "خطأ غير متوقع في إنشاء طلب جديد");
-                TempData[TempDataError] = AppMessages.Common.OperationFailed;
-                var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
-                ViewBag.ConcreteTypes = concreteTypes;
-                return View(model);
+                TempData[TempDataSuccess] = AppMessages.Success.Created;
             }
+
+            return RedirectToAction(nameof(Index));
         }
 
         // ============================================================
@@ -105,55 +68,16 @@ namespace Kharasana.Web.Controllers
 
             if (!ModelState.IsValid)
             {
-                // مصدر واحد لبيانات النموذج: نفس مسار إعادة التحميل الذي تستعمله مسارات
-                // الفشل الأخرى، فلا تتباعد نسختان من العرض مرة أخرى.
                 await ReloadEditViewDataAsync(model);
                 return View(model);
             }
 
-            try
-            {
-                var existingOrder = await _ordersApiService.GetOrderByIdAsync(id);
-                if (existingOrder == null)
-                {
-                    _logger.LogWarning("الطلب {OrderId} غير موجود للتعديل", id);
-                    TempData[TempDataError] = AppMessages.Common.NotFound;
-                    return RedirectToAction(nameof(Index));
-                }
+            // الخدمة ترمي استثناءً إذا فشلت، والفلتر العالمي سيعالجه
+            await _ordersApiService.UpdateOrderAsync(id, model);
 
-                var updated = await _ordersApiService.UpdateOrderAsync(id, model);
-
-                if (updated == null)
-                {
-                    TempData[TempDataError] = AppMessages.Common.OperationFailed;
-
-                    // مصدر واحد لبيانات النموذج: كانت هذه النسخة المكرّرة الأطول لا تضبط
-                    // Status/UnitPrice، فتظهر الحالة «غير معروف» والسعر «-» — معلومة خاطئة
-                    // لا ناقصة. وبقية مسارات الفشل تستعمل الدالة المساعدة نفسها.
-                    await ReloadEditViewDataAsync(model);
-                    return View(model);
-                }
-
-                _logger.LogInformation("عُدّل الطلب {OrderId}", id);
-                TempData[TempDataSuccess] = AppMessages.Success.Updated;
-                return RedirectToAction(nameof(Details), new { id });
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في تعديل الطلب {OrderId} الحالة={StatusCode}", id, (int)ex.StatusCode);
-                TempData[TempDataError] = ex.Message;
-
-                await ReloadEditViewDataAsync(model);
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في تعديل الطلب {OrderId}", id);
-                TempData[TempDataError] = AppMessages.Common.OperationFailed;
-
-                await ReloadEditViewDataAsync(model);
-                return View(model);
-            }
+            _logger.LogInformation("عُدّل الطلب {OrderId}", id);
+            TempData[TempDataSuccess] = AppMessages.Success.Updated;
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         // ============================================================
@@ -169,39 +93,20 @@ namespace Kharasana.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            try
+            if (RoleValue == UserRole.FactoryEmployee)
             {
-                if (RoleValue == UserRole.FactoryEmployee)
+                var order = await _ordersApiService.GetOrderByIdAsync(id);
+                if (order == null || IsFactoryIsolated(order.FactoryId))
                 {
-                    var order = await _ordersApiService.GetOrderByIdAsync(id);
-                    if (order == null || IsFactoryIsolated(order.FactoryId))
-                    {
-                        TempData[TempDataError] = AppMessages.Common.Forbidden;
-                        return RedirectToAction(nameof(Index));
-                    }
+                    TempData[TempDataError] = AppMessages.Common.Forbidden;
+                    return RedirectToAction(nameof(Index));
                 }
-
-                var ok = await _ordersApiService.DeleteOrderAsync(id);
-                if (!ok.Succeeded)
-                {
-                    TempData[TempDataError] = AppMessages.Error.Deleted;
-                }
-                else
-                {
-                    TempData[TempDataSuccess] = AppMessages.Success.Deleted;
-                }
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في حذف الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                TempData[TempDataError] = ex.Message;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في حذف الطلب {OrderId}", id);
-                TempData[TempDataError] = AppMessages.Common.OperationFailed;
             }
 
+            // الخدمة ترمي استثناءً إذا فشلت، والفلتر العالمي سيعالجه
+            await _ordersApiService.DeleteOrderAsync(id);
+
+            TempData[TempDataSuccess] = AppMessages.Success.Deleted;
             return RedirectToAction(nameof(Index));
         }
     }

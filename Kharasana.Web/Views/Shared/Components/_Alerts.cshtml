@@ -33,7 +33,24 @@
 {
     <div class="alert alert-danger app-alert show" role="alert">
         <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-        @error
+        <strong>خطأ:</strong> @error
+
+        @if (TempData["ErrorSolution"] != null || TempData["TraceId"] != null)
+        {
+            <button class="btn btn-sm btn-outline-danger ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#errorDetails" aria-expanded="false" aria-controls="errorDetails">
+                عرض التفاصيل
+            </button>
+            <div class="collapse mt-2" id="errorDetails">
+                @if (TempData["ErrorSolution"] != null)
+                {
+                    <p class="mb-1"><strong>الحل المقترح:</strong> @TempData["ErrorSolution"]</p>
+                }
+                @if (TempData["TraceId"] != null)
+                {
+                    <small class="d-block text-muted">رقم التتبع: <code class="user-select-all">@TempData["TraceId"]</code></small>
+                }
+            </div>
+        }
     </div>
 }
 

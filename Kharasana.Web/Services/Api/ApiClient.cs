@@ -78,24 +78,27 @@ public class ApiClient
     }
 
     /// <summary>
-    /// يحوّل حالة HTTP إلى رسالة عربية مناسبة، مع تفضيل رسالة الـ API الأصلية
+    /// يحوّل حالة HTTP إلى نموذج خطأ مناسب، مع تفضيل رسالة الـ API الأصلية
     /// عندما يعيد الخادم ApiResponse بجسم قابل للقراءة.
     /// </summary>
-    private static string ComposeUserMessage(HttpStatusCode statusCode, string? apiMessage)
+    private static ApiError ComposeApiError(HttpStatusCode statusCode, string? apiMessage)
     {
-        if (!string.IsNullOrWhiteSpace(apiMessage))
-            return apiMessage;
-
-        return statusCode switch
+        var error = statusCode switch
         {
-            HttpStatusCode.Unauthorized => AppMessages.Common.Unauthorized,
-            HttpStatusCode.Forbidden => AppMessages.Common.Forbidden,
-            HttpStatusCode.NotFound => AppMessages.Common.NotFound,
-            HttpStatusCode.Conflict => AppMessages.Common.DataConflict,
-            HttpStatusCode.TooManyRequests => AppMessages.Common.DeviceRateLimited,
-            _ when (int)statusCode >= 500 => AppMessages.Common.ServerError,
-            _ => AppMessages.Common.OperationFailed
+            HttpStatusCode.Unauthorized => ApiErrorCatalog.Unauthorized,
+            HttpStatusCode.Forbidden => ApiErrorCatalog.Forbidden,
+            HttpStatusCode.NotFound => ApiErrorCatalog.NotFound,
+            _ when (int)statusCode >= 500 => ApiErrorCatalog.ServerError,
+            _ => ApiErrorCatalog.Unknown
         };
+
+        if (!string.IsNullOrWhiteSpace(apiMessage))
+        {
+            // نستخدم رسالة الـ API الأصلية إذا توفرت ولكن نحتفظ بنفس الكود
+            return error with { UserMessageTemplate = apiMessage };
+        }
+
+        return error;
     }
 
     private async Task<T?> HandleResponseAsync<T>(
@@ -137,8 +140,8 @@ public class ApiClient
 
                 try
                 {
-                    var error = JsonSerializer.Deserialize<ApiErrorEnvelope>(content, JsonOptions);
-                    apiMessage = string.IsNullOrWhiteSpace(error?.Message) ? null : error.Message;
+                    var envelope = JsonSerializer.Deserialize<ApiErrorEnvelope>(content, JsonOptions);
+                    apiMessage = string.IsNullOrWhiteSpace(envelope?.Message) ? null : envelope.Message;
                 }
                 catch
                 {
@@ -152,13 +155,12 @@ public class ApiClient
                 _httpContextAccessor.HttpContext?.Session.Clear();
             }
 
-            var userMessage = ComposeUserMessage(response.StatusCode, apiMessage);
+            var error = ComposeApiError(response.StatusCode, apiMessage);
 
             throw new ApiServiceException(
                 response.StatusCode,
-                userMessage,
-                apiMessage,
-                CurrentTraceId);
+                error,
+                traceId: CurrentTraceId);
         }
 
         try
@@ -170,8 +172,7 @@ public class ApiClient
             _logger.LogError(ex, "تعذّر تحليل ردّ ناجح لـ {Method} {Url}. التتبّع={TraceId}", method, url, CurrentTraceId);
             throw new ApiServiceException(
                 HttpStatusCode.OK,
-                AppMessages.Common.ServerError,
-                apiResponseMessage: null,
+                ApiErrorCatalog.Unknown,
                 traceId: CurrentTraceId,
                 innerException: ex);
         }
@@ -195,10 +196,10 @@ public class ApiClient
     /// </summary>
     private void ThrowTransportException(string method, string url, Exception ex)
     {
-        var userMessage = ex switch
+        var error = ex switch
         {
-            HttpRequestException => AppMessages.Common.NetworkError,
-            _ => AppMessages.Common.ServerError
+            HttpRequestException => ApiErrorCatalog.NetworkError,
+            _ => ApiErrorCatalog.ServerError
         };
 
         var statusCode = ex switch
@@ -207,7 +208,7 @@ public class ApiClient
             _ => HttpStatusCode.InternalServerError
         };
 
-        throw new ApiServiceException(statusCode, userMessage, traceId: CurrentTraceId, innerException: ex);
+        throw new ApiServiceException(statusCode, error, traceId: CurrentTraceId, innerException: ex);
     }
 
     /// <summary>

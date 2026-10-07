@@ -13,6 +13,8 @@ namespace Kharasana.Web.Controllers
         /// </summary>
         public const string TempDataSuccess = "Success";
         public const string TempDataError = "Error";
+        public const string TempDataErrorSolution = "ErrorSolution";
+        public const string TempDataTraceId = "TraceId";
         public const string TempDataInfo = "Info";
         public const string TempDataWarning = "Warning";
 

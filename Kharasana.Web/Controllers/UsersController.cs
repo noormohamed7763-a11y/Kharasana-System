@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
@@ -55,16 +55,13 @@ public class UsersController : BaseController
 
         // أعداد الأدوار عبر كل الصفحات — فشلها لا ينبغي أن يُسقط الصفحة بعد أن حمّلنا القائمة
         var counts = (Admins: 0, FactoryEmployees: 0, Drivers: 0);
-        if (users != null)
+        try
         {
-            try
-            {
-                counts = await _userApiService.GetRoleCountsAsync(search, factoryId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "تعذر جلب إحصاءات أدوار المستخدمين — ستُعرض البطاقات بقيمة صفر.");
-            }
+            counts = await _userApiService.GetRoleCountsAsync(search, factoryId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "تعذر جلب إحصاءات أدوار المستخدمين — ستُعرض البطاقات بقيمة صفر.");
         }
 
         var model = new UsersIndexViewModel
@@ -74,7 +71,7 @@ public class UsersController : BaseController
             Role = role,
             PageNumber = pageNumber,
             PageSize = pageSize,
-            TotalUsers = users?.TotalCount ?? 0,
+            TotalUsers = users.TotalCount,
             AdminsCount = counts.Admins,
             FactoryEmployeesCount = counts.FactoryEmployees,
             DriversCount = counts.Drivers
@@ -109,30 +106,10 @@ public class UsersController : BaseController
             return View(model);
         }
 
-        try
-        {
-            var result = await _userApiService.CreateAsync(model);
+        await _userApiService.CreateAsync(model);
 
-            if (result.Success)
-            {
-                TempData[TempDataSuccess] = AppMessages.Success.UserCreated;
-                return RedirectToAction(nameof(Index));
-            }
-
-            ModelState.AddModelError(string.Empty, result.Message ?? AppMessages.Error.UserCreate);
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في إنشاء مستخدم جديد StatusCode={StatusCode}", (int)ex.StatusCode);
-            ModelState.AddModelError(string.Empty, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في إنشاء مستخدم جديد");
-            ModelState.AddModelError(string.Empty, AppMessages.Common.OperationFailed);
-        }
-
-        return View(model);
+        TempData[TempDataSuccess] = AppMessages.Success.UserCreated;
+        return RedirectToAction(nameof(Index));
     }
 
     // GET: Users/Details/{id}
@@ -144,12 +121,6 @@ public class UsersController : BaseController
     public async Task<IActionResult> Details(int id)
     {
         var user = await _userApiService.GetUserByIdAsync(id);
-
-        if (user == null)
-        {
-            TempData[TempDataError] = AppMessages.Common.NotFound;
-            return RedirectToAction(nameof(Index));
-        }
 
         var model = new UserDetailsViewModel
         {
@@ -193,12 +164,6 @@ public class UsersController : BaseController
     {
         var user = await _userApiService.GetUserByIdAsync(id);
 
-        if (user == null)
-        {
-            TempData[TempDataError] = AppMessages.Common.NotFound;
-            return RedirectToAction(nameof(Index));
-        }
-
         if (user.Role != Roles.Driver)
         {
             TempData[TempDataError] = AppMessages.Common.DriverReportForDriverCardOnly;
@@ -228,12 +193,6 @@ public class UsersController : BaseController
     public async Task<IActionResult> Edit(int id)
     {
         var user = await _userApiService.GetUserByIdAsync(id);
-
-        if (user == null)
-        {
-            TempData[TempDataError] = AppMessages.Common.NotFound;
-            return RedirectToAction(nameof(Index));
-        }
 
         var role = Enum.TryParse<UserRole>(user.Role, out var parsedRole)
             ? parsedRole
@@ -280,30 +239,10 @@ public class UsersController : BaseController
             return View(model);
         }
 
-        try
-        {
-            var result = await _userApiService.UpdateAsync(id, model);
+        await _userApiService.UpdateAsync(id, model);
 
-            if (result.Success)
-            {
-                TempData[TempDataSuccess] = AppMessages.Success.UserUpdated;
-                return RedirectToAction(nameof(Index));
-            }
-
-            ModelState.AddModelError(string.Empty, result.Message ?? AppMessages.Error.UserUpdate);
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في تعديل مستخدم StatusCode={StatusCode}", (int)ex.StatusCode);
-            ModelState.AddModelError(string.Empty, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في تعديل مستخدم");
-            ModelState.AddModelError(string.Empty, AppMessages.Common.OperationFailed);
-        }
-
-        return View(model);
+        TempData[TempDataSuccess] = AppMessages.Success.UserUpdated;
+        return RedirectToAction(nameof(Index));
     }
 
     // POST: Users/Delete/{id}
@@ -312,30 +251,9 @@ public class UsersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        try
-        {
-            var result = await _userApiService.DeleteAsync(id);
+        await _userApiService.DeleteAsync(id);
 
-            if (result.Success)
-            {
-                TempData[TempDataSuccess] = AppMessages.Success.UserDeleted;
-            }
-            else
-            {
-                TempData[TempDataError] = result.Message ?? AppMessages.Error.UserDelete;
-            }
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في حذف مستخدم StatusCode={StatusCode}", (int)ex.StatusCode);
-            TempData[TempDataError] = ex.Message;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في حذف مستخدم");
-            TempData[TempDataError] = AppMessages.Common.OperationFailed;
-        }
-
+        TempData[TempDataSuccess] = AppMessages.Success.UserDeleted;
         return RedirectToAction(nameof(Index));
     }
 }

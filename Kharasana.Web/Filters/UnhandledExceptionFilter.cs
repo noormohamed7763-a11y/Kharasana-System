@@ -39,9 +39,10 @@ public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
         context.ExceptionHandled = true;
 
         _logger.LogWarning(
-            "التقط الفلتر ApiServiceException غير معالَج: الحالة={StatusCode} الرسالة={Message} التتبّع={TraceId}",
+            "التقط الفلتر ApiServiceException غير معالَج: الحالة={StatusCode} الكود={ErrorCode} الرسالة={Message} التتبّع={TraceId}",
             (int)apiEx.StatusCode,
-            apiEx.Message,
+            apiEx.Error.ErrorCode,
+            apiEx.Error.FormatMessage(apiEx.MessageArgs ?? Array.Empty<object>()),
             apiEx.TraceId);
 
         // ── AJAX / fetch ──
@@ -50,7 +51,9 @@ public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
             context.Result = new ObjectResult(new
             {
                 success = false,
-                message = apiEx.Message,
+                errorCode = apiEx.Error.ErrorCode,
+                message = apiEx.Error.FormatMessage(),
+                solution = apiEx.Error.UserSolution,
                 traceId = apiEx.TraceId
             })
             { StatusCode = (int)apiEx.StatusCode };
@@ -81,7 +84,9 @@ public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
             .GetRequiredService<ITempDataDictionaryFactory>()
             .GetTempData(httpContext);
 
-        tempData[BaseController.TempDataError] = apiEx.Message;
+        tempData[BaseController.TempDataError] = apiEx.Error.FormatMessage(apiEx.MessageArgs ?? Array.Empty<object>());
+        tempData["ErrorSolution"] = apiEx.Error.UserSolution;
+        tempData["TraceId"] = apiEx.TraceId;
         tempData.Save();
 
         // ── POST: نُعيد المستخدم إلى الصفحة السابقة مع رسالة الخطأ ──
