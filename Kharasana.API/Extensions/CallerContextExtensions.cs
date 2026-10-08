@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Kharasana.API.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 
 namespace Kharasana.API.Extensions;

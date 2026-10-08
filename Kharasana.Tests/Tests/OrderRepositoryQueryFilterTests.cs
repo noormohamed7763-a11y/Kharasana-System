@@ -74,13 +74,13 @@ public class OrderRepositoryQueryFilterTests : IDisposable
         await SeedOrderGraphAsync(concreteTypeDeleted: true);
 
         var result = await _repository.GetPagedAsync(
+            new CallerContext(1, UserRole.Admin, null),
             factoryId: null, clientId: null, driverId: null, status: null,
             search: null, pageNumber: 1, pageSize: 10);
 
         result.TotalCount.Should().Be(1);
         result.Items.Should().HaveCount(1);
-        result.Items.Single().ConcreteType.Should().NotBeNull();
-        result.Items.Single().ConcreteType.Name.Should().Be("C30");
+        result.Items.Single().ConcreteTypeName.Should().Be("C30");
     }
 
     [Fact]
@@ -89,12 +89,12 @@ public class OrderRepositoryQueryFilterTests : IDisposable
         await SeedOrderGraphAsync(factoryDeleted: true);
 
         var result = await _repository.GetPagedAsync(
+            new CallerContext(1, UserRole.Admin, null),
             factoryId: null, clientId: null, driverId: null, status: null,
             search: null, pageNumber: 1, pageSize: 10);
 
         result.TotalCount.Should().Be(1);
-        result.Items.Single().Factory.Should().NotBeNull();
-        result.Items.Single().Factory.FactoryName.Should().Be("مصنع_فلتر");
+        result.Items.Single().FactoryName.Should().Be("مصنع_فلتر");
     }
 
     [Fact]
@@ -103,12 +103,12 @@ public class OrderRepositoryQueryFilterTests : IDisposable
         await SeedOrderGraphAsync(clientDeleted: true);
 
         var result = await _repository.GetPagedAsync(
+            new CallerContext(1, UserRole.Admin, null),
             factoryId: null, clientId: null, driverId: null, status: null,
             search: null, pageNumber: 1, pageSize: 10);
 
         result.TotalCount.Should().Be(1);
-        result.Items.Single().Client.Should().NotBeNull();
-        result.Items.Single().Client.FullName.Should().Be("عميل_فلتر");
+        result.Items.Single().ClientName.Should().Be("عميل_فلتر");
     }
 
     [Fact]
@@ -117,12 +117,12 @@ public class OrderRepositoryQueryFilterTests : IDisposable
         await SeedOrderGraphAsync(driverDeleted: true);
 
         var result = await _repository.GetPagedAsync(
+            new CallerContext(1, UserRole.Admin, null),
             factoryId: null, clientId: null, driverId: null, status: null,
             search: null, pageNumber: 1, pageSize: 10);
 
         result.TotalCount.Should().Be(1);
-        result.Items.Single().Driver.Should().NotBeNull();
-        result.Items.Single().Driver!.FullName.Should().Be("سائق_فلتر");
+        result.Items.Single().DriverName.Should().Be("سائق_فلتر");
     }
 
     [Fact]
@@ -147,6 +147,7 @@ public class OrderRepositoryQueryFilterTests : IDisposable
         await SeedOrderGraphAsync(orderDeleted: true);
 
         var result = await _repository.GetPagedAsync(
+            new CallerContext(1, UserRole.Admin, null),
             factoryId: null, clientId: null, driverId: null, status: null,
             search: null, pageNumber: 1, pageSize: 10);
 
@@ -175,7 +176,8 @@ public class OrderRepositoryQueryFilterTests : IDisposable
 
         var result = await service.GetPagedAsync(
             factoryId: null, clientId: null, driverId: null,
-            callerRole: UserRole.Admin, pagination: new PaginationParams { PageNumber = 1, PageSize = 10 });
+            caller: new CallerContext(1, UserRole.Admin, null),
+            pagination: new PaginationParams { PageNumber = 1, PageSize = 10 });
 
         var dto = result.Items.Should().ContainSingle().Subject;
         dto.ConcreteTypeName.Should().Be("C30");

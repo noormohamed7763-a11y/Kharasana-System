@@ -1,4 +1,6 @@
 using FluentAssertions;
+using Kharasana.Application.Common;
+using Kharasana.Domain.Enums;
 using Kharasana.IntegrationTests.Infrastructure;
 using Kharasana.IntegrationTests.TestData;
 using Kharasana.Infrastructure.Repositories;
@@ -73,6 +75,7 @@ public class QueryFilterOnSqlServerTests
         var repository = new OrderRepository(context);
 
         var page = await repository.GetPagedAsync(
+            new CallerContext(1, UserRole.Admin, null),
             factoryId: null, clientId: null, driverId: null, status: null,
             search: null, pageNumber: 1, pageSize: 10);
 
@@ -80,10 +83,9 @@ public class QueryFilterOnSqlServerTests
         page.Items.Should().ContainSingle();
 
         var order = page.Items.Single();
-        order.ConcreteType.Should().NotBeNull("الطلب التاريخي يجب أن يبقى ظاهرًا بعد أرشفة نوعه");
-        order.ConcreteType.Name.Should().Be("C30");
-        order.Client.FullName.Should().Be("عميل_فلتر");
-        order.Driver!.FullName.Should().Be("سائق_فلتر");
+        order.ConcreteTypeName.Should().Be("C30", "الطلب التاريخي يجب أن يبقى ظاهرًا بعد أرشفة نوعه");
+        order.ClientName.Should().Be("عميل_فلتر");
+        order.DriverName.Should().Be("سائق_فلتر");
     }
 
     [SqlServerFact]
@@ -107,12 +109,13 @@ public class QueryFilterOnSqlServerTests
         var repository = new OrderRepository(context);
 
         var page = await repository.GetPagedAsync(
+            new CallerContext(1, UserRole.Admin, null),
             factoryId: null, clientId: null, driverId: null, status: null,
             search: null, pageNumber: 1, pageSize: 10);
 
         page.TotalCount.Should().Be(1);
-        page.Items.Single().Factory.FactoryName.Should().Be("مصنع_فلتر");
-        page.Items.Single().Client.FullName.Should().Be("عميل_فلتر");
+        page.Items.Single().FactoryName.Should().Be("مصنع_فلتر");
+        page.Items.Single().ClientName.Should().Be("عميل_فلتر");
     }
 
     /// <summary>
@@ -137,6 +140,7 @@ public class QueryFilterOnSqlServerTests
         var repository = new OrderRepository(context);
 
         var page = await repository.GetPagedAsync(
+            new CallerContext(1, UserRole.Admin, null),
             factoryId: null, clientId: null, driverId: null, status: null,
             search: null, pageNumber: 1, pageSize: 10);
 

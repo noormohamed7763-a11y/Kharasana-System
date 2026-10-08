@@ -1,5 +1,6 @@
 ﻿using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Customer;
+using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.DTOs.Report;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
@@ -25,8 +26,8 @@ public interface IOrderRepository : IGenericRepository<Order>
     /// </summary>
     Task<Order?> GetByIdWithDetailsForUpdateAsync(int id);
 
-    Task<PagedResult<Order>> GetPagedAsync(
-        int? factoryId, int? clientId, int? driverId, OrderStatus? status, string? search, int pageNumber, int pageSize);
+    Task<PagedResult<OrderDto>> GetPagedAsync(
+        CallerContext caller, int? factoryId, int? clientId, int? driverId, OrderStatus? status, string? search, int pageNumber, int pageSize);
 
     Task<PagedResult<CustomerSummaryDto>> GetFactoryCustomersAsync(
         int? factoryId, string? search, int pageNumber, int pageSize);

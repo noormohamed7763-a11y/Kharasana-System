@@ -480,7 +480,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — Admin يرى جميع الطلبات مرتبة تنازلياً
         var orders = await _orderService.GetOrdersByDriverIdAsync(
-            driverId: 200, callerFactoryId: null, callerRole: UserRole.Admin);
+            driverId: 200, caller: new CallerContext(10, UserRole.Admin, null));
 
         // Assert
         orders.Should().HaveCount(3);
@@ -505,7 +505,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — موظف المصنع 1 يرى طلبات سائق المصنع 1
         var orders = await _orderService.GetOrdersByDriverIdAsync(
-            driverId: 201, callerFactoryId: 1, callerRole: UserRole.FactoryEmployee);
+            driverId: 201, caller: new CallerContext(20, UserRole.FactoryEmployee, 1));
 
         // Assert
         orders.Should().HaveCount(1);
@@ -530,7 +530,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — موظف المصنع 1 يحاول رؤية طلبات سائق المصنع 900
         var act = () => _orderService.GetOrdersByDriverIdAsync(
-            driverId: 202, callerFactoryId: 1, callerRole: UserRole.FactoryEmployee);
+            driverId: 202, caller: new CallerContext(20, UserRole.FactoryEmployee, 1));
 
         // Assert
         await act.Should().ThrowAsync<ForbiddenException>()
@@ -548,7 +548,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — موظف المصنع يحاول إنشاء تقرير لمستخدم ليس سائقاً
         var act = () => _orderService.GetOrdersByDriverIdAsync(
-            driverId: 300, callerFactoryId: 1, callerRole: UserRole.FactoryEmployee);
+            driverId: 300, caller: new CallerContext(20, UserRole.FactoryEmployee, 1));
 
         // Assert
         await act.Should().ThrowAsync<ForbiddenException>()
@@ -566,7 +566,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — العميل يحاول رؤية تقرير السائق
         var act = () => _orderService.GetOrdersByDriverIdAsync(
-            driverId: 203, callerFactoryId: null, callerRole: UserRole.Client);
+            driverId: 203, caller: new CallerContext(90, UserRole.Client, null));
 
         // Assert
         await act.Should().ThrowAsync<ForbiddenException>()
@@ -584,7 +584,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — سائق يحاول رؤية تقرير سائق آخر
         var act = () => _orderService.GetOrdersByDriverIdAsync(
-            driverId: 204, callerFactoryId: 1, callerRole: UserRole.Driver);
+            driverId: 204, caller: new CallerContext(204, UserRole.Driver, 1));
 
         // Assert
         await act.Should().ThrowAsync<ForbiddenException>()
@@ -599,7 +599,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — سائق غير موجود
         var orders = await _orderService.GetOrdersByDriverIdAsync(
-            driverId: 9999, callerFactoryId: null, callerRole: UserRole.Admin);
+            driverId: 9999, caller: new CallerContext(10, UserRole.Admin, null));
 
         // Assert
         orders.Should().BeEmpty();

@@ -1,5 +1,6 @@
 ﻿using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Customer;
+using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.DTOs.Report;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Domain.Common;
@@ -69,10 +70,12 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .FirstOrDefaultAsync(o => o.OrderId == id);
     }
 
-    public async Task<PagedResult<Order>> GetPagedAsync(
-        int? factoryId, int? clientId, int? driverId, OrderStatus? status, string? search, int pageNumber, int pageSize)
+    public async Task<PagedResult<OrderDto>> GetPagedAsync(
+        CallerContext caller, int? factoryId, int? clientId, int? driverId, OrderStatus? status, string? search, int pageNumber, int pageSize)
     {
-        var query = OrdersWithDetails(trackChanges: false);
+        var query = _context.Orders
+            .IgnoreQueryFilters()
+            .Where(o => !o.IsDeleted);
 
         if (factoryId.HasValue)
             query = query.Where(o => o.FactoryId == factoryId.Value);
@@ -93,7 +96,6 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             var phoneDigits = YemeniPhoneHelper.NormalizeForSearch(term);
             var hasPhoneDigits = !string.IsNullOrEmpty(phoneDigits);
 
-            // تطبيع الاسم يُبنى تعبيرياً بدل تكرار سلسلة Replace يدوياً (انظر ArabicTextNormalization)
             var clientNameMatch = ArabicTextNormalization.Contains<Order>(o => o.Client.FullName, normalizedNameTerm);
             var numberOrNameMatch = ArabicTextNormalization.Or(clientNameMatch, o => o.OrderNumber.Contains(term));
 
@@ -107,9 +109,26 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .OrderByDescending(o => o.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .Select(o => new OrderDto
+            {
+                OrderId = o.OrderId,
+                OrderNumber = o.OrderNumber,
+                ClientName = o.Client != null ? o.Client.FullName : string.Format(Messages.ClientFallback, o.ClientId),
+                ClientPhone = o.Client != null ? o.Client.Phone : null,
+                DriverId = o.DriverId,
+                DriverName = o.Driver != null ? o.Driver.FullName : string.Empty,
+                FactoryName = o.Factory != null ? o.Factory.FactoryName : string.Format(Messages.FactoryFallback, o.FactoryId),
+                ConcreteTypeName = o.ConcreteTypeNameSnapshot ?? (o.ConcreteType != null ? o.ConcreteType.Name : string.Format(Messages.ConcreteTypeFallback, o.ConcreteTypeId)),
+                Quantity = o.Quantity,
+                TotalPrice = (caller.Role == Domain.Enums.UserRole.Driver) ? null : o.TotalPrice,
+                TransportMethod = o.TransportMethod,
+                Status = o.Status,
+                PouringDate = o.PouringDate,
+                CreatedAt = o.CreatedAt
+            })
             .ToListAsync();
 
-        return new PagedResult<Order>
+        return new PagedResult<OrderDto>
         {
             Items = items,
             PageNumber = pageNumber,

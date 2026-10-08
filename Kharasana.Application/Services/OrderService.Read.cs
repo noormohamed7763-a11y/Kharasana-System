@@ -30,16 +30,16 @@ public partial class OrderService
     }
 
     public async Task<PagedResult<OrderDto>> GetPagedAsync(
-        int? factoryId, int? clientId, int? driverId, UserRole callerRole, PaginationParams pagination)
+        int? factoryId, int? clientId, int? driverId, CallerContext caller, PaginationParams pagination)
     {
-        return await _orderQueryService.GetPagedAsync(factoryId, clientId, driverId, callerRole, pagination);
+        return await _orderQueryService.GetPagedAsync(factoryId, clientId, driverId, caller, pagination);
     }
 
     // ============================================================
     // GET ORDERS BY DRIVER ID (for reports) - Delegates to OrderQueryService
     // ============================================================
-    public async Task<IEnumerable<OrderDto>> GetOrdersByDriverIdAsync(int driverId, int? callerFactoryId, UserRole callerRole)
+    public async Task<IEnumerable<OrderDto>> GetOrdersByDriverIdAsync(int driverId, CallerContext caller)
     {
-        return await _orderQueryService.GetOrdersByDriverIdAsync(driverId, callerFactoryId, callerRole);
+        return await _orderQueryService.GetOrdersByDriverIdAsync(driverId, caller);
     }
 }

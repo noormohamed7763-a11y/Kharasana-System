@@ -22,6 +22,41 @@ namespace Kharasana.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.ActivationToken", b =>
+                {
+                    b.Property<int>("ActivationTokenId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ActivationTokenId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ActivationTokenId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivationTokens", (string)null);
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.ConcreteType", b =>
                 {
                     b.Property<int>("ConcreteTypeId")
@@ -159,6 +194,84 @@ namespace Kharasana.Infrastructure.Migrations
                     b.ToTable("Factories", (string)null);
                 });
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.FactoryRegistrationRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CommercialId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ContactEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ContactPhone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FactoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FactoryName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ProcessedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FactoryId")
+                        .IsUnique()
+                        .HasFilter("[FactoryId] IS NOT NULL");
+
+                    b.HasIndex("ProcessedByUserId");
+
+                    b.ToTable("FactoryRegistrationRequests", (string)null);
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.Order", b =>
                 {
                     b.Property<int>("OrderId")
@@ -285,7 +398,9 @@ namespace Kharasana.Infrastructure.Migrations
 
                     b.HasIndex("FactoryId", "CreatedAt");
 
-                    b.HasIndex("FactoryId", "Status");
+                    b.HasIndex("FactoryId", "Status")
+                        .HasDatabaseName("IX_Orders_FactoryId_Status_Filtered")
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Orders", (string)null);
                 });
@@ -380,9 +495,22 @@ namespace Kharasana.Infrastructure.Migrations
 
                     b.HasIndex("Role");
 
-                    b.HasIndex("Role", "FactoryId");
+                    b.HasIndex("Role", "FactoryId")
+                        .HasDatabaseName("IX_Users_FactoryId_Role_Filtered")
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.ActivationToken", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.ConcreteType", b =>
@@ -394,6 +522,23 @@ namespace Kharasana.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Factory");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.FactoryRegistrationRequest", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
+                        .WithOne()
+                        .HasForeignKey("Kharasana.Domain.Entities.FactoryRegistrationRequest", "FactoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kharasana.Domain.Entities.User", "ProcessedBy")
+                        .WithMany()
+                        .HasForeignKey("ProcessedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Factory");
+
+                    b.Navigation("ProcessedBy");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.Order", b =>
