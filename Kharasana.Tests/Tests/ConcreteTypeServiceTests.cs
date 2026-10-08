@@ -802,7 +802,7 @@ public class ConcreteTypeServiceTests : IDisposable
             .Select(i => $"{i.DeclaringEntityType.ClrType.Name}.{string.Join("_", i.Properties.Select(p => p.Name))}")
             .ToList();
 
-        filtered.Should().Equal("ConcreteType.FactoryId_Name");
+        filtered.Should().Equal("ConcreteType.FactoryId_Name", "Order.FactoryId_Status", "User.Role_FactoryId");
     }
 
     public void Dispose() => _context.Dispose();

@@ -56,7 +56,7 @@ public partial class OrdersController
                 break;
         }
 
-        var result = await _orderService.GetPagedAsync(factoryId, clientId, driverId, caller.Role, pagination);
+        var result = await _orderService.GetPagedAsync(factoryId, clientId, driverId, caller, pagination);
 
         return Ok(new ApiResponse<PagedResult<OrderDto>>
         {
@@ -84,7 +84,7 @@ public partial class OrdersController
     {
         var caller = User.GetCallerContext();
 
-        var orders = await _orderService.GetOrdersByDriverIdAsync(driverId, caller.FactoryId, caller.Role);
+        var orders = await _orderService.GetOrdersByDriverIdAsync(driverId, caller);
 
         return Ok(new ApiResponse<IEnumerable<OrderDto>>
         {

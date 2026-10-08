@@ -18,4 +18,6 @@
 - [جولة المراجعة طبقة طبقة (جارية)](kharasana-audit-findings-2026-09-29.md) — 11 بندًا بأدلّة ملف:سطر · **بدأ الإصلاح**: فجوة عقد قائمة الطلبات (ClientPhone/PouringDate) + رسالة خاطئة + 5 بنود نصية/تنظيمية — بناء 0/0 · 282 ناجحًا؛ **لا commit**
 - [نتائج مسح التنظيف والتوحيد](kharasana-cleanup-phase-findings.md) — الكود **نظيف** (بناء 0/0 · 282 ناجحًا)؛ اللغة والتوحيد مُغلَقان؛ **وفيه تصحيح بنود سابقة خاطئة (CS1998 · الاستيرادات)**؛ بنود التوحيد الثلاثة مؤجَّلة بقرار لأن 46/50 ملفًا في طبقة الويب المُنتظِر إعادة تصميم
 - [سير عمل تسجيل المصانع](factory-registration-workflow.md) — توثيق التدفق الكامل من الطلب حتى القبول/الرفض
-
+- [Filtered Indexes Implementation](kharasana-filtered-indexes-implementation.md) — تم تطبيق فهارس مصفاة لتحسين أداء الاستعلامات المستثنية للسجلات المحذوفة ناعمًا.
+- [إخفاء السعر في مستوى المستودع](kharasana-hide-pricing-refactor.md) — `CallerContext` انتقل إلى Application؛ `TotalPrice` يُخفى للسائق داخل SQL لا بعده
+- [Hide Pricing Refactor](kharasana-hide-pricing-refactor.md) — نقل CallerContext وتطبيق إخفاء السعر في المستودع

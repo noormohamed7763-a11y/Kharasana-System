@@ -1,6 +1,6 @@
 using Kharasana.Domain.Enums;
 
-namespace Kharasana.API.Common;
+namespace Kharasana.Application.Common;
 
 /// <summary>
 /// هوية الطالب المستخرجة من جلسة JWT — قطعة بيانات واحدة تُمرَّر لأعمال التحكم

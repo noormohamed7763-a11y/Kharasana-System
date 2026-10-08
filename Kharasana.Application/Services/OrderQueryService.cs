@@ -42,43 +42,36 @@ public class OrderQueryService : IOrderQueryService
     }
 
     public async Task<PagedResult<OrderDto>> GetPagedAsync(
-        int? factoryId, int? clientId, int? driverId, UserRole callerRole, PaginationParams pagination)
+        int? factoryId, int? clientId, int? driverId, CallerContext caller, PaginationParams pagination)
     {
         var result = await _unitOfWork.Orders.GetPagedAsync(
-            factoryId, clientId, driverId, pagination.Status, pagination.Search, pagination.PageNumber, pagination.PageSize);
+            caller, factoryId, clientId, driverId, pagination.Status, pagination.Search, pagination.PageNumber, pagination.PageSize);
 
-        var hidePricing = callerRole == UserRole.Driver;
-
-        return new PagedResult<OrderDto>
-        {
-            Items = result.Items.Select(o => OrderMapper.MapToOrderDto(o, hidePricing)),
-            PageNumber = result.PageNumber,
-            PageSize = result.PageSize,
-            TotalCount = result.TotalCount
-        };
+        return result;
     }
 
-    public async Task<IEnumerable<OrderDto>> GetOrdersByDriverIdAsync(int driverId, int? callerFactoryId, UserRole callerRole)
+    public async Task<IEnumerable<OrderDto>> GetOrdersByDriverIdAsync(int driverId, CallerContext caller)
     {
-        if (callerRole != UserRole.Admin && callerRole != UserRole.FactoryEmployee)
+        if (caller.Role != UserRole.Admin && caller.Role != UserRole.FactoryEmployee)
         {
             throw new ForbiddenException(Messages.NotAuthorizedToViewReport);
         }
 
-        if (callerRole == UserRole.FactoryEmployee)
+        if (caller.Role == UserRole.FactoryEmployee)
         {
-            if (!callerFactoryId.HasValue)
+            if (!caller.FactoryId.HasValue)
                 throw new ForbiddenException(Messages.NotAuthorizedToViewReport);
 
             var driver = await _unitOfWork.Users.GetByIdAsync(driverId);
-            if (driver == null || driver.FactoryId != callerFactoryId.Value || driver.Role != UserRole.Driver)
+            if (driver == null || driver.FactoryId != caller.FactoryId.Value || driver.Role != UserRole.Driver)
             {
                 throw new ForbiddenException(Messages.NotAuthorizedToViewReport);
             }
         }
 
         var result = await _unitOfWork.Orders.GetPagedAsync(
-            factoryId: callerRole == UserRole.FactoryEmployee ? callerFactoryId : null,
+            caller,
+            factoryId: caller.Role == UserRole.FactoryEmployee ? caller.FactoryId : null,
             clientId: null,
             driverId: driverId,
             status: null,
@@ -87,7 +80,6 @@ public class OrderQueryService : IOrderQueryService
             pageSize: 100_000);
 
         return result.Items
-            .OrderByDescending(o => o.CreatedAt)
-            .Select(o => OrderMapper.MapToOrderDto(o, hidePricing: false));
+            .OrderByDescending(o => o.CreatedAt);
     }
 }

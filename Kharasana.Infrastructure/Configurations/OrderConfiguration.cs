@@ -87,7 +87,9 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.HasIndex(o => o.Status);
         builder.HasIndex(o => o.ClientId);
         builder.HasIndex(o => o.CreatedAt);
-        builder.HasIndex(o => new { o.FactoryId, o.Status });
+        builder.HasIndex(o => new { o.FactoryId, o.Status })
+            .HasDatabaseName("IX_Orders_FactoryId_Status_Filtered")
+            .HasFilter("[IsDeleted] = 0");
         builder.HasIndex(o => new { o.FactoryId, o.CreatedAt });
     }
 }

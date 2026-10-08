@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Kharasana.Application.Common;
 using Kharasana.API.Common;
 using Kharasana.Application.DTOs.Auth;
 using Kharasana.Application.Interfaces.Services;

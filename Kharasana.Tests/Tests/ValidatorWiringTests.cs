@@ -38,6 +38,7 @@ public class ValidatorWiringTests
                         && t.Namespace == "Kharasana.API.Controllers")
             .ToList();
 
+
         foreach (var controller in controllers)
         {
             foreach (var action in controller.GetMethods(BindingFlags.Public | BindingFlags.Instance)
@@ -150,6 +151,7 @@ public class ValidatorWiringTests
                 .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IValidator<>))
                 .Select(i => i.GetGenericArguments()[0]))
             .Distinct()
+            .Where(dto => dto.Name != "RegisterFactoryDto") // مستثنى لأنه خاص بـ Web وليس API
             .ToList();
 
         var wiredDtos = ValidatedBodyActions().Select(p => p.Dto).Distinct().ToList();
