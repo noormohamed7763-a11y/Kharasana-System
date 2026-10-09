@@ -66,9 +66,20 @@ public class ApiClient
     /// </summary>
     private string? GetToken()
     {
+        var context = _httpContextAccessor.HttpContext;
+        if (context == null) return null;
+
+        // ✅ التخزين المؤقت في Items لكل طلب لتقليل الوصول المتكرر للجلسة
+        if (context.Items.TryGetValue("ApiToken", out var cachedToken))
+            return cachedToken as string;
+
         try
         {
-            return _httpContextAccessor.HttpContext?.Session.GetString("Token");
+            var token = context.Session.GetString("Token");
+            if (!string.IsNullOrEmpty(token))
+                context.Items["ApiToken"] = token;
+
+            return token;
         }
         catch (Exception ex)
         {
@@ -151,8 +162,7 @@ public class ApiClient
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                _logger.LogInformation("غير مُصرَّح. تُفرَّغ الجلسة. التتبّع={TraceId}", CurrentTraceId);
-                _httpContextAccessor.HttpContext?.Session.Clear();
+                _logger.LogInformation("غير مُصرَّح. التتبّع={TraceId}", CurrentTraceId);
             }
 
             var error = ComposeApiError(response.StatusCode, apiMessage);

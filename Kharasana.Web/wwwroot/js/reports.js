@@ -50,7 +50,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     statusCanvas.style.display = 'none';
                     const empty = document.createElement('div');
                     empty.className = 'chart-empty-state';
-                    empty.innerHTML = '<i class="bi bi-inbox"></i><span>لا توجد طلبات مسجلة بعد</span>';
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-inbox';
+                    const span = document.createElement('span');
+                    span.textContent = 'لا توجد طلبات مسجلة بعد';
+                    empty.appendChild(icon);
+                    empty.appendChild(span);
                     wrap.appendChild(empty);
                 }
             }
@@ -110,7 +115,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     concreteCanvas.style.display = 'none';
                     const empty = document.createElement('div');
                     empty.className = 'chart-empty-state';
-                    empty.innerHTML = '<i class="bi bi-inbox"></i><span>لا توجد أنواع خرسانة مسجلة بعد</span>';
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-inbox';
+                    const span = document.createElement('span');
+                    span.textContent = 'لا توجد أنواع خرسانة مسجلة بعد';
+                    empty.appendChild(icon);
+                    empty.appendChild(span);
                     wrap.appendChild(empty);
                 }
             }

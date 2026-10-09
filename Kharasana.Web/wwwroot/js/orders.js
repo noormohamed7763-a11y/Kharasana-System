@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 alertDiv.style.display = 'block';
 
                 // ✅ مسح المحتوى القديم وبناء DOM آمن
-                alertDiv.innerHTML = '';
+                alertDiv.textContent = '';
 
                 const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
                 const iconElement = document.createElement('i');
@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function () {
         el.className = cls;
 
         // ✅ مسح المحتوى القديم وإضافة النص بشكل آمن
-        el.innerHTML = '';
+        el.textContent = '';
         const textNode = document.createTextNode(message);
         el.appendChild(textNode);
 
@@ -201,7 +201,13 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!button) return;
         button.disabled = disabled;
         if (text !== null) {
-            button.innerHTML = text;
+            button.textContent = '';
+            // إذا كان النص يحتوي على Spinner، أضفه كـ HTML آمن وموثوق
+            if (text.includes('<span')) {
+                button.insertAdjacentHTML('afterbegin', text);
+            } else {
+                button.textContent = text;
+            }
         }
     }
 
@@ -402,7 +408,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // ✅ عرض رسالة خطأ بشكل آمن
             if (!unitPrice || parseFloat(unitPrice) <= 0) {
                 if (messageDiv) {
-                    messageDiv.innerHTML = '';
+                    messageDiv.textContent = '';
                     const span = document.createElement('span');
                     span.className = 'text-danger';
                     const textNode = document.createTextNode('⚠️ يرجى إدخال سعر صحيح (أكبر من صفر)');
@@ -434,7 +440,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     setTimeout(() => location.reload(), CONFIG.reloadDelay);
                 } else {
                     if (messageDiv) {
-                        messageDiv.innerHTML = '';
+                        messageDiv.textContent = '';
                         const span = document.createElement('span');
                         span.className = 'text-danger';
                         const textNode = document.createTextNode(`❌ ${result.message || 'فشل حفظ السعر'}`);
@@ -445,7 +451,7 @@ document.addEventListener("DOMContentLoaded", function () {
             } catch (error) {
                 console.error('SavePrice error:', error);
                 if (messageDiv) {
-                    messageDiv.innerHTML = '';
+                    messageDiv.textContent = '';
                     const span = document.createElement('span');
                     span.className = 'text-danger';
                     const textNode = document.createTextNode('❌ حدث خطأ أثناء الاتصال بالخادم');

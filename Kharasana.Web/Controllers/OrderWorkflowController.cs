@@ -14,6 +14,7 @@ namespace Kharasana.Web.Controllers
     /// تُفصّل عن OrdersController (الذي يتعامل مع العرض CRUD) لتقليل حجم الكود وتبسيط الصيانة.
     /// </summary>
     [SessionAuthorize]
+    [ServiceFilter(typeof(ApiExceptionHandlerFilter))]
     public class OrderWorkflowController : BaseController
     {
         private readonly IOrdersApiService _ordersApiService;
@@ -43,28 +44,15 @@ namespace Kharasana.Web.Controllers
             if (dto == null)
                 return AjaxFail(AppMessages.Validation.RequiredField);
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.SavePriceAsync(id, dto.UnitPrice);
+            var result = await _ordersApiService.SavePriceAsync(id, dto.UnitPrice);
 
-                if (result.Succeeded)
-                    return AjaxSuccess(result.Message);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(result.Message);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في حفظ سعر الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في حفظ سعر الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -77,28 +65,15 @@ namespace Kharasana.Web.Controllers
             if (!EnsureValidId(id))
                 return AjaxInvalidId();
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.ApproveOrderAsync(id);
+            var result = await _ordersApiService.ApproveOrderAsync(id);
 
-                if (result.Succeeded)
-                    return AjaxSuccess(result.Message);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(result.Message);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في الموافقة على الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في الموافقة على الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -114,28 +89,15 @@ namespace Kharasana.Web.Controllers
             if (dto == null)
                 return AjaxFail(AppMessages.Validation.RequiredField);
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.RejectOrderAsync(id, dto.Reason ?? string.Empty);
+            var result = await _ordersApiService.RejectOrderAsync(id, dto.Reason ?? string.Empty);
 
-                if (result.Succeeded)
-                    return AjaxSuccess(result.Message);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(result.Message);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في رفض الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في رفض الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -148,28 +110,15 @@ namespace Kharasana.Web.Controllers
             if (!EnsureValidId(id))
                 return AjaxInvalidId();
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.CancelOrderAsync(id);
+            var result = await _ordersApiService.CancelOrderAsync(id);
 
-                if (result.Succeeded)
-                    return AjaxSuccess(result.Message);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(result.Message);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في إلغاء الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في إلغاء الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -182,28 +131,15 @@ namespace Kharasana.Web.Controllers
             if (!EnsureValidId(id))
                 return AjaxInvalidId();
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.StartDeliveryAsync(id);
+            var result = await _ordersApiService.StartDeliveryAsync(id);
 
-                if (result.Succeeded)
-                    return AjaxSuccess(result.Message);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(result.Message);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في بدء توصيل الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في بدء توصيل الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -216,28 +152,15 @@ namespace Kharasana.Web.Controllers
             if (!EnsureValidId(id))
                 return AjaxInvalidId();
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.DeliverOrderAsync(id);
+            var result = await _ordersApiService.DeliverOrderAsync(id);
 
-                if (result.Succeeded)
-                    return AjaxSuccess(result.Message);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(result.Message);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في تسليم الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في تسليم الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -250,28 +173,15 @@ namespace Kharasana.Web.Controllers
             if (!EnsureValidId(id))
                 return AjaxInvalidId();
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.CloseOrderAsync(id);
+            var result = await _ordersApiService.CloseOrderAsync(id);
 
-                if (result.Succeeded)
-                    return AjaxSuccess(result.Message);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(result.Message);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في إغلاق الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في إغلاق الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -290,42 +200,29 @@ namespace Kharasana.Web.Controllers
             if (!ModelState.IsValid)
                 return AjaxFail(AppMessages.Common.InvalidData);
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var allDrivers = await _lookupApiService.GetAvailableDriversAsync();
+            var allDrivers = await _lookupApiService.GetAvailableDriversAsync();
 
-                // ✅ موظف المصنع يُقيَّد بسائقي مصنعه، والمدير (بلا مصنع) يرى القائمة كاملة
-                //    مطابقةً لقائمة النافذة في Orders/Details؛ التحقق النهائي من تطابق
-                //    مصنع السائق مع مصنع الطلب مسؤولية OrderService.AssignDriverAsync.
-                var factoryDrivers = FactoryId.HasValue
-                    ? allDrivers.Where(d => d.FactoryId == FactoryId.Value).ToList()
-                    : allDrivers;
+            // ✅ موظف المصنع يُقيَّد بسائقي مصنعه، والمدير (بلا مصنع) يرى القائمة كاملة
+            //    مطابقةً لقائمة النافذة في Orders/Details؛ التحقق النهائي من تطابق
+            //    مصنع السائق مع مصنع الطلب مسؤولية OrderService.AssignDriverAsync.
+            var factoryDrivers = FactoryId.HasValue
+                ? allDrivers.Where(d => d.FactoryId == FactoryId.Value).ToList()
+                : allDrivers;
 
-                var driverExists = factoryDrivers.Any(d => d.Id == model.DriverId);
+            var driverExists = factoryDrivers.Any(d => d.Id == model.DriverId);
 
-                if (!driverExists)
-                    return AjaxFail(AppMessages.Common.DriverNotInFactory);
+            if (!driverExists)
+                return AjaxFail(AppMessages.Common.DriverNotInFactory);
 
-                var ok = await _ordersApiService.AssignDriverAsync(id, model);
+            var ok = await _ordersApiService.AssignDriverAsync(id, model);
 
-                if (ok.Succeeded)
-                    return AjaxSuccess(ok.Message);
+            if (ok.Succeeded)
+                return AjaxSuccess(ok.Message);
 
-                return AjaxFail(ok.Message);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في تعيين سائق للطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في تعيين سائق للطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(ok.Message);
         }
 
         // ============================================================
