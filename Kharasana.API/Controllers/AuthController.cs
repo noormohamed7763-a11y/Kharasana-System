@@ -72,9 +72,9 @@ public class AuthController : ControllerBase
 
     [HttpPost("activate")]
     [EnableRateLimiting("login")]
-    public async Task<IActionResult> Activate([FromBody] string tokenHash)
+    public async Task<IActionResult> Activate([FromBody] ActivateAccountDto dto)
     {
-        var result = await _authService.ActivateAccountAsync(tokenHash);
+        var result = await _authService.ActivateAccountAsync(dto.TokenHash, dto.NewPassword);
         return Ok(result);
     }
 }

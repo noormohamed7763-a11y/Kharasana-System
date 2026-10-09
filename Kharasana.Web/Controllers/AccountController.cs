@@ -148,15 +148,32 @@ namespace Kharasana.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Activate(string token)
+        public IActionResult Activate(string token)
         {
             if (string.IsNullOrEmpty(token))
                 return BadRequest("التوكن مفقود.");
 
-            var success = await _authService.ActivateAccountAsync(token);
+            // عرض نموذج تعيين كلمة المرور للمستخدم
+            return View(new ActivateAccountViewModel { TokenHash = token });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Activate(ActivateAccountViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                ModelState.AddModelError(string.Empty, "كلمتا المرور غير متطابقتين.");
+                return View(model);
+            }
+
+            var success = await _authService.ActivateAccountAsync(model.TokenHash, model.NewPassword);
             if (success)
             {
-                ViewBag.Message = "تم تفعيل الحساب بنجاح، يمكنك الآن تسجيل الدخول.";
+                ViewBag.Message = "تم تفعيل الحساب وتعيين كلمة المرور بنجاح، يمكنك الآن تسجيل الدخول.";
                 return View("ActivateSuccess");
             }
 

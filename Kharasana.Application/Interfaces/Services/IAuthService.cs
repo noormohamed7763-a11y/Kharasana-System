@@ -9,5 +9,5 @@ public interface IAuthService
 
     Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginRequestDto request);
 
-    Task<ApiResponse<object>> ActivateAccountAsync(string tokenHash);
+    Task<ApiResponse<object>> ActivateAccountAsync(string tokenHash, string newPassword);
 }

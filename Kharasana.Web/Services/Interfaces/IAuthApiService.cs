@@ -6,7 +6,7 @@ namespace Kharasana.Web.Services.Interfaces
     {
         Task<LoginResponseViewModel?> LoginAsync(LoginViewModel model);
 
-        Task<bool> ActivateAccountAsync(string tokenHash);
+        Task<bool> ActivateAccountAsync(string tokenHash, string newPassword);
 
         Task LogoutAsync();
     }

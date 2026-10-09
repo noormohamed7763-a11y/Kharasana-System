@@ -214,8 +214,11 @@ public class AuthService : IAuthService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task<ApiResponse<object>> ActivateAccountAsync(string tokenHash)
+    public async Task<ApiResponse<object>> ActivateAccountAsync(string tokenHash, string newPassword)
     {
+        if (string.IsNullOrEmpty(newPassword) || newPassword.Length < PasswordPolicy.MinimumLength)
+            throw new BusinessException(Messages.PasswordMinLength);
+
         var token = await _unitOfWork.ActivationTokens.GetByHashAsync(tokenHash);
         if (token == null)
             throw new BusinessException(Messages.ActivationTokenInvalid);
@@ -234,6 +237,7 @@ public class AuthService : IAuthService
             throw new BusinessException(Messages.UserNotFound);
 
         user.IsActive = true;
+        user.PasswordHash = _passwordHasher.Hash(newPassword);
         token.UsedAt = DateTime.UtcNow;
 
         _unitOfWork.Users.Update(user);
