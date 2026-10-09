@@ -314,6 +314,9 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsManuallyPriced")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("NeedPump")
                         .HasColumnType("bit");
 

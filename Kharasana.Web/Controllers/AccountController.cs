@@ -62,6 +62,7 @@ namespace Kharasana.Web.Controllers
 
                 // تفريغ الجلسة قبل كتابة الهوية الجديدة إلزامي
                 HttpContext.Session.Clear();
+                HttpContext.Session.SetString("Token", result!.Token);
 
                 // إصدار المطالبات (Claims)
                 var claims = new List<Claim>

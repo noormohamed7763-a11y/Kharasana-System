@@ -67,12 +67,12 @@ public class SessionAuthorizeAttribute : ActionFilterAttribute
         // التحقق من الدور إذا كان مطلوباً — يدعم قائمة أدوار مفصولة بفواصل (مثل "Admin,FactoryEmployee")
         if (!string.IsNullOrWhiteSpace(_requiredRole))
         {
-            var userRole = session.GetString("Role");
+            var userRole = context.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
 
             var allowedRoles = _requiredRole
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-            if (!allowedRoles.Contains(userRole, StringComparer.Ordinal))
+            if (string.IsNullOrEmpty(userRole) || !allowedRoles.Contains(userRole, StringComparer.Ordinal))
             {
                 if (context.Controller is Controller controller)
                 {
