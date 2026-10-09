@@ -102,7 +102,7 @@ public class FactoryRegistrationRequestService : IFactoryRegistrationRequestServ
                 FullName = request.ContactName,
                 Email = request.ContactEmail,
                 Phone = request.ContactPhone,
-                Password = Guid.NewGuid().ToString(),
+                Password = string.Empty,
                 Role = UserRole.FactoryAdmin,
                 FactoryId = factory.FactoryId
             };

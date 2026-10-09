@@ -66,13 +66,13 @@ namespace Kharasana.Web.Services.Api
             return Task.CompletedTask;
         }
 
-        public async Task<bool> ActivateAccountAsync(string tokenHash)
+        public async Task<bool> ActivateAccountAsync(string tokenHash, string newPassword)
         {
             try
             {
                 var response = await _apiClient.PostAsync<ApiResponse<object>>(
                     "Auth/activate",
-                    tokenHash);
+                    new { TokenHash = tokenHash, NewPassword = newPassword });
 
                 return response?.Success ?? false;
             }

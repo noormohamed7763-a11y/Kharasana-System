@@ -63,7 +63,7 @@ public class UserService : IUserService
         //    (لوحة الويب، الـ API، أي استدعاء داخلي). كانت تُخزَّن كلمة مرور من محرف
         //    واحد بلا اعتراض لأن CreateUserDto بلا DataAnnotations وكان
         //    CreateUserDtoValidator غير مُشغَّل. الرقم من المصدر الوحيد PasswordPolicy.
-        if (string.IsNullOrEmpty(dto.Password) || dto.Password.Length < PasswordPolicy.MinimumLength)
+        if (dto.Role != UserRole.FactoryAdmin && (string.IsNullOrEmpty(dto.Password) || dto.Password.Length < PasswordPolicy.MinimumLength))
             throw new BusinessException(Messages.PasswordMinLength);
 
         if (string.IsNullOrWhiteSpace(dto.Email) && string.IsNullOrWhiteSpace(dto.Phone))
@@ -86,7 +86,9 @@ public class UserService : IUserService
         {
             FullName = dto.FullName,
             Email = normalizedEmail,
-            PasswordHash = _passwordHasher.Hash(dto.Password),
+            PasswordHash = (dto.Role == UserRole.FactoryAdmin && string.IsNullOrEmpty(dto.Password))
+                ? string.Empty
+                : _passwordHasher.Hash(dto.Password),
             Phone = normalizedPhone,
             WhatsApp = normalizedWhatsApp,
             Role = dto.Role,
