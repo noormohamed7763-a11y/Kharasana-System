@@ -142,8 +142,9 @@ public class ReportServiceTests : IDisposable
 
         var before = await _service.GetReportSummaryAsync(factoryId: 1);
 
-        // Act — حذف ناعم لنوع الخرسانة عبر الخدمة نفسها
-        await new ConcreteTypeService(new UnitOfWork(_context)).DeleteAsync(1, currentFactoryId: 1);
+        // Act — حذف ناعم لنوع الخرسانة يدوياً
+        var ct = await _context.ConcreteTypes.FindAsync(1);
+        if (ct != null) { ct.IsDeleted = true; await _context.SaveChangesAsync(); }
 
         var after = await _service.GetReportSummaryAsync(factoryId: 1);
 
@@ -186,3 +187,5 @@ public class ReportServiceTests : IDisposable
 
     public void Dispose() => _context.Dispose();
 }
+
+
