@@ -121,6 +121,7 @@ namespace Kharasana.Web
             });
 
             // Services Registration
+            builder.Services.AddScoped<ApiExceptionHandlerFilter>();
             builder.Services.AddScoped<IAuthApiService, AuthApiService>();
             builder.Services.AddScoped<IDashboardApiService, DashboardApiService>();
             builder.Services.AddScoped<IOrdersApiService, OrdersApiService>();

@@ -13,20 +13,24 @@
         modal.className = 'modal fade';
         modal.id = 'confirmActionModal';
         modal.tabIndex = -1;
-        modal.innerHTML =
-            '<div class="modal-dialog">' +
-                '<div class="modal-content">' +
-                    '<div class="modal-header">' +
-                        '<h5 class="modal-title">تأكيد</h5>' +
-                        '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>' +
-                    '</div>' +
-                    '<div class="modal-body" id="confirmModalBody"></div>' +
-                    '<div class="modal-footer">' +
-                        '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>' +
-                        '<button type="button" class="btn btn-danger" id="confirmModalYes">تأكيد</button>' +
-                    '</div>' +
-                '</div>' +
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        modalContent.innerHTML =
+            '<div class="modal-header">' +
+                '<h5 class="modal-title">تأكيد</h5>' +
+                '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>' +
+            '</div>' +
+            '<div class="modal-body" id="confirmModalBody"></div>' +
+            '<div class="modal-footer">' +
+                '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>' +
+                '<button type="button" class="btn btn-danger" id="confirmModalYes">تأكيد</button>' +
             '</div>';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'modal-dialog';
+        dialog.appendChild(modalContent);
+
+        modal.appendChild(dialog);
         document.body.appendChild(modal);
 
         confirmModal = new bootstrap.Modal(modal);
@@ -197,10 +201,22 @@ document.addEventListener('keydown', function (e) {
                 const colCount = table.querySelector('thead th') ? table.querySelectorAll('thead th').length : 10;
                 noResults = document.createElement('tr');
                 noResults.className = 'no-results-row';
-                noResults.innerHTML = '<td colspan="' + colCount + '" class="text-center text-muted py-4">' +
-                    '<i class="bi bi-search" style="font-size: 2rem; opacity: 0.4;"></i>' +
-                    '<p class="mt-2 mb-0">لم يتم العثور على نتائج</p>' +
-                    '</td>';
+                noResults.innerHTML = '';
+                const td = document.createElement('td');
+                td.colSpan = colCount;
+                td.className = 'text-center text-muted py-4';
+
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-search';
+                icon.style.cssText = 'font-size: 2rem; opacity: 0.4;';
+
+                const p = document.createElement('p');
+                p.className = 'mt-2 mb-0';
+                p.textContent = 'لم يتم العثور على نتائج';
+
+                td.appendChild(icon);
+                td.appendChild(p);
+                noResults.appendChild(td);
                 tbody.appendChild(noResults);
             }
         } else if (noResults) {
@@ -468,10 +484,10 @@ document.addEventListener('click', function (e) {
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(textToCopy).then(function () {
-            const originalHtml = copyBtn.innerHTML;
+            const originalContent = copyBtn.innerHTML;
             copyBtn.innerHTML = '<i class="bi bi-check-lg text-success"></i>';
             setTimeout(function () {
-                copyBtn.innerHTML = originalHtml;
+                copyBtn.innerHTML = originalContent;
             }, 1800);
             if (typeof showToast === 'function') {
                 showToast('تم النسخ بنجاح', textToCopy, 'success');

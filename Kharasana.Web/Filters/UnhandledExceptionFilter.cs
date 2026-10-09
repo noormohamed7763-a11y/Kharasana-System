@@ -65,11 +65,11 @@ public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
         // ── 401 Unauthorized → تسجيل الدخول ──
         if (apiEx.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
-            // ✅ تفريغ الجلسة قبل التوجيه إلزامي: صفحة الدخول تُحوِّل المسجَّل فورًا
-            //    إلى اللوحة (AccountController.Login)، فإن بقي توكن منتهٍ في الجلسة
+            // ✅ حذف التوكن فقط بدل تفريغ كامل الجلسة:
+            //    صفحة الدخول تُحوِّل المسجَّل فورًا إلى اللوحة، فإن بقي توكن منتهٍ في الجلسة
             //    عاد المستخدم إليها وفشل نداؤها من جديد: Login ↔ Dashboard بلا نهاية.
-            //    (ApiClient يفرّغها أيضًا عند 401؛ التفريغ هنا حارس ثانٍ مستقل عنه.)
-            httpContext.Session.Clear();
+            //    حذف التوكن يكسر هذه الحلقة دون المساس ببيانات الجلسة الأخرى (إن وجدت).
+            httpContext.Session.Remove("Token");
 
             context.Result = new RedirectToActionResult("Login", "Account", null);
             return Task.CompletedTask;

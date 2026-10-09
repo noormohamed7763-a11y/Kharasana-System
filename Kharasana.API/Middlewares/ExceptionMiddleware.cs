@@ -72,7 +72,7 @@ public class ExceptionMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "استثناء غير معالَج. التتبّع={TraceId} المسار={Path} المستخدم={User}",
+                "استثناء غير معالَج. التتبّع={TraceId} المسار={Path} المستخدم={User}. السياق غير متاح (Non-Request Context)",
                 context.TraceIdentifier,
                 context.Request.Path,
                 context.User.Identity?.Name ?? "مجهول");
