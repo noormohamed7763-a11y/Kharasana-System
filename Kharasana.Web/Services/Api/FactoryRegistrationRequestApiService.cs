@@ -17,12 +17,12 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
 
     public async Task<IEnumerable<FactoryRegistrationRequest>> GetAllAsync()
     {
-        return await _apiClient.GetAsync<IEnumerable<FactoryRegistrationRequest>>("api/registration-requests");
+        return await _apiClient.GetAsync<IEnumerable<FactoryRegistrationRequest>>("api/registration-requests") ?? Enumerable.Empty<FactoryRegistrationRequest>();
     }
 
     public async Task<IEnumerable<FactoryRegistrationRequest>> GetPendingAsync()
     {
-        return await _apiClient.GetAsync<IEnumerable<FactoryRegistrationRequest>>("api/registration-requests/pending");
+        return await _apiClient.GetAsync<IEnumerable<FactoryRegistrationRequest>>("api/registration-requests/pending") ?? Enumerable.Empty<FactoryRegistrationRequest>();
     }
 
     public async Task<FactoryRegistrationRequest?> GetByIdAsync(int id)
@@ -32,16 +32,16 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
 
     public async Task<ServiceResult> RegisterAsync(RegisterFactoryDto dto)
     {
-        return await _apiClient.PostAsync<ServiceResult>("api/registration-requests", dto);
+        return await _apiClient.PostAsync<ServiceResult>("api/registration-requests", dto) ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
     }
 
     public async Task<ServiceResult> ApproveAsync(int id)
     {
-        return await _apiClient.PostAsync<ServiceResult>($"api/registration-requests/{id}/approve", null);
+        return await _apiClient.PostAsync<ServiceResult>($"api/registration-requests/{id}/approve", new { }) ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
     }
 
     public async Task<ServiceResult> RejectAsync(int id, string reason)
     {
-        return await _apiClient.PostAsync<ServiceResult>($"api/registration-requests/{id}/reject", reason);
+        return await _apiClient.PostAsync<ServiceResult>($"api/registration-requests/{id}/reject", reason) ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
     }
 }

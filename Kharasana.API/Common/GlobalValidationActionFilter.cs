@@ -36,18 +36,21 @@ namespace Kharasana.API.Common
                 if (validator is IValidator genericValidator)
                 {
                     var validationContextType = typeof(ValidationContext<>).MakeGenericType(argument.GetType());
-                    var validationContext = Activator.CreateInstance(validationContextType, argument);
+                    var validationContext = Activator.CreateInstance(validationContextType, argument) as IValidationContext;
 
-                    var result = await (Task<FluentValidation.Results.ValidationResult>)genericValidator.ValidateAsync((IValidationContext)validationContext, context.HttpContext.RequestAborted);
-
-                    if (!result.IsValid)
+                    if (validationContext != null)
                     {
-                        foreach (var error in result.Errors)
+                        var result = await (Task<FluentValidation.Results.ValidationResult>)genericValidator.ValidateAsync(validationContext, context.HttpContext.RequestAborted);
+
+                        if (!result.IsValid)
                         {
-                            context.ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                            foreach (var error in result.Errors)
+                            {
+                                context.ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                            }
+                            context.Result = ApiErrorResponseFactory.FromModelState(context.ModelState);
+                            return;
                         }
-                        context.Result = ApiErrorResponseFactory.FromModelState(context.ModelState);
-                        return;
                     }
                 }
             }
