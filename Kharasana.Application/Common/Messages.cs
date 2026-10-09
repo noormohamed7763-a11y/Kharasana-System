@@ -70,6 +70,7 @@ public static class Messages
     public const string FactoryAlreadyExists = "اسم المصنع مستخدم مسبقًا.";
     public const string FactoryAlreadyHasAccount = "هذا المصنع يمتلك حساباً مسجلاً بالفعل ولا يمكن إنشاء حساب آخر له.";
     public const string ConcreteTypeAlreadyExists = "نوع الخرسانة موجود مسبقًا لهذا المصنع.";
+    public const string ConcreteTypeHasActiveOrders = "لا يمكن أرشفة نوع الخرسانة: هناك {0} طلب(ات) نشط(ة) تعتمد عليه.";
 
     /// <summary>فشل استعادة نوع خرسانة لأن الاسم نفسه ما زال مستخدمًا بنوع نشط في المصنع.</summary>
     public const string ConcreteTypeRestoreNameConflict = "لا يمكن استعادة نوع الخرسانة: الاسم \"{0}\" مستخدم بالفعل في هذا المصنع. يجب إعادة تسمية النوع الحالي أو حذفه قبل الاستعادة.";

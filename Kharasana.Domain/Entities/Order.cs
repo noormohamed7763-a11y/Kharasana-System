@@ -36,6 +36,8 @@ public class Order
 
     public decimal UnitPrice { get; set; }
 
+    public bool IsManuallyPriced { get; set; } = false;
+
     public decimal TotalPrice { get; set; }
 
     // ✅ لقطتان تاريخيتان لنوع الخرسانة وقت إنشاء الطلب — على نمط UnitPrice أعلاه.

@@ -4,6 +4,7 @@ using Kharasana.Application.DTOs.ConcreteType;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Entities;
+using Kharasana.Domain.Enums;
 
 namespace Kharasana.Application.Services;
 
@@ -83,6 +84,9 @@ public class ConcreteTypeService : IConcreteTypeService
         //    الأسماء المحرَّرة بحذف ناعم لا تُحتسب تعارضًا (خيار B).
         await EnsureNameIsFreeAsync(dto.FactoryId, dto.Name);
 
+        if (dto.UnitPrice <= 0)
+            throw new BusinessException(Messages.UnitPriceMustBePositive);
+
         var concreteType = new ConcreteType
         {
             FactoryId = dto.FactoryId,
@@ -123,6 +127,9 @@ public class ConcreteTypeService : IConcreteTypeService
         // ✅ منع تكرار الاسم داخل المصنع (باستثناء النوع نفسه)
         await EnsureNameIsFreeAsync(concreteType.FactoryId, dto.Name, concreteType.ConcreteTypeId);
 
+        if (dto.UnitPrice <= 0)
+            throw new BusinessException(Messages.UnitPriceMustBePositive);
+
         concreteType.Name = dto.Name;
         concreteType.Strength = dto.Strength;
         concreteType.UnitPrice = dto.UnitPrice;
@@ -157,6 +164,19 @@ public class ConcreteTypeService : IConcreteTypeService
 
         if (factory is { IsActive: false })
             throw new BusinessException(Messages.FactoryInactive);
+
+        // ✅ تحقق من الطلبات النشطة (غير مكتملة)
+        var activeOrdersCount = await _unitOfWork.Orders
+            .CountAsync(o => o.ConcreteTypeId == id
+                && !o.IsDeleted
+                && o.Status != OrderStatus.Delivered
+                && o.Status != OrderStatus.Closed
+                && o.Status != OrderStatus.Cancelled
+                && o.Status != OrderStatus.Rejected);
+
+        if (activeOrdersCount > 0)
+            throw new BusinessException(
+                string.Format(Messages.ConcreteTypeHasActiveOrders, activeOrdersCount));
 
         // ✅ حذف ناعم: لا يُحذف الصف فعليًا حتى تبقى الطلبات التاريخية التي تشير إليه سليمة،
         //    ويختفي من الاستعلامات العادية عبر فلتر الاستعلام العام (!IsDeleted)
