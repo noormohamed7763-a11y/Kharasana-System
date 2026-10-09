@@ -190,15 +190,12 @@ public class OrderCommandService : IOrderCommandService
             if (!concreteType.IsActive)
                 throw new BusinessException(string.Format(Messages.ConcreteTypeInactiveForOrder, concreteType.Name));
 
-            var previousUnitPrice = order.ConcreteType?.UnitPrice;
-            var wasManuallyPriced = previousUnitPrice.HasValue && order.UnitPrice != previousUnitPrice.Value;
-
             order.ConcreteTypeId = dto.ConcreteTypeId;
             order.ConcreteType = concreteType;
             order.ConcreteTypeNameSnapshot = concreteType.Name;
             order.ConcreteTypeStrengthSnapshot = concreteType.Strength;
 
-            if (!wasManuallyPriced)
+            if (!order.IsManuallyPriced)
                 order.UnitPrice = concreteType.UnitPrice;
         }
 
@@ -343,6 +340,7 @@ public class OrderCommandService : IOrderCommandService
             NeedPump = dto.NeedPump,
             FloorNumber = dto.FloorNumber,
             UnitPrice = concreteType.UnitPrice,
+            IsManuallyPriced = false,
             TotalPrice = totalPrice,
             PouringDate = dto.PouringDate,
             TransportMethod = dto.TransportMethod,

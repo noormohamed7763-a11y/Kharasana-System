@@ -1,10 +1,11 @@
+using Kharasana.Application.Common;
 using Kharasana.Web.ViewModels.ConcreteTypes;
 
 namespace Kharasana.Web.Services.Interfaces;
 
 public interface IConcreteTypeApiService
 {
-    Task<List<ConcreteTypeListItemViewModel>> GetAllAsync();
+    Task<PagedResult<ConcreteTypeListItemViewModel>> GetAllAsync(int pageNumber = 1, int pageSize = 20, string? search = null);
 
     /// <summary>الأنواع المؤرشفة (المحذوفة حذفًا ناعمًا) — يعزلها الـ API على مصنع موظف المصنع.</summary>
     Task<List<ConcreteTypeListItemViewModel>> GetArchivedAsync();

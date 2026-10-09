@@ -39,9 +39,9 @@ public class ConcreteTypesController : BaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20, string? search = null)
     {
-        var concreteTypes = await _concreteTypeService.GetAllAsync();
+        var concreteTypes = await _concreteTypeService.GetAllAsync(pageNumber, pageSize, search);
         return View(concreteTypes);
     }
 
@@ -121,7 +121,23 @@ public class ConcreteTypesController : BaseController
         }
 
         if (!ModelState.IsValid)
+        {
+            // أعد تعبئة البيانات المطلوبة للـ View في حالة فشل التحقق
+            LoadConcreteCatalog(model);
+            if (RoleValue == UserRole.Admin)
+            {
+                var factoryResult = await _factoryService.GetAllAsync();
+                model.Factories = (factoryResult.Data ?? [])
+                    .Where(f => f.IsActive)
+                    .Select(f => new SelectListItem { Value = f.FactoryId.ToString(), Text = f.FactoryName })
+                    .ToList();
+            }
+            else if (RoleValue == UserRole.FactoryEmployee && FactoryId.HasValue)
+            {
+                model.FactoryId = FactoryId.Value;
+            }
             return View(model);
+        }
 
         await _concreteTypeService.CreateAsync(model);
 

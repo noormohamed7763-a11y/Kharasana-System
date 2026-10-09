@@ -17,14 +17,18 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         _logger = logger;
     }
 
-    public async Task<List<ConcreteTypeListItemViewModel>> GetAllAsync()
+    public async Task<PagedResult<ConcreteTypeListItemViewModel>> GetAllAsync(int pageNumber = 1, int pageSize = 20, string? search = null)
     {
-        var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeListItemViewModel>>>("ConcreteTypes");
+        var query = $"ConcreteTypes?pageNumber={pageNumber}&pageSize={pageSize}";
+        if (!string.IsNullOrWhiteSpace(search))
+            query += $"&search={Uri.EscapeDataString(search)}";
+
+        var response = await _apiClient.GetAsync<ApiResponse<PagedResult<ConcreteTypeListItemViewModel>>>(query);
         if (response == null || !response.Success)
         {
             throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
         }
-        return response.Data ?? new List<ConcreteTypeListItemViewModel>();
+        return response.Data ?? new PagedResult<ConcreteTypeListItemViewModel>();
     }
 
     public async Task<List<ConcreteTypeListItemViewModel>> GetArchivedAsync()

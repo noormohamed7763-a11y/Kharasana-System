@@ -143,49 +143,22 @@ public class ConcreteTypesController : ControllerBase
     {
         var caller = User.GetCallerContext();
 
-        var concreteType = await _concreteTypeService.GetByIdAsync(id);
-        if (concreteType == null)
-        {
-            return NotFound(ApiResponse.Fail(Messages.ConcreteTypeNotFoundShort));
-        }
-
-        // ============================================================
-        // ✅ Client - يمكنه مشاهدة أي نوع خرسانة نشط
-        // ============================================================
-        if (caller.Role == UserRole.Client)
-        {
-            if (!concreteType.IsActive)
-            {
-                return NotFound(ApiResponse.Fail(Messages.ConcreteTypeNotActiveForClient));
-            }
-            return Ok(new ApiResponse<ConcreteTypeDto>
-            {
-                Success = true,
-                Message = Messages.ConcreteTypeRetrievedSuccessfully,
-                Data = concreteType
-            });
-        }
-
-        // ============================================================
-        // ✅ FactoryEmployee - يمكنه مشاهدة أنواع خرسانة مصنعه فقط
-        // ============================================================
+        int? currentFactoryId = null;
         if (caller.Role == UserRole.FactoryEmployee)
         {
-            if (caller.FactoryId is null || concreteType.FactoryId != caller.FactoryId)
-            {
-                return NotFound(ApiResponse.Fail(Messages.ConcreteTypeNotFoundOrNotForFactory));
-            }
-            return Ok(new ApiResponse<ConcreteTypeDto>
-            {
-                Success = true,
-                Message = Messages.ConcreteTypeRetrievedSuccessfully,
-                Data = concreteType
-            });
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            currentFactoryId = caller.FactoryId;
         }
 
-        // ============================================================
-        // ✅ Admin - يمكنه مشاهدة أي نوع خرسانة
-        // ============================================================
+        var concreteType = await _concreteTypeService.GetByIdAsync(id, currentFactoryId);
+
+        // ✅ Client لا يرى إلا الأنواع النشطة
+        if (caller.Role == UserRole.Client && !concreteType.IsActive)
+        {
+            return NotFound(ApiResponse.Fail(Messages.ConcreteTypeNotActiveForClient));
+        }
+
         return Ok(new ApiResponse<ConcreteTypeDto>
         {
             Success = true,
