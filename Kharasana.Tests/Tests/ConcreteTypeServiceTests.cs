@@ -292,7 +292,7 @@ public class ConcreteTypeServiceTests : IDisposable
         _context.ConcreteTypes.Add(TestDataSeeder.CreateConcreteType(301, 111, "C30"));
         await _context.SaveChangesAsync();
 
-        var order = TestDataSeeder.CreateOrder(0, clientId: 300, factoryId: 111, concreteTypeId: 301);
+        var order = TestDataSeeder.CreateOrder(0, clientId: 300, factoryId: 111, concreteTypeId: 301, status: OrderStatus.Delivered);
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
 
@@ -508,7 +508,7 @@ public class ConcreteTypeServiceTests : IDisposable
         var act = () => _service.CreateAsync(new CreateConcreteTypeDto
         {
             FactoryId = 121,
-            Name = "c25",
+            Name = "C25",
             Strength = 25,
             UnitPrice = 150m
         });
@@ -611,7 +611,7 @@ public class ConcreteTypeServiceTests : IDisposable
         _context.Factories.Add(TestDataSeeder.CreateFactory(129, "مصنع_تعارض_حالة"));
         _context.ConcreteTypes.AddRange(
             TestDataSeeder.CreateConcreteType(346, 129, "C25", isActive: false, isDeleted: true),
-            TestDataSeeder.CreateConcreteType(347, 129, "c25"));
+            TestDataSeeder.CreateConcreteType(347, 129, "C25"));
         await _context.SaveChangesAsync();
 
         // Act

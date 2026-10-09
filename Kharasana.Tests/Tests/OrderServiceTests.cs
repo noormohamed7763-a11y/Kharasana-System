@@ -914,6 +914,8 @@ public class OrderServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         var order = CreateAndSeedOrder(OrderStatus.Pending, unitPrice: 200m, quantity: 10);
+        order.IsManuallyPriced = true; // تعيين يدوي للتأكد من عدم إعادة التسعير
+        await _context.SaveChangesAsync();
 
         // Act
         var result = await _orderService.UpdateOrderAsync(
