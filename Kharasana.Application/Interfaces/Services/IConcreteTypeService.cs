@@ -4,7 +4,7 @@ namespace Kharasana.Application.Interfaces.Services;
 
 public interface IConcreteTypeService
 {
-    Task<IEnumerable<ConcreteTypeDto>> GetAllAsync(int? factoryId = null);
+    Task<PagedResult<ConcreteTypeDto>> GetAllAsync(int pageNumber = 1, int pageSize = 20, string? search = null, int? factoryId = null);
 
     /// <summary>الأنواع المحذوفة حذفًا ناعمًا (المؤرشفة) — عكس <see cref="GetAllAsync"/> الذي يستبعدها.</summary>
     /// <param name="factoryId">مصنع بعينه (موظف المصنع)، أو <c>null</c> لكل المصانع (المدير).</param>

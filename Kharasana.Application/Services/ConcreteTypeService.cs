@@ -17,22 +17,28 @@ public class ConcreteTypeService : IConcreteTypeService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IEnumerable<ConcreteTypeDto>> GetAllAsync(int? factoryId = null)
+    public async Task<PagedResult<ConcreteTypeDto>> GetAllAsync(int pageNumber = 1, int pageSize = 20, string? search = null, int? factoryId = null)
     {
-        IEnumerable<ConcreteType> concreteTypes;
+        PagedResult<ConcreteType> concreteTypes;
 
         if (factoryId.HasValue)
         {
             concreteTypes = await _unitOfWork.ConcreteTypes
-                .GetByFactoryWithFactoryAsync(factoryId.Value);
+                .GetPagedByFactoryAsync(factoryId.Value, pageNumber, pageSize, search);
         }
         else
         {
             concreteTypes = await _unitOfWork.ConcreteTypes
-                .GetAllWithFactoryAsync();
+                .GetPagedAsync(pageNumber, pageSize, search);
         }
 
-        return concreteTypes.Select(MapToDto);
+        return new PagedResult<ConcreteTypeDto>
+        {
+            Items = concreteTypes.Items.Select(MapToDto),
+            TotalCount = concreteTypes.TotalCount,
+            PageNumber = concreteTypes.PageNumber,
+            PageSize = concreteTypes.PageSize
+        };
     }
 
     public async Task<IEnumerable<ConcreteTypeDto>> GetArchivedAsync(int? factoryId = null)
