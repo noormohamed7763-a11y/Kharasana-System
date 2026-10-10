@@ -21,3 +21,4 @@
 - [Filtered Indexes Implementation](kharasana-filtered-indexes-implementation.md) — تم تطبيق فهارس مصفاة لتحسين أداء الاستعلامات المستثنية للسجلات المحذوفة ناعمًا.
 - [إصلاحات P0 لنظام الخرسانة](kharasana-p0-fixes-completed.md) — إنجاز إصلاحات سلامة التسعير، التحقق من السعر، أمان الحذف، والتعامل مع التعارض.
 - [إصلاحات P1 لنظام الخرسانة](kharasana-p1-fixes-completed.md) — إنجاز إصلاحات تجربة المستخدم، الترقيم الصفحاتي، أداء الاستعلامات، وتأمين التفاصيل.
+- [إصلاح دعم الترقيم في ConcreteTypeService](fix-concrete-type-pagination-support.md) — إصلاح خطأ بناء (CS0246) وإضافة دوال الترقيم المفقودة للأنواع الخرسانية وتحديث اختبارات الوحدات.

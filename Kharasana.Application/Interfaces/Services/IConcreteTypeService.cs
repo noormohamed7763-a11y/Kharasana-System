@@ -1,4 +1,5 @@
 ﻿using Kharasana.Application.DTOs.ConcreteType;
+using Kharasana.Application.Common;
 
 namespace Kharasana.Application.Interfaces.Services;
 

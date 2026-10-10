@@ -1,5 +1,6 @@
 ﻿using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Domain.Entities;
+using Kharasana.Application.Common;
 using Kharasana.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -69,5 +70,33 @@ public class ConcreteTypeRepository
                 x.FactoryId == factoryId
                 && x.Name == name
                 && (excludeConcreteTypeId == null || x.ConcreteTypeId != excludeConcreteTypeId));
+    }
+
+    public async Task<PagedResult<ConcreteType>> GetPagedAsync(int pageNumber, int pageSize, string? search)
+    {
+        IQueryable<ConcreteType> query = _context.ConcreteTypes.AsNoTracking().Include(x => x.Factory);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(x => x.Name.Contains(search));
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PagedResult<ConcreteType> { Items = items, TotalCount = totalCount, PageNumber = pageNumber, PageSize = pageSize };
+    }
+
+    public async Task<PagedResult<ConcreteType>> GetPagedByFactoryAsync(int factoryId, int pageNumber, int pageSize, string? search)
+    {
+        IQueryable<ConcreteType> query = _context.ConcreteTypes.AsNoTracking().Include(x => x.Factory).Where(x => x.FactoryId == factoryId);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(x => x.Name.Contains(search));
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PagedResult<ConcreteType> { Items = items, TotalCount = totalCount, PageNumber = pageNumber, PageSize = pageSize };
     }
 }

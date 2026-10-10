@@ -159,7 +159,7 @@ public class ConcreteTypeServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = (await _service.GetAllAsync(103)).ToList();
+        var result = (await _service.GetAllAsync(factoryId: 103)).Items.ToList();
 
         // Assert — فقط أنواع المصنع 103
         result.Should().HaveCount(2);
@@ -246,7 +246,7 @@ public class ConcreteTypeServiceTests : IDisposable
 
         // Assert — عاد إلى القائمة العادية وخرج من الأرشيف
         archived.Should().BeEmpty();
-        var active = (await _service.GetAllAsync(111)).ToList();
+        var active = (await _service.GetAllAsync(factoryId: 111)).Items.ToList();
         active.Should().ContainSingle(x => x.ConcreteTypeId == 240);
     }
 
@@ -276,7 +276,7 @@ public class ConcreteTypeServiceTests : IDisposable
         stored.IsActive.Should().BeFalse();
 
         // ويختفي من الاستعلامات العادية بفضل فلتر الاستعلام العام
-        var all = (await _service.GetAllAsync(110)).ToList();
+        var all = (await _service.GetAllAsync(factoryId: 110)).Items.ToList();
         all.Should().NotContain(x => x.ConcreteTypeId == 300);
 
         var act = () => _service.GetByIdAsync(300);
@@ -377,7 +377,7 @@ public class ConcreteTypeServiceTests : IDisposable
         stored.IsDeleted.Should().BeFalse();
         stored.IsActive.Should().BeTrue();
 
-        var all = (await _service.GetAllAsync(114)).ToList();
+        var all = (await _service.GetAllAsync(factoryId: 114)).Items.ToList();
         all.Should().Contain(x => x.ConcreteTypeId == 310);
     }
 
