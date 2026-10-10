@@ -36,52 +36,31 @@ public class ConcreteTypesController : ControllerBase
     /// - <b>FactoryEmployee:</b> أنواع مصنعه فقط.
     /// - <b>Client:</b> الأنواع النشطة فقط.
     /// </remarks>
+    /// <param name="pageNumber">رقم الصفحة (افتراضي: 1).</param>
+    /// <param name="pageSize">حجم الصفحة (افتراضي: 20).</param>
+    /// <param name="search">نص البحث.</param>
     /// <response code="200">تم جلب الأنواع بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpGet]
-    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]  // ✅ إضافة Client
-    public async Task<IActionResult> GetAll()
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null)
     {
         var caller = User.GetCallerContext();
+        int? factoryId = caller.Role == UserRole.FactoryEmployee ? caller.FactoryId : null;
 
-        // ============================================================
-        // ✅ Client - جميع أنواع الخرسانة النشطة
-        // ============================================================
+        var concreteTypes = await _concreteTypeService.GetAllAsync(pageNumber, pageSize, search, factoryId);
+
+        // ✅ Client لا يرى إلا الأنواع النشطة
         if (caller.Role == UserRole.Client)
         {
-            var allTypes = await _concreteTypeService.GetAllAsync(null);
-            var activeTypes = allTypes.Where(t => t.IsActive).ToList();
-
-            return Ok(new ApiResponse<IEnumerable<ConcreteTypeDto>>
-            {
-                Success = true,
-                Message = Messages.ConcreteTypesRetrievedSuccessfully,
-                Data = activeTypes
-            });
+            concreteTypes.Items = concreteTypes.Items.Where(t => t.IsActive).ToList();
+            concreteTypes.TotalCount = concreteTypes.Items.Count();
         }
 
-        // ============================================================
-        // ✅ FactoryEmployee - أنواع الخرسانة لمصنعه فقط
-        // ============================================================
-        if (caller.Role == UserRole.FactoryEmployee)
-        {
-            if (caller.FactoryId is null)
-                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
-
-            var factoryTypes = await _concreteTypeService.GetAllAsync(caller.FactoryId);
-            return Ok(new ApiResponse<IEnumerable<ConcreteTypeDto>>
-            {
-                Success = true,
-                Message = Messages.ConcreteTypesRetrievedSuccessfully,
-                Data = factoryTypes
-            });
-        }
-
-        // ============================================================
-        // ✅ Admin - جميع أنواع الخرسانة (بما في ذلك غير النشطة)
-        // ============================================================
-        var concreteTypes = await _concreteTypeService.GetAllAsync(null);
-        return Ok(new ApiResponse<IEnumerable<ConcreteTypeDto>>
+        return Ok(new ApiResponse<PagedResult<ConcreteTypeDto>>
         {
             Success = true,
             Message = Messages.ConcreteTypesRetrievedSuccessfully,
