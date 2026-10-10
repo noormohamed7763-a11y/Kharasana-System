@@ -1,15 +1,15 @@
-@model IEnumerable<Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeListItemViewModel>
+@model Kharasana.Application.Common.PagedResult<Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeListItemViewModel>
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.Models.Components.Search
 
 @{
     ViewData["Title"] = "أنواع الخرسانة";
 
-    var total = Model.Count();
-    var active = Model.Count(x => x.IsActive);
-    var factories = Model.Select(x => x.FactoryId).Distinct().Count();
-    var avgPrice = Model.Any()
-        ? Model.Average(x => x.UnitPrice)
+    var total = Model.TotalCount;
+    var active = Model.Items.Count(x => x.IsActive);
+    var factories = Model.Items.Select(x => x.FactoryId).Distinct().Count();
+    var avgPrice = Model.Items.Any()
+        ? Model.Items.Average(x => x.UnitPrice)
         : 0;
 }
 
