@@ -27,14 +27,8 @@ public class ListToolbarViewModel
 
     public Search.SearchBoxViewModel Search { get; set; } = new();
 
-    /// <summary>عرض عمود البحث في شبكة Bootstrap.</summary>
-    public string SearchColumnClass { get; set; } = "col-lg-6";
-
     /// <summary>فلاتر إضافية (الحالة، المصنع...) تُرسل مع النموذج.</summary>
     public List<ListToolbarFilterViewModel> Filters { get; set; } = new();
-
-    /// <summary>عرض عمود الأزرار. الافتراضي يدفعها إلى الطرف المقابل بلا عمود فاصل فارغ.</summary>
-    public string ActionsColumnClass { get; set; } = "col-lg-4 ms-auto";
 
     public string SubmitText { get; set; } = "بحث";
 
@@ -51,8 +45,6 @@ public class ListToolbarFilterViewModel
 
     /// <summary>وصف يُقرأ لقارئ الشاشة، لأن القائمة نفسها بلا label مرئي.</summary>
     public string AriaLabel { get; set; } = string.Empty;
-
-    public string ColumnClass { get; set; } = "col-lg-3";
 
     /// <summary>نص خيار «الكل» الفارغ. اتركه فارغاً لقائمة بلا خيار فارغ.</summary>
     public string EmptyOptionText { get; set; } = string.Empty;

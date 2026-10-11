@@ -47,21 +47,31 @@
     border: 1px solid var(--border-main);
     box-shadow: var(--shadow-sm);
     padding: 24px;
-    display: flex;
-    flex-direction: column;
+    margin-bottom: var(--space-4);
+}
+
+.erp-toolbar-grid {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: var(--space-4);
+    align-items: center;
 }
 
 @media(min-width: 768px) {
-    .erp-toolbar {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
+    .erp-toolbar-grid {
+        grid-template-columns: auto 1fr auto;
     }
 }
 
 .action-buttons {
     display: flex;
+    gap: var(--space-2);
+    justify-content: center;
+    align-items: center;
+}
+
+.action-buttons-wrapper {
+    display: inline-flex;
     gap: var(--space-2);
     justify-content: center;
     align-items: center;
@@ -117,7 +127,7 @@
    عناصرها المباشرة هي الكروت فقط (بدون أغلفة col-*). */
 .summary-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(clamp(14rem, 16.5vw, 20rem), 1fr));
     gap: var(--space-4);
 }
 
