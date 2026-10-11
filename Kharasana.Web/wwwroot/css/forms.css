@@ -106,3 +106,13 @@ span.text-danger {
     align-items: center;
     gap: 8px;
 }
+
+/* Factory form density — scoped to avoid regressing ConcreteTypes/Orders */
+.factory-form .form-group {
+    margin-bottom: var(--space-3); /* 12px vs global 16px */
+}
+
+.factory-form .form-section-title {
+    padding-bottom: 6px;   /* 6px vs global 8px */
+    margin-bottom: 16px;   /* 16px vs global 20px */
+}

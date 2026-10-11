@@ -5,44 +5,46 @@
     string? ctrl = string.IsNullOrEmpty(Model.ControllerName) ? null : Model.ControllerName;
 }
 
-@if (Model.ShowDetails)
-{
-    <a asp-action="@Model.DetailsAction"
-       asp-controller="@ctrl"
-       asp-route-id="@Model.Id"
-       class="btn-action btn-action--view"
-       title="@Model.DetailsTooltip"
-       aria-label="@Model.DetailsTooltip">
-        <i class="bi bi-eye"></i>
-    </a>
-}
+<div class="action-buttons-wrapper">
+    @if (Model.ShowDetails)
+    {
+        <a asp-action="@Model.DetailsAction"
+           asp-controller="@ctrl"
+           asp-route-id="@Model.Id"
+           class="btn-action btn-action--view"
+           title="@Model.DetailsTooltip"
+           aria-label="@Model.DetailsTooltip">
+            <i class="bi bi-eye"></i>
+        </a>
+    }
 
-@if (Model.ShowEdit)
-{
-    <a asp-action="@Model.EditAction"
-       asp-controller="@ctrl"
-       asp-route-id="@Model.Id"
-       class="btn-action btn-action--edit"
-       title="@Model.EditTooltip"
-       aria-label="@Model.EditTooltip">
-        <i class="bi bi-pencil"></i>
-    </a>
-}
+    @if (Model.ShowEdit)
+    {
+        <a asp-action="@Model.EditAction"
+           asp-controller="@ctrl"
+           asp-route-id="@Model.Id"
+           class="btn-action btn-action--edit"
+           title="@Model.EditTooltip"
+           aria-label="@Model.EditTooltip">
+            <i class="bi bi-pencil"></i>
+        </a>
+    }
 
-@if (Model.ShowDelete)
-{
-    <form method="post"
-          asp-action="@Model.DeleteAction"
-          asp-controller="@ctrl"
-          asp-route-id="@Model.Id"
-          class="d-inline"
-          data-confirm="هل أنت متأكد من حذف هذا العنصر؟">
-        @Html.AntiForgeryToken()
-        <button type="submit"
-                class="btn-action btn-action--delete"
-                title="@Model.DeleteTooltip"
-                aria-label="@Model.DeleteTooltip">
-            <i class="bi bi-trash"></i>
-        </button>
-    </form>
-}
+    @if (Model.ShowDelete)
+    {
+        <form method="post"
+              asp-action="@Model.DeleteAction"
+              asp-controller="@ctrl"
+              asp-route-id="@Model.Id"
+              class="d-inline"
+              data-confirm="هل أنت متأكد من حذف هذا العنصر؟">
+            @Html.AntiForgeryToken()
+            <button type="submit"
+                    class="btn-action btn-action--delete"
+                    title="@Model.DeleteTooltip"
+                    aria-label="@Model.DeleteTooltip">
+                <i class="bi bi-trash"></i>
+            </button>
+        </form>
+    }
+</div>

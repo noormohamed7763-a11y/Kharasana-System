@@ -1,6 +1,6 @@
 ﻿@model Kharasana.Web.ViewModels.Factories.FactoryFormViewModel
 
-<div class="row g-3">
+<div class="row g-3 factory-form">
     <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
     <!-- 1. القسم الأول: المعلومات الأساسية -->
@@ -31,19 +31,19 @@
         </div>
     </div>
 
-    <div class="col-xl-4 col-md-4">
+    <div class="col-xl-4 col-md-6 col-12">
         <label asp-for="Phone" class="form-label fw-bold"><i class="bi bi-telephone me-2"></i>رقم الهاتف</label>
         <input asp-for="Phone" class="form-control text-start" placeholder="01xxxxxx أو 7xxxxxxxx" dir="ltr" />
         <span asp-validation-for="Phone" class="text-danger"></span>
     </div>
 
-    <div class="col-xl-4 col-md-4">
+    <div class="col-xl-4 col-md-6 col-12">
         <label asp-for="WhatsApp" class="form-label fw-bold"><i class="bi bi-whatsapp me-2"></i>رقم الواتساب</label>
         <input asp-for="WhatsApp" class="form-control text-start" placeholder="9677xxxxxxxx" dir="ltr" />
         <span asp-validation-for="WhatsApp" class="text-danger"></span>
     </div>
 
-    <div class="col-xl-4 col-md-4">
+    <div class="col-xl-4 col-md-6 col-12">
         <label asp-for="Email" class="form-label fw-bold"><i class="bi bi-envelope me-2"></i>البريد الإلكتروني</label>
         <input asp-for="Email" class="form-control text-start" placeholder="factory@domain.com" dir="ltr" />
         <span asp-validation-for="Email" class="text-danger"></span>

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Kharasana.Web.Controllers
 {
     [SessionAuthorize(Roles.Admin)]
+[Route("FactoryRegistrationRequests")]
     public class FactoryRegistrationRequestsController : BaseController
     {
         private readonly IFactoryRegistrationRequestApiService _apiService;

@@ -84,7 +84,6 @@
             Id = "statusFilter",
             Name = "status",
             AriaLabel = "تصفية حسب حالة الطلب",
-            ColumnClass = "col-xl-3 col-lg-3",
             EmptyOptionText = "جميع الحالات"
         };
         foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
@@ -106,7 +105,6 @@
                 Id = "factoryFilter",
                 Name = "factoryId",
                 AriaLabel = "تصفية حسب المصنع",
-                ColumnClass = "col-xl-2 col-lg-2",
                 EmptyOptionText = "جميع المصانع"
             };
 
@@ -129,9 +127,6 @@
         var toolbar = new ListToolbarViewModel
         {
             PageSize = Model.PageSize,
-            // للأدمن ثلاثة أعمدة فلترة فيضيق عمود البحث، ولغيره عمودان
-            SearchColumnClass = showFactoryFilter ? "col-xl-4 col-lg-3" : "col-xl-5 col-lg-4",
-            ActionsColumnClass = showFactoryFilter ? "col-xl-3 col-lg-4" : "col-xl-4 col-lg-5",
             Filters = toolbarFilters,
             Search = new SearchBoxViewModel
             {
@@ -178,7 +173,7 @@
                             <th class="text-nowrap">الحالة</th>
                             <th class="text-nowrap">السائق</th>
                             <th class="text-nowrap">تاريخ الصب</th>
-                            <th class="text-center text-nowrap">الإجراءات</th>
+                            <th class="text-center col-actions col-actions--xl text-nowrap">الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody>

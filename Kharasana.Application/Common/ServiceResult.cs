@@ -27,7 +27,7 @@ public class ServiceResult<T> : ServiceResult
 {
     public T? Data { get; init; }
 
-    public static new ServiceResult<T> Ok(T data, string? message = null)
+    public static ServiceResult<T> Ok(T data, string? message = null)
         => new() { Succeeded = true, Data = data, Message = message ?? "تم تنفيذ العملية بنجاح." };
 
     public static new ServiceResult<T> Fail(string message)

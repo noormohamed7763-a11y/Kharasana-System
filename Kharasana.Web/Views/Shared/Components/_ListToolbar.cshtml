@@ -18,7 +18,7 @@
     var actionName = string.IsNullOrWhiteSpace(Model.ActionName) ? "Index" : Model.ActionName;
 }
 
-<div class="form-card mb-3 p-3 shadow-sm">
+<div class="erp-toolbar mb-3 p-3 shadow-sm">
     <form method="get" asp-action="@actionName" asp-controller="@Model.ControllerName">
         @if (Model.PageSize.HasValue)
         {
@@ -26,15 +26,15 @@
             <input type="hidden" name="pageSize" value="@Model.PageSize.Value" />
         }
 
-        <div class="row g-2 align-items-center">
-            <div class="@Model.SearchColumnClass">
+        <div class="erp-toolbar-grid">
+            <div>
                 @await Html.PartialAsync("~/Views/Shared/Components/_SearchBox.cshtml", Model.Search)
             </div>
 
-            @foreach (var filter in Model.Filters)
-            {
-                <div class="@filter.ColumnClass">
-                    <select class="form-select"
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var filter in Model.Filters)
+                {
+                    <select class="form-select w-auto"
                             id="@filter.Id"
                             name="@(string.IsNullOrWhiteSpace(filter.Name) ? null : filter.Name)"
                             aria-label="@(string.IsNullOrWhiteSpace(filter.AriaLabel) ? null : filter.AriaLabel)"
@@ -55,15 +55,15 @@
                             }
                         }
                     </select>
-                </div>
-            }
+                }
+            </div>
 
-            <div class="@Model.ActionsColumnClass d-flex gap-2">
-                <button type="submit" class="btn btn-primary flex-fill">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
                     <i class="bi bi-search me-1"></i> @Model.SubmitText
                 </button>
                 <a asp-action="@actionName" asp-controller="@Model.ControllerName"
-                   class="btn btn-outline-secondary flex-fill" title="إلغاء الفلاتر">
+                   class="btn btn-outline-secondary" title="إلغاء الفلاتر">
                     <i class="bi bi-arrow-counterclockwise me-1"></i> @Model.ResetText
                 </a>
             </div>

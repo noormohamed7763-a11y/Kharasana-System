@@ -118,6 +118,11 @@
        في dashboard.css. لا يمسّ الجداول ولا لوحات المعلومات. */
     --form-max-width: 1100px;
     --chart-height: 220px;
+    /* ارتفاعات موحّدة لرسوم لوحات المعلومات — تُستهلك في الـ Views مباشرةً
+       عبر style="height: var(--chart-height-*)" بعد أن كانت أرقاماً مضمّنة
+       (260px/240px) موزّعة بين _AdminDashboard و _FactoryDashboard. */
+    --chart-height-bar: 260px;
+    --chart-height-doughnut: 240px;
     --icon-size-lg: 42px;
     --icon-size-md: 38px;
     --logo-size: 42px;

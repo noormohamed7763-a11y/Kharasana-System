@@ -271,19 +271,23 @@
    حُدِّد رقمه على حدة. الحجم يتبع عدد الأزرار داخل الخلية.
    ========================================================== */
 .col-index {
-    width: 50px;
+    width: 40px;
 }
 
 .col-actions {
-    width: 120px;
+    width: 130px;
 }
 
 .col-actions--md {
-    width: 140px;
+    width: 160px;
 }
 
 .col-actions--lg {
-    width: 180px;
+    width: 200px;
+}
+
+.col-actions--xl {
+    width: 220px;
 }
 
 /* عمود تاريخ (صفحة أرشيف أنواع الخرسانة) — يمنع كسر السطر في «2026-09-27» */
