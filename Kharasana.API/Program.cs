@@ -17,6 +17,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kharasana.API;
 
@@ -300,23 +301,27 @@ public class Program
 
         var app = builder.Build();
 
+        // ✅ تطبيق ترحيلات قاعدة البيانات تلقائياً عند الإقلاع
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<KharasanaDbContext>();
+            await dbContext.Database.MigrateAsync();
+        }
+
         app.UseMiddleware<ExceptionMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
-        if (app.Environment.IsDevelopment())
+        // تفعيل Swagger في كل البيئات للتجربة
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
         {
-            app.UseSwagger();
-
-            app.UseSwaggerUI(options =>
-            {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Kharasana ERP API v1");
-                options.DocumentTitle = "Kharasana ERP API | واجهة برمجة التطبيقات";
-                options.EnableTryItOutByDefault();      // تفعيل زر "Try it out" تلقائياً
-                options.EnablePersistAuthorization();   // حفظ ما يُدخله المستخدم من توكن
-                options.DisplayRequestDuration();       // عرض مدّة كل طلب بالمللي ثانية
-                options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
-            });
-        }
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Kharasana ERP API v1");
+            options.DocumentTitle = "Kharasana ERP API | واجهة برمجة التطبيقات";
+            options.EnableTryItOutByDefault();
+            options.EnablePersistAuthorization();
+            options.DisplayRequestDuration();
+            options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
+        });
 
         // ============================================================
         // 5. تفعيل CORS (يجب أن يكون قبل UseAuthentication)
@@ -328,14 +333,13 @@ public class Program
         //    تحذير: في الإنتاج يجب ضبط KnownProxies / KnownNetworks لقبول
         //    X-Forwarded-* من مصادر موثوقة فقط — وإلا أمكن تزوير عنوان IP.
         // ============================================================
-        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        var forwardedOptions = new ForwardedHeadersOptions
         {
-            ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                               ForwardedHeaders.XForwardedProto,
-            // تقييد قبول X-Forwarded-* من الـ Proxy المحلي فقط.
-            // في الإنتاج: استبدل IPAddress.Loopback بعنوان IP الفعلي للـ reverse proxy (nginx/Caddy/...).
-            KnownProxies = { System.Net.IPAddress.Loopback, System.Net.IPAddress.IPv6Loopback }
-        });
+            ForwardedHeaders = ForwardedHeaders.All
+        };
+        forwardedOptions.KnownNetworks.Clear();
+        forwardedOptions.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedOptions);
 
         app.UseRateLimiter();
 
