@@ -1,8 +1,7 @@
+using Kharasana.Application.Common;
+using Kharasana.Application.DTOs.Factory;
 using Kharasana.Domain.Entities;
 using Kharasana.Web.Services.Interfaces;
-using Kharasana.Web.Services.Api;
-using Kharasana.Application.DTOs.Factory;
-using Kharasana.Application.Common;
 
 namespace Kharasana.Web.Services.Api;
 
@@ -17,12 +16,22 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
 
     public async Task<IEnumerable<FactoryRegistrationRequest>> GetAllAsync()
     {
-        return await _apiClient.GetAsync<IEnumerable<FactoryRegistrationRequest>>("api/registration-requests") ?? Enumerable.Empty<FactoryRegistrationRequest>();
+        return await _apiClient.GetAsync<IEnumerable<FactoryRegistrationRequest>>("api/registration-requests")
+               ?? Enumerable.Empty<FactoryRegistrationRequest>();
     }
 
-    public async Task<IEnumerable<FactoryRegistrationRequest>> GetPendingAsync()
+    public async Task<PagedResult<FactoryRegistrationRequest>> GetPagedRequestsAsync(RegistrationRequestFilterParams filter)
     {
-        return await _apiClient.GetAsync<IEnumerable<FactoryRegistrationRequest>>("api/registration-requests/pending") ?? Enumerable.Empty<FactoryRegistrationRequest>();
+        var url = $"api/registration-requests/paged?pageNumber={filter.PageNumber}&pageSize={filter.PageSize}";
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+            url += $"&search={Uri.EscapeDataString(filter.Search)}";
+
+        if (filter.Status.HasValue)
+            url += $"&status={(int)filter.Status.Value}";
+
+        return await _apiClient.GetAsync<PagedResult<FactoryRegistrationRequest>>(url)
+               ?? new PagedResult<FactoryRegistrationRequest>();
     }
 
     public async Task<FactoryRegistrationRequest?> GetByIdAsync(int id)
@@ -32,16 +41,19 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
 
     public async Task<ServiceResult> RegisterAsync(RegisterFactoryDto dto)
     {
-        return await _apiClient.PostAsync<ServiceResult>("api/registration-requests", dto) ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
+        return await _apiClient.PostAsync<ServiceResult>("api/registration-requests", dto)
+               ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
     }
 
     public async Task<ServiceResult> ApproveAsync(int id)
     {
-        return await _apiClient.PostAsync<ServiceResult>($"api/registration-requests/{id}/approve", new { }) ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
+        return await _apiClient.PostAsync<ServiceResult>($"api/registration-requests/{id}/approve", new { })
+               ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
     }
 
     public async Task<ServiceResult> RejectAsync(int id, string reason)
     {
-        return await _apiClient.PostAsync<ServiceResult>($"api/registration-requests/{id}/reject", reason) ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
+        return await _apiClient.PostAsync<ServiceResult>($"api/registration-requests/{id}/reject", reason)
+               ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
     }
 }

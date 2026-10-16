@@ -1,43 +1,189 @@
 @model Kharasana.Web.ViewModels.FactoryRegistration.RegistrationRequestDetailsViewModel
+@using Kharasana.Domain.Enums
+@using Kharasana.Web.Models.Components
 
 @{
-    ViewData["Title"] = "تفاصيل طلب التسجيل";
+    ViewData["Title"] = $"تفاصيل طلب تسجيل - {Model.FactoryName}";
+
+    var statusText = Model.Status switch
+    {
+        RegistrationStatus.Pending => "قيد الانتظار",
+        RegistrationStatus.Approved => "تم القبول",
+        RegistrationStatus.Rejected => "مرفوض",
+        _ => Model.Status.ToString()
+    };
+
+    var statusCss = Model.Status switch
+    {
+        RegistrationStatus.Pending => "status-warning",
+        RegistrationStatus.Approved => "status-success",
+        RegistrationStatus.Rejected => "status-danger",
+        _ => "status-secondary"
+    };
 }
 
-<div class="dashboard-page">
-    <div class="page-header mb-4">
-        <h3>تفاصيل طلب تسجيل: @Model.FactoryName</h3>
-    </div>
+<div class="dashboard-page dashboard-page--narrow">
 
-    <div class="form-card">
-        <dl class="row">
-            <dt class="col-sm-3">اسم المصنع</dt>
-            <dd class="col-sm-9">@Model.FactoryName</dd>
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-building-check",
+            Title = "تفاصيل طلب تسجيل مصنع",
+            Description = $"مراجعة وتدقيق بيانات طلب التسجيل المقدم من: {Model.FactoryName}"
+        })
 
-            <dt class="col-sm-3">المالك</dt>
-            <dd class="col-sm-9">@Model.OwnerName</dd>
-
-            <dt class="col-sm-3">البريد الإلكتروني</dt>
-            <dd class="col-sm-9">@Model.Email</dd>
-
-            <dt class="col-sm-3">الهاتف</dt>
-            <dd class="col-sm-9">@Model.Phone</dd>
-
-            <dt class="col-sm-3">الحالة</dt>
-            <dd class="col-sm-9">@Model.Status</dd>
-        </dl>
-
-        <div class="mt-4">
-            <form asp-action="Approve" asp-route-id="@Model.Id" method="post" style="display:inline;">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-success">قبول</button>
-            </form>
-            <form asp-action="Reject" asp-route-id="@Model.Id" method="post" style="display:inline;">
-                @Html.AntiForgeryToken()
-                <input type="text" name="reason" placeholder="سبب الرفض (اختياري)" class="form-control d-inline-block w-auto" />
-                <button type="submit" class="btn btn-danger">رفض</button>
-            </form>
-            <a asp-action="Index" class="btn btn-secondary">رجوع</a>
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger d-flex align-items-center gap-2 mb-3 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+            <div>@TempData["Error"]</div>
         </div>
+    }
+
+    <div class="erp-section-card shadow-sm">
+
+        <!-- رأس البطاقة: الأيقونة، الاسم، المنطقة، الحالة -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-3 shadow-sm" style="width: 56px; height: 56px;">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">@Model.FactoryName</h3>
+                    <span class="text-muted"><i class="bi bi-geo-alt me-1 text-danger"></i> @(string.IsNullOrWhiteSpace(Model.Area) ? "المنطقة غير محددة" : Model.Area)</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                @await Html.PartialAsync(
+                    "~/Views/Shared/Components/_StatusBadge.cshtml",
+                    new StatusBadgeViewModel
+                    {
+                        Text = statusText,
+                        CssClass = statusCss
+                    })
+            </div>
+        </div>
+
+        <!-- القسم الأول: بيانات المنشأة والسجل -->
+        <div class="form-section-title">
+            <i class="bi bi-buildings"></i> بيانات المنشأة والسجل
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-building me-1"></i> اسم المصنع</span>
+                    <h6 class="fw-bold mb-0 text-dark">@Model.FactoryName</h6>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-card-heading me-1"></i> رقم السجل التجاري</span>
+                    <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrWhiteSpace(Model.BusinessRegistrationNumber) ? "غير متوفر" : Model.BusinessRegistrationNumber)</h6>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-geo-alt me-1"></i> المنطقة</span>
+                    <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrWhiteSpace(Model.Area) ? "-" : Model.Area)</h6>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-pin-map me-1"></i> العنوان التفصيلي</span>
+                    <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrWhiteSpace(Model.Address) ? "-" : Model.Address)</h6>
+                </div>
+            </div>
+        </div>
+
+        <!-- القسم الثاني: بيانات المالك والاتصال -->
+        <div class="form-section-title">
+            <i class="bi bi-person-badge"></i> المالك وبيانات الاتصال
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-person me-1"></i> المالك المفوض</span>
+                    <h6 class="fw-bold mb-0 text-dark">@Model.OwnerName</h6>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-telephone me-1"></i> رقم الهاتف</span>
+                    <h6 class="fw-bold mb-0 text-dark" dir="ltr">@Model.Phone</h6>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-envelope me-1"></i> البريد الإلكتروني</span>
+                    <h6 class="fw-bold mb-0 text-dark" dir="ltr">@Model.Email</h6>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-calendar3 me-1"></i> تاريخ تقديم الطلب</span>
+                    <h6 class="fw-bold mb-0 text-dark">@Model.CreatedAt.ToString("yyyy/MM/dd - hh:mm tt")</h6>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-hash me-1"></i> رقم الطلب في النظام</span>
+                    <h6 class="fw-bold mb-0 text-dark">#@Model.Id</h6>
+                </div>
+            </div>
+        </div>
+
+        <!-- القسم الثالث: اتخاذ القرار -->
+        @if (Model.Status == RegistrationStatus.Pending)
+        {
+            <div class="p-3 rounded-3 border bg-light mb-4">
+                <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-shield-check text-primary me-1"></i> اتخاذ القرار بشأن الطلب:</h6>
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <form asp-action="Approve" asp-route-id="@Model.Id" method="post" class="d-inline" data-confirm="هل أنت متأكد من قبول هذا الطلب واعتماد حساب المصنع؟">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-check-circle me-1"></i> قبول واعتماد المصنع
+                        </button>
+                    </form>
+
+                    <button type="button" class="btn btn-outline-danger px-4" data-bs-toggle="collapse" data-bs-target="#rejectReasonBox" aria-expanded="false" aria-controls="rejectReasonBox">
+                        <i class="bi bi-x-circle me-1"></i> رفض الطلب...
+                    </button>
+                </div>
+
+                <!-- نموذج الرفض داخل صندوق قابل للطي -->
+                <div class="collapse mt-3" id="rejectReasonBox">
+                    <div class="card card-body border-danger-subtle bg-white">
+                        <form asp-action="Reject" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label class="form-label text-danger fw-bold">سبب رفض الطلب (اختياري)</label>
+                                <textarea name="reason" class="form-control" rows="2" placeholder="اكتب سبب الرفض هنا ليتم توثيقه..."></textarea>
+                            </div>
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button type="button" class="btn btn-sm btn-light border" data-bs-toggle="collapse" data-bs-target="#rejectReasonBox">إلغاء</button>
+                                <button type="submit" class="btn btn-sm btn-danger px-3">تأكيد الرفض</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert @(Model.Status == RegistrationStatus.Approved ? "alert-success" : "alert-secondary") d-flex align-items-center gap-2 mb-4">
+                <i class="bi @(Model.Status == RegistrationStatus.Approved ? "bi-check-circle-fill" : "bi-info-circle-fill") fs-5"></i>
+                <span>تمت معالجة هذا الطلب مسبقاً بحالة: <strong>@statusText</strong></span>
+            </div>
+        }
+
+        <!-- أزرار الرجوع -->
+        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right me-1"></i> العودة إلى قائمة الطلبات
+            </a>
+        </div>
+
     </div>
+
 </div>

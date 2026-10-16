@@ -90,16 +90,19 @@ textarea {
    KHARASANA ERP - UI/UX General Enhancements
    ========================================================== */
 
-/* تحسين تفاعل البطاقات (Elevation) */
-.form-card,
-.erp-section-card {
-    transition: transform var(--transition), box-shadow var(--transition);
+/* تحسين استجابة بطاقة المعلومات (Elevation فقط — بدون حركة عمودية)
+   الحركة translateY(-2px) مناسبة للبطاقات الثابتة (KPI / Section Cards)،
+   لكنها تُزعج داخل نموذج تفاعلي: أي مرور للمؤشر فوق حقل يُحرّك الكارت كله.
+   .erp-section-card تحتفظ بالحركة الكاملة في components.css (لم تُمسّ). */
+.form-card:hover {
+    box-shadow: var(--shadow-md);
 }
 
-.form-card:hover, .erp-section-card:hover {
+.erp-section-card:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
+
 
 /* تحسين استجابة الأزرار */
 .btn {

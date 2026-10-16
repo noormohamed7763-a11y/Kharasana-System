@@ -1,6 +1,7 @@
 @model Kharasana.Application.Common.PagedResult<Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeListItemViewModel>
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.Models.Components.Search
+@using Kharasana.Web.ViewModels.Components
 
 @{
     ViewData["Title"] = "أنواع الخرسانة";
@@ -83,30 +84,53 @@
                         })
     </div>
 
-    <!-- Search -->
-    <div class="form-card mb-3 p-3 shadow-sm">
-        <div class="row g-2 align-items-center">
-            <div class="col-lg-6">
-                @await Html.PartialAsync(
-                                "~/Views/Shared/Components/_SearchBox.cshtml",
-                                new SearchBoxViewModel
-                                {
-                                    InputId = "tableSearch",
-                                    Placeholder = "ابحث باسم النوع أو المصنع..."
-                                })
-            </div>
-            @* ms-auto يدفع التنبيه إلى الطرف الآخر من الصف على سطح المكتب،
-               وإلا بقي ملاصقاً لصندوق البحث في وسط الصفحة وبقيت نصف الأعمدة فارغة. *@
-            <div class="col-auto ms-auto">
-                <span class="text-muted small">
-                    <i class="bi bi-info-circle me-1"></i>
-                    البحث يعمل داخل الصفحة الحالية
-                </span>
-            </div>
-        </div>
-    </div>
+    <!-- شريط البحث الموحّد -->
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_ListToolbar.cshtml",
+        new ListToolbarViewModel
+        {
+            PageSize = Model.PageSize,
+            Search = new SearchBoxViewModel
+            {
+                InputId = "search",
+                Placeholder = "ابحث باسم النوع أو المصنع...",
+                Value = (string?)ViewBag.Search ?? string.Empty
+            }
+        })
 
-    <partial name="_ConcreteTypeTable" model="Model.Items" />
+    @if (Model.Items == null || !Model.Items.Any())
+    {
+        @await Html.PartialAsync(
+            "~/Views/Shared/Components/_EmptyState.cshtml",
+            new EmptyStateViewModel
+            {
+                ImageUrl = "/images/empty-concrete.png",
+                Title = "لا توجد أنواع خرسانة",
+                Message = "لم يتم العثور على أي أنواع خرسانة تطابق معايير البحث.",
+                ShowActionButton = canManage && !factoryInactive,
+                ActionController = "ConcreteTypes",
+                ActionAction = "Create",
+                ActionText = "إضافة نوع خرسانة"
+            })
+    }
+    else
+    {
+        ViewData["RowOffset"] = (Model.PageNumber - 1) * Model.PageSize;
+        <partial name="_ConcreteTypeTable" model="Model.Items" />
+    }
+
+    <!-- الترقيم -->
+    @await Html.PartialAsync("~/Views/Shared/Components/_Pagination.cshtml", new PaginationViewModel
+    {
+        CurrentPage = Model.PageNumber,
+        TotalPages = Model.TotalPages,
+        PageSize = Model.PageSize,
+        TotalCount = Model.TotalCount,
+        RouteValues = new Dictionary<string, string>
+        {
+            { "search", (string?)ViewBag.Search ?? string.Empty }
+        }
+    })
 
 </div>
 

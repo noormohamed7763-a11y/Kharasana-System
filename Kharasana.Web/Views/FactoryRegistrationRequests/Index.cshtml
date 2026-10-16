@@ -1,42 +1,271 @@
 @model Kharasana.Web.ViewModels.FactoryRegistration.FactoryRegistrationRequestsIndexViewModel
+@using Kharasana.Domain.Enums
+@using Kharasana.Web.Models.Components
 
 @{
     ViewData["Title"] = "طلبات تسجيل المصانع";
 }
 
 <div class="dashboard-page">
-    <div class="page-header mb-4">
-        <h3>طلبات تسجيل المصانع</h3>
-        <p class="text-muted">مراجعة واعتماد طلبات المصانع الجديدة</p>
+
+    <!-- Header -->
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-building-check",
+            Title = "طلبات تسجيل المصانع",
+            Description = "مراجعة واعتماد طلبات المصانع الجديدة وتفعيل حساباتهم في النظام"
+        })
+
+    <!-- Summary KPI Cards -->
+    <div class="summary-cards-grid mb-4">
+        @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+            new SummaryCardViewModel
+            {
+                Title = "إجمالي الطلبات",
+                Value = Model.TotalAllRequestsCount.ToString(),
+                Icon = "bi-files",
+                IconClass = "kpi-icon-primary"
+            })
+
+        @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+            new SummaryCardViewModel
+            {
+                Title = "بانتظار المراجعة",
+                Value = Model.PendingCount.ToString(),
+                Icon = "bi-hourglass-split",
+                IconClass = "kpi-icon-warning"
+            })
+
+        @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+            new SummaryCardViewModel
+            {
+                Title = "الطلبات المقبولة",
+                Value = Model.ApprovedCount.ToString(),
+                Icon = "bi-check-circle-fill",
+                IconClass = "kpi-icon-success"
+            })
+
+        @await Html.PartialAsync(
+            "~/Views/Shared/Components/_SummaryCard.cshtml",
+            new SummaryCardViewModel
+            {
+                Title = "الطلبات المرفوضة",
+                Value = Model.RejectedCount.ToString(),
+                Icon = "bi-x-circle-fill",
+                IconClass = "kpi-icon-danger"
+            })
     </div>
 
-    <div class="form-card">
-        <table class="erp-table">
-            <thead>
-                <tr>
-                    <th>المصنع</th>
-                    <th>المالك</th>
-                    <th>البريد الإلكتروني</th>
-                    <th>الحالة</th>
-                    <th>التاريخ</th>
-                    <th>الإجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var request in Model.PagedRequests?.Items ?? Enumerable.Empty<Kharasana.Web.ViewModels.FactoryRegistration.RegistrationRequestListItemViewModel>())
-                {
-                    <tr>
-                        <td>@request.FactoryName</td>
-                        <td>@request.OwnerName</td>
-                        <td>@request.Email</td>
-                        <td><span class="status-badge @request.StatusClass">@request.StatusText</span></td>
-                        <td>@request.CreatedAt.ToShortDateString()</td>
-                        <td>
-                            <a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-primary">تفاصيل</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <!-- Filters & Search Toolbar -->
+    <div class="form-card mb-4 p-3 shadow-sm">
+        <div class="row g-3 align-items-center justify-content-between">
+            <!-- Tabs / Pills بالحالة -->
+            <div class="col-12 col-lg-7">
+                <div class="btn-group flex-wrap" role="group" aria-label="تصفية حسب الحالة">
+                    <a asp-action="Index"
+                       asp-route-status=""
+                       asp-route-search="@Model.Filter.Search"
+                       class="btn btn-sm @(!Model.Filter.Status.HasValue ? "btn-primary" : "btn-outline-secondary")">
+                        الكل
+                        <span class="badge bg-light text-dark ms-1">@Model.TotalAllRequestsCount</span>
+                    </a>
+
+                    <a asp-action="Index"
+                       asp-route-status="@((int)RegistrationStatus.Pending)"
+                       asp-route-search="@Model.Filter.Search"
+                       class="btn btn-sm @(Model.Filter.Status == RegistrationStatus.Pending ? "btn-warning text-dark fw-bold" : "btn-outline-warning text-dark")">
+                        قيد الانتظار
+                        <span class="badge bg-warning text-dark ms-1">@Model.PendingCount</span>
+                    </a>
+
+                    <a asp-action="Index"
+                       asp-route-status="@((int)RegistrationStatus.Approved)"
+                       asp-route-search="@Model.Filter.Search"
+                       class="btn btn-sm @(Model.Filter.Status == RegistrationStatus.Approved ? "btn-success" : "btn-outline-success")">
+                        المقبولة
+                        <span class="badge bg-light text-dark ms-1">@Model.ApprovedCount</span>
+                    </a>
+
+                    <a asp-action="Index"
+                       asp-route-status="@((int)RegistrationStatus.Rejected)"
+                       asp-route-search="@Model.Filter.Search"
+                       class="btn btn-sm @(Model.Filter.Status == RegistrationStatus.Rejected ? "btn-danger" : "btn-outline-danger")">
+                        المرفوضة
+                        <span class="badge bg-light text-dark ms-1">@Model.RejectedCount</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- حقل البحث -->
+            <div class="col-12 col-lg-5">
+                <form asp-action="Index" method="get" class="d-flex gap-2">
+                    @if (Model.Filter.Status.HasValue)
+                    {
+                        <input type="hidden" name="status" value="@((int)Model.Filter.Status.Value)" />
+                    }
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control"
+                               placeholder="بحث باسم المصنع أو المالك أو البريد..."
+                               value="@Model.Filter.Search" />
+                    </div>
+                    <button type="submit" class="btn btn-primary px-3 text-nowrap">بحث</button>
+                    @if (!string.IsNullOrWhiteSpace(Model.Filter.Search))
+                    {
+                        <a asp-action="Index" asp-route-status="@(Model.Filter.Status.HasValue ? (int)Model.Filter.Status.Value : null)" class="btn btn-outline-secondary">
+                            <i class="bi bi-x"></i>
+                        </a>
+                    }
+                </form>
+            </div>
+        </div>
     </div>
+
+    <!-- Data Table Card -->
+    <div class="form-card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover erp-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>المصنع والمنطقة</th>
+                        <th>المالك المفوض</th>
+                        <th>بيانات التواصل</th>
+                        <th>الحالة</th>
+                        <th>تاريخ التقديم</th>
+                        <th class="text-center" style="width: 120px;">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var items = Model.PagedRequests?.Items ?? Enumerable.Empty<Kharasana.Web.ViewModels.FactoryRegistration.RegistrationRequestListItemViewModel>();
+                    }
+
+                    @if (items.Any())
+                    {
+                        var index = ((Model.PagedRequests!.PageNumber - 1) * Model.PagedRequests.PageSize) + 1;
+                        foreach (var request in items)
+                        {
+                            <tr>
+                                <td class="text-secondary fw-bold">@index</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-primary" style="width: 36px; height: 36px;">
+                                            <i class="bi bi-building"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">@request.FactoryName</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-person text-muted"></i>
+                                        <span>@request.OwnerName</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <div><i class="bi bi-envelope text-muted me-1"></i>@request.Email</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge @request.StatusClass">
+                                        <span class="status-dot"></span>
+                                        @request.StatusText
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-muted small">
+                                        <i class="bi bi-calendar3 me-1"></i>@request.CreatedAt.ToString("yyyy/MM/dd")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-primary px-3">
+                                        <i class="bi bi-eye me-1"></i>تفاصيل
+                                    </a>
+                                </td>
+                            </tr>
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="p-0">
+                                @await Html.PartialAsync(
+                                    "~/Views/Shared/Components/_EmptyState.cshtml",
+                                    new EmptyStateViewModel
+                                    {
+                                        Icon = "bi-building-slash",
+                                        Title = "لا توجد طلبات تسجيل",
+                                        Message = "لم يتم العثور على أي طلبات تسجيل تطابق معايير الفلترة الحالية."
+                                    })
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.PagedRequests != null && Model.PagedRequests.TotalCount > Model.PagedRequests.PageSize)
+        {
+            var totalPages = (int)Math.Ceiling((double)Model.PagedRequests.TotalCount / Model.PagedRequests.PageSize);
+            var currentPage = Model.PagedRequests.PageNumber;
+
+            <div class="p-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <span class="text-muted small">
+                    عرض @(((currentPage - 1) * Model.PagedRequests.PageSize) + 1) - @(Math.Min(currentPage * Model.PagedRequests.PageSize, Model.PagedRequests.TotalCount)) من إجمالي @Model.PagedRequests.TotalCount طلب
+                </span>
+
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        @if (currentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" asp-action="Index"
+                                   asp-route-pageNumber="@(currentPage - 1)"
+                                   asp-route-pageSize="@Model.PagedRequests.PageSize"
+                                   asp-route-search="@Model.Filter.Search"
+                                   asp-route-status="@(Model.Filter.Status.HasValue ? (int)Model.Filter.Status.Value : null)">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        }
+
+                        @for (int i = 1; i <= totalPages; i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" asp-action="Index"
+                                   asp-route-pageNumber="@i"
+                                   asp-route-pageSize="@Model.PagedRequests.PageSize"
+                                   asp-route-search="@Model.Filter.Search"
+                                   asp-route-status="@(Model.Filter.Status.HasValue ? (int)Model.Filter.Status.Value : null)">@i</a>
+                            </li>
+                        }
+
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" asp-action="Index"
+                                   asp-route-pageNumber="@(currentPage + 1)"
+                                   asp-route-pageSize="@Model.PagedRequests.PageSize"
+                                   asp-route-search="@Model.Filter.Search"
+                                   asp-route-status="@(Model.Filter.Status.HasValue ? (int)Model.Filter.Status.Value : null)">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+
 </div>

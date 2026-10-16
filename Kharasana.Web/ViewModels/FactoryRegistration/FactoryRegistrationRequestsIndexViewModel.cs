@@ -1,18 +1,26 @@
 using Kharasana.Application.Common;
-using Kharasana.Web.ViewModels.Shared;
 
 namespace Kharasana.Web.ViewModels.FactoryRegistration;
 
 public class FactoryRegistrationRequestsIndexViewModel
 {
+    /// <summary>بيانات الصفحة الحالية مع إجمالي العدد للترقيم.</summary>
     public PagedResult<RegistrationRequestListItemViewModel>? PagedRequests { get; set; }
-    public int PageNumber { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
-    public string? Search { get; set; }
-    public int? StatusFilter { get; set; }
 
-    // Summary Counts
+    /// <summary>
+    /// معاملات الفلترة الحالية — تُمرَّر للـ View لبناء نموذج البحث والترقيم.
+    /// </summary>
+    public RegistrationRequestFilterParams Filter { get; set; } = new();
+
+    /// <summary>إجمالي جميع الطلبات بمختلف حالاتها.</summary>
+    public int TotalAllRequestsCount { get; set; }
+
+    /// <summary>عدد الطلبات قيد الانتظار (تحتاج مراجعة).</summary>
     public int PendingCount { get; set; }
+
+    /// <summary>عدد الطلبات المقبولة.</summary>
     public int ApprovedCount { get; set; }
+
+    /// <summary>عدد الطلبات المرفوضة.</summary>
     public int RejectedCount { get; set; }
 }

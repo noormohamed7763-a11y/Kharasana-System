@@ -30,7 +30,12 @@ namespace Kharasana.Web.Controllers
                 return View(dto);
             }
 
-            await _apiService.RegisterAsync(dto);
+            var result = await _apiService.RegisterAsync(dto);
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+                return View(dto);
+            }
 
             TempData[BaseController.TempDataSuccess] = "تم إرسال طلب تسجيل المصنع بنجاح، سيتم مراجعته من قبل الإدارة.";
             return RedirectToAction("Login", "Account");

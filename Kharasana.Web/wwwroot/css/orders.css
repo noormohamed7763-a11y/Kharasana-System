@@ -1,5 +1,5 @@
 /* ==========================================================
-   KHARASANA ERP — إدارة الطلبات (صفحة Index.cshtml)
+   KHARASANA ERP — إدارة الطلبات
    ========================================================== */
 
 /* ── 1. شارات الحالة (Status Badges) — نمط مؤسسي هادئ ── */
@@ -13,13 +13,18 @@
     white-space: nowrap;
 }
 
-.status-badge.bg-pending { background-color: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+.status-badge.bg-pending  { background-color: #fff7ed; color: #9a3412; border-color: #fed7aa; }
 .status-badge.bg-approved { background-color: #f0fdf4; color: #166534; border-color: #bbf7d0; }
 .status-badge.bg-rejected { background-color: #fef2f2; color: #991b1b; border-color: #fecaca; }
-.status-badge.bg-closed { background-color: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
-.status-badge.bg-new { background-color: #f3f4f6; color: #374151; border-color: #d1d5db; }
+.status-badge.bg-closed   { background-color: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+.status-badge.bg-new      { background-color: #f3f4f6; color: #374151; border-color: #d1d5db; }
 
-/* ── 3. حاسبة الطلب الثابتة (Sticky Estimator) ── */
+/* ── 2. حاسبة الطلب الثابتة — الحاوية الخارجية (Sticky Shell) ── */
+/*
+   padding: 0 — الحشو يُدار من كل قسم داخلي على حدة:
+   .estimator-header / .estimator-body / .estimator-total-box / .estimator-note / .estimator-actions
+   وذلك حتى يمتدّ border-bottom للأقسام من حافة إلى حافة بدون مسافة.
+*/
 .order-estimator-sticky {
     position: sticky;
     top: calc(var(--navbar-height) + var(--space-4));
@@ -29,5 +34,181 @@
     border-radius: var(--radius-md);
     border: 1px solid var(--border-main);
     box-shadow: var(--shadow-sm);
-    padding: var(--card-padding);
+    padding: 0;
+}
+
+/* ── 3. رأس اللوحة ── */
+.estimator-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--card-padding);
+    border-bottom: 1px solid var(--border-soft);
+    background: var(--surface-low);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    flex-shrink: 0;
+}
+
+.estimator-title {
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.estimator-title i {
+    color: var(--primary-text);
+    font-size: 1.1rem;
+}
+
+.estimator-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    background: var(--brand-cta-soft);
+    color: var(--brand-cta);
+    border: 1px solid rgba(194, 75, 23, 0.2);
+    white-space: nowrap;
+}
+
+/* ── 4. جسم البيانات ── */
+.estimator-body {
+    padding: var(--space-2) var(--card-padding) var(--space-1);
+}
+
+.estimator-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.estimator-row:last-child {
+    border-bottom: none;
+}
+
+.estimator-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.estimator-value {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--text-main);
+    /* LTR: الأرقام والأسماء تُقرأ من اليسار وفق نمط التطبيق الموحّد */
+    direction: ltr;
+    text-align: right;
+}
+
+/*
+   القيم الطويلة (اسم العميل / اسم الصنف) تُقصَّر بـ ellipsis.
+   max-width مضبوطة على ~40% من عرض اللوحة (col-lg-4) على 1300px.
+*/
+.estimator-value--clamp {
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: bottom;
+}
+
+/* ── 5. صندوق الإجمالي ── */
+.estimator-total-box {
+    margin: var(--space-3) var(--card-padding);
+    padding: var(--space-3) var(--space-4);
+    background: var(--brand-cta-soft);
+    border: 1px solid rgba(194, 75, 23, 0.2);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.estimator-total-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--brand-cta);
+    margin-bottom: var(--space-1);
+    display: block;
+    letter-spacing: 0.2px;
+}
+
+.estimator-total-amount {
+    font-size: var(--text-2xl);
+    font-weight: 800;
+    color: var(--brand-cta);
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── 6. تنبيه تشريحي ── */
+.estimator-note {
+    padding: var(--space-2) var(--card-padding) var(--space-3);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    line-height: 1.55;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.estimator-note i {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* ── 7. منطقة الأزرار ── */
+.estimator-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--card-padding) var(--space-4);
+    border-top: 1px solid var(--border-soft);
+}
+
+.estimator-actions .btn {
+    width: 100%;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* ── 8. بطاقة اختيار طريقة النقل ── */
+/*
+   تُعطي .transport-option هوية تفاعلية:
+   - hover  → خلفية خفيفة
+   - checked → border برتقالي + خلفية brand-cta-soft + outline خفيف
+   :has() مدعوم: Chromium 105+ / Firefox 121+ / Safari 15.4+
+*/
+.transport-option {
+    cursor: pointer;
+    border-color: var(--border-main) !important;
+    transition: background-color var(--transition),
+                border-color var(--transition),
+                box-shadow var(--transition);
+}
+
+.transport-option:hover {
+    background: var(--surface-low);
+    box-shadow: var(--shadow-sm);
+}
+
+.transport-option:has(input[type="radio"]:checked) {
+    background: var(--brand-cta-soft);
+    border-color: var(--brand-cta) !important;
+    box-shadow: 0 0 0 2px rgba(194, 75, 23, 0.18);
 }

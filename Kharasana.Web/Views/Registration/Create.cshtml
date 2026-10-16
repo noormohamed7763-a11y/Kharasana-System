@@ -1,75 +1,734 @@
 @model Kharasana.Application.DTOs.Factory.RegisterFactoryDto
-@using Kharasana.Web.Models.Components
 
 @{
+    Layout = null;
     ViewData["Title"] = "تسجيل مصنع جديد";
 }
 
-<div class="dashboard-page dashboard-page--narrow">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kharasana ERP | @ViewData["Title"]</title>
 
-    @await Html.PartialAsync(
-    "~/Views/Shared/Components/_PageHeader.cshtml",
-        new PageHeaderViewModel
-        {
-            Icon = "bi-building-add",
-            Title = "تسجيل مصنع جديد",
-            Description = "قم بتعبئة البيانات أدناه لإنشاء حساب مصنع جديد في النظام."
-        })
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet" integrity="sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
 
-    <div class="erp-section-card">
-        <form asp-action="Create" method="post">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+    <style>
+        :root {
+            --primary: #C2410C;
+            --primary-hover: #9A3412;
+            --primary-light: #FFF7ED;
+            --primary-glow: rgba(194, 65, 12, 0.16);
+            --bg-dark: #0A0D12;
+            --surface-dark: #12171F;
+            --surface-dark-card: #18202B;
+            --surface-light: #FFFFFF;
+            --text-dark: #F1F5F9;
+            --text-muted-dark: #94A3B8;
+            --text-light: #1E293B;
+            --muted-light: #64748B;
+            --border-dark: rgba(255, 255, 255, 0.08);
+            --border-light: #CBD5E1;
+            --border-light-soft: #E2E8F0;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 8px;
+            --shadow-xl: 0 24px 50px -12px rgba(0, 0, 0, 0.45);
+        }
 
-            <div class="mb-3">
-                <label asp-for="FactoryName" class="form-label">اسم المصنع</label>
-                <input asp-for="FactoryName" class="form-control" />
-                <span asp-validation-for="FactoryName" class="text-danger"></span>
-            </div>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="OwnerName" class="form-label">اسم المالك</label>
-                    <input asp-for="OwnerName" class="form-control" />
-                    <span asp-validation-for="OwnerName" class="text-danger"></span>
+        body {
+            font-family: "Cairo", sans-serif;
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(ellipse at 15% 15%, rgba(194, 65, 12, 0.12) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 85%, rgba(20, 27, 36, 0.95) 0%, transparent 60%);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding: 32px 16px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .reg-wrapper {
+            width: 100%;
+            max-width: 1220px;
+            margin: auto 0;
+        }
+
+        /* Top Brand Navigation */
+        .reg-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            padding: 0 4px;
+        }
+
+        .reg-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: opacity 0.2s;
+        }
+
+        .reg-brand:hover {
+            opacity: 0.9;
+            color: var(--text-dark);
+        }
+
+        .reg-brand img {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+        }
+
+        .reg-brand-title {
+            font-weight: 800;
+            font-size: 1.25rem;
+            line-height: 1.2;
+            letter-spacing: -0.3px;
+        }
+
+        .reg-brand-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted-dark);
+        }
+
+        .back-link {
+            color: #FED7AA;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-dark);
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: #FFFFFF;
+            background: rgba(194, 65, 12, 0.2);
+            border-color: rgba(194, 65, 12, 0.4);
+        }
+
+        /* Main Split Card */
+        .reg-card {
+            background: var(--surface-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: grid;
+            grid-template-columns: 1.2fr 0.95fr;
+        }
+
+        /* Right Column: Form Panel */
+        .reg-form-panel {
+            padding: 40px 42px;
+            background: #FFFFFF;
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .form-header {
+            margin-bottom: 22px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light-soft);
+        }
+
+        .form-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+
+        .form-header h1 {
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: #0F172A;
+            margin-bottom: 6px;
+        }
+
+        .form-header p {
+            color: var(--muted-light);
+            font-size: 0.92rem;
+            margin: 0;
+        }
+
+        .section-legend {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #1E293B;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 20px 0 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed var(--border-light-soft);
+        }
+
+        .section-legend i {
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.86rem;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+        /* Unified Modern Input Group */
+        .input-group {
+            display: flex;
+            align-items: stretch;
+            background: #FFFFFF;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s ease;
+        }
+
+        .input-group:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .input-group-text {
+            background: transparent !important;
+            border: none !important;
+            color: #64748B;
+            font-size: 0.95rem;
+            padding: 0 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+        }
+
+        .input-group:focus-within .input-group-text {
+            color: var(--primary);
+        }
+
+        .form-control {
+            border: none !important;
+            background: transparent !important;
+            padding: 10px 14px;
+            font-size: 0.92rem;
+            color: #0F172A;
+            box-shadow: none !important;
+            width: 100%;
+        }
+
+        .form-control:focus {
+            box-shadow: none !important;
+            outline: none;
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: #FFFFFF;
+            font-weight: 700;
+            border: none;
+            padding: 12px 28px;
+            font-size: 0.98rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(194, 65, 12, 0.25);
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-hover);
+            color: #FFFFFF;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(194, 65, 12, 0.35);
+        }
+
+        .btn-cancel {
+            font-weight: 600;
+            color: #64748B;
+            border: 1px solid var(--border-light);
+            padding: 11px 20px;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-cancel:hover {
+            background-color: #F8FAFC;
+            color: #0F172A;
+            border-color: #94A3B8;
+        }
+
+        /* Left Side: Visual Hero & Promotional Panel */
+        .reg-hero-panel {
+            background: linear-gradient(160deg, #121820 0%, #1A222D 100%);
+            color: var(--text-dark);
+            padding: 38px 34px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid var(--border-dark);
+            position: relative;
+        }
+
+        /* Hero Image Container */
+        .hero-image-card {
+            position: relative;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+            margin-bottom: 24px;
+            background: #000000;
+        }
+
+        .hero-img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            object-position: center 20%;
+            display: block;
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .hero-image-card:hover .hero-img {
+            transform: scale(1.03);
+        }
+
+        .hero-image-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 24px 16px 12px;
+            background: linear-gradient(to top, rgba(10, 13, 18, 0.92) 0%, rgba(10, 13, 18, 0.45) 60%, transparent 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .hero-badge-pill {
+            background: rgba(194, 65, 12, 0.9);
+            backdrop-filter: blur(8px);
+            color: #FFFFFF;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Hero Text Content */
+        .hero-content {
+            flex-grow: 1;
+        }
+
+        .hero-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            line-height: 1.35;
+            color: #FFFFFF;
+            margin-bottom: 10px;
+        }
+
+        .hero-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted-dark);
+            line-height: 1.6;
+            margin-bottom: 22px;
+        }
+
+        /* 3-Steps Timeline */
+        .hero-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 16px 18px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 22px;
+        }
+
+        .hero-step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.78rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+            box-shadow: 0 0 10px rgba(194, 65, 12, 0.4);
+        }
+
+        .step-body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .step-body strong {
+            font-size: 0.86rem;
+            color: #FFFFFF;
+            margin-bottom: 1px;
+        }
+
+        .step-body span {
+            font-size: 0.78rem;
+            color: var(--text-muted-dark);
+        }
+
+        /* Feature Pills */
+        .hero-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .feat-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            color: #CBD5E1;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .feat-pill i {
+            color: #FB923C;
+        }
+
+        /* Responsive Breakpoints */
+        @@media (min-width: 992px) {
+            .reg-form-panel {
+                grid-column: 1;
+            }
+            .reg-hero-panel {
+                grid-column: 2;
+            }
+        }
+
+        @@media (max-width: 991px) {
+            body {
+                padding: 20px 12px 30px;
+            }
+
+            .reg-card {
+                grid-template-columns: 1fr;
+            }
+
+            /* On mobile/tablet: hero panel on top so visual introduces the experience */
+            .reg-hero-panel {
+                grid-row: 1;
+                border-right: none;
+                border-bottom: 1px solid var(--border-dark);
+                padding: 26px 20px;
+            }
+
+            .reg-form-panel {
+                grid-row: 2;
+                padding: 30px 20px;
+            }
+
+            .hero-img {
+                height: 220px;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            body {
+                padding: 14px 8px 24px;
+            }
+
+            .reg-brand-title {
+                font-size: 1.1rem;
+            }
+
+            .back-link span {
+                display: none;
+            }
+
+            .form-header h1 {
+                font-size: 1.3rem;
+            }
+
+            .hero-img {
+                height: 190px;
+            }
+
+            .reg-form-panel {
+                padding: 24px 16px;
+            }
+
+            .hero-steps {
+                padding: 12px 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="reg-wrapper">
+
+        <!-- Top Navigation -->
+        <header class="reg-top-bar">
+            <a asp-controller="Account" asp-action="Login" class="reg-brand">
+                <img src="~/images/logo.png" alt="Kharasana ERP" asp-append-version="true" />
+                <div>
+                    <div class="reg-brand-title">Kharasana ERP</div>
+                    <div class="reg-brand-sub">منظومة إدارة مصانع الخرسانة الجاهزة</div>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Email" class="form-label">البريد الإلكتروني</label>
-                    <input asp-for="Email" class="form-control" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
+            </a>
+            <a asp-controller="Account" asp-action="Login" class="back-link">
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span>لديك حساب بالفعل؟ تسجيل الدخول</span>
+            </a>
+        </header>
+
+        <!-- Main Card with Side-by-Side Split Layout -->
+        <main class="reg-card">
+
+            <!-- Right Column: Registration Form -->
+            <section class="reg-form-panel">
+                <div class="form-header">
+                    <span class="form-badge">
+                        <i class="bi bi-patch-plus"></i> انضمام مصنع جديد
+                    </span>
+                    <h1>طلب تسجيل مصنع</h1>
+                    <p>قم بتعبئة بيانات المصنع والمالك للانضمام إلى شبكة التوريد الذكية.</p>
                 </div>
-            </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Phone" class="form-label">رقم الهاتف</label>
-                    <input asp-for="Phone" class="form-control" />
-                    <span asp-validation-for="Phone" class="text-danger"></span>
+                <form asp-action="Create" method="post" id="regForm" autocomplete="off" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+                    <!-- القسم الأول: بيانات المنشأة -->
+                    <div class="section-legend">
+                        <i class="bi bi-buildings"></i>
+                        <span>بيانات المصنع والترخيص</span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="FactoryName" class="form-label">اسم المصنع <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-building"></i></span>
+                                <input asp-for="FactoryName" class="form-control" placeholder="مثال: مصنع الأمل للخرسانة الجاهزة" required />
+                            </div>
+                            <span asp-validation-for="FactoryName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="BusinessRegistrationNumber" class="form-label">رقم السجل التجاري <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-file-earmark-text"></i></span>
+                                <input asp-for="BusinessRegistrationNumber" class="form-control" placeholder="رقم القيد التجاري" required />
+                            </div>
+                            <span asp-validation-for="BusinessRegistrationNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Area" class="form-label">المدينة / المنطقة <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                                <input asp-for="Area" class="form-control" placeholder="مثال: صنعاء" required />
+                            </div>
+                            <span asp-validation-for="Area" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label asp-for="Address" class="form-label">العنوان التفصيلي <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-pin-map"></i></span>
+                                <input asp-for="Address" class="form-control" placeholder="الشارع، جوار معلم بارز، المنطقة الصناعية" required />
+                            </div>
+                            <span asp-validation-for="Address" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- القسم الثاني: بيانات المسؤول -->
+                    <div class="section-legend">
+                        <i class="bi bi-person-badge"></i>
+                        <span>بيانات المالك / المسؤول المفوض</span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="OwnerName" class="form-label">اسم المسؤول <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input asp-for="OwnerName" class="form-control" placeholder="الاسم الثلاثي أو الرباعي" required />
+                            </div>
+                            <span asp-validation-for="OwnerName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Phone" class="form-label">رقم الهاتف <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                <input asp-for="Phone" class="form-control" placeholder="77xxxxxxx" required />
+                            </div>
+                            <span asp-validation-for="Phone" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Email" class="form-label">البريد الإلكتروني <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input asp-for="Email" type="email" class="form-control" placeholder="name@domain.com" required />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- أزرار الإجراء -->
+                    <div class="d-flex align-items-center justify-content-between pt-4 border-top mt-4">
+                        <a asp-controller="Account" asp-action="Login" class="btn-cancel">
+                            <i class="bi bi-arrow-right me-1"></i> إلغاء والعودة
+                        </a>
+
+                        <button type="submit" class="btn btn-submit" id="submitBtn">
+                            <span id="btnText">
+                                <i class="bi bi-send-check me-1"></i> إرسال طلب التسجيل
+                            </span>
+                            <span id="btnLoading" class="d-none">
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                جاري المعالجة...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Left Column: Promotional Visual Hero Panel -->
+            <aside class="reg-hero-panel">
+
+                <!-- Promotional Image Showcase -->
+                <div class="hero-image-card">
+                    <img src="~/images/factory-registration-hero.png"
+                         alt="محطة خلط خرسانة جاهزة - منصة خرسانة"
+                         class="hero-img"
+                         asp-append-version="true" />
+                    <div class="hero-image-overlay">
+                        <span class="hero-badge-pill">
+                            <i class="bi bi-patch-check-fill text-warning"></i> شبكة مصانع معتمدة
+                        </span>
+                        <span class="text-white small" style="opacity: 0.9;">
+                            <i class="bi bi-geo-alt-fill text-warning me-1"></i> تغطية لكافة المناطق
+                        </span>
+                    </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="BusinessRegistrationNumber" class="form-label">رقم السجل التجاري</label>
-                    <input asp-for="BusinessRegistrationNumber" class="form-control" />
-                    <span asp-validation-for="BusinessRegistrationNumber" class="text-danger"></span>
+
+                <!-- Value Proposition Content -->
+                <div class="hero-content">
+                    <h2 class="hero-title">منظومة رقمية متكاملة لنمو أعمال مصنعك</h2>
+                    <p class="hero-desc">
+                        انضم إلى منصة Kharasana ERP الرائدة لإدارة دورة التوريد الميداني، وجدولة أوامر الصب، ومتابعة الخلاطات والمضخات لحظة بلحظة.
+                    </p>
+
+                    <!-- Onboarding Steps -->
+                    <div class="hero-steps">
+                        <div class="hero-step-item">
+                            <span class="step-num">1</span>
+                            <div class="step-body">
+                                <strong>تقديم البيانات الرسمية</strong>
+                                <span>تسجيل بيانات المصنع والسجل التجاري وبيانات التواصل</span>
+                            </div>
+                        </div>
+                        <div class="hero-step-item">
+                            <span class="step-num">2</span>
+                            <div class="step-body">
+                                <strong>مراجعة وتدقيق الإدارة</strong>
+                                <span>التحقق من البيانات واعتماد الطلب من قبل فريق الإشراف</span>
+                            </div>
+                        </div>
+                        <div class="hero-step-item">
+                            <span class="step-num">3</span>
+                            <div class="step-body">
+                                <strong>تفعيل الحساب والبدء</strong>
+                                <span>استلام رابط تفعيل الحساب فوراً واستقبال طلبات المقاولين</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Highlights & Capabilities -->
+                    <div class="hero-features">
+                        <span class="feat-pill"><i class="bi bi-truck"></i> تتبع حركة الخلاطات</span>
+                        <span class="feat-pill"><i class="bi bi-receipt"></i> فواتير وكشوفات آلية</span>
+                        <span class="feat-pill"><i class="bi bi-bar-chart"></i> لوحة مؤشرات الإنتاج</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="mb-3">
-                <label asp-for="Area" class="form-label">المنطقة</label>
-                <input asp-for="Area" class="form-control" />
-                <span asp-validation-for="Area" class="text-danger"></span>
-            </div>
+            </aside>
 
-            <div class="mb-3">
-                <label asp-for="Address" class="form-label">العنوان</label>
-                <textarea asp-for="Address" class="form-control"></textarea>
-                <span asp-validation-for="Address" class="text-danger"></span>
-            </div>
+        </main>
 
-            <button type="submit" class="btn btn-primary">إرسال طلب التسجيل</button>
-        </form>
+        <footer class="text-center text-muted mt-3 small" style="opacity: 0.7;">
+            &copy; @DateTime.UtcNow.Year Kharasana ERP — جميع الحقوق محفوظة
+        </footer>
+
     </div>
-</div>
 
-@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <partial name="_ValidationScriptsPartial" />
-}
+
+    <script>
+        document.getElementById('regForm').addEventListener('submit', function() {
+            if ($(this).valid()) {
+                document.getElementById('btnText').classList.add('d-none');
+                document.getElementById('btnLoading').classList.remove('d-none');
+                document.getElementById('submitBtn').setAttribute('disabled', 'disabled');
+            }
+        });
+    </script>
+</body>
+</html>
