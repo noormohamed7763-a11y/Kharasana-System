@@ -41,7 +41,7 @@
 
                 @if (Model.Any())
                 {
-                    var index = 1;
+                    var index = ((int)(ViewData["RowOffset"] ?? 0)) + 1;
 
                     foreach (var item in Model)
                     {

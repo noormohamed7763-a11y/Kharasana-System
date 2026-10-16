@@ -41,6 +41,7 @@ public class ConcreteTypesController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20, string? search = null)
     {
+        ViewBag.Search = search;
         var concreteTypes = await _concreteTypeService.GetAllAsync(pageNumber, pageSize, search);
         return View(concreteTypes);
     }

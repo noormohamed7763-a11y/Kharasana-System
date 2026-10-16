@@ -11,13 +11,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
-using Microsoft.EntityFrameworkCore;
 
 namespace Kharasana.API;
 
@@ -217,24 +217,15 @@ public class Program
             options.Filters.Add<GlobalValidationActionFilter>();
         });
 
-                // تسجيل الفلتر الخاص (لضمان توافق المتحكمات القديمة)
+        // تسجيل الفلتر الخاص (لضمان توافق المتحكمات القديمة)
         builder.Services.AddScoped(typeof(ValidationFilter<>));
 
-
-
-        // توحيد شكل خطأ 400: فلتر [ApiController] المدمج يعمل بترتيب -2000 (قبل فلتر
-        // FluentValidation) فيردّ ValidationProblemDetails بصيغة RFC 7807 بلا حقل message،
-        // بينما FluentValidation يمرّ عبر ExceptionMiddleware فيردّ ApiResponse.Fail.
-        // الشكلان المختلفان يجعلان ApiClient في الويب يسقط إلى رسالة عامة ويفقد نصّ
-        // الخطأ العربي. هنا يُبنى الردّان من مصدر واحد.
+        // توحيد شكل خطأ 400
         builder.Services.Configure<ApiBehaviorOptions>(options =>
         {
             options.InvalidModelStateResponseFactory =
                 context => ApiErrorResponseFactory.FromModelState(context.ModelState);
         });
-
-        // تسجيل الفلتر العام للتحقق كخدمة مفتوحة النوع — يُحقن IValidator<T> تلقائياً عند الاستخدام عبر [ServiceFilter(typeof(ValidationFilter<T>))]
-        // builder.Services.AddScoped(typeof(ValidationFilter<>));
 
         // Response Compression — تقليل حجم الاستجابات
         builder.Services.AddResponseCompression(options =>
@@ -301,11 +292,24 @@ public class Program
 
         var app = builder.Build();
 
-        // ✅ تطبيق ترحيلات قاعدة البيانات تلقائياً عند الإقلاع
-        using (var scope = app.Services.CreateScope())
+        // ✅ تطبيق ترحيلات قاعدة البيانات مع حماية التطبيق من السقوط عند الإقلاع
+        try
         {
+            using var scope = app.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<KharasanaDbContext>();
             await dbContext.Database.MigrateAsync();
+
+            var startupLogger = app.Services
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger(nameof(AdminAccountSeeder));
+            await AdminAccountSeeder.SeedAsync(app.Services, app.Configuration, startupLogger);
+        }
+        catch (Exception ex)
+        {
+            var startupLogger = app.Services
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("StartupMigration");
+            startupLogger.LogError(ex, "تعذر تطبيق الترحيلات أو الـ Seeding عند الإقلاع");
         }
 
         app.UseMiddleware<ExceptionMiddleware>();
@@ -330,14 +334,12 @@ public class Program
 
         // ============================================================
         // 6. Forwarded Headers — لتشغيل Rate Limiter و HTTPS بشكل صحيح خلف وسيط (Proxy)
-        //    تحذير: في الإنتاج يجب ضبط KnownProxies / KnownNetworks لقبول
-        //    X-Forwarded-* من مصادر موثوقة فقط — وإلا أمكن تزوير عنوان IP.
         // ============================================================
         var forwardedOptions = new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.All
         };
-        forwardedOptions.KnownNetworks.Clear();
+        forwardedOptions.KnownIPNetworks.Clear();
         forwardedOptions.KnownProxies.Clear();
         app.UseForwardedHeaders(forwardedOptions);
 
@@ -353,16 +355,6 @@ public class Program
 
         app.MapControllers();
         app.MapHealthChecks("/health");
-
-        // ============================================================
-        // 7. تهيئة حساب المدير الأول — لا يوجد أي مسار آخر لإنشائه
-        //    مُتكرّرة بلا أثر: تتخطّى نفسها إن وُجد مدير، ولا تُعدّل كلمة مرور قائمة.
-        // ============================================================
-        var startupLogger = app.Services
-            .GetRequiredService<ILoggerFactory>()
-            .CreateLogger(nameof(AdminAccountSeeder));
-
-        await AdminAccountSeeder.SeedAsync(app.Services, app.Configuration, startupLogger);
 
         app.Run();
     }

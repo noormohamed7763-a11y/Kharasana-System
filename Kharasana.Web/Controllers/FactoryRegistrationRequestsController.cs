@@ -1,9 +1,9 @@
+using Kharasana.Application.Common;
 using Kharasana.Domain.Enums;
 using Kharasana.Web.Controllers;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.FactoryRegistration;
-using Kharasana.Application.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Kharasana.Web.Controllers
@@ -19,37 +19,53 @@ namespace Kharasana.Web.Controllers
             _apiService = apiService;
         }
 
-        public async Task<IActionResult> Index()
+        [HttpGet("")]
+        public async Task<IActionResult> Index([FromQuery] RegistrationRequestFilterParams filter)
         {
-            var requests = await _apiService.GetPendingAsync();
+            var pagedRequests = await _apiService.GetPagedRequestsAsync(filter);
+            var allRequests = (await _apiService.GetAllAsync()).ToList();
 
             var vm = new FactoryRegistrationRequestsIndexViewModel
             {
+                Filter = filter,
+                TotalAllRequestsCount = allRequests.Count,
+                PendingCount = allRequests.Count(r => r.Status == RegistrationStatus.Pending),
+                ApprovedCount = allRequests.Count(r => r.Status == RegistrationStatus.Approved),
+                RejectedCount = allRequests.Count(r => r.Status == RegistrationStatus.Rejected),
                 PagedRequests = new PagedResult<RegistrationRequestListItemViewModel>
                 {
-                    Items = requests.Select(r => new RegistrationRequestListItemViewModel
+                    Items = pagedRequests.Items.Select(r => new RegistrationRequestListItemViewModel
                     {
                         Id = r.Id,
                         FactoryName = r.FactoryName,
                         OwnerName = r.ContactName,
                         Email = r.ContactEmail,
-                        StatusText = r.Status.ToString(),
+                        StatusText = r.Status switch
+                        {
+                            RegistrationStatus.Pending => "قيد الانتظار",
+                            RegistrationStatus.Approved => "تم القبول",
+                            RegistrationStatus.Rejected => "مرفوض",
+                            _ => r.Status.ToString()
+                        },
                         StatusClass = r.Status switch
                         {
-                            RegistrationStatus.Pending => "bg-warning",
-                            RegistrationStatus.Approved => "bg-success",
-                            RegistrationStatus.Rejected => "bg-danger",
-                            _ => "bg-secondary"
+                            RegistrationStatus.Pending => "status-warning",
+                            RegistrationStatus.Approved => "status-success",
+                            RegistrationStatus.Rejected => "status-danger",
+                            _ => "status-secondary"
                         },
                         CreatedAt = r.CreatedAt
                     }).ToList(),
-                    TotalCount = requests.Count()
+                    TotalCount = pagedRequests.TotalCount,
+                    PageNumber = pagedRequests.PageNumber,
+                    PageSize = pagedRequests.PageSize
                 }
             };
 
             return View(vm);
         }
 
+        [HttpGet("Details/{id:int}")]
         public async Task<IActionResult> Details(int id)
         {
             var request = await _apiService.GetByIdAsync(id);

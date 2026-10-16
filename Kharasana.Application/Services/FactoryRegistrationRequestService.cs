@@ -51,6 +51,51 @@ public class FactoryRegistrationRequestService : IFactoryRegistrationRequestServ
         return all.Where(r => r.Status == RegistrationStatus.Pending);
     }
 
+    public async Task<PagedResult<FactoryRegistrationRequest>> GetPagedRequestsAsync(RegistrationRequestFilterParams filter)
+    {
+        var all = await _unitOfWork.FactoryRegistrationRequests.GetAllAsync();
+        var query = all.AsQueryable();
+
+        if (filter.Status.HasValue)
+            query = query.Where(r => r.Status == filter.Status.Value);
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var s = filter.Search.Trim();
+            query = query.Where(r =>
+                r.FactoryName.Contains(s) ||
+                r.ContactName.Contains(s) ||
+                r.ContactEmail.Contains(s) ||
+                r.Area.Contains(s));
+        }
+
+        var totalCount = query.Count();
+
+        var items = query
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((filter.PageNumber - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .ToList();
+
+        return new PagedResult<FactoryRegistrationRequest>
+        {
+            Items = items,
+            PageNumber = filter.PageNumber,
+            PageSize = filter.PageSize,
+            TotalCount = totalCount
+        };
+    }
+
+    public async Task<(int Pending, int Approved, int Rejected)> GetStatusCountsAsync()
+    {
+        var all = await _unitOfWork.FactoryRegistrationRequests.GetAllAsync();
+        return (
+            all.Count(r => r.Status == RegistrationStatus.Pending),
+            all.Count(r => r.Status == RegistrationStatus.Approved),
+            all.Count(r => r.Status == RegistrationStatus.Rejected)
+        );
+    }
+
     public async Task<ServiceResult> RejectRequestAsync(int requestId, string reason)
     {
         var request = await _unitOfWork.FactoryRegistrationRequests.GetByIdAsync(requestId);
@@ -59,7 +104,7 @@ public class FactoryRegistrationRequestService : IFactoryRegistrationRequestServ
 
         request.Status = RegistrationStatus.Rejected;
         request.ProcessedAt = DateTime.UtcNow;
-        // هنا يمكن إضافة حقل للسبب إذا تم إضافته لاحقاً في الـ Entity
+        request.RejectionReason = !string.IsNullOrWhiteSpace(reason) ? reason.Trim() : null;
 
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Ok();

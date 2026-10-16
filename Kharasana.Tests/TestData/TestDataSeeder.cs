@@ -19,6 +19,7 @@ internal static class TestDataSeeder
     {
         var options = new DbContextOptionsBuilder<KharasanaDbContext>()
             .UseInMemoryDatabase(databaseName: dbName ?? Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         var context = new KharasanaDbContext(options);

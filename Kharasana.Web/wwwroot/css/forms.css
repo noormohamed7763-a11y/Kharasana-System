@@ -1,4 +1,4 @@
-﻿/* ==========================================================
+/* ==========================================================
    FORMS LIBRARY (Kharasana ERP)
    ========================================================== */
 
@@ -39,6 +39,25 @@
     transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition), color var(--transition);
     width: 100%;
 }
+
+/*
+   .form-select-lg من Bootstrap يطلب ارتفاعاً ~48px وحشواً عمودياً أكبر.
+   القاعدة أعلاه تُثبّت height: 44px وتُلغيه. الحلّ: نجعل الـ select
+   يعتمد على min-height بدل height الصارم، ونُعيد الحشو العمودي لـ -lg.
+   .form-control (inputs) تبقى على height: 44px لأن حقول النص لا تحتاج
+   للتمدّد الطبيعي كما تفعل القوائم المنسدلة.
+*/
+select.form-select {
+    height: auto;
+    min-height: 44px;
+}
+
+select.form-select.form-select-lg {
+    min-height: 50px;
+    padding-block: var(--space-2);
+    font-size: var(--text-base);
+}
+
 
 /* حقول النصوص المتعددة الأسطر: لا يُقيَّد ارتفاعها بقاعدة الـ 44px،
    بل تنمو حسب rows وتسمح للمستخدم بتغيير الحجم عند الحاجة */
