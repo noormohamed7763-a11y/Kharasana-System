@@ -1,4 +1,4 @@
-﻿using Kharasana.Domain.Validation;
+using Kharasana.Web.Validation;
 using System.ComponentModel.DataAnnotations;
 
 namespace Kharasana.Web.ViewModels.Drivers;

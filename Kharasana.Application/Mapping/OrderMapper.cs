@@ -3,7 +3,7 @@ using Kharasana.Application.DTOs.Order;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Common;
 
-namespace Kharasana.Application.Common.Mapping;
+namespace Kharasana.Application.Mapping;
 
 public static class OrderMapper
 {

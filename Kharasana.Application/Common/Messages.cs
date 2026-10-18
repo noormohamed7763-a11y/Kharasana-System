@@ -6,6 +6,7 @@ public static class Messages
 
     public const string RegisterSuccess = "تم إنشاء الحساب بنجاح.";
     public const string LoginSuccess = "تم تسجيل الدخول بنجاح.";
+    public const string TokenRefreshedSuccessfully = "تم تجديد الجلسة بنجاح.";
     public const string CreatedSuccessfully = "تم إنشاء البيانات بنجاح.";
     public const string UpdatedSuccessfully = "تم تحديث البيانات بنجاح.";
     public const string DeletedSuccessfully = "تم حذف البيانات بنجاح.";
@@ -83,6 +84,8 @@ public static class Messages
     public const string ActivationTokenAlreadyUsed = "تم استخدام رابط التفعيل هذا مسبقاً.";
     public const string Unauthorized = "ليس لديك صلاحية لتنفيذ هذه العملية.";
     public const string InvalidOrExpiredToken = "التوكن غير موجود أو غير صالح أو منتهي الصلاحية.";
+    public const string InvalidOrExpiredRefreshToken = "رمز التحديث غير صالح أو منتهي الصلاحية.";
+    public const string TokenRevokedSuccessfully = "تم إبطال الجلسة بنجاح.";
     public const string InvalidDriver = "المستخدم المحدد ليس سائقًا.";
     public const string InvalidClient = "المستخدم المحدد ليس عميلاً.";
     public const string InvalidFactory = "المصنع المحدد غير صالح.";
@@ -243,6 +246,8 @@ public static class Messages
     /// («The JSON value could not be converted to…») إلى المستخدم.
     /// </summary>
     public const string InvalidRequest = "البيانات المُرسَلة غير صالحة. تحقق من الحقول ثم أعد المحاولة.";
+    public const string MalformedJsonOrPayload = "البيانات المُرسَلة تحتوي على صيغة غير صالحة. يرجى التحقق من صحة الحقول والأرقام والتواريخ.";
+    public const string PayloadTooLarge = "حجم البيانات أو الملفات المُرسَلة يتجاوز الحد المسموح به.";
 
     /// <summary>
     /// احتياط أخير لانتهاك قيد التفرّد على مستوى قاعدة البيانات (حالة سباق فاتت الفحص المسبق).

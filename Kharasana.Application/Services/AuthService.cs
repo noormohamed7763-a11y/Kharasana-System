@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Auth;
 using Kharasana.Application.Interfaces;
@@ -166,10 +166,16 @@ public class AuthService : IAuthService
         if (isLockedOut)
             throw new BusinessException(Messages.AccountLocked);
 
-        // ✅ نجاح تسجيل الدخول: تصفير عدّاد المحاولات وإلغاء القفل
+        // ✅ نجاح تسجيل الدخول: تصفير عدّاد المحاولات وإلغاء القفل وتوليد Refresh Token
         user.FailedLoginAttempts = 0;
         user.LockoutEnd = null;
         user.LastLoginAt = DateTime.UtcNow;
+
+        var refreshToken = _tokenService.GenerateRefreshToken();
+        var refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = refreshTokenExpiry;
+
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync();
 
@@ -183,6 +189,8 @@ public class AuthService : IAuthService
             FactoryId = user.FactoryId,
             Token = tokenResult.Token,
             Expiration = tokenResult.Expiration,
+            RefreshToken = refreshToken,
+            RefreshTokenExpiration = refreshTokenExpiry,
             Notification = notification,
             FactoryIsActive = factoryIsActive
         };
@@ -248,6 +256,104 @@ public class AuthService : IAuthService
         {
             Success = true,
             Message = Messages.RegisterSuccess // Or a more specific activation message if needed
+        };
+    }
+
+    public async Task<ApiResponse<LoginResponseDto>> RefreshTokenAsync(string refreshToken)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            throw new BusinessException(Messages.InvalidOrExpiredRefreshToken);
+
+        var user = await _unitOfWork.Users.GetByRefreshTokenAsync(refreshToken);
+        if (user == null ||
+            user.RefreshTokenExpiryTime == null ||
+            user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+        {
+            throw new BusinessException(Messages.InvalidOrExpiredRefreshToken);
+        }
+
+        if (!user.IsActive)
+        {
+            if (user.Role == UserRole.Driver)
+                throw new BusinessException(Messages.DriverDeactivated);
+
+            throw new BusinessException(Messages.UserInactive);
+        }
+
+        string? notification = null;
+        bool? factoryIsActive = null;
+
+        if (user.FactoryId.HasValue &&
+            (user.Role == UserRole.FactoryEmployee || user.Role == UserRole.Driver))
+        {
+            var factory = await _unitOfWork.Factories.GetByIdIncludingDeletedAsync(user.FactoryId.Value);
+            if (factory != null)
+            {
+                if (factory.IsDeleted)
+                {
+                    throw new BusinessException(Messages.FactoryArchived);
+                }
+
+                factoryIsActive = factory.IsActive;
+                if (!factory.IsActive)
+                {
+                    notification = Messages.FactoryInactiveLogin;
+                }
+            }
+        }
+
+        // تدوير التوكن: إصدار JWT جديد وإصدار Refresh Token جديد وتمديد المدة
+        var tokenResult = _tokenService.GenerateToken(user);
+        var newRefreshToken = _tokenService.GenerateRefreshToken();
+        var newRefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+
+        user.RefreshToken = newRefreshToken;
+        user.RefreshTokenExpiryTime = newRefreshTokenExpiry;
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+
+        var response = new LoginResponseDto
+        {
+            UserId = user.UserId,
+            FullName = user.FullName,
+            Email = user.Email ?? string.Empty,
+            Role = user.Role.ToString(),
+            FactoryId = user.FactoryId,
+            Token = tokenResult.Token,
+            Expiration = tokenResult.Expiration,
+            RefreshToken = newRefreshToken,
+            RefreshTokenExpiration = newRefreshTokenExpiry,
+            Notification = notification,
+            FactoryIsActive = factoryIsActive
+        };
+
+        return new ApiResponse<LoginResponseDto>
+        {
+            Success = true,
+            Message = Messages.TokenRefreshedSuccessfully,
+            Data = response
+        };
+    }
+
+    public async Task<ApiResponse<object>> RevokeTokenAsync(string refreshToken)
+    {
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+        {
+            var user = await _unitOfWork.Users.GetByRefreshTokenAsync(refreshToken);
+            if (user != null)
+            {
+                user.RefreshToken = null;
+                user.RefreshTokenExpiryTime = null;
+                _unitOfWork.Users.Update(user);
+                await _unitOfWork.SaveChangesAsync();
+            }
+        }
+
+        return new ApiResponse<object>
+        {
+            Success = true,
+            Message = Messages.TokenRevokedSuccessfully
         };
     }
 }

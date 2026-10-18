@@ -1,4 +1,3 @@
-﻿using System.ComponentModel.DataAnnotations;
 using Kharasana.Domain.Enums;
 
 namespace Kharasana.Domain.Entities;
@@ -7,7 +6,6 @@ public class Order
 {
     public int OrderId { get; set; }
 
-    [Timestamp]
     public byte[] RowVersion { get; set; } = [];
 
     public string OrderNumber { get; set; } = string.Empty;

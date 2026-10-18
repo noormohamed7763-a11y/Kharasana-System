@@ -77,4 +77,29 @@ public class AuthController : ControllerBase
         var result = await _authService.ActivateAccountAsync(dto.TokenHash, dto.NewPassword);
         return Ok(result);
     }
+
+    /// <summary>
+    /// تجديد جلسة المستخدم باستخدام Refresh Token دون الحاجة لإعادة إدخال كلمة المرور.
+    /// </summary>
+    /// <response code="200">تم تجديد التوكن بنجاح مع إصدار Refresh Token جديد.</response>
+    /// <response code="400">الرمز غير صالح أو منتهي الصلاحية.</response>
+    [HttpPost("refresh-token")]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto dto)
+    {
+        var result = await _authService.RefreshTokenAsync(dto.RefreshToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// إبطال الجلسة الحالية وإلغاء صلاحية الـ Refresh Token.
+    /// </summary>
+    /// <response code="200">تم إبطال الجلسة بنجاح.</response>
+    [HttpPost("revoke-token")]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequestDto dto)
+    {
+        var result = await _authService.RevokeTokenAsync(dto.RefreshToken);
+        return Ok(result);
+    }
 }

@@ -1,4 +1,4 @@
-﻿using Kharasana.Domain.Entities;
+using Kharasana.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -77,5 +77,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         // ✅ حقول الحماية من التخمين السريع (brute-force)
         builder.Property(u => u.FailedLoginAttempts)
             .HasDefaultValue(0);
+
+        // ✅ حقول رمز التحديث (Refresh Token)
+        builder.Property(u => u.RefreshToken)
+            .HasMaxLength(256);
+        builder.HasIndex(u => u.RefreshToken)
+            .HasFilter("[RefreshToken] IS NOT NULL");
     }
 }

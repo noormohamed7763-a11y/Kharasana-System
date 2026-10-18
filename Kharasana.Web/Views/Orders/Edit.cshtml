@@ -3,11 +3,6 @@
 
 @{
     ViewData["Title"] = "تعديل الطلب";
-
-    var statusArabic = ViewBag.Status != null ? ((OrderStatus)ViewBag.Status).GetArabicName() : "غير معروف";
-    var statusCssClass = ViewBag.Status != null ? ((OrderStatus)ViewBag.Status).GetCssClass() : "status-default";
-
-    var unitPriceValue = ViewBag.UnitPrice?.ToString() ?? "0";
 }
 
 <div class="dashboard-page dashboard-page--narrow">
@@ -18,7 +13,7 @@
         {
             Icon = "bi-pencil-square",
             Title = "تعديل الطلب",
-            Description = $"تعديل بيانات الطلب: @ViewBag.OrderNumber"
+            Description = $"تعديل بيانات الطلب: @Model.OrderNumber"
         })
 
     <!-- ============================================================
@@ -46,17 +41,17 @@
             <div class="row">
                 <div class="col-md-4">
                     <span class="text-muted">رقم الطلب</span>
-                    <p class="fw-bold">@ViewBag.OrderNumber</p>
+                    <p class="fw-bold">@Model.OrderNumber</p>
                 </div>
                 <div class="col-md-4">
                     <span class="text-muted">العميل</span>
-                    <p class="fw-bold">@ViewBag.ClientName</p>
+                    <p class="fw-bold">@Model.ClientName</p>
                 </div>
                 <div class="col-md-4">
                     <span class="text-muted">الحالة</span>
                     <p class="fw-bold">
-                        <span class="status-badge @statusCssClass">
-                            @statusArabic
+                        <span class="status-badge @Model.StatusCssClass">
+                            @Model.StatusArabicName
                         </span>
                     </p>
                 </div>
@@ -68,7 +63,10 @@
     FORM - نموذج التعديل (الأقسام في Partials مستقلة)
     ============================================================ -->
     <div class="form-card">
-        <form method="post" id="editOrderForm" asp-action="Edit" asp-route-id="@ViewBag.OrderId">
+        <form method="post" id="editOrderForm" asp-action="Edit" asp-route-id="@Model.OrderId"
+              data-quantity-id="@Html.IdFor(m => m.Quantity)"
+              data-unit-price="@Model.UnitPrice">
+
 
             @Html.AntiForgeryToken()
 
@@ -97,61 +95,5 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/orders.js" asp-append-version="true"></script>
-
-    <script nonce="@ViewBag.CspNonce">
-        document.addEventListener('DOMContentLoaded', function () {
-
-            const quantityInput = document.getElementById('@Html.IdFor(m => m.Quantity)');
-            const totalPricePreview = document.getElementById('totalPricePreview');
-
-            var unitPriceValue = '@unitPriceValue';
-            const unitPrice = parseFloat(unitPriceValue) || 0;
-
-            function updateTotalPrice() {
-                const quantity = parseFloat(quantityInput?.value) || 0;
-                const total = unitPrice * quantity;
-                if (totalPricePreview) {
-                    totalPricePreview.value = total > 0 ? total.toLocaleString() + ' ر.ي' : '-';
-                }
-            }
-
-            if (quantityInput) {
-                quantityInput.addEventListener('input', updateTotalPrice);
-                quantityInput.addEventListener('change', updateTotalPrice);
-                updateTotalPrice();
-            }
-
-            const form = document.getElementById('editOrderForm');
-            const submitBtn = document.getElementById('submitBtn');
-
-            if (form && submitBtn) {
-                form.addEventListener('submit', function () {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = `
-                        <span class="spinner-border spinner-border-sm me-2"></span>
-                        جاري الحفظ...
-                    `;
-                });
-            }
-
-            // ✅ تأكيد زر الإلغاء بات يحدث في site.js عبر data-confirm على الرابط
-            //    (بدل confirm() التقليدية).
-
-            if (quantityInput) {
-                quantityInput.addEventListener('blur', function () {
-                    const value = parseFloat(this.value);
-                    if (isNaN(value) || value <= 0) {
-                        this.classList.add('is-invalid');
-                        const feedback = this.nextElementSibling;
-                        if (feedback && feedback.classList.contains('text-danger')) {
-                            feedback.textContent = 'الكمية يجب أن تكون أكبر من صفر';
-                        }
-                    } else {
-                        this.classList.remove('is-invalid');
-                    }
-                });
-            }
-
-        });
-    </script>
 }
+

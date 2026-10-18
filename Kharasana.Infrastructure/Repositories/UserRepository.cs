@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
@@ -126,5 +126,12 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             PageSize = pageSize,
             TotalCount = totalCount
         };
+    }
+
+    public async Task<User?> GetByRefreshTokenAsync(string refreshToken)
+    {
+        return await _context.Users
+            .Include(u => u.Factory)
+            .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
     }
 }

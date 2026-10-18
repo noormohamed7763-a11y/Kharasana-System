@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Kharasana.Web.Filters;
@@ -69,7 +69,8 @@ namespace Kharasana.Web.Controllers
                 {
                     new Claim(ClaimTypes.Name, result!.FullName),
                     new Claim(ClaimTypes.NameIdentifier, result.UserId.ToString()),
-                    new Claim(ClaimTypes.Role, result.Role)
+                    new Claim(ClaimTypes.Role, result.Role),
+                    new Claim("access_token", result.Token)
                 };
 
                 if (result.FactoryId.HasValue)
@@ -88,6 +89,10 @@ namespace Kharasana.Web.Controllers
                     IsPersistent = true,
                     ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2)
                 };
+                authProperties.StoreTokens(new[]
+                {
+                    new AuthenticationToken { Name = "access_token", Value = result.Token }
+                });
 
                 await HttpContext.SignInAsync("WebCookie", new ClaimsPrincipal(claimsIdentity), authProperties);
 

@@ -1,8 +1,9 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.ConcreteType;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Application.Mapping;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 
@@ -241,20 +242,5 @@ public class ConcreteTypeService : IConcreteTypeService
             throw new ConflictException(Messages.ConcreteTypeAlreadyExists);
     }
 
-    private static ConcreteTypeDto MapToDto(ConcreteType concreteType)
-    {
-        return new ConcreteTypeDto
-        {
-            ConcreteTypeId = concreteType.ConcreteTypeId,
-            FactoryId = concreteType.FactoryId,
-            FactoryName = concreteType.Factory?.FactoryName ?? string.Empty,
-            Name = concreteType.Name,
-            Strength = concreteType.Strength,
-            UnitPrice = concreteType.UnitPrice,
-            ImageUrl = concreteType.ImageUrl,
-            Description = concreteType.Description,
-            IsActive = concreteType.IsActive,
-            UpdatedAt = concreteType.UpdatedAt
-        };
-    }
+    private static ConcreteTypeDto MapToDto(ConcreteType concreteType) => ConcreteTypeMapper.ToDto(concreteType);
 }

@@ -131,9 +131,8 @@ Kharasana.Domain/
 │   ├── SlabType.cs              # أنواع الأسقف والعناصر الإنشائية
 │   ├── TransportMethod.cs       # طرق النقل (سيارات مصنع / نقل ذاتي)
 │   └── DriverStatus.cs          # حالات السائقين (Unset, Available, Busy, Offline)
-└── Validation/                  # سمات التحقق الخاصة بالنطاق (Domain Validation Attributes)
-    ├── YemeniEmailAttribute.cs  # سمة التحقق من صيغة البريد الإلكتروني الاختياري
-    └── YemeniPhoneAttribute.cs  # سمة التحقق من صحة رقم الهاتف اليمني عبر YemeniPhoneHelper
+└── Validation/                  # سياسات التحقق المشتركة بالنطاق
+    └── PasswordPolicy.cs        # سياسة كلمة المرور الموحّدة (المصدر الوحيد للحد الأدنى للطول)
 ```
 
 ---

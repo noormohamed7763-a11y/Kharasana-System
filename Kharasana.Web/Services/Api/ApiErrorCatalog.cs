@@ -42,6 +42,16 @@ public static class ApiErrorCatalog
         "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
         "يرجى التحقق من البيانات والمحاولة مجدداً.");
 
+    public static readonly ApiError BadRequest = new(
+        "BAD_REQUEST",
+        "البيانات المرسلة غير صالحة.",
+        "يرجى التحقق من صحة الحقول والمدخلات والمحاولة مرة أخرى.");
+
+    public static readonly ApiError Conflict = new(
+        "CONFLICT",
+        "تعارض في البيانات: تم تعديل السجل أو أن إحدى القيم مستخدمة مسبقاً.",
+        "يرجى تحديث الصفحة للحصول على أحدث البيانات ثم إعادة المحاولة.");
+
     public static readonly ApiError OrderStatusConflict = new(
         "ORDER_STATUS_CONFLICT",
         "لا يمكن تعديل الطلب رقم #{0} لأنه حالياً في حالة '{1}'.",

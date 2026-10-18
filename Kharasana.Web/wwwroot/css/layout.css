@@ -77,23 +77,31 @@
 
 /* ==========================================================
    CONTENT CONTAINER — منع امتداد المحتوى على الشاشات العريضة
+   ----------------------------------------------------------
+   .container: مستخدم بشكل نادر (Bootstrap fallback)
+   .dashboard-page بلا معدِّل: صفحات القوائم (Orders, Clients, Users...)
+   المعدِّلات --narrow و--wide-form لها max-width خاص بهما في dashboard.css
+   فلا تدخل هنا لتجنب تعارض القيم.
 ========================================================== */
 .content-body .container,
-.main-content .container {
+.main-content .container,
+.content-body > .dashboard-page:not([class*="--narrow"]):not([class*="--wide-form"]):not([class*="--print"]) {
     max-width: 1600px;
     margin-inline: auto;
 }
 
 @media (min-width: 1920px) {
     .content-body .container,
-    .main-content .container {
+    .main-content .container,
+    .content-body > .dashboard-page:not([class*="--narrow"]):not([class*="--wide-form"]):not([class*="--print"]) {
         max-width: 1920px;
     }
 }
 
 @media (min-width: 2560px) {
     .content-body .container,
-    .main-content .container {
+    .main-content .container,
+    .content-body > .dashboard-page:not([class*="--narrow"]):not([class*="--wide-form"]):not([class*="--print"]) {
         max-width: 100%;
     }
 }

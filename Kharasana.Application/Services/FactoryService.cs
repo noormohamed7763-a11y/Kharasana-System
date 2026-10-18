@@ -1,8 +1,9 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Factory;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Application.Mapping;
 using Kharasana.Domain.Entities;
 
 namespace Kharasana.Application.Services;
@@ -243,21 +244,8 @@ public class FactoryService : IFactoryService
             ? factoryIdsWithEmployee.Contains(factory.FactoryId)
             : await _unitOfWork.Users.FactoryHasAccountAsync(factory.FactoryId);
 
-        return new FactoryDto
-        {
-            FactoryId = factory.FactoryId,
-            FactoryName = factory.FactoryName,
-            OwnerName = factory.OwnerName,
-            Phone = factory.Phone,
-            WhatsApp = factory.WhatsApp,
-            Email = factory.Email,
-            Area = factory.Area,
-            Address = factory.Address,
-            Latitude = factory.Latitude,
-            Longitude = factory.Longitude,
-            Logo = factory.Logo,
-            IsActive = factory.IsActive,
-            HasAccount = hasAccount
-        };
+        var dto = FactoryMapper.ToDto(factory);
+        dto.HasAccount = hasAccount;
+        return dto;
     }
 }

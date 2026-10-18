@@ -132,10 +132,20 @@
 }
 
 /* سطح المكتب: فسحة أوسع بين الكروت — البطاقة نفسها صارت أوسع
-   (--card-padding) فكانت الفواصل الضيّقة تجعلها تبدو ملتصقة. */
+   (--card-padding) فكانت الفواصل الضيّقة تجعلها تبدو ملتصقة.
+   max-width: 320px للبطاقة الواحدة على الشاشات ≥1200px: يمنع تمدد
+   بطاقتين أو ثلاث لتملآ نصف الشاشة أو ثلثها عند قلة عددها.
+   justify-content: start يرص البطاقات من اليمين بدل توزيعها بالتساوي. */
 @media (min-width: 992px) {
     .summary-cards-grid {
         gap: var(--space-5);
+    }
+}
+
+@media (min-width: 1200px) {
+    .summary-cards-grid {
+        grid-template-columns: repeat(auto-fit, minmax(clamp(14rem, 16.5vw, 20rem), 320px));
+        justify-content: start;
     }
 }
 

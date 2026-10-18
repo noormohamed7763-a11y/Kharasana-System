@@ -45,6 +45,20 @@
             ActionMethod = "Create"
         })
 
+    @if (canManage)
+    {
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div class="nav nav-pills">
+                <a asp-action="Index" class="nav-link active">
+                    <i class="bi bi-box-seam me-1"></i> الأنواع النشطة
+                </a>
+                <a asp-action="Archived" class="nav-link">
+                    <i class="bi bi-archive me-1"></i> الأنواع المؤرشفة
+                </a>
+            </div>
+        </div>
+    }
+
     <div class="summary-cards-grid mb-3">
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",

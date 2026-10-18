@@ -1,4 +1,4 @@
-﻿using Kharasana.Web.Configuration;
+using Kharasana.Web.Configuration;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Middlewares;
 using Kharasana.Web.Services;
@@ -114,10 +114,15 @@ namespace Kharasana.Web
             builder.Services.Configure<ApiSettings>(
                 builder.Configuration.GetSection("ApiSettings"));
 
-            // Http Client — مهلة معقولة بدل الافتراضية الطويلة حتى لا تعلق الواجهة
+            // Http Client — مرونة متقدمة وإعادة محاولة تلقائية وقاطع الدائرة لحماية الواجهة من تقلبات الشبكة
             builder.Services.AddHttpClient<ApiClient>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(30);
+            }).AddStandardResilienceHandler(options =>
+            {
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
             });
 
             // Services Registration

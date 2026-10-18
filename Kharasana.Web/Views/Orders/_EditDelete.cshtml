@@ -1,7 +1,7 @@
+@model Kharasana.Web.ViewModels.Orders.EditOrderViewModel
 @using Kharasana.Domain.Enums
 
-@* الدور يُقرأ من الجلسة عبر ViewBag (لا يوجد ClaimsPrincipal في هذا التطبيق) *@
-@if (ViewBag.ShowDeleteButton == true && ViewBag.UserRole == Roles.Admin)
+@if (Model.ShowDeleteButton && Model.UserRole == UserRole.Admin)
 {
     <!-- ============================================================
     DANGER ZONE - منطقة الحذف (للمدير فقط)
@@ -12,7 +12,7 @@
               data-ajax-delete="true"
               data-confirm="⚠️ هل أنت متأكد من حذف هذا الطلب؟">
             @Html.AntiForgeryToken()
-            <input type="hidden" name="id" value="@ViewBag.OrderId" />
+            <input type="hidden" name="id" value="@Model.OrderId" />
             <button type="submit" class="btn btn-outline-danger btn-lg">
                 <i class="bi bi-trash"></i> حذف الطلب
             </button>

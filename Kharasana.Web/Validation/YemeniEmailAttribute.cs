@@ -1,13 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Kharasana.Domain.Validation;
+namespace Kharasana.Web.Validation;
 
 /// <summary>
-/// سمة تحقق مركزيّة من البريد الإلكتروني.
-///
-/// على عكس <see cref="EmailAddressAttribute"/> المدمجة، فإن القيمة الفارغة ("" أو مسافات)
-/// تُعتبر <b>صالحة</b> لأن الحقل اختياري — بينما <see cref="EmailAddressAttribute.IsValid(string)"/>
-/// ترفض السلاسل الفارغة وتسبّب فشل النموذج حتى عندما يُترك الحقل فارغاً.
+/// سمة تحقق من صحة البريد الإلكتروني لـ ViewModels الخاصة بنماذج الويب (Razor).
+/// القيمة الفارغة ("" أو مسافات) تُعتبر صالحة لأن الحقل اختياري في النماذج.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
 public sealed class YemeniEmailAttribute : ValidationAttribute
