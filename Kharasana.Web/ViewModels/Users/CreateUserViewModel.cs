@@ -1,5 +1,6 @@
-﻿using Kharasana.Domain.Enums;
+using Kharasana.Domain.Enums;
 using Kharasana.Domain.Validation;
+using Kharasana.Web.Validation;
 using System.ComponentModel.DataAnnotations;
 
 namespace Kharasana.Web.ViewModels.Users;

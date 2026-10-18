@@ -9,7 +9,7 @@
 <div class="row bg-light p-3 rounded-3">
     <div class="col-md-4 mb-2">
         <label class="form-label fw-bold text-muted">سعر المتر (ر.ي)</label>
-        <input type="text" class="form-control bg-white" id="unitPricePreview" value="@(ViewBag.UnitPrice?.ToString("N0") ?? "-")" readonly />
+        <input type="text" class="form-control bg-white" id="unitPricePreview" value="@(Model.UnitPrice.ToString("N0") ?? "-")" readonly />
     </div>
     <div class="col-md-4 mb-2">
         <label class="form-label fw-bold text-muted">الكمية (م³)</label>

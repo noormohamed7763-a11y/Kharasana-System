@@ -23,12 +23,36 @@ public class ApiClient
         Converters = { new JsonStringEnumConverter() }
     };
 
-    /// <summary>نموذج مبسّط لقراءة Message من جسم خطأ الـ API دون ربط Web بهيكل Application.</summary>
+    /// <summary>نموذج مرن لقراءة رسائل الخطأ من جسم الـ API سواء كان ApiResponse أو ProblemDetails أو ModelState.</summary>
     private sealed class ApiErrorEnvelope
     {
         public bool Success { get; set; }
         public string? Message { get; set; }
+        public string? Title { get; set; }
+        public string? Detail { get; set; }
+        public Dictionary<string, string[]>? Errors { get; set; }
         public object? Data { get; set; }
+
+        public string? GetBestDisplayMessage()
+        {
+            if (!string.IsNullOrWhiteSpace(Message))
+                return Message;
+
+            if (!string.IsNullOrWhiteSpace(Detail))
+                return Detail;
+
+            if (Errors != null && Errors.Count > 0)
+            {
+                var first = Errors.Values.SelectMany(v => v).FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+                if (!string.IsNullOrWhiteSpace(first))
+                    return first;
+            }
+
+            if (!string.IsNullOrWhiteSpace(Title) && Title.Any(c => c >= 0x0600 && c <= 0x06FF))
+                return Title;
+
+            return null;
+        }
     }
 
     public ApiClient(
@@ -69,10 +93,19 @@ public class ApiClient
         var context = _httpContextAccessor.HttpContext;
         if (context == null) return null;
 
-        // ✅ التخزين المؤقت في Items لكل طلب لتقليل الوصول المتكرر للجلسة
+        // ✅ التخزين المؤقت في Items لكل طلب لتقليل الوصول المتكرر
         if (context.Items.TryGetValue("ApiToken", out var cachedToken))
             return cachedToken as string;
 
+        // 1. القراءة من المطالبات الموثقة والمشفرة في كوكي المصادقة أولاً
+        var cookieToken = context.User?.FindFirst("access_token")?.Value;
+        if (!string.IsNullOrEmpty(cookieToken))
+        {
+            context.Items["ApiToken"] = cookieToken;
+            return cookieToken;
+        }
+
+        // 2. الرجوع للجلسة كبديل في حال عدم توفره في الكوكي
         try
         {
             var token = context.Session.GetString("Token");
@@ -99,6 +132,8 @@ public class ApiClient
             HttpStatusCode.Unauthorized => ApiErrorCatalog.Unauthorized,
             HttpStatusCode.Forbidden => ApiErrorCatalog.Forbidden,
             HttpStatusCode.NotFound => ApiErrorCatalog.NotFound,
+            HttpStatusCode.Conflict => ApiErrorCatalog.Conflict,
+            HttpStatusCode.BadRequest => ApiErrorCatalog.BadRequest,
             _ when (int)statusCode >= 500 => ApiErrorCatalog.ServerError,
             _ => ApiErrorCatalog.Unknown
         };
@@ -152,11 +187,11 @@ public class ApiClient
                 try
                 {
                     var envelope = JsonSerializer.Deserialize<ApiErrorEnvelope>(content, JsonOptions);
-                    apiMessage = string.IsNullOrWhiteSpace(envelope?.Message) ? null : envelope.Message;
+                    apiMessage = envelope?.GetBestDisplayMessage();
                 }
                 catch
                 {
-                    // الجسم ليس ApiResponse (مثلاً 401 بلا جسم من مستوى Framework) — يبقى null ونلجأ للرسالة العامة
+                    // الجسم ليس JSON (مثلاً 401 بلا جسم من مستوى Framework) — يبقى null ونلجأ للرسالة العامة
                 }
             }
 

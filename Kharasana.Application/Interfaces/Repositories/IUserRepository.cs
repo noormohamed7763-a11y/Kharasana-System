@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 
@@ -42,4 +42,6 @@ public interface IUserRepository : IGenericRepository<User>
     Task<PagedResult<User>> GetPagedAsync(
         UserRole? role, int? factoryId, DriverStatus? driverStatus, string? search,
         int pageNumber, int pageSize, bool? isActive = null);
+
+    Task<User?> GetByRefreshTokenAsync(string refreshToken);
 }

@@ -152,8 +152,6 @@ namespace Kharasana.Web.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            await ReloadEditViewDataAsync(new EditOrderViewModel { OrderId = order.OrderId });
-
             var vm = new EditOrderViewModel
             {
                 OrderId = order.OrderId,
@@ -170,6 +168,8 @@ namespace Kharasana.Web.Controllers
                 SiteDescription = order.SiteDescription,
                 Notes = order.Notes
             };
+
+            await ReloadEditViewDataAsync(vm);
 
             return View(vm);
         }

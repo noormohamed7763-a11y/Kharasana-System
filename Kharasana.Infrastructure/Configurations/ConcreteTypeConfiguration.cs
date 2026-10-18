@@ -1,4 +1,4 @@
-﻿using Kharasana.Domain.Entities;
+using Kharasana.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -24,6 +24,10 @@ public class ConcreteTypeConfiguration : IEntityTypeConfiguration<ConcreteType>
 
         builder.Property(c => c.Description)
             .HasMaxLength(1000);
+
+        // ✅ RowVersion — ConcurrentUpdate
+        builder.Property(c => c.RowVersion)
+            .IsRowVersion();
 
         // ✅ فهرس تفرّد مُرشَّح: التفرّد يُفرض على الأنواع غير المحذوفة فقط،
         //    فيتحرّر الاسم فور الحذف الناعم لإعادة الاستخدام داخل المصنع نفسه.

@@ -1,4 +1,5 @@
 using Kharasana.Web.Filters;
+using Kharasana.Web.Helpers;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Orders;
 using Microsoft.AspNetCore.Mvc;
@@ -59,10 +60,6 @@ namespace Kharasana.Web.Controllers
         /// </remarks>
         private async Task ReloadEditViewDataAsync(EditOrderViewModel model)
         {
-            ViewBag.OrderId = model.OrderId;
-            ViewBag.OrderNumber = model.OrderId.ToString();
-            ViewBag.ShowDeleteButton = true;
-
             try
             {
                 var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
@@ -75,10 +72,14 @@ namespace Kharasana.Web.Controllers
                 if (order == null || IsFactoryIsolated(order.FactoryId))
                     return;
 
-                ViewBag.OrderNumber = order.OrderNumber;
-                ViewBag.ClientName = order.ClientName;
-                ViewBag.Status = order.Status;
-                ViewBag.UnitPrice = order.UnitPrice ?? 0;
+                model.OrderNumber = order.OrderNumber;
+                model.ClientName = order.ClientName;
+                model.Status = order.Status;
+                model.StatusArabicName = order.Status.GetArabicName();
+                model.StatusCssClass = order.Status.GetCssClass();
+                model.UnitPrice = order.UnitPrice ?? 0;
+                model.ShowDeleteButton = true; // أو منطق التحقق من إمكانية الحذف
+                model.UserRole = RoleValue ?? Kharasana.Domain.Enums.UserRole.Client;
             }
             catch (Exception ex)
             {

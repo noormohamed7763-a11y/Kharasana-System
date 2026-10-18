@@ -623,5 +623,71 @@ public class AuthServiceTests : IDisposable
         created.Email.Should().BeNull();
     }
 
+    // ─────────────────────────────────────────────
+    // Refresh Token & Revoke Token Tests
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task RefreshToken_ValidToken_ReturnsRotatedTokenAndRotatedRefreshToken()
+    {
+        // Arrange
+        var user = TestDataSeeder.CreateUser(200, "مستخدم صالح", UserRole.Client, phone: "771234500");
+        user.RefreshToken = "valid_refresh_token_123";
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _authService.RefreshTokenAsync("valid_refresh_token_123");
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.Token.Should().NotBeNullOrEmpty();
+        result.Data.RefreshToken.Should().NotBeNullOrEmpty();
+        result.Data.RefreshToken.Should().NotBe("valid_refresh_token_123"); // تم التدوير
+
+        var updatedUser = await _context.Users.FindAsync(200);
+        updatedUser!.RefreshToken.Should().Be(result.Data.RefreshToken);
+    }
+
+    [Fact]
+    public async Task RefreshToken_ExpiredToken_ThrowsBusinessException()
+    {
+        // Arrange
+        var user = TestDataSeeder.CreateUser(201, "مستخدم منتهي", UserRole.Client, phone: "771234501");
+        user.RefreshToken = "expired_token";
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(-1); // منتهي
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _authService.RefreshTokenAsync("expired_token");
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidOrExpiredRefreshToken);
+    }
+
+    [Fact]
+    public async Task RevokeToken_ValidToken_ClearsRefreshTokenInDb()
+    {
+        // Arrange
+        var user = TestDataSeeder.CreateUser(202, "مستخدم للمغادرة", UserRole.Client, phone: "771234502");
+        user.RefreshToken = "token_to_revoke";
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(3);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _authService.RevokeTokenAsync("token_to_revoke");
+
+        // Assert
+        result.Success.Should().BeTrue();
+        var updatedUser = await _context.Users.FindAsync(202);
+        updatedUser!.RefreshToken.Should().BeNull();
+        updatedUser.RefreshTokenExpiryTime.Should().BeNull();
+    }
+
     public void Dispose() => _context.Dispose();
 }

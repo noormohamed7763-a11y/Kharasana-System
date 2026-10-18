@@ -1,20 +1,11 @@
 @model IEnumerable<Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeListItemViewModel>
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.Models.Components.Search
+@using Kharasana.Web.Helpers
 
 @{
     ViewData["Title"] = "أنواع الخرسانة المؤرشفة";
 }
-
-@* أنواع الخرسانة المحذوفة حذفًا ناعمًا. الحذف ناعم لأن الطلبات التاريخية تشير
-   إلى النوع، فلو حُذف الصف فعليًا انكسرت تلك الطلبات — لذلك لا توجد صفحة «حذف نهائي»
-   هنا، بل عرضٌ واستعادة فقط.
-
-   العزل على المصنع يفرضه الـ API من التوكن: موظف المصنع يرى أنواع مصنعه وحده،
-   والمدير يرى الجميع. لا نُمرّر معرّف مصنع من الصفحة حتى لا يكون وسيطًا قابلًا للتلاعب.
-
-   الجدول يطابق Views/ConcreteTypes/_ConcreteTypeTable.cshtml في الأعمدة والتنسيق،
-   ليكون الجدولان أخوين متطابقين في المظهر، ويزيد عليه عمود «تاريخ الأرشفة». *@
 
 <div class="dashboard-page">
 
@@ -24,13 +15,28 @@
         {
             Icon = "bi-archive",
             Title = "أنواع الخرسانة المؤرشفة",
-            Description = "أنواع الخرسانة المحذوفة، مع إمكانية استعادتها إلى القائمة."
+            Description = "أنواع الخرسانة المحذوفة، مع إمكانية استعادتها إلى القائمة النشطة."
         })
+
+    <!-- Navigation Pills -->
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div class="nav nav-pills">
+            <a asp-action="Index" class="nav-link">
+                <i class="bi bi-box-seam me-1"></i> الأنواع النشطة
+            </a>
+            <a asp-action="Archived" class="nav-link active">
+                <i class="bi bi-archive me-1"></i> الأنواع المؤرشفة
+            </a>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-right me-1"></i> العودة للقائمة
+        </a>
+    </div>
 
     @if (Model.Any())
     {
         <!-- Search & Toolbar -->
-        <div class="form-card mb-3 p-3 shadow-sm">
+        <div class="erp-section-card mb-3 p-3 shadow-sm">
             <div class="row g-2 align-items-center">
                 <div class="col-lg-6">
                     @await Html.PartialAsync(
@@ -46,157 +52,88 @@
                         <i class="bi bi-info-circle me-1"></i>
                         البحث يعمل داخل الصفحة الحالية
                     </span>
-                    <a asp-action="Index" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-right me-1"></i>
-                        العودة للقائمة
-                    </a>
                 </div>
             </div>
         </div>
     }
-    else
-    {
-        <div class="mb-3">
-            <a asp-action="Index" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-right me-1"></i>
-                العودة إلى أنواع الخرسانة
-            </a>
-        </div>
-    }
 
-    <div class="form-card">
-        <div class="table-responsive">
-            <table class="erp-table erp-table--sticky-cols align-middle mb-0">
+    <div class="erp-section-card p-0 shadow-sm mb-4">
+        <!-- Desktop Table View (>= 768px) -->
+        <div class="table-responsive d-none d-md-block">
+            <table class="table table-hover erp-table erp-table--sticky-cols align-middle mb-0">
                 <caption class="visually-hidden">أصناف الخرسانة المؤرشفة</caption>
-
                 <thead>
-
                     <tr>
-
                         <th class="col-index">#</th>
-
-                        <th>النوع</th>
-
+                        <th>النوع والمصنع</th>
                         <th>المقاومة</th>
-
                         <th>السعر</th>
-
                         <th class="col-date">تاريخ الأرشفة</th>
-
-                        <th class="text-center col-actions col-actions--lg">
-                            الإجراءات
-                        </th>
-
+                        <th class="text-center col-actions col-actions--lg">الإجراءات</th>
                     </tr>
-
                 </thead>
-
                 <tbody>
-
                     @if (Model.Any())
                     {
                         var index = 1;
-
                         foreach (var item in Model)
                         {
-
                             <tr>
-
                                 <td>
-
-                                    <span class="fw-bold text-secondary">
-                                        @index
-                                    </span>
-
+                                    <span class="fw-bold text-secondary">@index</span>
                                 </td>
-
                                 <td>
-
-                                    <div class="concrete-name">
-
+                                    <div class="concrete-name d-flex align-items-center gap-2">
                                         <div class="concrete-icon">
                                             <i class="bi bi-box-seam"></i>
                                         </div>
-
                                         <div>
-
-                                            <div class="concrete-title">
-                                                @item.Name
+                                            <div class="concrete-title fw-bold">@item.Name</div>
+                                            <div class="concrete-subtitle text-muted small">
+                                                <i class="bi bi-building me-1"></i>@item.FactoryName
                                             </div>
-
-                                            <div class="concrete-subtitle">
-                                                <i class="bi bi-building"></i>
-                                                @item.FactoryName
-                                            </div>
-
                                         </div>
-
                                     </div>
-
                                 </td>
-
                                 <td>
-
                                     <span class="strength-badge">
-                                        <i class="bi bi-speedometer2"></i>
-                                        @item.Strength MPa
+                                        <i class="bi bi-speedometer2 me-1"></i>@item.Strength MPa
                                     </span>
-
                                 </td>
-
                                 <td>
-
                                     <div class="price-display">
-                                        <span class="price-value">@item.UnitPrice.ToString("N0")</span>
-                                        <span class="price-unit">ر.ي / م³</span>
+                                        <span class="price-value fw-bold">@item.UnitPrice.ToString("N0")</span>
+                                        <span class="price-unit text-muted small">ر.ي / م³</span>
                                     </div>
-
                                 </td>
-
                                 <td>
-
-                                    @* UpdatedAt هو لحظة الأرشفة: DeleteAsync وحدها تكتبه،
-                                       ولا يُعدَّل الصف وهو مؤرشف. *@
-                                    <span class="text-muted">
+                                    <span class="text-muted small">
                                         @item.UpdatedAt.FormatDate()
                                     </span>
-
                                 </td>
-
                                 <td class="text-center">
-
                                     <form asp-action="Restore"
                                           asp-route-id="@item.ConcreteTypeId"
                                           method="post"
-                                          class="d-inline">
-
+                                          class="d-inline"
+                                          data-confirm="هل أنت متأكد من استعادة نوع الخرسانة هذا؟ سيظهر مجدداً في قائمة الأنواع النشطة.">
                                         @Html.AntiForgeryToken()
-
                                         <button type="submit"
-                                                class="btn btn-success btn-sm">
-
-                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
-
-                                            استعادة
-
+                                                class="btn btn-success btn-sm"
+                                                title="استعادة"
+                                                aria-label="استعادة">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i> استعادة
                                         </button>
-
                                     </form>
-
                                 </td>
-
                             </tr>
-
                             index++;
                         }
                     }
                     else
                     {
-
                         <tr>
-
                             <td colspan="6">
-
                                 @await Html.PartialAsync(
                                     "~/Views/Shared/Components/_EmptyState.cshtml",
                                     new EmptyStateViewModel
@@ -205,23 +142,72 @@
                                         Title = "لا توجد أنواع خرسانة مؤرشفة",
                                         Message = "أنواع الخرسانة التي تُحذف ستظهر هنا لإمكانية استعادتها."
                                     })
-
                             </td>
-
                         </tr>
-
                     }
-
                 </tbody>
-
             </table>
+        </div>
+
+        <!-- Mobile Cards View (< 768px) -->
+        <div class="d-md-none p-3">
+            @if (Model.Any())
+            {
+                var mIndex = 1;
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var item in Model)
+                    {
+                        <div class="card border rounded-3 shadow-none p-3 position-relative">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-light text-dark fw-bold">#@mIndex</span>
+                                    <h6 class="mb-0 fw-bold">@item.Name</h6>
+                                </div>
+                                <span class="badge bg-secondary">مؤرشف</span>
+                            </div>
+                            <div class="text-muted small mb-2">
+                                <i class="bi bi-building me-1"></i>@item.FactoryName
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                <div>
+                                    <span class="strength-badge me-2">
+                                        <i class="bi bi-speedometer2 me-1"></i>@item.Strength MPa
+                                    </span>
+                                    <span class="fw-bold text-primary">
+                                        @item.UnitPrice.ToString("N0") <small class="text-muted">ر.ي/م³</small>
+                                    </span>
+                                </div>
+                                <div>
+                                    <form asp-action="Restore"
+                                          asp-route-id="@item.ConcreteTypeId"
+                                          method="post"
+                                          class="d-inline"
+                                          data-confirm="هل أنت متأكد من استعادة نوع الخرسانة هذا؟ سيظهر مجدداً في قائمة الأنواع النشطة.">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit"
+                                                class="btn btn-sm btn-success"
+                                                aria-label="استعادة">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i> استعادة
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            @if (item.UpdatedAt.HasValue)
+                            {
+                                <div class="text-muted smaller text-end mt-2 pt-1 border-top">
+                                    <i class="bi bi-clock me-1"></i>أُرشف في: @item.UpdatedAt.FormatDate()
+                                </div>
+                            }
+                        </div>
+                        mIndex++;
+                    }
+                </div>
+            }
         </div>
     </div>
 
 </div>
 
 @section Scripts {
-    @* يُعيد استعمال مرشّح البحث الداخلي على #tableSearch — كل ما عداه في الملف
-       محروس بـ ?. فلا يمسّ هذه الصفحة التي لا نموذج إنشاء/تعديل فيها. *@
     <script src="~/js/concrete-type.js" asp-append-version="true"></script>
 }

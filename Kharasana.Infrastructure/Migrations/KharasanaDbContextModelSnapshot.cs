@@ -468,6 +468,13 @@ namespace Kharasana.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("RefreshToken")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
@@ -495,6 +502,9 @@ namespace Kharasana.Infrastructure.Migrations
                     b.HasIndex("Phone")
                         .IsUnique()
                         .HasFilter("[Phone] IS NOT NULL");
+
+                    b.HasIndex("RefreshToken")
+                        .HasFilter("[RefreshToken] IS NOT NULL");
 
                     b.HasIndex("Role");
 

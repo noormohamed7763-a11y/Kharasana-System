@@ -1,8 +1,9 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.User;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Application.Mapping;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
@@ -292,26 +293,5 @@ public class UserService : IUserService
         }
     }
 
-    private static UserDto MapToDto(User user)
-    {
-        return new UserDto
-        {
-            UserId = user.UserId,
-            FullName = user.FullName,
-            Email = user.Email,
-            Phone = user.Phone,
-            WhatsApp = user.WhatsApp,
-            ProfileImage = user.ProfileImage,
-            Role = user.Role.ToString(),
-            LicenseNumber = user.LicenseNumber,
-            DriverStatus = user.DriverStatus,
-            FactoryId = user.FactoryId,
-            // لا يُحمَّل المصنع إلا في قراءة المستخدم الواحد (GetByIdWithFactoryAsync)،
-            // فتبقى فارغة في القائمة — والقائمة لا تعرضها.
-            FactoryName = user.Factory?.FactoryName,
-            IsActive = user.IsActive,
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt
-        };
-    }
+    private static UserDto MapToDto(User user) => UserMapper.ToDto(user);
 }

@@ -2,209 +2,210 @@
 @using Kharasana.Web.Models.Components
 @{
     var role = (string?)ViewBag.UserRole;
-
     var factoryInactive = role == Roles.FactoryEmployee && ViewBag.FactoryIsActive == false;
 
     // من يملك التحرير: المدير وموظف المصنع — مطابقةً لصلاحيات الـ API
-    // (Create/Update/Delete كلها AdminOrFactoryEmployee). العميل يرى القائمة
-    // و«التفاصيل» فقط؛ وكانت أزرار التعديل والحذف تظهر له فيفشل بـ 403 من الـ API.
+    // (Create/Update/Delete كلها AdminOrFactoryEmployee). العميل يرى القائمة و«التفاصيل» فقط.
     var canManage = role == Roles.Admin || role == Roles.FactoryEmployee;
+    var offset = (int)(ViewData["RowOffset"] ?? 0);
 }
 
-<div class="form-card shadow-sm">
-    <div class="table-responsive">
+<div class="erp-section-card p-0 shadow-sm mb-4">
+    <!-- Desktop Table View (>= 768px) -->
+    <div class="table-responsive d-none d-md-block">
         <table class="table table-hover erp-table erp-table--sticky-cols align-middle mb-0">
-
+            <caption class="visually-hidden">قائمة أنواع الخرسانة</caption>
             <thead>
-
                 <tr>
-
                     <th class="col-index">#</th>
-
-                    <th>النوع</th>
-
+                    <th>النوع والمصنع</th>
                     <th>المقاومة</th>
-
                     <th>السعر</th>
-
                     <th>الحالة</th>
-
-                    <th class="text-center col-actions col-actions--lg">
-                        الإجراءات
-                    </th>
-
+                    <th class="text-center col-actions col-actions--lg">الإجراءات</th>
                 </tr>
-
             </thead>
-
             <tbody>
-
                 @if (Model.Any())
                 {
-                    var index = ((int)(ViewData["RowOffset"] ?? 0)) + 1;
-
+                    var index = offset + 1;
                     foreach (var item in Model)
                     {
-
                         <tr>
-
                             <td>
-
-                                <span class="fw-bold text-secondary">
-                                    @index
-                                </span>
-
+                                <span class="fw-bold text-secondary">@index</span>
                             </td>
-
                             <td>
-
-                                <div class="concrete-name">
-
+                                <div class="concrete-name d-flex align-items-center gap-2">
                                     <div class="concrete-icon">
                                         <i class="bi bi-box-seam"></i>
                                     </div>
-
                                     <div>
-
-                                        <div class="concrete-title">
-                                            @item.Name
+                                        <div class="concrete-title fw-bold">@item.Name</div>
+                                        <div class="concrete-subtitle text-muted small">
+                                            <i class="bi bi-building me-1"></i>@item.FactoryName
                                         </div>
-
-                                        <div class="concrete-subtitle">
-                                            <i class="bi bi-building"></i>
-                                            @item.FactoryName
-                                        </div>
-
                                     </div>
-
                                 </div>
-
                             </td>
-
                             <td>
-
                                 <span class="strength-badge">
-                                    <i class="bi bi-speedometer2"></i>
-                                    @item.Strength MPa
+                                    <i class="bi bi-speedometer2 me-1"></i>@item.Strength MPa
                                 </span>
-
                             </td>
-
                             <td>
-
                                 <div class="price-display">
-                                    <span class="price-value">@item.UnitPrice.ToString("N0")</span>
-                                    <span class="price-unit">ر.ي / م³</span>
+                                    <span class="price-value fw-bold">@item.UnitPrice.ToString("N0")</span>
+                                    <span class="price-unit text-muted small">ر.ي / م³</span>
                                 </div>
-
                             </td>
-
                             <td>
-
                                 @if (item.IsActive)
                                 {
                                     <span class="status-badge status-success">
-
-                                        <i class="bi bi-check-circle-fill"></i>
-
-                                        نشط
-
+                                        <i class="bi bi-check-circle-fill me-1"></i>نشط
                                     </span>
                                 }
                                 else
                                 {
                                     <span class="status-badge status-danger">
-
-                                        <i class="bi bi-x-circle-fill"></i>
-
-                                        متوقف
-
+                                        <i class="bi bi-x-circle-fill me-1"></i>متوقف
                                     </span>
                                 }
-
                             </td>
-
                             <td class="text-center">
-
-                                <a asp-action="Details"
-                                   asp-route-id="@item.ConcreteTypeId"
-                                   class="btn btn-light action-btn"
-                                   aria-label="التفاصيل">
-
-                                    <i class="bi bi-eye"></i>
-
-                                </a>
-
-                                @if (canManage && !factoryInactive)
-                                {
-                                    <a asp-action="Edit"
+                                <div class="btn-group gap-1" role="group">
+                                    <a asp-action="Details"
                                        asp-route-id="@item.ConcreteTypeId"
-                                       class="btn btn-warning text-white action-btn"
-                                       aria-label="تعديل">
-
-                                        <i class="bi bi-pencil"></i>
-
+                                       class="btn btn-sm btn-light action-btn"
+                                       title="التفاصيل"
+                                       aria-label="التفاصيل">
+                                        <i class="bi bi-eye"></i>
                                     </a>
-
-                                    @* الأرشفة (حذف ناعم) متاحة لموظف المصنع كما للمدير — عقد الـ API
-                                       نفسه، وصفحة الأرشيف تعيده. وقبل ذلك كان الزر للمدير وحده
-                                       فتبقى صفحة الأرشيف فارغة أبداً للموظف. *@
-                                    <form asp-action="Delete"
-                                      asp-route-id="@item.ConcreteTypeId"
-                                      method="post"
-                                      class="d-inline"
-                                       data-confirm="هل أنت متأكد من حذف نوع الخرسانة؟">
-
-                                    @Html.AntiForgeryToken()
-
-                                    <button type="submit"
-                                            class="btn btn-danger action-btn"
-                                            aria-label="حذف">
-
-                                        <i class="bi bi-trash"></i>
-
-                                    </button>
-
-                                    </form>
-                                }
-
+                                    @if (canManage && !factoryInactive)
+                                    {
+                                        <a asp-action="Edit"
+                                           asp-route-id="@item.ConcreteTypeId"
+                                           class="btn btn-sm btn-warning text-white action-btn"
+                                           title="تعديل"
+                                           aria-label="تعديل">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="Delete"
+                                              asp-route-id="@item.ConcreteTypeId"
+                                              method="post"
+                                              class="d-inline"
+                                              data-confirm="هل أنت متأكد من أرشفة نوع الخرسانة هذا؟ سيتم نقله إلى الأرشيف ويمكنك استعادته لاحقاً.">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-danger action-btn"
+                                                    title="أرشفة"
+                                                    aria-label="أرشفة">
+                                                <i class="bi bi-archive"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
                             </td>
-
                         </tr>
-
                         index++;
                     }
                 }
                 else
                 {
-
                     <tr>
-
                         <td colspan="6">
-
                             @await Html.PartialAsync(
-                            "~/Views/Shared/Components/_EmptyState.cshtml",
-                            new EmptyStateViewModel
-                            {
-                                ImageUrl = "/images/empty-concrete.png",
-                                Title = "لا توجد أنواع خرسانة",
-                                Message = "قم بإضافة أول نوع خرسانة ليظهر هنا.",
-                                ShowActionButton = canManage && !factoryInactive,
-                                ActionController = "ConcreteTypes",
-                                ActionAction = "Create",
-                                ActionText = "إضافة نوع خرسانة"
-                            })
-
+                                "~/Views/Shared/Components/_EmptyState.cshtml",
+                                new EmptyStateViewModel
+                                {
+                                    ImageUrl = "/images/empty-concrete.png",
+                                    Title = "لا توجد أنواع خرسانة",
+                                    Message = "قم بإضافة أول نوع خرسانة ليظهر هنا.",
+                                    ShowActionButton = canManage && !factoryInactive,
+                                    ActionController = "ConcreteTypes",
+                                    ActionAction = "Create",
+                                    ActionText = "إضافة نوع خرسانة"
+                                })
                         </td>
-
                     </tr>
-
                 }
-
             </tbody>
-
         </table>
-
     </div>
 
+    <!-- Mobile Cards View (< 768px) -->
+    <div class="d-md-none p-3">
+        @if (Model.Any())
+        {
+            var mIndex = offset + 1;
+            <div class="d-flex flex-column gap-3">
+                @foreach (var item in Model)
+                {
+                    <div class="card border rounded-3 shadow-none p-3 position-relative">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-light text-dark fw-bold">#@mIndex</span>
+                                <h6 class="mb-0 fw-bold">@item.Name</h6>
+                            </div>
+                            @if (item.IsActive)
+                            {
+                                <span class="status-badge status-success">نشط</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-danger">متوقف</span>
+                            }
+                        </div>
+                        <div class="text-muted small mb-2">
+                            <i class="bi bi-building me-1"></i>@item.FactoryName
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                            <div>
+                                <span class="strength-badge me-2">
+                                    <i class="bi bi-speedometer2 me-1"></i>@item.Strength MPa
+                                </span>
+                                <span class="fw-bold text-primary">
+                                    @item.UnitPrice.ToString("N0") <small class="text-muted">ر.ي/م³</small>
+                                </span>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <a asp-action="Details"
+                                   asp-route-id="@item.ConcreteTypeId"
+                                   class="btn btn-sm btn-light border"
+                                   title="التفاصيل"
+                                   aria-label="التفاصيل">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                @if (canManage && !factoryInactive)
+                                {
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.ConcreteTypeId"
+                                       class="btn btn-sm btn-warning text-white"
+                                       title="تعديل"
+                                       aria-label="تعديل">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form asp-action="Delete"
+                                          asp-route-id="@item.ConcreteTypeId"
+                                          method="post"
+                                          class="d-inline"
+                                          data-confirm="هل أنت متأكد من أرشفة نوع الخرسانة هذا؟ سيتم نقله إلى الأرشيف ويمكنك استعادته لاحقاً.">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit"
+                                                class="btn btn-sm btn-danger"
+                                                title="أرشفة"
+                                                aria-label="أرشفة">
+                                            <i class="bi bi-archive"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    mIndex++;
+                }
+            </div>
+        }
+    </div>
 </div>

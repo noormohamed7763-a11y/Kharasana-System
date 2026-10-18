@@ -1,7 +1,11 @@
 using System.Net;
+using System.Text.Json;
 using FluentValidation;
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
+using Kharasana.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kharasana.API.Middlewares;
 
@@ -21,6 +25,12 @@ public class ExceptionMiddleware
         try
         {
             await _next(context);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation(
+                "أُلغي الطلب من قِبل العميل. التتبّع={TraceId} المسار={Path}",
+                context.TraceIdentifier, context.Request.Path);
         }
         catch (NotFoundException ex)
         {
@@ -68,6 +78,39 @@ public class ExceptionMiddleware
                 firstError, context.TraceIdentifier, context.Request.Path);
 
             await HandleMessageAsync(context, firstError, HttpStatusCode.BadRequest);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex,
+                "فشل تحليل JSON: التتبّع={TraceId} المسار={Path}",
+                context.TraceIdentifier, context.Request.Path);
+            await HandleMessageAsync(context, Messages.MalformedJsonOrPayload, HttpStatusCode.BadRequest);
+        }
+        catch (BadHttpRequestException ex)
+        {
+            _logger.LogWarning(ex,
+                "طلب HTTP غير صالح: {Message} التتبّع={TraceId} المسار={Path}",
+                ex.Message, context.TraceIdentifier, context.Request.Path);
+
+            var message = ex.StatusCode == StatusCodes.Status413PayloadTooLarge
+                ? Messages.PayloadTooLarge
+                : Messages.MalformedJsonOrPayload;
+
+            await HandleMessageAsync(context, message, (HttpStatusCode)ex.StatusCode);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex,
+                "تعارض التزامن التفاؤلي (RowVersion): التتبّع={TraceId} المسار={Path}",
+                context.TraceIdentifier, context.Request.Path);
+            await HandleMessageAsync(context, Messages.ConcurrencyConflict, HttpStatusCode.Conflict);
+        }
+        catch (DbUpdateException ex) when (UniqueConstraintDetector.IsUniqueViolation(ex))
+        {
+            _logger.LogWarning(ex,
+                "انتهاك قيد تفرّد قاعدة البيانات: التتبّع={TraceId} المسار={Path}",
+                context.TraceIdentifier, context.Request.Path);
+            await HandleMessageAsync(context, Messages.DuplicateValueConflict, HttpStatusCode.Conflict);
         }
         catch (Exception ex)
         {

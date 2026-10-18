@@ -46,5 +46,15 @@ namespace Kharasana.Web.ViewModels.Orders
 
         [StringLength(1000, ErrorMessage = "الملاحظات لا تزيد عن 1000 حرف")]
         public string? Notes { get; set; }
+
+        // بيانات إضافية للـ View (كانت تُمرَّر عبر ViewBag)
+        public string OrderNumber { get; set; } = string.Empty;
+        public string ClientName { get; set; } = string.Empty;
+        public OrderStatus Status { get; set; }
+        public string StatusArabicName { get; set; } = string.Empty;
+        public string StatusCssClass { get; set; } = string.Empty;
+        public decimal UnitPrice { get; set; }
+        public bool ShowDeleteButton { get; set; }
+        public Kharasana.Domain.Enums.UserRole UserRole { get; set; }
     }
 }

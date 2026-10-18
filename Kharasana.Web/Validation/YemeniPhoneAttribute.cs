@@ -1,11 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using Kharasana.Domain.Common;
 
-namespace Kharasana.Domain.Validation;
+namespace Kharasana.Web.Validation;
 
 /// <summary>
-/// تحقق من صحة رقم هاتف يمني على خصائص ViewModels / DTOs (DataAnnotations).
-/// قاعدة التحقق الموحّدة هي YemeniPhoneHelper في Domain.Common — لا تُكتب قواعد هنا.
+/// سمة تحقق من صحة رقم الهاتف اليمني لـ ViewModels الخاصة بنماذج الويب (Razor).
+/// تعتمد حصرياً على المنطق النقي في <see cref="YemeniPhoneHelper"/> كمصدر وحيد للحقيقة.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
 public class YemeniPhoneAttribute : ValidationAttribute
