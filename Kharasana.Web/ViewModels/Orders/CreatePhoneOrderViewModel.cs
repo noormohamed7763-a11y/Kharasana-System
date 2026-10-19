@@ -127,5 +127,19 @@ namespace Kharasana.Web.ViewModels.Orders
         /// </summary>
         public bool IsPhoneValid => !string.IsNullOrWhiteSpace(ClientPhone) &&
                                      System.Text.RegularExpressions.Regex.IsMatch(ClientPhone, @"^[0-9]{7,15}$");
+
+        /// <summary>
+        /// طلب مراعاة في السعر / خصم كمية تشجيعي ("اكسبوني زبون")
+        /// </summary>
+        [Display(Name = "طلب سعر تفضيلي / مراعاة")]
+        public bool RequestSpecialPrice { get; set; }
+
+        /// <summary>
+        /// هل لدى العميل طلب معلق سابق للتنبيه الذكي؟
+        /// </summary>
+        public bool HasPendingOrder { get; set; }
+        public int? PendingOrderId { get; set; }
+        public string? PendingOrderNumber { get; set; }
+        public string? PendingProjectName { get; set; }
     }
 }

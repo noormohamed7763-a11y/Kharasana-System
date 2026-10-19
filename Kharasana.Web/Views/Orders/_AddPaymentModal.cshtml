@@ -1,0 +1,67 @@
+@model Kharasana.Web.ViewModels.Orders.OrderDto
+@using Kharasana.Domain.Enums
+@using Kharasana.Web.Localization
+@using Kharasana.Web.ViewModels.Orders
+
+@{
+    var paymentMethods = Html.GetEnumSelectList<PaymentMethod>();
+}
+
+<!-- Add Payment Modal -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPaymentModalLabel">تسجيل دفعة للطلب #@Model.OrderNumberSeq</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPaymentForm">
+                    <input type="hidden" name="OrderId" value="@Model.OrderId" />
+
+                    <div class="mb-3">
+                        <label for="paymentAmount" class="form-label">المبلغ المدفوع (ر.ي)</label>
+                        <input type="number" class="form-control" id="paymentAmount" name="Amount" step="0.01" min="0.01" required
+                               value="@Model.RemainingAmount.ToString("0.00")" />
+                        <div class="invalid-feedback"></div>
+                        <small class="form-text text-muted">المبلغ المتبقي: @Model.RemainingAmount.FormatPrice()</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="paymentMethod" class="form-label">طريقة الدفع</label>
+                        <select class="form-select" id="paymentMethod" name="PaymentMethod" required>
+                            <option value="">اختر طريقة الدفع</option>
+                            @foreach (var method in paymentMethods)
+                            {
+                                <option value="@method.Value">@method.Text</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="referenceNo" class="form-label">رقم مرجع الحوالة (اختياري)</label>
+                        <input type="text" class="form-control" id="referenceNo" name="ReferenceNo" maxlength="256" />
+                        <div class="invalid-feedback"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="paymentNotes" class="form-label">ملاحظات (اختياري)</label>
+                        <textarea class="form-control" id="paymentNotes" name="Notes" rows="3" maxlength="1000"></textarea>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="savePaymentBtn">تسجيل الدفعة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script nonce="@ViewBag.CspNonce">
+        // هذا السكربت سينقل إلى orders.js ليتبع نمط بقية الإجراءات
+    </script>
+}

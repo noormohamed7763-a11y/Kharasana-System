@@ -185,6 +185,34 @@ namespace Kharasana.Web.Controllers
         }
 
         // ============================================================
+        // ADD PAYMENT - تسجيل دفعة (AJAX)
+        // ============================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddPayment(int id, [FromBody] AddPaymentViewModel model)
+        {
+            if (!EnsureValidId(id))
+                return AjaxInvalidId();
+
+            if (model == null)
+                return AjaxFail(AppMessages.Validation.RequiredField);
+
+            if (!ModelState.IsValid)
+                return AjaxFail(AppMessages.Common.InvalidData);
+
+            // Ensure factory employee can modify this order (admin can always modify)
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
+
+            var result = await _ordersApiService.AddPaymentAsync(id, model);
+
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
+
+            return AjaxFail(result.Message);
+        }
+
+        // ============================================================
         // ASSIGN DRIVER - تعيين سائق (POST)
         // ============================================================
         [HttpPost]

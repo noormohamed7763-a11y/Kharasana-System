@@ -19,6 +19,8 @@ public class KharasanaDbContext : DbContext
 
     public DbSet<Order> Orders { get; set; }
 
+    public DbSet<OrderPayment> OrderPayments { get; set; }
+
     public DbSet<FactoryRegistrationRequest> FactoryRegistrationRequests { get; set; }
 
     public DbSet<ActivationToken> ActivationTokens { get; set; }

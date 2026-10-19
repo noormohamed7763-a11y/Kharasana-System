@@ -1,6 +1,7 @@
 @model Kharasana.Web.ViewModels.FactoryRegistration.FactoryRegistrationRequestsIndexViewModel
 @using Kharasana.Domain.Enums
 @using Kharasana.Web.Models.Components
+@using Kharasana.Web.ViewModels.Components
 
 @{
     ViewData["Title"] = "طلبات تسجيل المصانع";
@@ -129,16 +130,16 @@
     <!-- Data Table Card -->
     <div class="form-card shadow-sm">
         <div class="table-responsive">
-            <table class="table table-hover erp-table align-middle mb-0">
+            <table class="table table-hover erp-table erp-table--sticky-cols align-middle mb-0">
                 <thead>
                     <tr>
-                        <th style="width: 50px;">#</th>
-                        <th>المصنع والمنطقة</th>
-                        <th>المالك المفوض</th>
-                        <th>بيانات التواصل</th>
-                        <th>الحالة</th>
-                        <th>تاريخ التقديم</th>
-                        <th class="text-center" style="width: 120px;">الإجراءات</th>
+                        <th class="col-index text-nowrap">#</th>
+                        <th class="text-nowrap">المصنع والمنطقة</th>
+                        <th class="text-nowrap">المالك المفوض</th>
+                        <th class="text-nowrap">بيانات التواصل</th>
+                        <th class="text-nowrap">الحالة</th>
+                        <th class="col-date text-nowrap">تاريخ التقديم</th>
+                        <th class="text-center col-actions text-nowrap">الإجراءات</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -217,54 +218,27 @@
         @if (Model.PagedRequests != null && Model.PagedRequests.TotalCount > Model.PagedRequests.PageSize)
         {
             var totalPages = (int)Math.Ceiling((double)Model.PagedRequests.TotalCount / Model.PagedRequests.PageSize);
-            var currentPage = Model.PagedRequests.PageNumber;
+            var routeVals = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(Model.Filter.Search))
+            {
+                routeVals["search"] = Model.Filter.Search;
+            }
+            if (Model.Filter.Status.HasValue)
+            {
+                routeVals["status"] = ((int)Model.Filter.Status.Value).ToString();
+            }
 
-            <div class="p-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <span class="text-muted small">
-                    عرض @(((currentPage - 1) * Model.PagedRequests.PageSize) + 1) - @(Math.Min(currentPage * Model.PagedRequests.PageSize, Model.PagedRequests.TotalCount)) من إجمالي @Model.PagedRequests.TotalCount طلب
-                </span>
-
-                <nav aria-label="Page navigation">
-                    <ul class="pagination pagination-sm mb-0">
-                        @if (currentPage > 1)
-                        {
-                            <li class="page-item">
-                                <a class="page-link" asp-action="Index"
-                                   asp-route-pageNumber="@(currentPage - 1)"
-                                   asp-route-pageSize="@Model.PagedRequests.PageSize"
-                                   asp-route-search="@Model.Filter.Search"
-                                   asp-route-status="@(Model.Filter.Status.HasValue ? (int)Model.Filter.Status.Value : null)">
-                                    <i class="bi bi-chevron-right"></i>
-                                </a>
-                            </li>
-                        }
-
-                        @for (int i = 1; i <= totalPages; i++)
-                        {
-                            <li class="page-item @(i == currentPage ? "active" : "")">
-                                <a class="page-link" asp-action="Index"
-                                   asp-route-pageNumber="@i"
-                                   asp-route-pageSize="@Model.PagedRequests.PageSize"
-                                   asp-route-search="@Model.Filter.Search"
-                                   asp-route-status="@(Model.Filter.Status.HasValue ? (int)Model.Filter.Status.Value : null)">@i</a>
-                            </li>
-                        }
-
-                        @if (currentPage < totalPages)
-                        {
-                            <li class="page-item">
-                                <a class="page-link" asp-action="Index"
-                                   asp-route-pageNumber="@(currentPage + 1)"
-                                   asp-route-pageSize="@Model.PagedRequests.PageSize"
-                                   asp-route-search="@Model.Filter.Search"
-                                   asp-route-status="@(Model.Filter.Status.HasValue ? (int)Model.Filter.Status.Value : null)">
-                                    <i class="bi bi-chevron-left"></i>
-                                </a>
-                            </li>
-                        }
-                    </ul>
-                </nav>
-            </div>
+            @await Html.PartialAsync(
+                "~/Views/Shared/Components/_Pagination.cshtml",
+                new PaginationViewModel
+                {
+                    CurrentPage = Model.PagedRequests.PageNumber,
+                    TotalPages = totalPages,
+                    PageSize = Model.PagedRequests.PageSize,
+                    TotalCount = Model.PagedRequests.TotalCount,
+                    AspAction = "Index",
+                    RouteValues = routeVals
+                })
         }
     </div>
 

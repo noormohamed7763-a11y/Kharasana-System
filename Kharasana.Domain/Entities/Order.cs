@@ -38,6 +38,10 @@ public class Order
 
     public decimal TotalPrice { get; set; }
 
+    public decimal TotalDiscountAmount { get; set; }
+
+    public decimal NetAmount { get; set; }
+
     // ✅ لقطتان تاريخيتان لنوع الخرسانة وقت إنشاء الطلب — على نمط UnitPrice أعلاه.
     //    بدونهما كان تغيير اسم النوع أو مقاومته في الكتالوج يُعيد كتابة عرض الطلبات
     //    القديمة: طلب سُعِّر وبِيع باسم «C30» يظهر لاحقًا باسم النوع الجديد.
@@ -67,7 +71,24 @@ public class Order
     public DateTime? UpdatedAt { get; set; }
 
     public bool IsDeleted { get; set; } = false;
-    // Navigation Properties
+    
+    public virtual ICollection<OrderPayment> Payments { get; set; } = new List<OrderPayment>();
+
+    /// <summary>
+    /// يعيد حساب صافي المبلغ المستحق = الإجمالي − الخصم.
+    ///
+    /// <para><b>لماذا دالة على الكيان:</b> <c>NetAmount</c> مشتقّ من <c>TotalPrice</c>
+    /// و<code>TotalDiscountAmount</code>، وأي مسار يغيّر أحدهما <b>يجب</b> أن يعيد حساب
+    /// الآخر. لو ترك كل مسار يعيّن <c>TotalPrice</c> وحده، بقي <c>NetAmount</c> صفراً
+    /// (قيمته الافتراضية في قاعدة البيانات) بينما <c>RemainingAmount = NetAmount − PaidAmount</c>
+    /// فيعرض رصيداً سالباً كاذباً على العميل.</para>
+    ///
+    /// <para>استُدعيت في كل موضع يعيّن <c>TotalPrice</c>: الإنشاء، والتعديل، والتسعير.</para>
+    /// </summary>
+    public void RecalculateNetAmount()
+    {
+        NetAmount = TotalPrice - TotalDiscountAmount;
+    }
 
     public User Client { get; set; } = null!;
 

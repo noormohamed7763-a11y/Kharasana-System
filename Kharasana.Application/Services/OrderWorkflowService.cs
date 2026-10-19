@@ -29,6 +29,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         order.UnitPrice = unitPrice;
         order.TotalPrice = unitPrice * order.Quantity;
+        order.RecalculateNetAmount();
         order.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Orders.Update(order);

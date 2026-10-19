@@ -48,6 +48,7 @@ public static class Messages
     public const string OrderCancelledSuccessfully = "تم إلغاء الطلب بنجاح.";
     public const string OrderArchivedSuccessfully = "تم أرشفة الطلب بنجاح.";
     public const string OrderDeletedSuccessfully = "تم حذف الطلب بنجاح.";
+    public const string PaymentAddedSuccessfully = "تم تسجيل الدفعة بنجاح.";
 
     #endregion
 
@@ -233,6 +234,12 @@ public static class Messages
     public const string OrderAlreadyRejectedOrCancelled = "الطلب مرفوض أو ملغي بالفعل.";
     public const string CannotChangeDriverRole = "لا يمكن تغيير دور السائق.";
     public const string PhoneLinkedToNonClientAccount = "رقم الهاتف مرتبط بحساب موظف/سائق موجود في النظام. لا يمكن إنشاء عميل جديد بنفس الرقم. يرجى التحقق من الرقم أو التواصل مع مدير النظام.";
+    public const string PaymentAmountMustBePositive = "مبلغ الدفعة يجب أن يكون أكبر من صفر.";
+    public const string PaymentExceedsRemainingAmount = "مبلغ الدفعة يتجاوز المبلغ المتبقي على الطلب.";
+    public const string NotAuthorizedToRecordPayment = "غير مخول لتسجيل دفعات على الطلب.";
+    public const string CannotRecordPaymentForCancelledOrder = "لا يمكن تسجيل دفعة على طلب ملغى.";
+    public const string PaymentReferenceMaxLength = "رقم مرجع الحوالة يجب ألا يتجاوز 256 حرف.";
+    public const string PaymentNotesMaxLength = "ملاحظات الدفعة يجب ألا تتجاوز 1000 حرف.";
 
     #endregion
 
@@ -271,6 +278,12 @@ public static class Messages
     public const string ClientFallback = "العميل #{0}";
     public const string FactoryFallback = "المصنع #{0}";
     public const string ConcreteTypeFallback = "نوع الخرسانة #{0}";
+
+    public const string OrderNumberStatement = "طلب خرسانة رقم {0}";
+    public const string PaymentStatement = "دفعة نقود - {0}";
+    public const string ClientNotFound = "العميل غير موجود.";
+    public const string ClientNotInCallerFactory = "العميل لا ينتمي للمصنع الخاص بك.";
+    public const string CallerFactoryIdNotFound = "معرّف المصنع الخاص بك غير موجود.";
 
     #endregion
 }

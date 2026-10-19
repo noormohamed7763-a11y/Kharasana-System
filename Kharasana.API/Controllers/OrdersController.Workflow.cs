@@ -192,4 +192,32 @@ public partial class OrdersController
 
         return Ok(ApiResponse.Ok(Messages.OrderCancelledSuccessfully));
     }
+
+    // ============================================================
+    // 16. ADD PAYMENT — تسجيل دفعة على الطلب
+    // ============================================================
+    /// <summary>تسجيل دفعة جديدة (سند قبض) على طلب.</summary>
+    /// <remarks>
+    /// الحركة مالية فمخصّصة للمدير ولموظف المصنع الذي يملك الطلب — وحارس الدور
+    /// موجود داخل الخدمة (<c>OrderCommandService.AddPaymentAsync</c>) لا في
+    /// الـ Controller وحده، فلا يُتجاوز من أي مسار آخر.
+    /// </remarks>
+    /// <param name="id">معرّف الطلب.</param>
+    /// <param name="dto">بيانات الدفعة (المبلغ، طريقة الدفع، المرجع، الملاحظات).</param>
+    /// <response code="200">تم تسجيل الدفعة بنجاح.</response>
+    /// <response code="400">بيانات غير صالحة أو تجاوز المبلغ للمتبقي.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="403">الدور لا يملك صلاحية تسجيل دفعات.</response>
+    /// <response code="404">الطلب غير موجود.</response>
+    [HttpPost("{id:int}/payments")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<AddPaymentDto>))]
+    public async Task<IActionResult> AddPayment(int id, [FromBody] AddPaymentDto dto)
+    {
+        var caller = User.GetCallerContext();
+
+        await _orderService.AddPaymentAsync(id, dto, caller.UserId, caller.Role, caller.FactoryId);
+
+        return Ok(ApiResponse.Ok(Messages.PaymentAddedSuccessfully));
+    }
 }

@@ -320,6 +320,10 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Property<bool>("NeedPump")
                         .HasColumnType("bit");
 
+                    b.Property<decimal>("NetAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -364,6 +368,10 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("TotalDiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("TotalPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -406,6 +414,45 @@ namespace Kharasana.Infrastructure.Migrations
                         .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Orders", (string)null);
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.OrderPayment", b =>
+                {
+                    b.Property<int>("OrderPaymentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderPaymentId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("OrderPaymentId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderPayments", (string)null);
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>
@@ -588,6 +635,17 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Navigation("Factory");
                 });
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.OrderPayment", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.Order", "Order")
+                        .WithMany("Payments")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>
                 {
                     b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
@@ -610,6 +668,11 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Navigation("Orders");
 
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.Order", b =>
+                {
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>

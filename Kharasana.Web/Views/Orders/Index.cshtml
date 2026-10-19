@@ -74,7 +74,7 @@
 
     <!-- UNIFIED DESKTOP ERP TOOLBAR & FILTERS -->
     @{
-        var showFactoryFilter = ViewBag.ShowFactoryFilter == true;
+        var showFactoryFilter = Model.ShowFactoryFilter;
 
         // فلتر الحالة: القائمة تحمل name="status" فتُرسل مع النموذج مباشرة.
         // سابقاً كانت القائمة بلا name، ويُنسخ اختيارها إلى حقل مخفي بدالة JS
@@ -108,8 +108,7 @@
                 EmptyOptionText = "جميع المصانع"
             };
 
-            var factories = ViewBag.Factories as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
-                            ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+            var factories = Model.Factories ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
 
             foreach (var factory in factories)
             {

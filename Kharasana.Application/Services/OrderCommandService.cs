@@ -213,6 +213,7 @@ public class OrderCommandService : IOrderCommandService
         order.UpdatedAt = DateTime.UtcNow;
 
         order.TotalPrice = order.Quantity * order.UnitPrice;
+        order.RecalculateNetAmount();
 
         _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
@@ -239,6 +240,47 @@ public class OrderCommandService : IOrderCommandService
         await _unitOfWork.SaveChangesAsync();
 
         return true;
+    }
+
+    public async Task AddPaymentAsync(int orderId, AddPaymentDto dto, int userId, UserRole role, int? factoryId)
+    {
+        // ✅ تسجيل الدفعة حركة مالية: مخصّصة للمدير ولموظف المصنع فقط.
+        //    <c>GetOrderOrThrowAsync</c> وحده لا يكفي: يبقي للعميل والسائق حقّ
+        //    الوصول إلى طلبهما (شرط لازم لا كافٍ)، فبلا هذا الحارس كان بإمكان
+        //    العميل تسجيل دفعة على طلبه — وهو يمسّ دفتر حسابات المصنع.
+        if (role is not (UserRole.Admin or UserRole.FactoryEmployee))
+            throw new ForbiddenException(Messages.NotAuthorizedToRecordPayment);
+
+        var order = await GetOrderOrThrowAsync(orderId, userId, role, factoryId);
+
+        if (dto.Amount <= 0)
+            throw new BusinessException(Messages.PaymentAmountMustBePositive);
+
+        if (order.Status is OrderStatus.Cancelled or OrderStatus.Rejected)
+            throw new BusinessException(Messages.CannotRecordPaymentForCancelledOrder);
+
+        // ✅ منع تجاوز المتبقي: بدونه يُسجَّل مبلغ أكبر من المستحق فيبقى الرصيد
+        //    سالباً، وهو ما تعني «دفعة زائدة» لا رصيداً مستحقاً على العميل.
+        var netAmount = order.NetAmount;
+        var alreadyPaid = order.Payments.Sum(p => p.Amount);
+        var remaining = netAmount - alreadyPaid;
+
+        if (dto.Amount > remaining)
+            throw new BusinessException(Messages.PaymentExceedsRemainingAmount);
+
+        var payment = new OrderPayment
+        {
+            OrderId = orderId,
+            Amount = dto.Amount,
+            PaymentDate = DateTime.UtcNow,
+            PaymentMethod = dto.PaymentMethod,
+            ReferenceNumber = dto.ReferenceNo,
+            Notes = dto.Notes,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _unitOfWork.OrderPayments.AddAsync(payment);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     private async Task<Order> GetOrderOrThrowAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId)
@@ -323,7 +365,7 @@ public class OrderCommandService : IOrderCommandService
         var orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}";
         var totalPrice = dto.Quantity * concreteType.UnitPrice;
 
-        return new Order
+        var order = new Order
         {
             OrderNumber = orderNumber,
             ClientId = clientId,
@@ -348,5 +390,11 @@ public class OrderCommandService : IOrderCommandService
             Notes = dto.Notes,
             CreatedAt = DateTime.UtcNow
         };
+
+        // ✅ صافي المبلغ = الإجمالي − الخصم (الخصم صفر عند الإنشاء).
+        //    بدونها يبقى NetAmount صفراً فيبقى RemainingAmount سالباً كاذباً.
+        order.RecalculateNetAmount();
+
+        return order;
     }
 }

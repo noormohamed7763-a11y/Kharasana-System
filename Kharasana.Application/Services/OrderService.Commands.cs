@@ -39,4 +39,12 @@ public partial class OrderService
     {
         return await _orderCommandService.DeleteOrderAsync(id, callerId, callerRole, callerFactoryId);
     }
+
+    // ============================================================
+    // ADD PAYMENT - Delegates to OrderCommandService
+    // ============================================================
+    public async Task AddPaymentAsync(int orderId, AddPaymentDto dto, int callerId, UserRole callerRole, int? callerFactoryId)
+    {
+        await _orderCommandService.AddPaymentAsync(orderId, dto, callerId, callerRole, callerFactoryId);
+    }
 }

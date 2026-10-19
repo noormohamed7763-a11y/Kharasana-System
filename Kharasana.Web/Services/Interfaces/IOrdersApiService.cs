@@ -157,7 +157,20 @@ namespace Kharasana.Web.Services.Interfaces
 
 
         // ============================================================
-        // 7. DRIVER - السائق
+        // 7. PAYMENTS - الدفعات
+        // ============================================================
+
+        /// <summary>
+        /// تسجيل دفعة جديدة على الطلب
+        /// </summary>
+        /// <param name="id">معرف الطلب</param>
+        /// <param name="model">بيانات الدفعة</param>
+        /// <returns>نتيجة العملية</returns>
+        Task<ServiceResult> AddPaymentAsync(int id, AddPaymentViewModel model);
+
+
+        // ============================================================
+        // 8. DRIVER - السائق
         // ============================================================
 
         /// <summary>
