@@ -17,6 +17,11 @@ public interface IClientApiService
     Task<ClientStatsViewModel?> GetClientStatsAsync(int? factoryId = null);
 
     // ============================================================
+    // STATEMENT
+    // ============================================================
+    Task<ClientStatementViewModel?> GetClientStatementAsync(int clientId);
+
+    // ============================================================
     // GET DETAILS
     // ============================================================
     Task<ClientDetailsViewModel?> GetDetailsAsync(int clientId);
