@@ -77,36 +77,12 @@ public class ClientsController : BaseController
     [HttpGet]
     public async Task<IActionResult> Statement(int id)
     {
-        var client = await _clientApiService.GetDetailsAsync(id);
-        if (client == null)
+        var model = await _clientApiService.GetClientStatementAsync(id);
+        if (model == null)
         {
             TempData[TempDataError] = AppMessages.Common.NotFound;
             return RedirectToAction(nameof(Index));
         }
-
-        int? factoryIdFilter = IsFactoryUser ? FactoryId : null;
-        var pagedOrders = await _ordersApiService.GetOrdersAsync(1, 100, null, factoryIdFilter, null);
-        var clientOrders = pagedOrders?.Items != null
-            ? pagedOrders.Items
-                .Where(o => o.ClientId == id || o.ClientPhone == client.Phone)
-                .OrderByDescending(o => o.PouringDate ?? o.CreatedAt)
-                .ToList()
-            : new List<OrderDto>();
-
-        var model = new ClientStatementViewModel
-        {
-            ClientId = client.UserId,
-            ClientName = client.FullName,
-            Phone = client.Phone,
-            WhatsApp = client.WhatsApp,
-            FactoryId = factoryIdFilter,
-            FactoryName = HttpContext.Session.GetString("FactoryName") ?? "مصنع الخرسانة الجاهزة",
-            StatementDate = DateTime.Now,
-            TotalOrders = clientOrders.Count,
-            TotalQuantity = clientOrders.Sum(o => o.Quantity),
-            TotalAmount = clientOrders.Sum(o => o.TotalPrice ?? 0),
-            Orders = clientOrders
-        };
 
         return View(model);
     }

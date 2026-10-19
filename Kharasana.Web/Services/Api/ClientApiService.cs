@@ -127,6 +127,30 @@ public class ClientApiService : IClientApiService
     }
 
     // ============================================================
+    // STATEMENT
+    // ============================================================
+    public async Task<ClientStatementViewModel?> GetClientStatementAsync(int clientId)
+    {
+        try
+        {
+            var response = await _apiClient.GetAsync<ApiResponse<ClientStatementViewModel>>($"Orders/customers/{clientId}/statement");
+
+            if (response == null || !response.Success || response.Data == null)
+            {
+                _logger.LogWarning("GetClientStatementAsync: تعذّر جلب كشف حساب العميل {ClientId}.", clientId);
+                return null;
+            }
+
+            return response.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "استثناء في GetClientStatementAsync للعميل {ClientId}", clientId);
+            return null;
+        }
+    }
+
+    // ============================================================
     // GET DETAILS
     // ============================================================
     public async Task<ClientDetailsViewModel?> GetDetailsAsync(
