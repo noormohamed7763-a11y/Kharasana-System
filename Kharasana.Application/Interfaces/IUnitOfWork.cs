@@ -10,6 +10,7 @@ public interface IUnitOfWork : IDisposable
     IOrderRepository Orders { get; }
     IFactoryRegistrationRequestRepository FactoryRegistrationRequests { get; }
     IActivationTokenRepository ActivationTokens { get; }
+    IOrderPaymentRepository OrderPayments { get; }
 
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();

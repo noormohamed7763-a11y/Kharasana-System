@@ -44,6 +44,10 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     /// <c>IgnoreQueryFilters</c> يلغي فلاتر <b>كل</b> الكيانات في الاستعلام لا مجموعة
     /// واحدة؛ فبدونه تصير كل مسارات القراءة والتعديل هذه بابًا خلفيًا للطلبات المحذوفة.
     /// الحارس: OrderRepositoryQueryFilterTests.
+    ///
+    /// ✅ <c>Payments</c> محمَّلة هنا (LEFT JOIN عبر <c>Include</c>) لأن <c>PaidAmount</c>
+    /// و<code>RemainingAmount</code> في الـ DTO مشتقّان منها. بدون هذا الـ Include
+    /// كانت الخصائص المحسوبة تُرجع صفراً دائماً مهما بلّغت الدفعات المسجّلة.
     /// </remarks>
     private IQueryable<Order> OrdersWithDetails(bool trackChanges)
     {
@@ -53,9 +57,18 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .Include(o => o.Client)
             .Include(o => o.Factory)
             .Include(o => o.ConcreteType)
-            .Include(o => o.Driver);
+            .Include(o => o.Driver)
+            .Include(o => o.Payments);
 
         return trackChanges ? query : query.AsNoTracking();
+    }
+
+    public async Task<List<Order>> GetByClientIdWithPaymentsAsync(int clientId)
+    {
+        return await OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId)
+            .OrderBy(o => o.CreatedAt)
+            .ToListAsync();
     }
 
     public async Task<Order?> GetByIdWithDetailsAsync(int id)

@@ -73,6 +73,18 @@ public class OrderDto
     [JsonPropertyName("totalPrice")]
     public decimal? TotalPrice { get; set; }
 
+    [JsonPropertyName("totalDiscountAmount")]
+    public decimal TotalDiscountAmount { get; set; }
+
+    [JsonPropertyName("netAmount")]
+    public decimal NetAmount { get; set; }
+
+    [JsonPropertyName("totalPaid")]
+    public decimal TotalPaid { get; set; }
+
+    [JsonPropertyName("remainingAmount")]
+    public decimal RemainingAmount { get; set; }
+
 
     // ============================================================
     // PROJECT INFO

@@ -21,11 +21,39 @@ public static class OrderMapper
             ConcreteTypeName = o.ConcreteTypeNameSnapshot ?? o.ConcreteType?.Name ?? string.Format(Messages.ConcreteTypeFallback, o.ConcreteTypeId),
             Quantity = o.Quantity,
             TotalPrice = hidePricing ? null : o.TotalPrice,
+            TotalDiscountAmount = o.TotalDiscountAmount,
+            NetAmount = o.NetAmount,
+            Payments = MapPayments(o.Payments),
             TransportMethod = o.TransportMethod,
             Status = o.Status,
             PouringDate = o.PouringDate,
             CreatedAt = o.CreatedAt
         };
+    }
+
+    /// <summary>
+    /// تحويل دفعات الطلب إلى DTO — بترتيب زمني تصاعدي (الأقدم أولاً) لأن كشف
+    /// الحساب يُقرأ زمنياً، والترتيب عشوائي بلا <c>Include</c> صريح.
+    /// </summary>
+    public static ICollection<OrderPaymentDto> MapPayments(IEnumerable<OrderPayment>? payments)
+    {
+        if (payments == null)
+            return new List<OrderPaymentDto>();
+
+        return payments
+            .OrderBy(p => p.PaymentDate)
+            .ThenBy(p => p.OrderPaymentId)
+            .Select(p => new OrderPaymentDto
+            {
+                Id = p.OrderPaymentId,
+                OrderId = p.OrderId,
+                PaymentDate = p.PaymentDate,
+                Amount = p.Amount,
+                PaymentMethod = p.PaymentMethod,
+                ReferenceNo = p.ReferenceNumber,
+                Notes = p.Notes
+            })
+            .ToList();
     }
 
     public static OrderDetailsDto MapToDetailsDto(Order order, bool hidePricing, bool restrictDriverToActive = false)
@@ -56,6 +84,9 @@ public static class OrderMapper
             FloorNumber = order.FloorNumber,
             UnitPrice = hidePricing ? null : order.UnitPrice,
             TotalPrice = hidePricing ? null : order.TotalPrice,
+            TotalDiscountAmount = order.TotalDiscountAmount,
+            NetAmount = order.NetAmount,
+            Payments = MapPayments(order.Payments),
             PouringDate = order.PouringDate,
             TransportMethod = order.TransportMethod,
             DriverId = showDriver ? order.DriverId : null,

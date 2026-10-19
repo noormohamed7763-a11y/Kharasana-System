@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<IOrderCommandService, OrderCommandService>();
         services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
         services.AddScoped<IOrderHelperService, OrderHelperService>();
+        services.AddScoped<IClientStatementService, ClientStatementService>();
 
         // 2. Factory & Registration Services
         services.AddScoped<IFactoryService, FactoryService>();

@@ -16,4 +16,6 @@ public interface IOrderCommandService
     Task<OrderDto> UpdateOrderAsync(int id, UpdateOrderDto dto, int userId, Domain.Enums.UserRole role, int? factoryId);
 
     Task<bool> DeleteOrderAsync(int id, int callerId, Domain.Enums.UserRole callerRole, int? callerFactoryId);
+
+    Task AddPaymentAsync(int orderId, AddPaymentDto dto, int userId, Domain.Enums.UserRole role, int? factoryId);
 }

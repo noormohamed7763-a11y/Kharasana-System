@@ -12,6 +12,8 @@ public interface IOrderRepository : IGenericRepository<Order>
     /// <summary>
     /// قراءة الطلب مع تفاصيله للعرض فقط (AsNoTracking).
     /// </summary>
+    Task<List<Order>> GetByClientIdWithPaymentsAsync(int clientId);
+
     Task<Order?> GetByIdWithDetailsAsync(int id);
 
     /// <summary>

@@ -1,4 +1,4 @@
-﻿using Kharasana.Domain.Enums;
+using Kharasana.Domain.Enums;
 
 namespace Kharasana.Application.DTOs.Order;
 
@@ -15,9 +15,21 @@ public class OrderDto
     public int? DriverId { get; set; }
     public decimal Quantity { get; set; }
     public decimal? TotalPrice { get; set; }
+
+    // Fields for Financials
+    public decimal TotalDiscountAmount { get; set; }
+    public decimal NetAmount { get; set; }
+
     public TransportMethod TransportMethod { get; set; }
     public OrderStatus Status { get; set; }
     /// <summary>تاريخ الصب — تعرضه قائمة الطلبات في طبقة الويب (مع شارة «اليوم»).</summary>
     public DateTime? PouringDate { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    // Navigation for Payments
+    public ICollection<OrderPaymentDto> Payments { get; set; } = new List<OrderPaymentDto>();
+
+    // Calculated Financial Properties
+    public decimal PaidAmount => Payments?.Sum(p => p.Amount) ?? 0;
+    public decimal RemainingAmount => NetAmount - PaidAmount;
 }

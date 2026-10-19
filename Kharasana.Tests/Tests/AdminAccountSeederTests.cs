@@ -162,6 +162,7 @@ public class AdminAccountSeederTests : IDisposable
         public IUserRepository Users => throw Unreachable();
         public IConcreteTypeRepository ConcreteTypes => throw Unreachable();
         public IOrderRepository Orders => throw Unreachable();
+        public IOrderPaymentRepository OrderPayments => throw Unreachable();
         public IFactoryRegistrationRequestRepository FactoryRegistrationRequests => throw Unreachable();
         public IActivationTokenRepository ActivationTokens => throw Unreachable();
 

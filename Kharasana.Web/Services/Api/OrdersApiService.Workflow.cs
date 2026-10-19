@@ -108,6 +108,38 @@ namespace Kharasana.Web.Services.Api
         }
 
         // ============================================================
+        // ADD PAYMENT - تسجيل دفعة
+        // ============================================================
+        public async Task<ServiceResult> AddPaymentAsync(int id, AddPaymentViewModel model)
+        {
+            _logger.LogInformation("تسجيل دفعة للطلب {Id}: {Amount}", id, model.Amount);
+
+            try
+            {
+                var response = await _apiClient.PostAsync<ApiResponse<object>>($"Orders/{id}/payments", model);
+
+                if (response == null || !response.Success)
+                {
+                    _logger.LogWarning("فشل تسجيل دفعة للطلب {Id}. الرسالة: {Message}", id, response?.Message);
+                    return ServiceResult.Fail(response?.Message ?? "فشل تسجيل الدفعة.");
+                }
+
+                _logger.LogInformation("سُجلت دفعة للطلب {Id}", id);
+                return ServiceResult.Ok();
+            }
+            catch (ApiServiceException ex)
+            {
+                _logger.LogError(ex, "استثناء API عند تسجيل دفعة للطلب {Id}: {Message}", id, ex.Message);
+                return ServiceResult.Fail(ex.Error?.UserMessage ?? "حدث خطأ أثناء الاتصال بالخادم.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "استثناء عام عند تسجيل دفعة للطلب {Id}: {Message}", id, ex.Message);
+                return ServiceResult.Fail("حدث خطأ غير متوقع.");
+            }
+        }
+
+        // ============================================================
         // ASSIGN DRIVER - تعيين سائق
         // ============================================================
         public async Task<ServiceResult> AssignDriverAsync(int id, AssignDriverViewModel model)

@@ -29,6 +29,14 @@ namespace Kharasana.Web.Controllers
                 model.FactoryId = FactoryId.Value;
             }
 
+            if (model.RequestSpecialPrice)
+            {
+                const string tag = "[طلب سعر تفضيلي / اكسبوني زبون]";
+                model.Notes = string.IsNullOrWhiteSpace(model.Notes)
+                    ? tag
+                    : $"{tag}\n{model.Notes}";
+            }
+
             // الخدمة ترمي استثناءً إذا فشلت، والفلتر العالمي سيعالجه
             var created = await _ordersApiService.CreatePhoneOrderAsync(model);
 

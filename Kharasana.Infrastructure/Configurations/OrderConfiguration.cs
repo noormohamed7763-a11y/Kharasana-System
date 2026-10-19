@@ -45,6 +45,16 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.TotalPrice)
             .HasPrecision(18, 2);
 
+        // ✅ دفتر الحساب: صافي المبلغ المستحق بعد الخصم.
+        //    تحديد الدقة صريح لأن EF يحذّر (Model.Validation 30000) على العمود العشري
+        //    بلا نوع مخزَّن محدَّد: "No store type was specified for the decimal property
+        //    'NetAmount'" — وهو اقتطاع صامت لأي قيمة لا تتّسع في النطاق الافتراضي.
+        builder.Property(o => o.NetAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(o => o.TotalDiscountAmount)
+            .HasPrecision(18, 2);
+
         // ✅ لقطة اسم النوع — نفس سقف ConcreteType.Name (100) كي لا يُقتطع الاسم عند الحفظ.
         builder.Property(o => o.ConcreteTypeNameSnapshot)
             .HasMaxLength(100);

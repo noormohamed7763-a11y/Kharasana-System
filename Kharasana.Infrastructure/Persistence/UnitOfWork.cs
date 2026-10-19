@@ -19,6 +19,7 @@ public class UnitOfWork : IUnitOfWork
     public IConcreteTypeRepository ConcreteTypes { get; }
 
     public IOrderRepository Orders { get; }
+    public IOrderPaymentRepository OrderPayments { get; }
     public IFactoryRegistrationRequestRepository FactoryRegistrationRequests { get; }
     public IActivationTokenRepository ActivationTokens { get; }
 
@@ -30,6 +31,7 @@ public class UnitOfWork : IUnitOfWork
         Users = new UserRepository(context);
         ConcreteTypes = new ConcreteTypeRepository(context);
         Orders = new OrderRepository(context);
+        OrderPayments = new OrderPaymentRepository(context);
         FactoryRegistrationRequests = new FactoryRegistrationRequestRepository(context);
         ActivationTokens = new ActivationTokenRepository(context);
     }

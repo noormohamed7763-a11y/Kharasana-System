@@ -35,6 +35,11 @@ public class OrderDetailsDto
     public int? FloorNumber { get; set; }
     public decimal? UnitPrice { get; set; }
     public decimal? TotalPrice { get; set; }
+        public decimal? TotalDiscountAmount { get; set; }
+        public decimal? NetAmount { get; set; }
+        public ICollection<OrderPaymentDto> Payments { get; set; } = new List<OrderPaymentDto>();
+        public decimal PaidAmount => Payments?.Sum(p => p.Amount) ?? 0;
+        public decimal RemainingAmount => (NetAmount ?? 0) - PaidAmount;
     public DateTime? PouringDate { get; set; }
 
     // ✅ معلومات النقل

@@ -58,4 +58,11 @@ public interface IOrderService
     Task<ServiceResult> UpdateStatusAsync(int id, UpdateOrderStatusDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
 
     Task<bool> DeleteOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+
+    // ============================================================
+    // 4. PAYMENTS — سجل الدفعات
+    // ============================================================
+
+    /// <summary>تسجيل دفعة جديدة على طلب — للمدير وموظف المصنع فقط.</summary>
+    Task AddPaymentAsync(int orderId, AddPaymentDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
 }

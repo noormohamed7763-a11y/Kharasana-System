@@ -58,9 +58,9 @@ namespace Kharasana.Web.Controllers
 
             if (RoleValue == UserRole.Admin)
             {
-                ViewBag.ShowFactoryFilter = true;
+                vm.ShowFactoryFilter = true;
                 var factoryResult = await _factoryService.GetAllAsync();
-                ViewBag.Factories = (factoryResult.Data ?? []).Select(f => new SelectListItem
+                vm.Factories = (factoryResult.Data ?? []).Select(f => new SelectListItem
                 {
                     Value = f.FactoryId.ToString(),
                     Text = f.FactoryName
@@ -116,6 +116,27 @@ namespace Kharasana.Web.Controllers
             if (RoleValue == UserRole.FactoryEmployee && FactoryId.HasValue)
             {
                 vm.FactoryId = FactoryId.Value;
+            }
+
+            // إذا كان المستخدم عميلاً مسجلاً ولديه طلب قيد المراجعة، نعرض له التنبيه الذكي
+            if (RoleValue == UserRole.Client && CurrentUserId.HasValue)
+            {
+                try
+                {
+                    var clientOrders = await _ordersApiService.GetOrdersAsync(1, 5, null, null, (int)OrderStatus.Pending);
+                    var activePending = clientOrders?.Items?.FirstOrDefault(o => o.Status == OrderStatus.Pending || o.Status == OrderStatus.New);
+                    if (activePending != null)
+                    {
+                        vm.HasPendingOrder = true;
+                        vm.PendingOrderId = activePending.OrderId;
+                        vm.PendingOrderNumber = activePending.OrderNumber;
+                        vm.PendingProjectName = activePending.ProjectName;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "تعذر جلب الطلبات المعلقة السابقة للعميل");
+                }
             }
 
             return View(vm);

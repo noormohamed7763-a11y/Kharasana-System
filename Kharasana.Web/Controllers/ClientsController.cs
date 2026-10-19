@@ -1,9 +1,10 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Domain.Enums;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Clients;
+using Kharasana.Web.ViewModels.Orders;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Kharasana.Web.Controllers;
@@ -12,10 +13,14 @@ namespace Kharasana.Web.Controllers;
 public class ClientsController : BaseController
 {
     private readonly IClientApiService _clientApiService;
+    private readonly IOrdersApiService _ordersApiService;
 
-    public ClientsController(IClientApiService clientApiService)
+    public ClientsController(
+        IClientApiService clientApiService,
+        IOrdersApiService ordersApiService)
     {
         _clientApiService = clientApiService;
+        _ordersApiService = ordersApiService;
     }
 
     // ============================================================
@@ -63,6 +68,46 @@ public class ClientsController : BaseController
     public async Task<IActionResult> Details(int id)
     {
         var model = await _clientApiService.GetDetailsAsync(id);
+        return View(model);
+    }
+
+    // ============================================================
+    // STATEMENT - كشف حساب ومطابقة صبات العميل
+    // ============================================================
+    [HttpGet]
+    public async Task<IActionResult> Statement(int id)
+    {
+        var client = await _clientApiService.GetDetailsAsync(id);
+        if (client == null)
+        {
+            TempData[TempDataError] = AppMessages.Common.NotFound;
+            return RedirectToAction(nameof(Index));
+        }
+
+        int? factoryIdFilter = IsFactoryUser ? FactoryId : null;
+        var pagedOrders = await _ordersApiService.GetOrdersAsync(1, 100, null, factoryIdFilter, null);
+        var clientOrders = pagedOrders?.Items != null
+            ? pagedOrders.Items
+                .Where(o => o.ClientId == id || o.ClientPhone == client.Phone)
+                .OrderByDescending(o => o.PouringDate ?? o.CreatedAt)
+                .ToList()
+            : new List<OrderDto>();
+
+        var model = new ClientStatementViewModel
+        {
+            ClientId = client.UserId,
+            ClientName = client.FullName,
+            Phone = client.Phone,
+            WhatsApp = client.WhatsApp,
+            FactoryId = factoryIdFilter,
+            FactoryName = HttpContext.Session.GetString("FactoryName") ?? "مصنع الخرسانة الجاهزة",
+            StatementDate = DateTime.Now,
+            TotalOrders = clientOrders.Count,
+            TotalQuantity = clientOrders.Sum(o => o.Quantity),
+            TotalAmount = clientOrders.Sum(o => o.TotalPrice ?? 0),
+            Orders = clientOrders
+        };
+
         return View(model);
     }
 
