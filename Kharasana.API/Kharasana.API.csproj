@@ -7,7 +7,7 @@
     <UserSecretsId>198776ea-de06-483d-9ea4-6ec881880c64</UserSecretsId>
     <!-- توليد ملف XML من تعليقات التوثيق لتزويد Swagger بها (نعطل التحذير 1591) -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn>
+    <NoWarn>$(NoWarn);1591;NU1608</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
