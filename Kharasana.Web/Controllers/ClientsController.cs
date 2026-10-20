@@ -77,14 +77,39 @@ public class ClientsController : BaseController
     [HttpGet]
     public async Task<IActionResult> Statement(int id)
     {
-        var model = await _clientApiService.GetClientStatementAsync(id);
-        if (model == null)
+        var dto = await _clientApiService.GetClientStatementAsync(id);
+        if (dto == null)
         {
             TempData[TempDataError] = AppMessages.Common.NotFound;
             return RedirectToAction(nameof(Index));
         }
 
-        return View(model);
+        var vm = new ClientStatementViewModel
+        {
+            ClientId = dto.ClientId,
+            ClientName = dto.ClientName,
+            Phone = dto.Phone,
+            StatementDate = dto.StatementDate,
+            TotalOrders = dto.TotalOrders,
+            TotalQuantity = dto.TotalQuantity,
+            TotalAmount = dto.TotalAmount,
+            TotalPaid = dto.TotalPaid,
+            Balance = dto.Balance,
+            Orders = dto.Orders,
+            LedgerItems = dto.LedgerItems.Select(item => new ClientStatementItemViewModel
+            {
+                Date = item.Date,
+                Description = item.Description,
+                Reference = item.Reference,
+                Debit = item.Debit,
+                Credit = item.Credit,
+                RunningBalance = item.RunningBalance,
+                OrderNumber = item.OrderNumber,
+                OrderId = item.OrderId
+            }).ToList()
+        };
+
+        return View(vm);
     }
 
     // ============================================================

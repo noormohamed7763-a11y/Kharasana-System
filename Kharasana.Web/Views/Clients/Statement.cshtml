@@ -44,7 +44,23 @@
             </table>
 
             <div class="row mt-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>إجمالي الطلبات</h6>
+                            <p class="h4">@Model.TotalOrders</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>إجمالي الكمية</h6>
+                            <p class="h4">@Model.TotalQuantity.ToString("N2")</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="card bg-light">
                         <div class="card-body">
                             <h6>إجمالي المبالغ</h6>
@@ -52,7 +68,58 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>إجمالي المدفوع</h6>
+                            <p class="h4">@Model.TotalPaid.ToString("N2") ر.ي</p>
+                        </div>
+                    </div>
+                </div>
             </div>
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h6>الرصيد المتبقي</h6>
+                            <p class="h4">@Model.Balance.ToString("N2") ر.ي</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="mt-4">سجل الحركات المالية</h5>
+            <table class="table table-bordered table-striped mt-2">
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>الوصف</th>
+                        <th>المرجع</th>
+                        <th>مدين</th>
+                        <th>دائن</th>
+                        <th>الرصيد</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.LedgerItems)
+                    {
+                        <tr>
+                            <td>@item.Date.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                @item.Description
+                                @if (item.OrderId.HasValue)
+                                {
+                                    <br/><small class="text-muted">طلب رقم: @item.OrderNumber</small>
+                                }
+                            </td>
+                            <td>@item.Reference</td>
+                            <td class="text-danger">@(item.Debit != 0 ? item.Debit.ToString("N2") : "-")</td>
+                            <td class="text-success">@(item.Credit != 0 ? item.Credit.ToString("N2") : "-")</td>
+                            <td><strong>@item.RunningBalance.ToString("N2")</strong></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

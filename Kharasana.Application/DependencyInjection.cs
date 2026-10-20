@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using AutoMapper;
+using FluentValidation;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Application.Services;
 using Kharasana.Application.Validators.Auth;
@@ -33,6 +34,9 @@ public static class DependencyInjection
 
         // FluentValidation
         services.AddValidatorsFromAssemblyContaining<RegisterClientValidator>();
+
+        // AutoMapper — تسجيل IMapper لحقنه في الخدمات التي تحتاجه (مثل ClientStatementService)
+        services.AddAutoMapper(typeof(DependencyInjection).Assembly);
 
         return services;
     }
