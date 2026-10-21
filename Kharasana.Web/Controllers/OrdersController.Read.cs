@@ -1,5 +1,6 @@
 using Kharasana.Domain.Enums;
 using Kharasana.Web.Localization;
+using Kharasana.Web.Models;
 using Kharasana.Web.Services.Api;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Orders;
