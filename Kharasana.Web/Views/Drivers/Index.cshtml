@@ -33,8 +33,7 @@
                             Title = "إجمالي السائقين",
                             Value = Model.TotalDrivers.ToString(),
                             Icon = "bi-people",
-                            IconClass = "kpi-icon-primary",
-                            LinkUrl = Url.Action("Index", "Drivers")
+                            IconClass = "kpi-icon-primary"
                         })
             @await Html.PartialAsync(
                         "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -43,8 +42,7 @@
                             Title = "متاحون",
                             Value = Model.AvailableDrivers.ToString(),
                             Icon = "bi-person-check",
-                            IconClass = "kpi-icon-success",
-                            LinkUrl = Url.Action("Index", "Drivers")
+                            IconClass = "kpi-icon-success"
                         })
             @await Html.PartialAsync(
                         "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -53,8 +51,7 @@
                             Title = "مشغولون",
                             Value = Model.BusyDrivers.ToString(),
                             Icon = "bi-truck",
-                            IconClass = "kpi-icon-warning",
-                            LinkUrl = Url.Action("Index", "Drivers")
+                            IconClass = "kpi-icon-warning"
                         })
             @await Html.PartialAsync(
                         "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -63,8 +60,7 @@
                             Title = "غير متصلين",
                             Value = Model.OfflineDrivers.ToString(),
                             Icon = "bi-power",
-                            IconClass = "kpi-icon-neutral",
-                            LinkUrl = Url.Action("Index", "Drivers")
+                            IconClass = "kpi-icon-neutral"
                         })
     </div>
 
@@ -140,6 +136,4 @@
 
 </div>
 
-@section Scripts {
-    <script src="~/js/driver.js" asp-append-version="true"></script>
-}
+@* تفاعلات صفحة السائقين (التصفية وتفعيل الحساب) تُدار في site.js المشترك. *@

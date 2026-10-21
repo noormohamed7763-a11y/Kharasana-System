@@ -1,0 +1,17 @@
+@model Kharasana.Web.ViewModels.Orders.PaymentReceiptViewModel
+
+@{
+    ViewData["Title"] = $"سند قبض - {Model.PaymentId}";
+}
+
+<div class="dashboard-page">
+    @await Html.PartialAsync("~/Views/Orders/_PaymentReceipt.cshtml", Model)
+</div>
+
+@section Scripts {
+    <script nonce="@ViewBag.CspNonce">
+        window.addEventListener('load', function () {
+            window.print();
+        });
+    </script>
+}

@@ -33,6 +33,21 @@
         width: 100% !important;
     }
 
+    .client-statement .table-responsive {
+        overflow: visible !important;
+    }
+
+    .client-statement .summary-cards-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .client-statement .erp-section-card,
+    .client-statement .kpi-card {
+        break-inside: avoid;
+        box-shadow: none !important;
+    }
+
     /* Ensure backgrounds and colors print */
     * {
         -webkit-print-color-adjust: exact !important;

@@ -615,24 +615,6 @@ a.kpi-card--link {
     color: var(--info);
 }
 
-.progress-track {
-    margin-top: auto;
-    padding-top: var(--space-1);
-}
-
-.progress-percent {
-    font-weight: 800;
-    color: var(--primary);
-    font-size: var(--text-lg);
-    font-variant-numeric: tabular-nums;
-}
-
-.progress-caption {
-    color: var(--text-muted);
-    font-size: var(--text-sm);
-    font-weight: 600;
-}
-
 .progress {
     background: var(--surface-low);
     border-radius: var(--radius-pill);
