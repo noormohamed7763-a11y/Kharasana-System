@@ -1,9 +1,9 @@
-using AutoMapper;
 using Kharasana.Application.Common;
+using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Client;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Application.Interfaces.Services;
-using Kharasana.Domain.Entities;
+using Kharasana.Application.Mapping;
 using Kharasana.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -16,16 +16,13 @@ public class ClientStatementService : IClientStatementService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IMapper _mapper;
 
     public ClientStatementService(
         IOrderRepository orderRepository,
-        IUserRepository userRepository,
-        IMapper mapper)
+        IUserRepository userRepository)
     {
         _orderRepository = orderRepository;
         _userRepository = userRepository;
-        _mapper = mapper;
     }
 
     public async Task<ClientStatementDto> GetClientStatementAsync(int clientId, CallerContext caller)
@@ -33,38 +30,35 @@ public class ClientStatementService : IClientStatementService
         // 1. Validate Caller and Client Access
         if (caller.Role == UserRole.FactoryEmployee && caller.FactoryId == null)
         {
-            throw new ApplicationException(Messages.CallerFactoryIdNotFound);
+            throw new UnauthorizedException(Messages.CallerFactoryIdNotFound);
         }
 
         var client = await _userRepository.GetByIdAsync(clientId);
         if (client == null || client.Role != UserRole.Client)
         {
-            throw new ApplicationException(Messages.ClientNotFound);
+            throw new NotFoundException(Messages.ClientNotFound);
         }
+
+        var orders = await _orderRepository.GetByClientIdWithPaymentsAsync(clientId);
 
         // Factory employees can only view statements for clients in their factory
         if (caller.Role == UserRole.FactoryEmployee)
         {
-            // Need to check if the client has orders in the caller's factory
-            // This check can be implicitly handled by the order query, but an explicit check might be clearer
-            var clientOrders = await _orderRepository.GetByClientIdWithPaymentsAsync(clientId);
-            if (!clientOrders.Any(o => o.FactoryId == caller.FactoryId))
+            if (!orders.Any(o => o.FactoryId == caller.FactoryId))
             {
-                throw new ApplicationException(Messages.ClientNotInCallerFactory);
+                throw new ForbiddenException(Messages.ClientNotInCallerFactory);
             }
         }
 
-        // 2. Fetch Orders for the client
-        var orders = await _orderRepository.GetByClientIdWithPaymentsAsync(clientId);
-
-        // 3. Filter orders if caller is FactoryEmployee
+        // Restrict factory employees to their own factory.
         if (caller.Role == UserRole.FactoryEmployee)
         {
             orders = orders.Where(o => o.FactoryId == caller.FactoryId).ToList();
         }
 
-        // 4. Map Orders to OrderDto (for full order details if needed in the UI)
-        var orderDtos = _mapper.Map<IReadOnlyList<DTOs.Order.OrderDto>>(orders);
+        var orderDtos = orders
+            .Select(order => OrderMapper.MapToOrderDto(order, hidePricing: false))
+            .ToList();
 
         // 5. Build Ledger Items
         var ledgerItems = new List<ClientStatementItemDto>();

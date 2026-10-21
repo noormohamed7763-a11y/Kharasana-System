@@ -16,13 +16,13 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
 
     public async Task<IEnumerable<FactoryRegistrationRequest>> GetAllAsync()
     {
-        return await _apiClient.GetAsync<IEnumerable<FactoryRegistrationRequest>>("api/registration-requests")
+        return await _apiClient.GetAsync<IEnumerable<FactoryRegistrationRequest>>("registration-requests")
                ?? Enumerable.Empty<FactoryRegistrationRequest>();
     }
 
     public async Task<PagedResult<FactoryRegistrationRequest>> GetPagedRequestsAsync(RegistrationRequestFilterParams filter)
     {
-        var url = $"api/registration-requests/paged?pageNumber={filter.PageNumber}&pageSize={filter.PageSize}";
+        var url = $"registration-requests/paged?pageNumber={filter.PageNumber}&pageSize={filter.PageSize}";
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
             url += $"&search={Uri.EscapeDataString(filter.Search)}";
@@ -36,24 +36,24 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
 
     public async Task<FactoryRegistrationRequest?> GetByIdAsync(int id)
     {
-        return await _apiClient.GetAsync<FactoryRegistrationRequest>($"api/registration-requests/{id}");
+        return await _apiClient.GetAsync<FactoryRegistrationRequest>($"registration-requests/{id}");
     }
 
     public async Task<ServiceResult> RegisterAsync(RegisterFactoryDto dto)
     {
-        return await _apiClient.PostAsync<ServiceResult>("api/registration-requests", dto)
+        return await _apiClient.PostAsync<ServiceResult>("registration-requests", dto)
                ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
     }
 
     public async Task<ServiceResult> ApproveAsync(int id)
     {
-        return await _apiClient.PostAsync<ServiceResult>($"api/registration-requests/{id}/approve", new { })
+        return await _apiClient.PostAsync<ServiceResult>($"registration-requests/{id}/approve", new { })
                ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
     }
 
     public async Task<ServiceResult> RejectAsync(int id, string reason)
     {
-        return await _apiClient.PostAsync<ServiceResult>($"api/registration-requests/{id}/reject", reason)
+        return await _apiClient.PostAsync<ServiceResult>($"registration-requests/{id}/reject", reason)
                ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
     }
 }

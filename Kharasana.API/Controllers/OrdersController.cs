@@ -20,9 +20,13 @@ namespace Kharasana.API.Controllers;
 public partial class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
+    private readonly IClientStatementService _clientStatementService;
 
-    public OrdersController(IOrderService orderService)
+    public OrdersController(
+        IOrderService orderService,
+        IClientStatementService clientStatementService)
     {
         _orderService = orderService;
+        _clientStatementService = clientStatementService;
     }
 }

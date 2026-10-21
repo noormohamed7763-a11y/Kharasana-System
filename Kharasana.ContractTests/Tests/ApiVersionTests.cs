@@ -24,4 +24,13 @@ public class ApiVersionTests : IClassFixture<WebApplicationFactory<Kharasana.API
         // Assert: يجب أن تعود النتيجة إما 200 (إذا كان مسموحاً) أو 401 (لأنها محمية، لكن الإصدار يعمل)
         response.StatusCode.Should().NotBe(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task Get_VersionedFactoryRegistrationRequests_ReachesProtectedEndpoint()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/registration-requests/paged");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
 }

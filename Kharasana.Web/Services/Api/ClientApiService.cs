@@ -1,9 +1,11 @@
 using Kharasana.Application.Common;
+using Kharasana.Application.DTOs.Client;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Clients;
 using Kharasana.Web.ViewModels.Users;
 using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
+using Kharasana.Web.ViewModels.Orders;
 using System.Net;
 
 namespace Kharasana.Web.Services.Api;
@@ -133,7 +135,8 @@ public class ClientApiService : IClientApiService
     {
         try
         {
-            var response = await _apiClient.GetAsync<ApiResponse<ClientStatementViewModel>>($"Orders/customers/{clientId}/statement");
+            var response = await _apiClient.GetAsync<ApiResponse<ClientStatementDto>>(
+                $"Orders/customers/{clientId}/statement");
 
             if (response == null || !response.Success || response.Data == null)
             {
@@ -141,12 +144,52 @@ public class ClientApiService : IClientApiService
                 return null;
             }
 
-            return response.Data;
+            var statement = response.Data;
+            return new ClientStatementViewModel
+            {
+                ClientId = statement.ClientId,
+                ClientName = statement.ClientName,
+                Phone = statement.Phone,
+                StatementDate = statement.StatementDate,
+                TotalOrders = statement.TotalOrders,
+                TotalQuantity = statement.TotalQuantity,
+                TotalAmount = statement.TotalAmount,
+                TotalPaid = statement.TotalPaid,
+                Balance = statement.Balance,
+                LedgerItems = statement.LedgerItems.Select(item => new ClientStatementItemViewModel
+                {
+                    Date = item.Date,
+                    Description = item.Description,
+                    Reference = item.Reference,
+                    Debit = item.Debit,
+                    Credit = item.Credit,
+                    RunningBalance = item.RunningBalance,
+                    OrderNumber = item.OrderNumber,
+                    OrderId = item.OrderId
+                }).ToList(),
+                Orders = statement.Orders.Select(order => new Kharasana.Web.ViewModels.Orders.OrderDto
+                {
+                    OrderNumber = order.OrderNumber,
+                    Quantity = order.Quantity,
+                    TotalPrice = order.TotalPrice,
+                    PouringDate = order.PouringDate,
+                    CreatedAt = order.CreatedAt
+                }).ToList()
+            };
         }
+        catch (ApiServiceException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("GetClientStatementAsync: العميل {ClientId} غير موجود.", clientId);
+            return null;
+        }
+        catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
             _logger.LogError(ex, "استثناء في GetClientStatementAsync للعميل {ClientId}", clientId);
-            return null;
+            throw new ApiServiceException(
+                HttpStatusCode.InternalServerError,
+                ApiErrorCatalog.ServerError,
+                innerException: ex);
         }
     }
 
