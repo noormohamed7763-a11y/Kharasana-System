@@ -88,4 +88,14 @@ public class FactoryRegistrationRequestsController : ControllerBase
         if (!result.Succeeded) return BadRequest(result.Message);
         return Ok();
     }
+
+    /// <summary>جلب أعداد الطلبات حسب الحالة.</summary>
+    [HttpGet("status-counts")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<IActionResult> GetStatusCounts()
+    {
+        var counts = await _requestService.GetStatusCountsAsync();
+        return Ok(new { Pending = counts.Pending, Approved = counts.Approved, Rejected = counts.Rejected });
+    }
+
 }

@@ -23,15 +23,18 @@ namespace Kharasana.Web.Controllers
         public async Task<IActionResult> Index([FromQuery] RegistrationRequestFilterParams filter)
         {
             var pagedRequests = await _apiService.GetPagedRequestsAsync(filter);
-            var allRequests = (await _apiService.GetAllAsync()).ToList();
+
+            var pendingCount = await _apiService.GetPendingRequestsCountAsync();
+            var approvedCount = await _apiService.GetApprovedRequestsCountAsync();
+            var rejectedCount = await _apiService.GetRejectedRequestsCountAsync();
 
             var vm = new FactoryRegistrationRequestsIndexViewModel
             {
                 Filter = filter,
-                TotalAllRequestsCount = allRequests.Count,
-                PendingCount = allRequests.Count(r => r.Status == RegistrationStatus.Pending),
-                ApprovedCount = allRequests.Count(r => r.Status == RegistrationStatus.Approved),
-                RejectedCount = allRequests.Count(r => r.Status == RegistrationStatus.Rejected),
+                TotalAllRequestsCount = pendingCount + approvedCount + rejectedCount,
+                PendingCount = pendingCount,
+                ApprovedCount = approvedCount,
+                RejectedCount = rejectedCount,
                 PagedRequests = new PagedResult<RegistrationRequestListItemViewModel>
                 {
                     Items = pagedRequests.Items.Select(r => new RegistrationRequestListItemViewModel

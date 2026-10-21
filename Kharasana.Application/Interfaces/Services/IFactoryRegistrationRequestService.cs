@@ -18,4 +18,6 @@ public interface IFactoryRegistrationRequestService
     /// جلب طلبات التسجيل مع دعم الترقيم والبحث والفلترة.
     /// </summary>
     Task<PagedResult<FactoryRegistrationRequest>> GetPagedRequestsAsync(RegistrationRequestFilterParams filter);
+
+    Task<(int Pending, int Approved, int Rejected)> GetStatusCountsAsync();
 }
