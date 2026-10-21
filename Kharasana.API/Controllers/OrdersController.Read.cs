@@ -1,6 +1,7 @@
 using Kharasana.API.Extensions;
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
+using Kharasana.Application.DTOs.Client;
 using Kharasana.Application.DTOs.Customer;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Domain.Enums;
@@ -166,6 +167,30 @@ public partial class OrdersController
             Success = true,
             Message = Messages.CustomersRetrievedSuccessfully,
             Data = customer
+        });
+    }
+
+    // ============================================================
+    // 3.c GET CUSTOMER STATEMENT
+    // ============================================================
+    /// <summary>جلب كشف الحساب المالي للعميل.</summary>
+    /// <param name="userId">معرّف العميل.</param>
+    /// <response code="200">تم جلب كشف الحساب بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="403">العميل خارج نطاق مصنع موظف المصنع.</response>
+    /// <response code="404">العميل غير موجود.</response>
+    [HttpGet("customers/{userId:int}/statement")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    public async Task<IActionResult> GetClientStatement(int userId)
+    {
+        var caller = User.GetCallerContext();
+        var statement = await _clientStatementService.GetClientStatementAsync(userId, caller);
+
+        return Ok(new ApiResponse<ClientStatementDto>
+        {
+            Success = true,
+            Message = Messages.OrdersRetrievedSuccessfully,
+            Data = statement
         });
     }
 

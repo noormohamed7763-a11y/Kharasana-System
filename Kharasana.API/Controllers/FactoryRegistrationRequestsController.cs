@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Kharasana.API.Common;
 using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Factory;
@@ -14,6 +15,8 @@ namespace Kharasana.API.Controllers;
 /// - القراءة والقبول والرفض: للمدير فقط.
 /// </summary>
 [ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/registration-requests")]
 [Route("api/registration-requests")]
 [Authorize]
 public class FactoryRegistrationRequestsController : ControllerBase
