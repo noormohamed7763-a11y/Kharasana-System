@@ -1,125 +1,160 @@
 @model Kharasana.Web.ViewModels.Clients.ClientStatementViewModel
-@using Kharasana.Web.Localization
+@using Kharasana.Web.Models.Components
 
 @{
     ViewData["Title"] = "كشف حساب العميل";
 }
 
-<div class="container-fluid">
-    <div class="card">
-        <div class="card-header">
-            <h4 class="card-title">كشف حساب العميل: @Model.ClientName</h4>
+<div class="dashboard-page client-statement">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1">كشف حساب العميل</h1>
+            <p class="text-muted mb-0">حركة الطلبات والدفعات حتى @Model.StatementDate.ToString("yyyy-MM-dd")</p>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>العميل:</strong> @Model.ClientName</p>
-                    <p><strong>الهاتف:</strong> @Model.Phone</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>تاريخ الكشف:</strong> @Model.StatementDate.ToString("yyyy-MM-dd")</p>
-                </div>
-            </div>
-
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>رقم الطلب</th>
-                        <th>التاريخ</th>
-                        <th>الكمية</th>
-                        <th>الإجمالي</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var order in Model.Orders)
-                    {
-                        <tr>
-                            <td>@order.OrderNumberSeq</td>
-                            <td>@(order.PouringDate?.ToString("yyyy-MM-dd") ?? order.CreatedAt.ToString("yyyy-MM-dd"))</td>
-                            <td>@order.Quantity</td>
-                            <td>@order.TotalPrice?.ToString("N2")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-
-            <div class="row mt-3">
-                <div class="col-md-3">
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <h6>إجمالي الطلبات</h6>
-                            <p class="h4">@Model.TotalOrders</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <h6>إجمالي الكمية</h6>
-                            <p class="h4">@Model.TotalQuantity.ToString("N2")</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <h6>إجمالي المبالغ</h6>
-                            <p class="h4">@Model.TotalAmount.ToString("N2") ر.ي</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <h6>إجمالي المدفوع</h6>
-                            <p class="h4">@Model.TotalPaid.ToString("N2") ر.ي</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-4">
-                    <div class="card bg-danger text-white">
-                        <div class="card-body">
-                            <h6>الرصيد المتبقي</h6>
-                            <p class="h4">@Model.Balance.ToString("N2") ر.ي</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <h5 class="mt-4">سجل الحركات المالية</h5>
-            <table class="table table-bordered table-striped mt-2">
-                <thead>
-                    <tr>
-                        <th>التاريخ</th>
-                        <th>الوصف</th>
-                        <th>المرجع</th>
-                        <th>مدين</th>
-                        <th>دائن</th>
-                        <th>الرصيد</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.LedgerItems)
-                    {
-                        <tr>
-                            <td>@item.Date.ToString("yyyy-MM-dd")</td>
-                            <td>
-                                @item.Description
-                                @if (item.OrderId.HasValue)
-                                {
-                                    <br/><small class="text-muted">طلب رقم: @item.OrderNumber</small>
-                                }
-                            </td>
-                            <td>@item.Reference</td>
-                            <td class="text-danger">@(item.Debit != 0 ? item.Debit.ToString("N2") : "-")</td>
-                            <td class="text-success">@(item.Credit != 0 ? item.Credit.ToString("N2") : "-")</td>
-                            <td><strong>@item.RunningBalance.ToString("N2")</strong></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        <button type="button" class="btn btn-outline-primary no-print" data-print>
+            <i class="bi bi-printer me-1"></i> طباعة الكشف
+        </button>
     </div>
+
+    <section class="erp-section-card mb-3" aria-labelledby="statementClientHeading">
+        <h2 class="erp-section-title" id="statementClientHeading">
+            <i class="bi bi-person-lines-fill"></i> بيانات العميل
+        </h2>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="detail-label">اسم العميل</div>
+                <div class="detail-value fw-bold">@Model.ClientName</div>
+            </div>
+            <div class="col-md-6">
+                <div class="detail-label">رقم الهاتف</div>
+                <div class="detail-value" dir="ltr">@(string.IsNullOrWhiteSpace(Model.Phone) ? "-" : Model.Phone)</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="summary-cards-grid mb-3">
+        @await Html.PartialAsync("~/Views/Shared/Components/_SummaryCard.cshtml", new SummaryCardViewModel
+        {
+            Title = "عدد الطلبات",
+            Value = Model.TotalOrders.ToString(),
+            Icon = "bi-receipt",
+            IconClass = "kpi-icon-primary"
+        })
+        @await Html.PartialAsync("~/Views/Shared/Components/_SummaryCard.cshtml", new SummaryCardViewModel
+        {
+            Title = "إجمالي الكمية",
+            Value = $"{Model.TotalQuantity:N2} م³",
+            Icon = "bi-rulers",
+            IconClass = "kpi-icon-info"
+        })
+        @await Html.PartialAsync("~/Views/Shared/Components/_SummaryCard.cshtml", new SummaryCardViewModel
+        {
+            Title = "إجمالي المبالغ",
+            Value = $"{Model.TotalAmount:N2} ر.ي",
+            Icon = "bi-cash-stack",
+            IconClass = "kpi-icon-warning"
+        })
+        @await Html.PartialAsync("~/Views/Shared/Components/_SummaryCard.cshtml", new SummaryCardViewModel
+        {
+            Title = "إجمالي المدفوع",
+            Value = $"{Model.TotalPaid:N2} ر.ي",
+            Icon = "bi-wallet2",
+            IconClass = "kpi-icon-success"
+        })
+        @await Html.PartialAsync("~/Views/Shared/Components/_SummaryCard.cshtml", new SummaryCardViewModel
+        {
+            Title = "الرصيد المتبقي",
+            Value = $"{Model.Balance:N2} ر.ي",
+            Icon = "bi-calculator",
+            IconClass = "kpi-icon-danger"
+        })
+    </div>
+
+    <section class="erp-section-card p-0 mb-3" aria-labelledby="statementOrdersHeading">
+        <div class="p-3 pb-0">
+            <h2 class="erp-section-title" id="statementOrdersHeading">
+                <i class="bi bi-clipboard-data"></i> الطلبات المسجلة
+            </h2>
+        </div>
+        <div class="table-responsive">
+            <table class="erp-table align-middle mb-0">
+                <caption class="visually-hidden">طلبات العميل وكمياتها وإجمالياتها</caption>
+                <thead>
+                    <tr>
+                        <th class="text-nowrap">رقم الطلب</th>
+                        <th class="text-nowrap">تاريخ الصب</th>
+                        <th class="text-nowrap">الكمية (م³)</th>
+                        <th class="text-nowrap">الإجمالي (ر.ي)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Orders.Count == 0)
+                    {
+                        <tr><td colspan="4" class="text-center text-muted py-4">لا توجد طلبات مسجلة لهذا العميل.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in Model.Orders)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@order.OrderNumber</td>
+                                <td>@(order.PouringDate?.ToString("yyyy-MM-dd") ?? order.CreatedAt.ToString("yyyy-MM-dd"))</td>
+                                <td dir="ltr" class="text-end">@order.Quantity.ToString("N2")</td>
+                                <td dir="ltr" class="text-end">@(order.TotalPrice?.ToString("N2") ?? "-")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="erp-section-card p-0" aria-labelledby="statementLedgerHeading">
+        <div class="p-3 pb-0">
+            <h2 class="erp-section-title" id="statementLedgerHeading">
+                <i class="bi bi-journal-text"></i> سجل الحركات المالية
+            </h2>
+        </div>
+        <div class="table-responsive">
+            <table class="erp-table align-middle mb-0">
+                <caption class="visually-hidden">المدين والدائن والرصيد الجاري للعميل</caption>
+                <thead>
+                    <tr>
+                        <th class="text-nowrap">التاريخ</th>
+                        <th>الوصف</th>
+                        <th class="text-nowrap">المرجع</th>
+                        <th class="text-nowrap">مدين (ر.ي)</th>
+                        <th class="text-nowrap">دائن (ر.ي)</th>
+                        <th class="text-nowrap">الرصيد (ر.ي)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.LedgerItems.Count == 0)
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-4">لا توجد حركات مالية مسجلة لهذا العميل.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.LedgerItems)
+                        {
+                            <tr>
+                                <td class="text-nowrap">@item.Date.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    @item.Description
+                                    @if (item.OrderId.HasValue)
+                                    {
+                                        <small class="text-muted d-block">طلب رقم: @item.OrderNumber</small>
+                                    }
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Reference) ? "-" : item.Reference)</td>
+                                <td dir="ltr" class="text-end text-danger">@(item.Debit != 0 ? item.Debit.ToString("N2") : "-")</td>
+                                <td dir="ltr" class="text-end text-success">@(item.Credit != 0 ? item.Credit.ToString("N2") : "-")</td>
+                                <td dir="ltr" class="text-end fw-bold">@item.RunningBalance.ToString("N2")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>

@@ -10,7 +10,6 @@
     var totalOrders = Model.PagedOrders?.TotalCount ?? 0;
 
     var completedCount = Model.ClosedCount;
-    var cancelledCount = Model.CancelledCount + Model.RejectedCount;
 }
 
 <div class="dashboard-page">
@@ -64,8 +63,8 @@
                         "~/Views/Shared/Components/_SummaryCard.cshtml",
                         new SummaryCardViewModel
                         {
-                            Title = "ملغاة/مرفوضة",
-                            Value = cancelledCount.ToString(),
+                            Title = "ملغاة",
+                            Value = Model.CancelledCount.ToString(),
                             Icon = "bi-x-circle",
                             IconClass = "kpi-icon-danger",
                             LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Cancelled })
@@ -159,11 +158,10 @@
         <div class="erp-section-card p-0">
             <div class="table-responsive">
                 @Html.AntiForgeryToken()
-                <table class="table table-hover align-middle erp-table erp-table--sticky-head" id="ordersTable">
-                    <caption class="visually-hidden">قائمة طلبات الخرسانة — الرقم، العميل، النوع، الكمية، السعر، الحالة، السائق</caption>
+                <table class="table table-hover align-middle erp-table erp-table--sticky-head erp-table--sticky-cols" id="ordersTable">
+                    <caption class="visually-hidden">قائمة طلبات الخرسانة — رقم الطلب، العميل، النوع، الكمية، السعر، الحالة، السائق</caption>
                     <thead>
                         <tr>
-                            <th>#</th>
                             <th class="text-nowrap">رقم الطلب</th>
                             <th class="text-nowrap">العميل</th>
                             <th class="text-nowrap">نوع الخرسانة</th>
@@ -176,17 +174,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @{
-                            var index = 1;
-                        }
-
                         @foreach (var order in Model.PagedOrders.Items)
                         {
                             var statusClass = order.Status.GetCssClass();
                             var statusText = order.Status.GetArabicName();
 
                             <tr id="order-@order.OrderId">
-                                <td class="text-muted fw-bold">@(index++)</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-1">
                                         <a asp-action="Details" asp-route-id="@order.OrderId"

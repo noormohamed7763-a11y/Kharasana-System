@@ -32,8 +32,7 @@
             Title = "إجمالي المصانع",
             Value = totalFactories.ToString(),
             Icon = "bi-buildings",
-            IconClass = "kpi-icon-primary",
-            LinkUrl = Url.Action("Index", "Factories")
+            IconClass = "kpi-icon-primary"
         })
         @await Html.PartialAsync(
         "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -42,8 +41,7 @@
             Title = "المصانع النشطة",
             Value = activeFactories.ToString(),
             Icon = "bi-building-check",
-            IconClass = "kpi-icon-success",
-            LinkUrl = Url.Action("Index", "Factories")
+            IconClass = "kpi-icon-success"
         })
         @await Html.PartialAsync(
         "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -52,8 +50,7 @@
             Title = "المصانع المتوقفة",
             Value = inactiveFactories.ToString(),
             Icon = "bi-building-dash",
-            IconClass = "kpi-icon-danger",
-            LinkUrl = Url.Action("Index", "Factories")
+            IconClass = "kpi-icon-danger"
         })
         @await Html.PartialAsync(
         "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -62,8 +59,7 @@
             Title = "معدل التشغيل",
             Value = totalFactories > 0 ? $"{(activeFactories * 100) / totalFactories}%" : "0%",
             Icon = "bi-activity",
-            IconClass = "kpi-icon-info",
-            LinkUrl = Url.Action("Index", "Factories")
+            IconClass = "kpi-icon-info"
         })
     </div>
 

@@ -213,6 +213,44 @@ namespace Kharasana.Web.Controllers
         }
 
         // ============================================================
+        // PRINT PAYMENT RECEIPT
+        // ============================================================
+        [HttpGet]
+        public async Task<IActionResult> PrintPaymentReceipt(int orderId, int paymentId)
+        {
+            if (orderId <= 0 || paymentId <= 0)
+                return BadRequest(new { success = false, message = AppMessages.Error.InvalidId });
+
+            var order = await _ordersApiService.GetOrderByIdAsync(orderId);
+            if (order == null)
+                return BadRequest(new { success = false, message = AppMessages.Common.NotFound });
+
+            if (RoleValue == UserRole.FactoryEmployee && IsFactoryIsolated(order.FactoryId))
+                return BadRequest(new { success = false, message = AppMessages.Common.OrderCannotModify });
+
+            var payment = order.Payments.FirstOrDefault(p => p.Id == paymentId);
+            if (payment == null)
+                return NotFound();
+
+            var viewModel = new PaymentReceiptViewModel
+            {
+                PaymentId = payment.Id,
+                OrderId = order.OrderId,
+                OrderNumber = order.OrderNumber,
+                Amount = payment.Amount,
+                PaymentMethod = payment.PaymentMethod,
+                ReferenceNo = payment.ReferenceNo,
+                Notes = payment.Notes,
+                PaymentDate = payment.PaymentDate,
+                ClientName = order.ClientName,
+                ClientPhone = order.ClientPhone ?? string.Empty,
+                FactoryName = order.FactoryName
+            };
+
+            return View("~/Views/Orders/PaymentReceipt.cshtml", viewModel);
+        }
+
+        // ============================================================
         // ASSIGN DRIVER - تعيين سائق (POST)
         // ============================================================
         [HttpPost]

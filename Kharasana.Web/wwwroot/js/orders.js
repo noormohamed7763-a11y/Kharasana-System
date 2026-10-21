@@ -197,4 +197,24 @@ document.addEventListener('DOMContentLoaded', function () {
             alert(message);
         }
     }
+
+    // ============================================================
+    // PRINT Payment Receipt
+    // ============================================================
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('button[data-print-receipt]');
+        if (!btn) return;
+
+        const orderId = btn.dataset.printReceiptOrderId;
+        const paymentId = btn.dataset.printReceiptPaymentId;
+        if (!orderId || !paymentId) return;
+
+        const receiptUrl = `/OrderWorkflow/PrintPaymentReceipt?orderId=${encodeURIComponent(orderId)}&paymentId=${encodeURIComponent(paymentId)}`;
+        const printWindow = window.open(receiptUrl, '_blank');
+        if (!printWindow) {
+            displayToast('error', 'تعذر فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع ثم أعد المحاولة.');
+            return;
+        }
+        printWindow.opener = null;
+    });
 });

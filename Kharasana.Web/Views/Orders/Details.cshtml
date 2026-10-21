@@ -50,8 +50,8 @@
                SecurityHeadersMiddleware تسمح بـ script-src 'self' + nonce فقط،
                فالمعالجات المضمّنة (inline handlers) تُحجب صامتةً في المتصفح
                ويصبح الزر بلا أثر. المعالج المُفوَّض في site.js هو نفس أسلوب data-copy. *@
-            <button type="button" class="btn btn-outline-primary btn-lg" data-print title="طباعة بوليصة / أمر الصب والتسليم">
-                <i class="bi bi-printer"></i> طباعة بوليصة الصب
+            <button type="button" class="btn btn-outline-primary btn-lg" data-print title="طباعة أمر التوريد والصب">
+                <i class="bi bi-printer"></i> طباعة أمر التوريد
             </button>
             <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
                 <i class="bi bi-arrow-right"></i> العودة إلى القائمة
@@ -295,6 +295,44 @@
                 <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
                     <i class="bi bi-plus-circle"></i> تسجيل دفعة جديدة
                 </button>
+            }
+
+            <!-- Print payment receipts -->
+            @if (Model.Payments?.Any() == true)
+            {
+                <div class="table-responsive mt-3">
+                    <table class="erp-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>تاريخ الدفعة</th>
+                                <th>المبلغ</th>
+                                <th>طريقة الدفع</th>
+                                <th>المرجع</th>
+                                <th class="text-center">المستند</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var payment in Model.Payments.OrderByDescending(p => p.PaymentDate).ThenByDescending(p => p.Id))
+                            {
+                                <tr>
+                                    <td>@payment.PaymentDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td class="fw-bold">@payment.Amount.FormatPrice()</td>
+                                    <td>@PaymentMethodHelper.GetArabicName(payment.PaymentMethod)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNo) ? "-" : payment.ReferenceNo)</td>
+                                    <td class="text-center">
+                                        <button type="button"
+                                                class="btn btn-outline-success btn-sm"
+                                                data-print-receipt
+                                                data-print-receipt-order-id="@Model.OrderId"
+                                                data-print-receipt-payment-id="@payment.Id">
+                                            <i class="bi bi-printer"></i> طباعة السند
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
         </div>
     </div>

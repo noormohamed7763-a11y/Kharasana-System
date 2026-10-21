@@ -85,6 +85,9 @@ public class OrderDto
     [JsonPropertyName("remainingAmount")]
     public decimal RemainingAmount { get; set; }
 
+    [JsonPropertyName("payments")]
+    public List<OrderPaymentViewModel> Payments { get; set; } = new();
+
 
     // ============================================================
     // PROJECT INFO
