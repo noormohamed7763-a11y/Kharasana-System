@@ -16,10 +16,13 @@
 
 @{
     var actionName = string.IsNullOrWhiteSpace(Model.ActionName) ? "Index" : Model.ActionName;
+    var controllerName = string.IsNullOrWhiteSpace(Model.ControllerName)
+        ? ViewContext.RouteData.Values["controller"]?.ToString()
+        : Model.ControllerName;
 }
 
 <div class="erp-toolbar mb-3 p-3 shadow-sm">
-    <form method="get" asp-action="@actionName" asp-controller="@Model.ControllerName">
+    <form method="get" asp-action="@actionName" asp-controller="@controllerName">
         @if (Model.PageSize.HasValue)
         {
             @* يُرسل مع البحث حتى لا يعود المستخدم إلى الحجم الافتراضي *@
