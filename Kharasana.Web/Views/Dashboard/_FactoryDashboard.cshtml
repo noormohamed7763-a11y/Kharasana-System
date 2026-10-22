@@ -25,7 +25,7 @@
     <partial name="Components/_PageHeader" model='new PageHeaderViewModel { Title = "لوحة تشغيل المصنع", Description = $"{Kharasana.Web.Helpers.GreetingHelper.Greeting()}، {ViewBag.UserName} — متابعة العمليات وإدارة الطلبات اليومية" }' />
 
     <!-- T2. Operational Summary Cards Component (قابلة للنقر → قوائم العمل) -->
-    <div class="summary-cards-grid mb-4">
+    <div class="summary-cards-grid summary-cards-grid--four mb-4">
         <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "طلبات اليوم", Value = Model.TodayOrdersCount.ToString(), Icon = "bi-calendar-check", IconClass = "kpi-icon-primary", LinkUrl = Url.Action("Index", "Orders") }' />
         <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "قيد التنفيذ", Value = Model.InProgressOrdersCount.ToString(), Icon = "bi-hourglass-split", IconClass = "kpi-icon-warning", LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Pending }) }' />
         <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "جاهزة للتسليم", Value = Model.ReadyOrdersCount.ToString(), Icon = "bi-check2-all", IconClass = "kpi-icon-success", LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Approved }) }' />

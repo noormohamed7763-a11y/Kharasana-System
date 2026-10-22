@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Mapping;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
@@ -8,6 +9,83 @@ namespace Kharasana.Tests.Tests;
 
 public class MappingTests
 {
+    [Fact]
+    public void OrderMapper_HidesAllFinancialData_WhenPricingIsHidden()
+    {
+        var order = new Order
+        {
+            OrderId = 45,
+            OrderNumber = "ORD-20261022-001",
+            ClientId = 7,
+            FactoryId = 3,
+            ConcreteTypeId = 2,
+            Quantity = 10,
+            UnitPrice = 5000m,
+            TotalPrice = 50000m,
+            TotalDiscountAmount = 2000m,
+            NetAmount = 48000m,
+            Payments =
+            [
+                new OrderPayment
+                {
+                    OrderPaymentId = 91,
+                    OrderId = 45,
+                    Amount = 10000m,
+                    PaymentDate = new DateTime(2026, 10, 22),
+                    PaymentMethod = PaymentMethod.Cash,
+                    ReferenceNumber = "PAY-91"
+                }
+            ]
+        };
+
+        var dto = OrderMapper.MapToDetailsDto(order, hidePricing: true);
+
+        dto.UnitPrice.Should().BeNull();
+        dto.TotalPrice.Should().BeNull();
+        dto.TotalDiscountAmount.Should().BeNull();
+        dto.NetAmount.Should().BeNull();
+        dto.Payments.Should().BeEmpty();
+        dto.PaidAmount.Should().Be(0);
+        dto.RemainingAmount.Should().Be(0);
+    }
+
+    [Fact]
+    public void OrderMapper_IncludesFinancialData_WhenPricingIsVisible()
+    {
+        var order = new Order
+        {
+            OrderId = 46,
+            OrderNumber = "ORD-20261022-002",
+            ClientId = 7,
+            FactoryId = 3,
+            ConcreteTypeId = 2,
+            Quantity = 10,
+            UnitPrice = 5000m,
+            TotalPrice = 50000m,
+            TotalDiscountAmount = 2000m,
+            NetAmount = 48000m,
+            Payments =
+            [
+                new OrderPayment
+                {
+                    OrderPaymentId = 92,
+                    OrderId = 46,
+                    Amount = 10000m,
+                    PaymentDate = new DateTime(2026, 10, 22),
+                    PaymentMethod = PaymentMethod.Cash
+                }
+            ]
+        };
+
+        var dto = OrderMapper.MapToDetailsDto(order, hidePricing: false);
+
+        dto.TotalDiscountAmount.Should().Be(2000m);
+        dto.NetAmount.Should().Be(48000m);
+        dto.Payments.Should().ContainSingle().Which.Amount.Should().Be(10000m);
+        dto.PaidAmount.Should().Be(10000m);
+        dto.RemainingAmount.Should().Be(38000m);
+    }
+
     [Fact]
     public void UserMapper_MapsUserToUserDto_Correctly()
     {

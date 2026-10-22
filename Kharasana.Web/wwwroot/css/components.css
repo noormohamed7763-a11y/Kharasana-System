@@ -149,6 +149,13 @@
     }
 }
 
+@container dashboard-content (min-width: 860px) {
+    .summary-cards-grid--four {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        justify-content: stretch;
+    }
+}
+
 /* Status Badges */
 .status-badge {
     display: inline-flex;
