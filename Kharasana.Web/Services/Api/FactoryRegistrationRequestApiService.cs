@@ -57,21 +57,26 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
                ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
     }
 
+    public async Task<RegistrationStatusCountsDto?> GetRegistrationStatusCountsAsync()
+    {
+        return await _apiClient.GetAsync<RegistrationStatusCountsDto>("registration-requests/status-counts");
+    }
+
     public async Task<int> GetPendingRequestsCountAsync()
     {
-        var counts = await _apiClient.GetAsync<dynamic>("registration-requests/status-counts");
-        return (int)(counts?.Pending ?? 0);
+        var counts = await GetRegistrationStatusCountsAsync();
+        return counts?.Pending ?? 0;
     }
 
     public async Task<int> GetApprovedRequestsCountAsync()
     {
-        var counts = await _apiClient.GetAsync<dynamic>("registration-requests/status-counts");
-        return (int)(counts?.Approved ?? 0);
+        var counts = await GetRegistrationStatusCountsAsync();
+        return counts?.Approved ?? 0;
     }
 
     public async Task<int> GetRejectedRequestsCountAsync()
     {
-        var counts = await _apiClient.GetAsync<dynamic>("registration-requests/status-counts");
-        return (int)(counts?.Rejected ?? 0);
+        var counts = await GetRegistrationStatusCountsAsync();
+        return counts?.Rejected ?? 0;
     }
 }

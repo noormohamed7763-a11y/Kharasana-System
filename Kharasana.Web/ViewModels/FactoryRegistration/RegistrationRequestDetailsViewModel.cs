@@ -12,6 +12,7 @@ public class RegistrationRequestDetailsViewModel
     public string OwnerName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
+    public string? RequestedConcreteTypes { get; set; }
     public RegistrationStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
 }

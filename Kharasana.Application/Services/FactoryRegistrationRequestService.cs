@@ -30,6 +30,7 @@ public class FactoryRegistrationRequestService : IFactoryRegistrationRequestServ
             ContactName = dto.OwnerName,
             ContactEmail = dto.Email,
             ContactPhone = dto.Phone,
+            RequestedConcreteTypes = dto.RequestedConcreteTypes,
             Status = RegistrationStatus.Pending,
             CreatedAt = DateTime.UtcNow
         };

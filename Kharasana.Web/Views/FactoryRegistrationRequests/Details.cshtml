@@ -131,6 +131,12 @@
                     <h6 class="fw-bold mb-0 text-dark">#@Model.Id</h6>
                 </div>
             </div>
+            <div class="col-md-12">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-list-check me-1"></i> أنواع الخرسانة المطلوبة</span>
+                    <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrWhiteSpace(Model.RequestedConcreteTypes) ? "غير محددة" : Model.RequestedConcreteTypes)</h6>
+                </div>
+            </div>
         </div>
 
         <!-- القسم الثالث: اتخاذ القرار -->
