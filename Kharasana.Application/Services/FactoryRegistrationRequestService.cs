@@ -12,11 +12,13 @@ public class FactoryRegistrationRequestService : IFactoryRegistrationRequestServ
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserService _userService;
+    private readonly IWhatsAppService _whatsAppService;
 
-    public FactoryRegistrationRequestService(IUnitOfWork unitOfWork, IUserService userService)
+    public FactoryRegistrationRequestService(IUnitOfWork unitOfWork, IUserService userService, IWhatsAppService whatsAppService)
     {
         _unitOfWork = unitOfWork;
         _userService = userService;
+        _whatsAppService = whatsAppService;
     }
 
     public async Task<ServiceResult> CreateRequestAsync(RegisterFactoryDto dto)
@@ -167,6 +169,10 @@ public class FactoryRegistrationRequestService : IFactoryRegistrationRequestServ
             await _unitOfWork.SaveChangesAsync();
 
             await _unitOfWork.CommitTransactionAsync();
+
+            // إرسال إشعار عبر الواتساب
+            await _whatsAppService.SendTemplateMessageAsync(request.ContactPhone, "registration_approved", request.FactoryName);
+
             return ServiceResult.Ok();
         }
         catch (Exception ex)

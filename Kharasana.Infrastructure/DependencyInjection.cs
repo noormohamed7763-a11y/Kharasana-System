@@ -44,6 +44,8 @@ public static class DependencyInjection
         services.AddScoped<IImageStorageService, ImageStorageService>();
         services.AddScoped<IImageCleanupService, ImageCleanupService>();
 
+        services.AddHttpClient<IWhatsAppService, WhatsAppService>();
+
         return services;
     }
 }
