@@ -84,6 +84,7 @@ namespace Kharasana.Web.Controllers
                 OwnerName = request.ContactName,
                 Email = request.ContactEmail,
                 Phone = request.ContactPhone,
+                RequestedConcreteTypes = request.RequestedConcreteTypes,
                 Status = request.Status,
                 CreatedAt = request.CreatedAt
             };

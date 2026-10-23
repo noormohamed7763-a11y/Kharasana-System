@@ -12,6 +12,7 @@ public class FactoryRegistrationRequest
     public string ContactName { get; set; } = string.Empty;
     public string ContactEmail { get; set; } = string.Empty;
     public string ContactPhone { get; set; } = string.Empty;
+    public string? RequestedConcreteTypes { get; set; }
 
     public RegistrationStatus Status { get; set; }
     public string? RejectionReason { get; set; }

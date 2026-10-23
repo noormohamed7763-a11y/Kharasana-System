@@ -1,5 +1,6 @@
 @model Kharasana.Web.ViewModels.Reports.ReportsViewModel
 @using Kharasana.Web.Models.Components
+@using Kharasana.Domain.Enums
 
 @{
     ViewData["Title"] = "التقارير";
@@ -52,7 +53,7 @@
                 Value = (Model.PendingOrders?.Count ?? 0).ToString(),
                 Icon = "bi-hourglass-split",
                 IconClass = "kpi-icon-primary",
-                LinkUrl = Url.Action("Index", "Orders", new { status = 1 })
+                LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Pending })
             })
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -62,7 +63,7 @@
                 Value = (Model.ApprovedOrders?.Count ?? 0).ToString(),
                 Icon = "bi-check2-circle",
                 IconClass = "kpi-icon-success",
-                LinkUrl = Url.Action("Index", "Orders", new { status = 2 })
+                LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Approved })
             })
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -72,7 +73,7 @@
                 Value = (Model.OnTheWayOrders?.Count ?? 0).ToString(),
                 Icon = "bi-truck",
                 IconClass = "kpi-icon-info",
-                LinkUrl = Url.Action("Index", "Orders", new { status = 5 })
+                LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.OnTheWay })
             })
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -82,7 +83,7 @@
                 Value = (Model.DeliveredOrders?.Count ?? 0).ToString(),
                 Icon = "bi-check2-all",
                 IconClass = "kpi-icon-success",
-                LinkUrl = Url.Action("Index", "Orders", new { status = 6 })
+                LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Delivered })
             })
         </div>
 
