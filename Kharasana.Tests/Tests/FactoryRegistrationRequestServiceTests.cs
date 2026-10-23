@@ -8,6 +8,10 @@ using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Tests.TestData;
 using Microsoft.EntityFrameworkCore;
+using Moq;
+using Xunit;
+using FluentAssertions;
+using FluentAssertions.Extensions;
 
 namespace Kharasana.Tests.Tests;
 
@@ -25,6 +29,7 @@ public class FactoryRegistrationRequestServiceTests : IDisposable
     private readonly KharasanaDbContext _context;
     private readonly UnitOfWork _unitOfWork;
     private readonly FakeUserService _fakeUserService;
+    private readonly Mock<IWhatsAppService> _mockWhatsAppService;
     private readonly FactoryRegistrationRequestService _service;
 
     public FactoryRegistrationRequestServiceTests()
@@ -32,7 +37,8 @@ public class FactoryRegistrationRequestServiceTests : IDisposable
         _context = TestDataSeeder.CreateContext();
         _unitOfWork = new UnitOfWork(_context);
         _fakeUserService = new FakeUserService();
-        _service = new FactoryRegistrationRequestService(_unitOfWork, _fakeUserService);
+        _mockWhatsAppService = new Mock<IWhatsAppService>();
+        _service = new FactoryRegistrationRequestService(_unitOfWork, _fakeUserService, _mockWhatsAppService.Object);
     }
 
     public void Dispose() => _context.Dispose();
