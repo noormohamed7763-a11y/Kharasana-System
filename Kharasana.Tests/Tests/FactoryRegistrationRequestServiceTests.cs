@@ -8,7 +8,6 @@ using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Tests.TestData;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 using Xunit;
 using FluentAssertions;
 using FluentAssertions.Extensions;
@@ -29,7 +28,7 @@ public class FactoryRegistrationRequestServiceTests : IDisposable
     private readonly KharasanaDbContext _context;
     private readonly UnitOfWork _unitOfWork;
     private readonly FakeUserService _fakeUserService;
-    private readonly Mock<IWhatsAppService> _mockWhatsAppService;
+    private readonly FakeWhatsAppService _fakeWhatsAppService;
     private readonly FactoryRegistrationRequestService _service;
 
     public FactoryRegistrationRequestServiceTests()
@@ -37,8 +36,8 @@ public class FactoryRegistrationRequestServiceTests : IDisposable
         _context = TestDataSeeder.CreateContext();
         _unitOfWork = new UnitOfWork(_context);
         _fakeUserService = new FakeUserService();
-        _mockWhatsAppService = new Mock<IWhatsAppService>();
-        _service = new FactoryRegistrationRequestService(_unitOfWork, _fakeUserService, _mockWhatsAppService.Object);
+        _fakeWhatsAppService = new FakeWhatsAppService();
+        _service = new FactoryRegistrationRequestService(_unitOfWork, _fakeUserService, _fakeWhatsAppService);
     }
 
     public void Dispose() => _context.Dispose();
@@ -523,4 +522,13 @@ internal class FakeUserService : IUserService
     public Task<bool> UpdateMyProfileAsync(int userId, UpdateMyProfileDto dto) => Task.FromResult(true);
     public Task<bool> UpdateDriverStatusAsync(int driverId, UpdateDriverStatusDto dto, UserRole callerRole, int? callerFactoryId) => Task.FromResult(true);
     public Task<bool> ToggleDriverActiveAsync(int driverId, UserRole callerRole, int? callerFactoryId) => Task.FromResult(true);
+}
+
+/// <summary>
+/// تنفيذ بديل خفيف لـ IWhatsAppService لاختبارات مسار قبول طلبات التسجيل.
+/// </summary>
+internal class FakeWhatsAppService : IWhatsAppService
+{
+    public Task<bool> SendTemplateMessageAsync(string phone, string templateName, params string[] parameters)
+        => Task.FromResult(true);
 }
