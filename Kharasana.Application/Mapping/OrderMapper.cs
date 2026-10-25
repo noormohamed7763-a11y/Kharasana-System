@@ -51,7 +51,12 @@ public static class OrderMapper
                 Amount = p.Amount,
                 PaymentMethod = p.PaymentMethod,
                 ReferenceNo = p.ReferenceNumber,
-                Notes = p.Notes
+                Notes = p.Notes,
+
+                // حقول التحقق من الحوالات
+                VerificationStatus = p.VerificationStatus,
+                VerificationNotes = p.VerificationNotes,
+                VerifiedAt = p.VerifiedAt
             })
             .ToList();
     }

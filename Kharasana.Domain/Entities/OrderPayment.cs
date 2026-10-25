@@ -20,6 +20,12 @@ public class OrderPayment
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public PaymentVerificationStatus VerificationStatus { get; set; } = PaymentVerificationStatus.PendingVerification;
+
+    public string? VerificationNotes { get; set; }
+
+    public DateTime? VerifiedAt { get; set; }
+
     // Navigation property
     public Order Order { get; set; } = null!;
 }

@@ -276,11 +276,56 @@ public class OrderCommandService : IOrderCommandService
             PaymentMethod = dto.PaymentMethod,
             ReferenceNumber = dto.ReferenceNo,
             Notes = dto.Notes,
+            VerificationStatus = PaymentVerificationStatus.PendingVerification,
+            VerificationNotes = null,
+            VerifiedAt = null,
             CreatedAt = DateTime.UtcNow
         };
 
         await _unitOfWork.OrderPayments.AddAsync(payment);
         await _unitOfWork.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// يتولى المحاسب فحص الحوالة ويرسل حالة التحقق (مقروء/مرفوض).
+    /// </summary>
+    public async Task<bool> ApprovePaymentAsync(int paymentId, string verificationNotes, int approverId)
+    {
+        var payment = await _unitOfWork.OrderPayments.GetByIdIncludingDeletedAsync(paymentId);
+        if (payment == null)
+            throw new NotFoundException(Messages.PaymentNotFound);
+
+        // لا يمكن التحقق من دفعات الكاش المباشرة (NotApplicable)
+        if (payment.VerificationStatus == PaymentVerificationStatus.NotApplicable)
+            throw new BusinessException(Messages.PaymentCannotBeApprovedCash);
+
+        payment.VerificationStatus = PaymentVerificationStatus.Verified;
+        payment.VerificationNotes = verificationNotes;
+        payment.VerifiedAt = DateTime.UtcNow;
+
+        _unitOfWork.OrderPayments.Update(payment);
+        await _unitOfWork.SaveChangesAsync();
+
+        return true;
+    }
+
+    /// <summary>
+    /// رفض الحوالة وإدخال سبب الرفض من قبل المحاسب.
+    /// </summary>
+    public async Task<bool> RejectPaymentAsync(int paymentId, string rejectionReason, int approverId)
+    {
+        var payment = await _unitOfWork.OrderPayments.GetByIdIncludingDeletedAsync(paymentId);
+        if (payment == null)
+            throw new NotFoundException(Messages.PaymentNotFound);
+
+        payment.VerificationStatus = PaymentVerificationStatus.Rejected;
+        payment.VerificationNotes = rejectionReason;
+        payment.VerifiedAt = DateTime.UtcNow;
+
+        _unitOfWork.OrderPayments.Update(payment);
+        await _unitOfWork.SaveChangesAsync();
+
+        return true;
     }
 
     private async Task<Order> GetOrderOrThrowAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId)

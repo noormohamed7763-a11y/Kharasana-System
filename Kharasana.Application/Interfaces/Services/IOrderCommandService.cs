@@ -18,4 +18,14 @@ public interface IOrderCommandService
     Task<bool> DeleteOrderAsync(int id, int callerId, Domain.Enums.UserRole callerRole, int? callerFactoryId);
 
     Task AddPaymentAsync(int orderId, AddPaymentDto dto, int userId, Domain.Enums.UserRole role, int? factoryId);
+
+    // ============================================================
+    // 5. PAYMENT VERIFICATION (Hawala Ledger)
+    // ============================================================
+
+    /// <summary>قبول الحوالة من قبل المحاسب.</summary>
+    Task<bool> ApprovePaymentAsync(int paymentId, string verificationNotes, int approverId);
+
+    /// <summary>رفض الحوالة من قبل المحاسب.</summary>
+    Task<bool> RejectPaymentAsync(int paymentId, string rejectionReason, int approverId);
 }

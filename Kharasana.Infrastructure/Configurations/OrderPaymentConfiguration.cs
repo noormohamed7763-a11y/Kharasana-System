@@ -40,6 +40,13 @@ public class OrderPaymentConfiguration : IEntityTypeConfiguration<OrderPayment>
         builder.Property(p => p.Notes)
             .HasMaxLength(1000);
 
+        builder.Property(p => p.VerificationStatus)
+            .HasConversion<int>()
+            .IsRequired();
+
+        builder.Property(p => p.VerificationNotes)
+            .HasMaxLength(1000);
+
         builder.HasOne(p => p.Order)
             .WithMany(o => o.Payments)
             .HasForeignKey(p => p.OrderId)
