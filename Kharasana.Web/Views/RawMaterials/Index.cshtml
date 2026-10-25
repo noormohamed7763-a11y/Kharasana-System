@@ -1,0 +1,92 @@
+@model Kharasana.Application.Common.PagedResult<Kharasana.Web.ViewModels.RawMaterials.RawMaterialViewModel>
+@using Kharasana.Web.Models.Components
+@using Kharasana.Web.Models.Components.Search
+@using Kharasana.Web.ViewModels.Components
+
+@{
+    ViewData["Title"] = "إدارة المخزون";
+}
+
+<div class="dashboard-page">
+
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-box-seam",
+            Title = "إدارة المخزون",
+            Description = "متابعة وإدارة المواد الخام المتوفرة",
+            ActionText = "إضافة مادة خام",
+            ActionController = "RawMaterials",
+            ActionMethod = "Create"
+        })
+
+    <!-- شريط البحث الموحّد -->
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_ListToolbar.cshtml",
+        new ListToolbarViewModel
+        {
+            PageSize = Model.PageSize,
+            Search = new SearchBoxViewModel
+            {
+                InputId = "search",
+                Placeholder = "ابحث باسم المادة...",
+                Value = (string?)ViewBag.SearchTerm ?? string.Empty
+            }
+        })
+
+    @if (Model.Items == null || !Model.Items.Any())
+    {
+        @await Html.PartialAsync(
+            "~/Views/Shared/Components/_EmptyState.cshtml",
+            new EmptyStateViewModel
+            {
+                Title = "لا توجد مواد خام",
+                Message = "لم يتم العثور على أي مواد خام تطابق معايير البحث.",
+                ShowActionButton = true,
+                ActionController = "RawMaterials",
+                ActionAction = "Create",
+                ActionText = "إضافة مادة خام"
+            })
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>الاسم</th>
+                            <th>الكمية الحالية</th>
+                            <th>الوحدة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@item.Name</td>
+                                <td>@item.CurrentStock</td>
+                                <td>@item.Unit</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- الترقيم -->
+    @await Html.PartialAsync("~/Views/Shared/Components/_Pagination.cshtml", new PaginationViewModel
+    {
+        CurrentPage = Model.PageNumber,
+        TotalPages = Model.TotalPages,
+        PageSize = Model.PageSize,
+        TotalCount = Model.TotalCount,
+        RouteValues = new Dictionary<string, string>
+        {
+            { "searchTerm", (string?)ViewBag.SearchTerm ?? string.Empty }
+        }
+    })
+
+</div>
