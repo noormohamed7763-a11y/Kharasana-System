@@ -256,6 +256,9 @@ namespace Kharasana.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("RequestedConcreteTypes")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
@@ -455,6 +458,107 @@ namespace Kharasana.Infrastructure.Migrations
                     b.ToTable("OrderPayments", (string)null);
                 });
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.ProductionBatch", b =>
+                {
+                    b.Property<int>("ProductionBatchId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductionBatchId"));
+
+                    b.Property<int>("ConcreteTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FactoryId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ProductionBatchId");
+
+                    b.HasIndex("ConcreteTypeId");
+
+                    b.HasIndex("FactoryId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("FactoryId", "Status")
+                        .HasDatabaseName("IX_ProductionBatches_FactoryId_Status_Filtered")
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("ProductionBatches", (string)null);
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.RawMaterial", b =>
+                {
+                    b.Property<int>("RawMaterialId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RawMaterialId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("CurrentStock")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("FactoryId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("RawMaterialId");
+
+                    b.HasIndex("FactoryId");
+
+                    b.ToTable("RawMaterials", (string)null);
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>
                 {
                     b.Property<int>("UserId")
@@ -644,6 +748,44 @@ namespace Kharasana.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.ProductionBatch", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.ConcreteType", "ConcreteType")
+                        .WithMany()
+                        .HasForeignKey("ConcreteTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
+                        .WithMany()
+                        .HasForeignKey("FactoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ConcreteType");
+
+                    b.Navigation("Factory");
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.RawMaterial", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
+                        .WithMany()
+                        .HasForeignKey("FactoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Factory");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>

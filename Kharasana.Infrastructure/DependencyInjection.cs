@@ -5,9 +5,12 @@ using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Infrastructure.Repositories;
 using Kharasana.Infrastructure.Services;
-using Microsoft.EntityFrameworkCore;
+using Kharasana.Application.Services;
+using Kharasana.Domain.Entities;
+using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kharasana.Infrastructure;
 
@@ -45,6 +48,8 @@ public static class DependencyInjection
         services.AddScoped<IImageCleanupService, ImageCleanupService>();
 
         services.AddHttpClient<IWhatsAppService, WhatsAppService>();
+        services.AddScoped<IRawMaterialService, RawMaterialService>();
+        services.AddScoped<IProductionBatchService, ProductionBatchService>();
 
         return services;
     }
