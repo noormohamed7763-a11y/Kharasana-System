@@ -65,4 +65,14 @@ public interface IOrderService
 
     /// <summary>تسجيل دفعة جديدة على طلب — للمدير وموظف المصنع فقط.</summary>
     Task AddPaymentAsync(int orderId, AddPaymentDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
+
+    // ============================================================
+    // 5. PAYMENT VERIFICATION (Hawala Ledger)
+    // ============================================================
+
+    /// <summary>قبول الحوالة من قبل المحاسب.</summary>
+    Task<bool> ApprovePaymentAsync(int paymentId, string verificationNotes, int approverId);
+
+    /// <summary>رفض الحوالة من قبل المحاسب.</summary>
+    Task<bool> RejectPaymentAsync(int paymentId, string rejectionReason, int approverId);
 }

@@ -241,6 +241,15 @@ public static class Messages
     public const string PaymentReferenceMaxLength = "رقم مرجع الحوالة يجب ألا يتجاوز 256 حرف.";
     public const string PaymentNotesMaxLength = "ملاحظات الدفعة يجب ألا تتجاوز 1000 حرف.";
 
+    // ============================================================
+    // Hawala Ledger Payment Verification Messages
+    // ============================================================
+
+    public const string PaymentApprovedSuccess = "تم اعتماد الدفعة بنجاح.";
+    public const string PaymentRejectedSuccess = "تم رفض الدفعة بنجاح.";
+    public const string PaymentCannotBeApprovedCash = "لا يمكن اعتماد هذه الدفعة (الدفعات النقدية).";
+    public const string PaymentNotFound = "الدفعة المالية غير موجودة.";
+
     #endregion
 
     #region General Messages

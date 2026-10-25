@@ -134,4 +134,52 @@ public partial class OrdersController
 
         return Ok(ApiResponse.Ok(Messages.OrderArchivedSuccessfully));
     }
+
+    // ============================================================
+    // 17. VERIFY / REJECT PAYMENT (Hawala Ledger)
+    // ============================================================
+    /// <summary>
+    /// قبول الحوالة من قبل المحاسب (تغيير الحالة إلى已验证).
+    /// </summary>
+    /// <param name="paymentId">معرّف الدفعة.</param>
+    /// <param name="verificationNotes">ملاحظات المحاسب حول التحقق.</param>
+    /// <response code="200">تم قبول الحوالة بنجاح.</response>
+    /// <response code="400">الدفعة غير قابلة للقبول (مثل الدفعات النقدية).</response>
+    /// <response code="404">الدفعة غير موجودة.</response>
+    [HttpPost("{paymentId}/approve")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    public async Task<IActionResult> ApprovePayment(int paymentId, [FromBody] string verificationNotes)
+    {
+        var caller = User.GetCallerContext();
+        var result = await _orderService.ApprovePaymentAsync(paymentId, verificationNotes, caller.UserId);
+
+        return Ok(new ApiResponse<bool>
+        {
+            Success = true,
+            Message = Messages.PaymentApprovedSuccess,
+            Data = result
+        });
+    }
+
+    /// <summary>
+    /// رفض الحوالة من قبل المحاسب وإدخال سبب الرفض.
+    /// </summary>
+    /// <param name="paymentId">معرّف الدفعة.</param>
+    /// <param name="rejectionReason">سبب الرفض (مطلوب).</param>
+    /// <response code="200">تم رفض الحوالة بنجاح.</response>
+    /// <response code="404">الدفعة غير موجودة.</response>
+    [HttpPost("{paymentId}/reject")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    public async Task<IActionResult> RejectPayment(int paymentId, [FromBody] string rejectionReason)
+    {
+        var caller = User.GetCallerContext();
+        var result = await _orderService.RejectPaymentAsync(paymentId, rejectionReason, caller.UserId);
+
+        return Ok(new ApiResponse<bool>
+        {
+            Success = true,
+            Message = Messages.PaymentRejectedSuccess,
+            Data = result
+        });
+    }
 }

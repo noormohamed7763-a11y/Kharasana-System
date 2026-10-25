@@ -80,6 +80,22 @@ public partial class OrderService : IOrderService
     }
 
     /// <summary>
+    /// قبول الحوالة من قبل المحاسب.
+    /// </summary>
+    public async Task<bool> ApprovePaymentAsync(int paymentId, string verificationNotes, int approverId)
+    {
+        return await _orderCommandService.ApprovePaymentAsync(paymentId, verificationNotes, approverId);
+    }
+
+    /// <summary>
+    /// رفض الحوالة من قبل المحاسب.
+    /// </summary>
+    public async Task<bool> RejectPaymentAsync(int paymentId, string rejectionReason, int approverId)
+    {
+        return await _orderCommandService.RejectPaymentAsync(paymentId, rejectionReason, approverId);
+    }
+
+    /// <summary>
     /// تحرير السائق المرتبط بالطلب (إعادته إلى «متاح»).
     /// لا تنفّذ أي إدخال/إخراج: تُعدّل الكيان المُتتبَّع فقط، والحفظ الفعلي
     /// مسؤولية SaveChangesAsync في المستدعي — لذلك ليست async.

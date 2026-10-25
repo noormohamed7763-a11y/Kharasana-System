@@ -16,5 +16,10 @@ namespace Kharasana.Application.DTOs.Order
 
         public string? ReferenceNo { get; set; }
         public string? Notes { get; set; }
+
+        // حقول التحقق من الحوالات
+        public PaymentVerificationStatus VerificationStatus { get; set; }
+        public string? VerificationNotes { get; set; }
+        public DateTime? VerifiedAt { get; set; }
     }
 }
