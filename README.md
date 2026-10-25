@@ -12,7 +12,7 @@
 ![EF Core](https://img.shields.io/badge/EF%20Core-10-512BD4?logo=entityframework&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Clean%20Architecture-Service%20Pattern-blue)
 ![JWT](https://img.shields.io/badge/Auth-JWT-orange)
-![Tests](https://img.shields.io/badge/Tests-xUnit%20%2B%20FluentAssertions-blue)
+![Tests](https://img.shields.io/badge/Tests-xUnit%20%2B%20FluentAssertions%20%2B%20Moq%20%2B%20SQLServer-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 </div>
@@ -80,12 +80,22 @@
 
 ```text
 Kharasana/
-├── Kharasana.API/           # واجهة API RESTful (مُدخل النظام)
+├── Kharasana.API/           # واجهة API RESTful
 ├── Kharasana.Web/           # واجهة الويب (MVC Client)
 ├── Kharasana.Application/   # طبقة الأعمال (Use Cases & DTOs)
 ├── Kharasana.Infrastructure/# تنفيذ البنية التحتية (EF Core, SQL Server)
-└── Kharasana.Domain/        # نواة النظام (Entities, Common)
+├── Kharasana.Domain/        # نواة النظام (Entities, Common)
+├── Kharasana.Tests/         # اختبارات الوحدة (Unit Tests)
+├── Kharasana.IntegrationTests/ # اختبارات التكامل (SQL Server)
+└── Kharasana.ContractTests/ # اختبارات العقود (API Contracts)
 ```
+
+## 🧪 الاختبارات والجودة
+
+يعتمد المشروع على استراتيجية اختبار متكاملة لضمان استقرار النظام:
+- **اختبارات الوحدة (Unit Tests):** توجد في `Kharasana.Tests` (تستخدم xUnit, FluentAssertions, Moq).
+- **اختبارات التكامل (Integration Tests):** توجد في `Kharasana.IntegrationTests` (تستخدم SQL Server حقيقي). لضبط بيئة الاختبارات، يرجى مراجعة [SQL_SERVER_INTEGRATION_TESTING.md](SQL_SERVER_INTEGRATION_TESTING.md).
+- **اختبارات العقود (Contract Tests):** توجد في `Kharasana.ContractTests` لضمان صحة العقود بين الطبقات.
 
 ---
 
