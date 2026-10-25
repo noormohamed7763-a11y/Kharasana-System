@@ -135,6 +135,8 @@ namespace Kharasana.Web
             builder.Services.AddScoped<IUserApiService, UserApiService>();
             builder.Services.AddScoped<IConcreteTypeApiService, ConcreteTypeApiService>();
             builder.Services.AddScoped<IConcreteCatalogService, ConcreteCatalogService>();
+            builder.Services.AddScoped<IRawMaterialService, RawMaterialApiService>();
+            builder.Services.AddScoped<IProductionBatchService, ProductionBatchApiService>();
             builder.Services.AddScoped<IClientApiService, ClientApiService>();
             builder.Services.AddScoped<IDriverApiService, DriverApiService>();
             builder.Services.AddScoped<ISettingsApiService, SettingsApiService>();
