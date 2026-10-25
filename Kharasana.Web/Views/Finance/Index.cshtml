@@ -1,0 +1,155 @@
+@model Kharasana.Application.Common.Models.PaginatedList<Kharasana.Application.DTOs.Order.OrderPaymentDto>
+
+@{
+    ViewData["Title"] = "إدارة الحوالات";
+}
+
+<div class="dashboard-page">
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">مكتب المراجعة المالية</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>اسم المصنع</th>
+                            <th>رقم الطلب</th>
+                            <th>مبلغ الدفعة</th>
+                            <th>رقم الحوالة</th>
+                            <th>التاريخ</th>
+                            <th>الحالة</th>
+                            <th>التعليقات</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items == null || !Model.Items.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        لا توجد دفوعات معلقة للمراجعة حالياً.
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var payment in Model.Items)
+                            {
+                                <tr>
+                                    <td>@(Model.PageSize * (Model.PageNumber - 1) + Model.Items.ToList().IndexOf(payment) + 1)</td>
+                                    <td>@payment.ReferenceNumber != null ? "مصنع " + payment.ReferenceNumber.Substring(0, Math.Min(10, payment.ReferenceNumber.Length)) : "—"</td>
+                                    <td>
+                                        <a href="/Orders/Details/@payment.OrderId" class="text-primary small">
+                                            @payment.OrderId
+                                        </a>
+                                    </td>
+                                    <td>@payment.Amount.ToString("N0") " ريال"</td>
+                                    <td>@(string.IsNullOrEmpty(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
+                                    <td>@payment.PaymentDate.ToShortDateString()</td>
+                                    <td>
+                                        <span class="badge badge-@payment.VerificationStatus switch
+                                        {
+                                            PaymentVerificationStatus.PendingVerification => "warning",
+                                            PaymentVerificationStatus.Verified => "success",
+                                            PaymentVerificationStatus.Rejected => "danger",
+                                            default => "secondary"
+                                        }">
+                                            @payment.VerificationStatus switch
+                                            {
+                                                PaymentVerificationStatus.PendingVerification => "بانتظار التحقق",
+                                                PaymentVerificationStatus.Verified => "مقروءة",
+                                                PaymentVerificationStatus.Rejected => "مرفوضة",
+                                                default => "غير معروف"
+                                            }
+                                        </span>
+                                    </td>
+                                    <td>@(string.IsNullOrEmpty(payment.VerificationNotes) ? "—" : payment.VerificationNotes)</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (payment.VerificationStatus == PaymentVerificationStatus.PendingVerification)
+                                            {
+                                                <!-- Approve Payment -->
+                                                <form method="POST" action="/api/orders/@payment.OrderId/approve" style="display:inline">
+                                                    <input type="hidden" name="verificationNotes" value="تم التحقق من الحوالة وتدقيقها">
+                                                    <button class="btn btn-sm btn-success" title="قبول الحوالة">
+                                                        <i class="bi bi-check-circle-fill"></i>
+                                                    </button>
+                                                </form>
+
+                                                <!-- Reject Payment -->
+                                                <form method="POST" action="/api/orders/@payment.OrderId/reject" style="display:inline">
+                                                    <input type="hidden" name="rejectionReason" value="تم الرفض: أسباب فنية/مالية">
+                                                    <button class="btn btn-sm btn-danger" title="رفض الحوالة">
+                                                        <i class="bi bi-x-circle-fill"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">已处理</span>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="صفحة ">
+            <ul class="pagination justify-content-end">
+                @if (Model.PageNumber > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
+                }
+
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    if (i == Model.PageNumber)
+                    {
+                        <li class="page-item active"><a class="page-link" href="#">@i</a></li>
+                    }
+                    else
+                    {
+                        <li class="page-item"><a class="page-link" href="#">@i</a></li>
+                    }
+                }
+
+                @if (Model.PageNumber < Model.TotalPages)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled"><a class="page-link" href="#">&raquo;</a></li>
+                }
+            </ul>
+        </nav>
+    }
+
+</div>
