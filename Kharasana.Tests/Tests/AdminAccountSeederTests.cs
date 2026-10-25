@@ -163,6 +163,8 @@ public class AdminAccountSeederTests : IDisposable
         public IConcreteTypeRepository ConcreteTypes => throw Unreachable();
         public IOrderRepository Orders => throw Unreachable();
         public IOrderPaymentRepository OrderPayments => throw Unreachable();
+        public IRawMaterialRepository RawMaterials => throw Unreachable();
+        public IProductionBatchRepository ProductionBatches => throw Unreachable();
         public IFactoryRegistrationRequestRepository FactoryRegistrationRequests => throw Unreachable();
         public IActivationTokenRepository ActivationTokens => throw Unreachable();
 

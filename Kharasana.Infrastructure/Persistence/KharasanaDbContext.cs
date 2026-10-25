@@ -21,6 +21,10 @@ public class KharasanaDbContext : DbContext
 
     public DbSet<OrderPayment> OrderPayments { get; set; }
 
+    public DbSet<RawMaterial> RawMaterials { get; set; }
+
+    public DbSet<ProductionBatch> ProductionBatches { get; set; }
+
     public DbSet<FactoryRegistrationRequest> FactoryRegistrationRequests { get; set; }
 
     public DbSet<ActivationToken> ActivationTokens { get; set; }
@@ -43,6 +47,12 @@ public class KharasanaDbContext : DbContext
 
         modelBuilder.Entity<ConcreteType>()
             .HasQueryFilter(c => !c.IsDeleted);
+
+        modelBuilder.Entity<RawMaterial>()
+            .HasQueryFilter(r => !r.IsDeleted);
+
+        modelBuilder.Entity<ProductionBatch>()
+            .HasQueryFilter(p => !p.IsDeleted);
 
         base.OnModelCreating(modelBuilder);
     }

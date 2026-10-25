@@ -11,6 +11,8 @@ public interface IUnitOfWork : IDisposable
     IFactoryRegistrationRequestRepository FactoryRegistrationRequests { get; }
     IActivationTokenRepository ActivationTokens { get; }
     IOrderPaymentRepository OrderPayments { get; }
+    IRawMaterialRepository RawMaterials { get; }
+    IProductionBatchRepository ProductionBatches { get; }
 
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();
