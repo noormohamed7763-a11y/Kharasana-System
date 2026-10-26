@@ -17,4 +17,12 @@ public class RawMaterialRepository : GenericRepository<RawMaterial>, IRawMateria
             .Where(r => r.FactoryId == factoryId)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<RawMaterial>> GetLowStockAsync()
+    {
+        return await _context.RawMaterials
+            .Include(r => r.Factory)
+            .Where(r => r.CurrentStock <= r.MinStockLevel && r.MinStockLevel > 0)
+            .ToListAsync();
+    }
 }

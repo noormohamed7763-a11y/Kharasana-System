@@ -5,6 +5,7 @@ using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Infrastructure.Repositories;
 using Kharasana.Infrastructure.Services;
+using Kharasana.Infrastructure.Workers;
 using Kharasana.Application.Services;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
@@ -50,6 +51,8 @@ public static class DependencyInjection
         services.AddHttpClient<IWhatsAppService, WhatsAppService>();
         services.AddScoped<IRawMaterialService, RawMaterialService>();
         services.AddScoped<IProductionBatchService, ProductionBatchService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddHostedService<ProactiveAlertsWorker>();
 
         return services;
     }

@@ -1,9 +1,9 @@
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Application.Mapping;
-using Kharasana.Domain.Common;
 using Kharasana.Domain.Enums;
 
 namespace Kharasana.Application.Services;
@@ -20,7 +20,19 @@ public class FinanceService : IFinanceService
     public async Task<IEnumerable<OrderPaymentDto>> GetPendingPaymentsAsync(int factoryId)
     {
         var payments = await _unitOfWork.OrderPayments.GetPendingVerificationsAsync(factoryId);
-        return payments.Select(OrderMapper.MapToPaymentDto);
+        return payments.Select(p => new OrderPaymentDto
+        {
+            Id = p.OrderPaymentId,
+            OrderId = p.OrderId,
+            Amount = p.Amount,
+            PaymentDate = p.PaymentDate,
+            PaymentMethod = p.PaymentMethod,
+            ReferenceNo = p.ReferenceNumber,
+            Notes = p.VerificationNotes,
+            VerificationStatus = p.VerificationStatus,
+            VerificationNotes = p.VerificationNotes,
+            VerifiedAt = p.VerifiedAt
+        });
     }
 
     public async Task<bool> ApprovePaymentAsync(int paymentId, string verificationNotes, int approverId)
