@@ -1,4 +1,5 @@
 using Kharasana.Application.Common;
+using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Web.Controllers;
 using Microsoft.AspNetCore.Mvc;
@@ -17,13 +18,20 @@ public class FinanceController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index(int page = 1)
     {
-        // For now, using Application DTO as it's already used in the view.
-        // We might need a Web DTO mapping later.
-        var payments = await _financeService.GetPendingPaymentsAsync(GetCurrentFactoryId());
+        var factoryId = FactoryId;
+        if (!factoryId.HasValue)
+            return Forbid();
 
-        // Simulating pagination
-        var pagedList = Kharasana.Application.Common.Models.PaginatedList<Kharasana.Application.DTOs.Order.OrderPaymentDto>.Create(payments.ToList(), page, 10);
+        var payments = await _financeService.GetPendingPaymentsAsync(factoryId.Value);
 
-        return View(pagedList);
+        var pagedResult = new PagedResult<OrderPaymentDto>
+        {
+            Items = payments.Skip((page - 1) * 10).Take(10),
+            PageNumber = page,
+            PageSize = 10,
+            TotalCount = payments.Count()
+        };
+
+        return View(pagedResult);
     }
 }

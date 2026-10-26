@@ -19,6 +19,9 @@ public class RawMaterialConfiguration : IEntityTypeConfiguration<RawMaterial>
         builder.Property(r => r.CurrentStock)
             .HasPrecision(18, 3); // دقة أكبر للمواد الخام
 
+        builder.Property(r => r.MinStockLevel)
+            .HasPrecision(18, 3);
+
         builder.Property(r => r.Unit)
             .IsRequired()
             .HasMaxLength(20);

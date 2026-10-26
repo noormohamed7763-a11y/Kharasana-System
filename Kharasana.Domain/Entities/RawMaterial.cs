@@ -11,6 +11,8 @@ public class RawMaterial : TenantEntity
 
     public decimal CurrentStock { get; set; }
 
+    public decimal MinStockLevel { get; set; }
+
     public string Unit { get; set; } = null!; // مثال: "طن", "متر مكعب"
 
     public virtual Factory Factory { get; set; } = null!;
