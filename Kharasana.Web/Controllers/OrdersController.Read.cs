@@ -97,10 +97,19 @@ namespace Kharasana.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var allDrivers = await _lookupApiService.GetAvailableDriversAsync();
-            ViewBag.AvailableDrivers = FactoryId.HasValue
-                ? allDrivers.Where(d => d.FactoryId == FactoryId.Value).ToList()
-                : allDrivers;
+            try
+            {
+                var allDrivers = await _lookupApiService.GetAvailableDriversAsync();
+                ViewBag.AvailableDrivers = FactoryId.HasValue
+                    ? allDrivers.Where(d => d.FactoryId == FactoryId.Value).ToList()
+                    : allDrivers;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "خطأ في تحميل السائقين المتاحين للطلب {OrderId}", id);
+                ViewBag.AvailableDrivers = new List<SelectListItem>(); // قائمة فارغة لتجنب الانهيار
+                TempData[TempDataError] = AppMessages.Error.FailedToLoadDrivers;
+            }
             ViewBag.FactoryId = FactoryId ?? 0;
 
             return View(order);
