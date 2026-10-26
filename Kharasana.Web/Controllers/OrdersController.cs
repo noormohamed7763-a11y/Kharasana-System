@@ -45,6 +45,8 @@ namespace Kharasana.Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "خطأ في تحميل أنواع الخرسانة");
+                TempData[TempDataError] = AppMessages.Error.FailedToLoadConcreteTypes; // إضافة رسالة خطأ للمستخدم
+                ViewBag.ConcreteTypes = new List<SelectListItem>(); // ضمان قائمة فارغة لتجنب NullReference
             }
         }
 

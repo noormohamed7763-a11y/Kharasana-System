@@ -124,6 +124,25 @@ document.addEventListener('DOMContentLoaded', function () {
         const savePaymentBtn = addPaymentModal.querySelector('#savePaymentBtn');
         const paymentForm = addPaymentModal.querySelector('#addPaymentForm');
         const orderId = paymentForm.querySelector('input[name="OrderId"]').value;
+        const paymentMethodSelect = paymentForm.querySelector('#paymentMethod');
+        const referenceNoInput = paymentForm.querySelector('#referenceNo');
+        const referenceNoContainer = referenceNoInput.closest('.mb-3');
+
+        // Toggle Reference Number based on Payment Method (Hawala = 2)
+        function toggleReferenceField() {
+            const hawalaValue = '2';
+            if (paymentMethodSelect.value === hawalaValue) {
+                referenceNoContainer.style.display = 'block';
+                referenceNoInput.required = true;
+            } else {
+                referenceNoContainer.style.display = 'none';
+                referenceNoInput.required = false;
+                referenceNoInput.value = '';
+            }
+        }
+
+        paymentMethodSelect.addEventListener('change', toggleReferenceField);
+        toggleReferenceField(); // Initial check
 
         savePaymentBtn.addEventListener('click', async function () {
             if (!paymentForm.checkValidity()) {

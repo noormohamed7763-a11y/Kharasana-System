@@ -155,7 +155,8 @@ namespace Kharasana.Web.Services.Api
                         return types;
                     }
 
-                    _logger.LogWarning("لا أنواع خرسانة من API.");
+                    _logger.LogError("فشل جلب أنواع الخرسانة: {Message}", response?.Message ?? "الاستجابة فارغة");
+                    throw new Exception("تعذر جلب أنواع الخرسانة من الخادم.");
                 }
                 catch (Exception ex)
                 {
