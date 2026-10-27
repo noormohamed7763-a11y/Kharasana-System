@@ -104,6 +104,12 @@ public class OrderDto
     [JsonPropertyName("siteDescription")]
     public string? SiteDescription { get; set; }
 
+    [JsonPropertyName("latitude")]
+    public decimal? Latitude { get; set; }
+
+    [JsonPropertyName("longitude")]
+    public decimal? Longitude { get; set; }
+
     [JsonPropertyName("slabType")]
     public SlabType SlabType { get; set; }
 

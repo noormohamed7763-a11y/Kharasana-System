@@ -24,6 +24,16 @@ public class Order
 
     public string? SiteDescription { get; set; }
 
+    /// <summary>
+    /// إحداثيات موقع صبّ الخرسانة كما التقطها جهاز العميل عند إنشاء الطلب.
+    ///
+    /// <para>قابلان للفراغ: الطلبات المنشأة قبل إضافة GPS، وطلبات السائقين
+    /// والموظفين التي لا تمرّ بتطبيق العميل، تبقى صالحة بلا موقع.</para>
+    /// </summary>
+    public decimal? Latitude { get; set; }
+
+    public decimal? Longitude { get; set; }
+
     public SlabType SlabType { get; set; }
 
     public decimal Quantity { get; set; }

@@ -195,6 +195,17 @@
 
                         <dt class="col-sm-4 text-muted">نوع البلاطة</dt>
                         <dd class="col-sm-8">@slabName</dd>
+
+                        @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+                        {
+                            <dt class="col-sm-4 text-muted">موقع الصب</dt>
+                            <dd class="col-sm-8">
+                                <a href="https://www.google.com/maps/search/?api=1&query=@Model.Latitude,@Model.Longitude"
+                                   target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-geo-alt"></i> فتح في الخرائط
+                                </a>
+                            </dd>
+                        }
                     </dl>
                 </div>
             </div>

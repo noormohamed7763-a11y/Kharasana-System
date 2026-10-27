@@ -422,6 +422,8 @@ public class OrderCommandService : IOrderCommandService
             ProjectOwnerName = dto.ProjectOwnerName,
             SiteArea = dto.SiteArea,
             SiteDescription = dto.SiteDescription,
+            Latitude = dto.Latitude,
+            Longitude = dto.Longitude,
             SlabType = dto.SlabType,
             Quantity = dto.Quantity,
             NeedPump = dto.NeedPump,

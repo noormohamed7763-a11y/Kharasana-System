@@ -26,6 +26,13 @@ public class OrderDto
     public DateTime? PouringDate { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>
+    /// إحداثيات موقع صبّ الخرسانة كما التقطها جهاز العميل.
+    /// تُعرض في طبقة الويب كخريطة مصغّرة وفتح رابط الملاحة إلى الموقع.
+    /// </summary>
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+
     // Navigation for Payments
     public ICollection<OrderPaymentDto> Payments { get; set; } = new List<OrderPaymentDto>();
 
