@@ -184,6 +184,8 @@ public static class AppMessages
         public const string InvalidLogin = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
         public const string InvalidLogo = "يرجى اختيار صورة صالحة.";
         public const string InvalidId = "المعرّف المطلوب غير صحيح.";
+        public const string FailedToLoadDrivers = "تعذر تحميل قائمة السائقين. حاول مرة أخرى.";
+        public const string FailedToLoadConcreteTypes = "تعذر تحميل أنواع الخرسانة. حاول مرة أخرى.";
 
         // ——— المستخدمون
         public const string UserCreate = "حدث خطأ أثناء إنشاء المستخدم.";

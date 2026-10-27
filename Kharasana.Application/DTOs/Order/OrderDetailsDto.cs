@@ -42,6 +42,13 @@ public class OrderDetailsDto
         public decimal RemainingAmount => (NetAmount ?? 0) - PaidAmount;
     public DateTime? PouringDate { get; set; }
 
+    /// <summary>
+    /// إحداثيات موقع صبّ الخرسانة كما التقطها جهاز العميل عند إنشاء الطلب.
+    /// قابلة للفراغ للطلبات المنشأة قبل إضافة GPS أو التي لا تمرّ بتطبيق العميل.
+    /// </summary>
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+
     // ✅ معلومات النقل
     public TransportMethod TransportMethod { get; set; }
 

@@ -1,5 +1,6 @@
 using Kharasana.Web.Filters;
 using Kharasana.Web.Helpers;
+using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Orders;
 using Microsoft.AspNetCore.Mvc;

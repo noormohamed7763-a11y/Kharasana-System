@@ -18,4 +18,6 @@ public class CreateOrderDto
     public DateTime? PouringDate { get; set; }
     public TransportMethod TransportMethod { get; set; }
     public string? Notes { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
 }

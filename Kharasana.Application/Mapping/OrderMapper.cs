@@ -27,7 +27,9 @@ public static class OrderMapper
             TransportMethod = o.TransportMethod,
             Status = o.Status,
             PouringDate = o.PouringDate,
-            CreatedAt = o.CreatedAt
+            CreatedAt = o.CreatedAt,
+            Latitude = o.Latitude,
+            Longitude = o.Longitude
         };
     }
 
@@ -99,7 +101,9 @@ public static class OrderMapper
             DriverPhone = showDriver ? YemeniPhoneHelper.Normalize(order.Driver?.Phone) : null,
             TruckPlate = showDriver ? order.TruckPlate : null,
             Status = order.Status,
-            Notes = order.Notes
+            Notes = order.Notes,
+            Latitude = order.Latitude,
+            Longitude = order.Longitude
         };
     }
 }
