@@ -57,7 +57,8 @@ DESKTOP STICKY ESTIMATOR PANEL - حاسبة وملخص التكلفة لشاشا
 
         <!-- أزرار الإجراء السريع في اللوحة الثابتة -->
         <div class="estimator-actions">
-            <button type="submit" class="btn btn-outline-primary btn-lg d-none d-lg-flex" id="stickySubmitBtn" form="createOrderForm">
+            <button type="submit" class="btn btn-outline-primary btn-lg d-none d-lg-flex" id="stickySubmitBtn" form="createOrderForm"
+                    onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm\' aria-hidden=\'true\'></span> <span role=\'status\'>جاري الحفظ...</span>';">
                 <i class="bi bi-check-circle"></i> إنشاء الطلب الآن
             </button>
 

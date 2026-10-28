@@ -29,43 +29,31 @@ namespace Kharasana.Web.Services.Api
         private const int MaxLookupPages = 20;
 
         /// <summary>
-        /// يجلب **كل** عناصر قائمة مرقّمة عبر صفحاتها المتتابعة.
-        ///
-        /// <para>الـ API يقيّد PageSize بسقف 100، فطلب صفحة واحدة كان يُسقط كل ما بعد
-        /// العنصر المئة صامتاً — فيغيب سائق متاح أو عميل موجود عن القائمة المنسدلة
-        /// بلا أي إشارة ويستحيل اختياره. هنا نقرأ TotalCount من الصفحة الأولى ثم نكمل
-        /// ما بقي.</para>
+        /// جلب **كل** عناصر قائمة مرقّمة عبر صفحاتها المتتابعة.
         /// </summary>
-        private async Task<List<UserDto>> FetchAllUsersAsync(string url)
+        private async Task<List<TItem>> FetchPagedAsync<TItem, TResult>(
+            string url,
+            Func<IEnumerable<TResult>, IEnumerable<TItem>> extractor)
         {
-            var items = new List<UserDto>();
+            var items = new List<TItem>();
             var pageNumber = 1;
             var totalCount = int.MaxValue;
             var separator = url.Contains('?') ? '&' : '?';
 
             while (items.Count < totalCount && pageNumber <= MaxLookupPages)
             {
-                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(
+                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<TResult>>>(
                     $"{url}{separator}PageNumber={pageNumber}&PageSize={LookupPageSize}");
 
                 if (response == null || !response.Success || response.Data?.Items == null)
                 {
-                    _logger.LogWarning("لا بيانات قوائم في الصفحة {Page} من {Url}", pageNumber, url);
+                    _logger.LogWarning("لا بيانات في الصفحة {Page} من {Url}", pageNumber, url);
                     break;
                 }
 
-                items.AddRange(response.Data.Items);
+                items.AddRange(extractor(response.Data.Items));
                 totalCount = response.Data.TotalCount;
                 pageNumber++;
-            }
-
-            if (items.Count < totalCount)
-            {
-                _logger.LogWarning(
-                    "قُطعت القوائم: جُلب {Fetched} من {Total} من {Url}",
-                    items.Count,
-                    totalCount,
-                    url);
             }
 
             return items;
@@ -73,12 +61,6 @@ namespace Kharasana.Web.Services.Api
 
         /// <summary>
         /// جلب قائمة اختيار (سائقون/عملاء) مع توحيد التسجيل.
-        ///
-        /// <para>⚠️ لا يُبتلع <see cref="ApiServiceException"/> هنا: تعذّر الوصول إلى الـ API
-        /// كان يُعيد قائمة فارغة، فتظهر المنسدلة وكأنه «لا يوجد سائقون متاحون» — نتيجة
-        /// خاطئة تدفع المستخدم لقرار خاطئ (يظن أن لا سائقين بينما الخدمة متوقفة).
-        /// يُطرح الاستثناء ليعرضه المتحكّم برسالة صريحة؛ وكل مواضع الاستدعاء تُحيط
-        /// النداء بـ try/catch يعالج ApiServiceException.</para>
         /// </summary>
         private async Task<List<LookupDto>> FetchUserLookupAsync(
             string operation,
@@ -87,7 +69,7 @@ namespace Kharasana.Web.Services.Api
         {
             _logger.LogInformation("جلب {Operation}...", operation);
 
-            var users = await FetchAllUsersAsync(url);
+            var users = await FetchPagedAsync<UserDto, UserDto>(url, items => items);
             var items = users.Select(project).ToList();
 
             _logger.LogInformation("وُجد {Count} {Operation}", items.Count, operation);
@@ -97,9 +79,6 @@ namespace Kharasana.Web.Services.Api
 
         /// <summary>
         /// جلب جميع السائقين المتاحين في النظام
-        ///
-        /// <para>التصفية على الخادم (<c>isActive=true</c>): كانت تُجلب الصفحة الأولى ثم
-        /// تُصفّى في الذاكرة، فيسقط سائق نشط وقع خارج تلك الصفحة.</para>
         /// </summary>
         public async Task<List<LookupDto>> GetAvailableDriversAsync()
         {
@@ -115,18 +94,11 @@ namespace Kharasana.Web.Services.Api
         }
 
         /// <summary>
-        /// جلب أنواع الخرسانة.
-        ///
-        /// <para>⚠️ خلافًا لـ<see cref="FetchUserLookupAsync"/> لا يُطرح الاستثناء هنا بل
-        /// تُعاد قائمة فارغة — وهذا مقصود لا سهو: كل مواضع النداء في <c>OrdersController</c>
-        /// تقع إما داخل <c>try</c> الإجراء وإما داخل كتل <c>catch</c> نفسها، فرمي
-        /// <see cref="ApiServiceException"/> هناك يستبدل رسالة عربية صريحة برسالة عامة.
-        /// والثمن — منسدلة فارغة عند تعذّر الوصول — مقبول لأن رسالة الخطأ الأصلية معروضة
-        /// في الصفحة نفسها.</para>
+        /// جلب أنواع الخرسانة الخاصة بمصنع معين.
         /// </summary>
-        public async Task<List<LookupDto>> GetConcreteTypesAsync()
+        public async Task<List<LookupDto>> GetConcreteTypesAsync(int factoryId)
         {
-            const string cacheKey = "ConcreteTypes_Lookup";
+            string cacheKey = $"ConcreteTypes_Lookup_{factoryId}";
 
             return await _cache.GetOrCreateAsync(cacheKey, async entry =>
             {
@@ -135,35 +107,27 @@ namespace Kharasana.Web.Services.Api
 
                 try
                 {
-                    _logger.LogInformation("جلب أنواع الخرسانة من API (Cache Miss)...");
+                    _logger.LogInformation("جلب أنواع الخرسانة للمصنع {FactoryId} من API...", factoryId);
 
-                    var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeDto>>>("ConcreteTypes");
-
-                    if (response != null && response.Success && response.Data != null)
-                    {
-                        var types = response.Data
+                    var items = await FetchPagedAsync<LookupDto, ConcreteTypeDto>(
+                        $"ConcreteTypes?factoryId={factoryId}",
+                        items => items
                             .Where(x => x.IsActive)
                             .Select(x => new LookupDto
                             {
                                 Id = x.ConcreteTypeId,
                                 Name = x.Name,
                                 UnitPrice = x.UnitPrice
-                            })
-                            .ToList();
+                            }));
 
-                        _logger.LogInformation("وُجد {Count} نوع خرسانة", types.Count);
-                        return types;
-                    }
-
-                    _logger.LogError("فشل جلب أنواع الخرسانة: {Message}", response?.Message ?? "الاستجابة فارغة");
-                    throw new Exception("تعذر جلب أنواع الخرسانة من الخادم.");
+                    _logger.LogInformation("وُجد {Count} نوع خرسانة للمصنع {FactoryId}", items.Count, factoryId);
+                    return items;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "خطأ في جلب أنواع الخرسانة من API");
+                    _logger.LogError(ex, "خطأ في جلب أنواع الخرسانة للمصنع {FactoryId}", factoryId);
+                    throw;
                 }
-
-                return new List<LookupDto>();
             }) ?? new List<LookupDto>();
         }
     }

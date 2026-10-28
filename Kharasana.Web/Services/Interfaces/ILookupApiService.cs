@@ -3,5 +3,5 @@ using Kharasana.Web.ViewModels.Shared;
 public interface ILookupApiService
 {
     Task<List<LookupDto>> GetAvailableDriversAsync();
-    Task<List<LookupDto>> GetConcreteTypesAsync();
+    Task<List<LookupDto>> GetConcreteTypesAsync(int factoryId);
 }

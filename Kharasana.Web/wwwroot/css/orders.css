@@ -2,6 +2,29 @@
    KHARASANA ERP — إدارة الطلبات
    ========================================================== */
 
+/* ── 0. تحسين بطاقة نموذج الإنشاء (Create Order Form Card) ── */
+.form-card {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-main);
+    box-shadow: var(--shadow-md);
+    padding: var(--card-padding);
+    transition: box-shadow var(--transition-slow);
+}
+
+.form-card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+/* تحسين المسافات بين الأقسام في البطاقة */
+.form-card > .form-section-title {
+    margin-top: 0;
+}
+
+.form-card .row.g-4 {
+    gap: var(--space-6);
+}
+
 /* ── 1. شارات الحالة (Status Badges) — نمط مؤسسي هادئ ── */
 .status-badge {
     padding: 0.35rem 0.75rem;
@@ -211,4 +234,45 @@
     background: var(--brand-cta-soft);
     border-color: var(--brand-cta) !important;
     box-shadow: 0 0 0 2px rgba(194, 75, 23, 0.18);
+}
+
+/* ── 9. تحسين أزرار الإرسال (Submit Buttons) ── */
+.btn-primary,
+.btn-outline-primary {
+    min-width: 140px;
+    font-weight: 600;
+    padding-block: 12px;
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-outline-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:disabled,
+.btn-outline-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* spinner مركز داخل الزر */
+.spinner-border-sm {
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+/* ── 10. توزيع الأعمدة (Desktop Grid Balance) ── */
+@media (min-width: 992px) {
+    .dashboard-page .row > .col-lg-8 {
+        /* العمود الرئيسي يأخذ 60% على الشاشات العريضة */
+        flex: 0 0 60%;
+        max-width: 60%;
+    }
+
+    .dashboard-page .row > .col-lg-4 {
+        /* لوحة الحاسبة تأخذ 40% */
+        flex: 0 0 40%;
+        max-width: 40%;
+    }
 }
