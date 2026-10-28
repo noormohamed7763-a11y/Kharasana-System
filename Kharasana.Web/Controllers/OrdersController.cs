@@ -40,7 +40,8 @@ namespace Kharasana.Web.Controllers
         {
             try
             {
-                var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
+                if (!FactoryId.HasValue) return;
+                var concreteTypes = await _lookupApiService.GetConcreteTypesAsync(FactoryId.Value);
                 ViewBag.ConcreteTypes = concreteTypes;
             }
             catch (Exception ex)
@@ -65,8 +66,11 @@ namespace Kharasana.Web.Controllers
         {
             try
             {
-                var concreteTypes = await _lookupApiService.GetConcreteTypesAsync();
-                ViewBag.ConcreteTypes = new SelectList(concreteTypes, "Id", "Name", model.ConcreteTypeId);
+                if (FactoryId.HasValue)
+                {
+                    var concreteTypes = await _lookupApiService.GetConcreteTypesAsync(FactoryId.Value);
+                    ViewBag.ConcreteTypes = new SelectList(concreteTypes, "Id", "Name", model.ConcreteTypeId);
+                }
 
                 var order = await _ordersApiService.GetOrderByIdAsync(model.OrderId);
 
