@@ -1,3 +1,4 @@
+@using Kharasana.Web.Controllers
 @model Kharasana.Application.DTOs.Factory.RegisterFactoryDto
 
 @{
@@ -544,6 +545,21 @@
                     <h1>طلب تسجيل مصنع</h1>
                     <p>قم بتعبئة بيانات المصنع والمالك للانضمام إلى شبكة التوريد الذكية.</p>
                 </div>
+
+                @if (TempData[BaseController.TempDataSuccess] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @TempData[BaseController.TempDataSuccess]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
 
                 <form asp-action="Create" method="post" id="regForm" autocomplete="off" novalidate>
                     @Html.AntiForgeryToken()

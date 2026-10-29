@@ -76,6 +76,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             order.Notes = (order.Notes + "\n" + string.Format(Messages.RejectionReasonPrefix, reason)).Trim();
 
         ReleaseDriver(order);
+        _trackingService.RemoveOrder(order.OrderId);
 
         _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
@@ -102,6 +103,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         order.UpdatedAt = DateTime.UtcNow;
 
         ReleaseDriver(order);
+        _trackingService.RemoveOrder(order.OrderId);
 
         _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
@@ -204,6 +206,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         _trackingService.RemoveOrder(order.OrderId);
         ReleaseDriver(order);
+        _trackingService.RemoveOrder(order.OrderId);
 
         _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
@@ -249,6 +252,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         if (dto.Status is OrderStatus.Delivered or OrderStatus.Rejected or OrderStatus.Cancelled)
             ReleaseDriver(order);
+        _trackingService.RemoveOrder(order.OrderId);
 
         _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();

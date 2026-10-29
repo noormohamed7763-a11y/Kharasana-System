@@ -36,7 +36,7 @@ public class OrderConcreteTypeSnapshotTests : IDisposable
         var orderHelper = new OrderHelperService(_unitOfWork);
         var orderQueryService = new OrderQueryService(_unitOfWork, orderHelper);
         var orderCommandService = new OrderCommandService(_unitOfWork, passwordHasher);
-        var orderWorkflowService = new OrderWorkflowService(_unitOfWork);
+        var orderWorkflowService = new OrderWorkflowService(_unitOfWork, new FakeTrackingService());
         _orderService = new OrderService(passwordHasher, _unitOfWork, orderQueryService, orderCommandService, orderWorkflowService);
     }
 

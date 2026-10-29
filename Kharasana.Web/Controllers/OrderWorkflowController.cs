@@ -14,6 +14,7 @@ namespace Kharasana.Web.Controllers
     /// تُفصّل عن OrdersController (الذي يتعامل مع العرض CRUD) لتقليل حجم الكود وتبسيط الصيانة.
     /// </summary>
     [SessionAuthorize]
+    [Route("OrderWorkflow")]
     [ServiceFilter(typeof(ApiExceptionHandlerFilter))]
     public class OrderWorkflowController : BaseController
     {
