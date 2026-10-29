@@ -1,86 +1,257 @@
 @model Kharasana.Web.ViewModels.Orders.OrderDto
+@using Kharasana.Domain.Enums
+@using Kharasana.Web.Helpers
 
 @{
-    // أمر توريد وطباعة بيانات الصب — تُطبع فقط (d-none d-print-block).
-    var factoryId = ViewBag.FactoryId ?? 0;
-    var slabName = Enum.IsDefined(typeof(Kharasana.Domain.Enums.SlabType), Model.SlabType)
-        ? ((Kharasana.Domain.Enums.SlabType)Model.SlabType).GetDisplayName()
+    var slabType = (SlabType)Model.SlabType;
+    var slabName = Enum.IsDefined(typeof(SlabType), Model.SlabType)
+        ? slabType.GetDisplayName()
         : "غير محدد";
     var transportName = Model.TransportMethod.GetDisplayName();
+    var factoryTitle = string.IsNullOrWhiteSpace(Model.FactoryName) ? "شركة ومصنع الخرسانة الجاهزة" : Model.FactoryName;
+    var pouringDateStr = Model.PouringDate?.ToString("yyyy/MM/dd") ?? Model.CreatedAt.ToString("yyyy/MM/dd");
+    var pouringTimeStr = Model.PouringDate?.ToString("hh:mm tt") ?? "صباحاً";
 }
 
-<div class="print-delivery-ticket d-none d-print-block">
-    <div class="ticket-header text-center">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="text-start">
-                @* اسم المصنع الحقيقي من الطلب —identity ensured by showing actual factory name. *@
-                <h5 class="fw-bold mb-1">@(string.IsNullOrWhiteSpace(Model.FactoryName) ? "مصنع خرسانة جاهزة" : Model.FactoryName)</h5>
-                <div class="text-muted small">@Model.OrderNumber</div>
+<div class="print-delivery-ticket d-none d-print-block yemeni-bond-container" dir="rtl">
+    <!-- ============================================================
+    ترويسة السند الرسمية
+    ============================================================ -->
+    <div class="bond-header">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+            <div class="text-start company-info">
+                <h4 class="fw-bold mb-0 text-dark">@factoryTitle</h4>
+                <div class="small text-muted">صناعة وتوريد الخرسانة الجاهزة - الجمهورية اليمنية</div>
             </div>
-            <div>
-                <h2 class="ticket-title">أمر توريد</h2>
-                <div class="mt-1">
-                    <strong>رقم الطلب:</strong> #@Model.OrderNumber
-                </div>
+            <div class="text-center bond-title-box">
+                <h3 class="fw-bold mb-1 bond-main-title">سند طلب خرسانة جاهزة</h3>
+                <span class="badge bg-dark fs-6 px-3 py-1">رقم الطلب: #@Model.OrderNumber</span>
             </div>
-            <div class="text-end">
-                <div class="small"><strong>تاريخ الصب:</strong> @(Model.PouringDate?.ToString("yyyy-MM-dd") ?? Model.CreatedAt.ToString("yyyy-MM-dd"))</div>
-                <div class="small"><strong>وقت الطباعة:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</div>
-                <div class="small"><strong>نوع المستند:</strong> أمر توريد</div>
+            <div class="text-end doc-meta">
+                <div class="small"><strong>التاريخ:</strong> @DateTime.Now.ToString("yyyy/MM/dd")م</div>
+                <div class="small"><strong>تاريخ الصب:</strong> @pouringDateStr م</div>
+                <div class="small text-muted"><strong>وقت الطباعة:</strong> @DateTime.Now.ToString("HH:mm")</div>
             </div>
         </div>
     </div>
 
-    <div class="row g-3 mb-3">
-        <div class="col-6">
-            <table class="ticket-table">
-                <tbody>
-                    <tr><th>اسم العميل</th><td>@(Model.ClientName ?? "غير محدد")</td></tr>
-                    <tr><th>رقم الهاتف</th><td dir="ltr">@(Model.ClientPhone ?? "-")</td></tr>
-                    <tr><th>اسم المشروع</th><td>@(Model.ProjectName ?? "-")</td></tr>
-                    <tr><th>مالك المشروع</th><td>@(Model.ProjectOwnerName ?? "-")</td></tr>
-                    <tr><th>منطقة الموقع</th><td>@(Model.SiteArea ?? "-")</td></tr>
-                    <tr><th>وصف الموقع</th><td>@(Model.SiteDescription ?? "-")</td></tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="col-6">
-            <table class="ticket-table">
-                <tbody>
-                    <tr><th>صنف الخرسانة</th><td class="fw-bold">@Model.ConcreteTypeName</td></tr>
-                    <tr><th>الكمية المصرحة</th><td class="fw-bold">@Model.Quantity م³</td></tr>
-                    <tr><th>العنصر الإنشائي</th><td>@slabName</td></tr>
-                    <tr><th>مضخة خرسانية</th><td>@(Model.NeedPump ? $"نعم (طابق {Model.FloorNumber})" : "بدون مضخة")</td></tr>
-                    <tr><th>طريقة النقل</th><td>@transportName</td></tr>
-                    <tr><th>السائق والشاحنة</th><td>@(Model.DriverName ?? "غير معين") @(string.IsNullOrEmpty(Model.TruckPlate) ? "" : $"({Model.TruckPlate})")</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <!-- ============================================================
+    1. بيانات العميل والموقع
+    ============================================================ -->
+    <div class="bond-section">
+        <div class="section-badge">1. بيانات العميل والموقع:</div>
+        <table class="table-compact">
+            <tbody>
+                <tr>
+                    <td style="width: 15%;" class="lbl">اسم العميل:</td>
+                    <td style="width: 35%;" class="val fw-bold">@(Model.ClientName ?? "غير محدد")</td>
+                    <td style="width: 15%;" class="lbl">رقم الهاتف:</td>
+                    <td style="width: 35%;" class="val" dir="ltr">@(Model.ClientPhone ?? "-")</td>
+                </tr>
+                <tr>
+                    <td class="lbl">اسم المشروع:</td>
+                    <td class="val">@(Model.ProjectName ?? "-")</td>
+                    <td class="lbl">مالك المشروع:</td>
+                    <td class="val">@(Model.ProjectOwnerName ?? Model.ClientName ?? "-")</td>
+                </tr>
+                <tr>
+                    <td class="lbl">موقع الصب:</td>
+                    <td class="val" colspan="3">
+                        @(Model.SiteArea ?? "") @(string.IsNullOrEmpty(Model.SiteDescription) ? "" : $" - {Model.SiteDescription}")
+                        @if (!string.IsNullOrEmpty(Model.Landmarks))
+                        {
+                            <span class="landmarks-text"> (معالم بارزة: @Model.Landmarks)</span>
+                        }
+                        @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+                        {
+                            <span class="gps-text"> [إحداثيات GPS: @Model.Latitude, @Model.Longitude]</span>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <td class="lbl">المشرف بالموقع:</td>
+                    <td class="val">@(Model.SupervisorName ?? Model.ProjectOwnerName ?? Model.ClientName ?? "المشرف المستلم")</td>
+                    <td class="lbl">هاتف المشرف:</td>
+                    <td class="val" dir="ltr">@(Model.SupervisorPhone ?? Model.ClientPhone ?? "-")</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ============================================================
+    2. المواصفات الفنية للخلطة الخرسانية
+    ============================================================ -->
+    <div class="bond-section">
+        <div class="section-badge">2. المواصفات الفنية للخلطة الخرسانية:</div>
+        <table class="table-compact">
+            <tbody>
+                <tr>
+                    <td class="lbl" style="width: 20%;">المقاومة المطلوبة:</td>
+                    <td class="val" colspan="3">
+                        @{
+                            var strength = Model.ConcreteStrength;
+                        }
+                        <span class="chk-item">[@(strength == 250 ? "✓" : " ")] 250 كجم/سم²</span>
+                        <span class="chk-item">[@(strength == 300 ? "✓" : " ")] 300 كجم/سم²</span>
+                        <span class="chk-item">[@(strength == 350 ? "✓" : " ")] 350 كجم/سم²</span>
+                        <span class="chk-item">[@(strength != 250 && strength != 300 && strength != 350 && strength > 0 ? $"✓ {strength} كجم/سم²" : " ")] أخرى (@Model.ConcreteTypeName)</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="lbl">نوع الإسمنت:</td>
+                    <td class="val" colspan="3">
+                        <span class="chk-item">[@(Model.CementType == CementType.SulphateResistant ? "✓" : " ")] مقاوم للملوحة (بورتلاندي مقاوم - SRC)</span>
+                        <span class="chk-item">[@(Model.CementType == CementType.Ordinary ? "✓" : " ")] عادي (بورتلاندي عادي - OPC)</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="lbl">نوع الصبة (العنصر):</td>
+                    <td class="val" colspan="3">
+                        <span class="chk-item">[@(slabType == SlabType.Foundation ? "✓" : " ")] قواعد</span>
+                        <span class="chk-item">[@(slabType == SlabType.Columns ? "✓" : " ")] أعمدة</span>
+                        <span class="chk-item">[@(slabType == SlabType.Roof ? "✓" : " ")] أسقف</span>
+                        <span class="chk-item">[@(slabType == SlabType.Beams ? "✓" : " ")] كمرات (جسور)</span>
+                        <span class="chk-item">[@(slabType == SlabType.Other ? "✓" : " ")] مضافة / أخرى (@slabName)</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="lbl">حجم الحجر (الكري):</td>
+                    <td class="val">
+                        <span class="chk-item">[@(Model.AggregateSize == AggregateSize.Size20mm ? "✓" : " ")] حد أقصى 20 ملم</span>
+                        <span class="chk-item">[@(Model.AggregateSize == AggregateSize.Size12mm ? "✓" : " ")] حد أقصى 12 ملم</span>
+                    </td>
+                    <td class="lbl" style="width: 15%;">الإضافات:</td>
+                    <td class="val">
+                        <span class="chk-item">[@(Model.Admixture == Admixture.Plasticizer ? "✓" : " ")] لدانة (تسهيل الضخ)</span>
+                        <span class="chk-item">[@(Model.Admixture == Admixture.Retarder ? "✓" : " ")] مؤخر شك</span>
+                        <span class="chk-item">[@(Model.Admixture == Admixture.None ? "✓" : " ")] بدون</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ============================================================
+    3. الكمية والمواعيد ونوع التوريد
+    ============================================================ -->
+    <div class="bond-section">
+        <div class="section-badge">3. الكمية والمواعيد ونوع التوريد:</div>
+        <table class="table-compact">
+            <tbody>
+                <tr>
+                    <td class="lbl" style="width: 20%;">الكمية المطلوبة:</td>
+                    <td class="val fw-bold" style="width: 30%; font-size: 1.05rem;">@Model.Quantity م³ (متر مكعب)</td>
+                    <td class="lbl" style="width: 20%;">تاريخ ووقت الصب:</td>
+                    <td class="val" style="width: 30%;">@pouringDateStr م - الساعة @pouringTimeStr</td>
+                </tr>
+                <tr>
+                    <td class="lbl">نوع التوريد:</td>
+                    <td class="val">
+                        @if (Model.NeedPump)
+                        {
+                            <span>[✓] بمب (مضخة خرسانية) - طابق: @(Model.FloorNumber?.ToString() ?? "أرضي")</span>
+                        }
+                        else
+                        {
+                            <span>[✓] صب مباشر (مزراب) - بدون بمب</span>
+                        }
+                    </td>
+                    <td class="lbl">معدل التدفق:</td>
+                    <td class="val">تتابع الخلاطات كل 25 - 35 دقيقة</td>
+                </tr>
+                <tr>
+                    <td class="lbl">السائق والخلاطة:</td>
+                    <td class="val">@(Model.DriverName ?? "يحدد عند الإرسال") @(string.IsNullOrEmpty(Model.TruckPlate) ? "" : $" (لوحة: {Model.TruckPlate})")</td>
+                    <td class="lbl">طريقة النقل:</td>
+                    <td class="val">@transportName</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ============================================================
+    4. تفاصيل الحساب المالي
+    ============================================================ -->
+    <div class="bond-section">
+        <div class="section-badge">4. تفاصيل الحساب المالي (ريال يمني):</div>
+        <table class="table-compact financial-table">
+            <thead>
+                <tr class="table-header-row">
+                    <th>سعر المتر الواصل</th>
+                    <th>إجمالي قيمة الخرسانة</th>
+                    <th>الخصم</th>
+                    <th>المبلغ الإجمالي الصافي</th>
+                    <th>المدفوع مقدماً</th>
+                    <th>المبلغ المتبقي</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="text-center">
+                    <td>@(Model.UnitPrice.HasValue ? $"{Model.UnitPrice.Value:N0} ر.ي" : "قيد التسعير")</td>
+                    <td>@(Model.TotalPrice.HasValue ? $"{Model.TotalPrice.Value:N0} ر.ي" : "-")</td>
+                    <td>@(Model.TotalDiscountAmount > 0 ? $"{Model.TotalDiscountAmount:N0} ر.ي" : "0 ر.ي")</td>
+                    <td class="fw-bold">@($"{Model.NetAmount:N0} ر.ي")</td>
+                    <td class="text-success fw-bold">@($"{Model.TotalPaid:N0} ر.ي")</td>
+                    <td class="text-danger fw-bold">@($"{Model.RemainingAmount:N0} ر.ي")</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     @if (!string.IsNullOrEmpty(Model.Notes))
     {
-        <div class="p-2 border mb-3 small">
-            <strong>ملاحظات إضافية:</strong> @Model.Notes
+        <div class="bond-section mb-1">
+            <div class="section-badge">ملاحظات إضافية:</div>
+            <div class="p-1 px-2 border rounded bg-light small">
+                @Model.Notes
+            </div>
         </div>
     }
 
-    <div class="ticket-signatures">
-        <div class="row text-center">
-            <div class="col-4 ticket-sig-box">
-                <div class="fw-bold">مسؤول محطة الخلط</div>
-                <div class="ticket-sig-line"></div>
-                <small class="text-muted d-block mt-1">الاسم والختم</small>
+    <!-- ============================================================
+    5. شروط وأحكام التوريد الهندسية والقانونية (هام)
+    ============================================================ -->
+    <div class="bond-section conditions-section">
+        <div class="section-badge">5. شروط وأحكام التوريد (هام):</div>
+        <ol class="conditions-list mb-1 ps-3">
+            <li><strong>تجهيز الموقع:</strong> يلتزم العميل بتجهيز الموقع، وتأمين مسار آمن وخالٍ من العوائق لمرور الخلاطات والمضخة، وتوفير العمالة اللازمة للصب والتسوية.</li>
+            <li><strong>فترة الانتظار:</strong> يُسمح بالخلاطة في الموقع لمدة أقصاها (45 دقيقة) لتفريغ الشحنة، وأي تأخير إضافي ناتج عن الموقع يتحمل العميل مسؤوليته وما يترتب عليه من تلف الخرسانة.</li>
+            <li><strong>إضافة الماء:</strong> يُمنع منعاً باتاً إضافة الماء إلى الخرسانة داخل الموقع بدون إذن وإشراف المهندس المسؤول، والشركة غير مسؤولة عن هبوط المقاومة في حال تم إضافة الماء بطلب من العميل.</li>
+            <li><strong>الفحص والاختبار:</strong> يتم أخذ مكعبات الفحص (الخرسانة) في الموقع وفقاً للمواصفات الهندسية المعتمدة في الجمهورية اليمنية.</li>
+        </ol>
+    </div>
+
+    <!-- ============================================================
+    التوقيعات والبصمة الرسمية
+    ============================================================ -->
+    <div class="bond-signatures mt-2">
+        <div class="row text-center g-2">
+            <div class="col-4">
+                <div class="sig-card">
+                    <div class="sig-title">توقيع وبصمة المشرف / العميل</div>
+                    <div class="sig-space">
+                        <div class="fingerprint-box">مكان البصمة</div>
+                    </div>
+                    <div class="sig-name">الاسم: .................................</div>
+                </div>
             </div>
-            <div class="col-4 ticket-sig-box">
-                <div class="fw-bold">سائق الشاحنة</div>
-                <div class="ticket-sig-line"></div>
-                <small class="text-muted d-block mt-1">توقيع السائق</small>
+            <div class="col-4">
+                <div class="sig-card">
+                    <div class="sig-title">سائق الخلاطة / التوريد</div>
+                    <div class="sig-space">
+                        <div class="sig-line"></div>
+                    </div>
+                    <div class="sig-name">الاسم: @(Model.DriverName ?? ".................................")</div>
+                </div>
             </div>
-            <div class="col-4 ticket-sig-box">
-                <div class="fw-bold">المستلم / مهندس الموقع</div>
-                <div class="ticket-sig-line"></div>
-                <small class="text-muted d-block mt-1">توقيع استلام الكمية</small>
+            <div class="col-4">
+                <div class="sig-card">
+                    <div class="sig-title">توقيع ومختم مسؤول المبيعات / المصنع</div>
+                    <div class="sig-space">
+                        <div class="stamp-box">ختم الشركة</div>
+                    </div>
+                    <div class="sig-name">التوقيع: .................................</div>
+                </div>
             </div>
         </div>
     </div>

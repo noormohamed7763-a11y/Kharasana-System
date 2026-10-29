@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using Kharasana.Domain.Enums;
 using Kharasana.Web.Helpers;
 
@@ -104,6 +104,24 @@ public class OrderDto
     [JsonPropertyName("siteDescription")]
     public string? SiteDescription { get; set; }
 
+    [JsonPropertyName("landmarks")]
+    public string? Landmarks { get; set; }
+
+    [JsonPropertyName("supervisorName")]
+    public string? SupervisorName { get; set; }
+
+    [JsonPropertyName("supervisorPhone")]
+    public string? SupervisorPhone { get; set; }
+
+    [JsonPropertyName("cementType")]
+    public CementType CementType { get; set; } = CementType.Ordinary;
+
+    [JsonPropertyName("aggregateSize")]
+    public AggregateSize AggregateSize { get; set; } = AggregateSize.Size20mm;
+
+    [JsonPropertyName("admixture")]
+    public Admixture Admixture { get; set; } = Admixture.Plasticizer;
+
     [JsonPropertyName("latitude")]
     public decimal? Latitude { get; set; }
 
@@ -173,10 +191,6 @@ public class OrderDto
 
     /// <summary>
     /// الاسم العربي للحالة جاهزاً للعرض (مع إيموجي).
-    /// <para>✅ يحوّل إلى طبقة العرض الوحيدة <see cref="OrderStatusExtensions.GetArabicName"/> —
-    /// كانت هنا خريطة ثالثة كاملة مكرّرة حرفياً مع إيموجيها. الخريطة المكرّرة تعني أن
-    /// إضافة حالة جديدة يوماً ما كانت ستتطلّب تعديل ثلاثة مواضع، وأن نسيتها في أحدهما
-    /// تُنتج نصاً متناقضاً بين شاشة الطلبات ولوحة المعلومات لنفس الطلب.</para>
     /// </summary>
     public string StatusArabic => Status.GetArabicName();
 

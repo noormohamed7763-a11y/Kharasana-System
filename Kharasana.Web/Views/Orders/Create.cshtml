@@ -4,41 +4,40 @@
     ViewData["Title"] = "إنشاء طلب جديد";
 }
 
-<div class="dashboard-page dashboard-page--narrow dashboard-page--wide-form">
-
+<div class="dashboard-page dashboard-page--wide-form">
 
     @await Html.PartialAsync(
-    "~/Views/Shared/Components/_PageHeader.cshtml",
+        "~/Views/Shared/Components/_PageHeader.cshtml",
         new Kharasana.Web.Models.Components.PageHeaderViewModel
         {
             Icon = "bi-plus-circle",
             Title = "إنشاء طلب جديد",
-            Description = "إنشاء طلب خرسانة جديد للعميل"
+            Description = "إنشاء وتوثيق طلب خرسانة جديد لصالح العميل عبر موظف المصنع"
         })
 
     @if (Model.HasPendingOrder && Model.PendingOrderId.HasValue)
     {
-        <div class="alert alert-warning border-warning shadow-sm mb-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 p-3 rounded-3" role="alert">
+        <div class="alert alert-warning border-warning shadow-sm mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 p-3 rounded-3" role="alert">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-exclamation-circle-fill fs-4 text-warning"></i>
+                <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
                 <div>
-                    <strong>تنبيه بخصوص طلباتك السابقة:</strong>
+                    <strong class="d-block">تنبيه بخصوص طلب سابق:</strong>
                     <div>
-                        لديك طلب سابق قيد الانتظار حالياً برقم <strong>@Model.PendingOrderNumber</strong>
+                        يوجد طلب سابق قيد الانتظار حالياً برقم <strong>@Model.PendingOrderNumber</strong>
                         @(string.IsNullOrWhiteSpace(Model.PendingProjectName) ? "" : $"لمشروع ({Model.PendingProjectName})").
                     </div>
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2 flex-shrink-0">
                 <a asp-action="Edit" asp-route-id="@Model.PendingOrderId" class="btn btn-sm btn-warning text-dark fw-bold">
-                    <i class="bi bi-pencil-square me-1"></i> تعديل الطلب السابق بدلاً من هذا
+                    <i class="bi bi-pencil-square me-1"></i> تعديل الطلب السابق بدلاً من إنشاء جديد
                 </a>
             </div>
         </div>
     }
 
     <!-- ============================================================
-    FORM - نموذج إنشاء الطلب لشاشات الكمبيوتر
+    FORM - نموذج إنشاء الطلب
     ============================================================ -->
     <form asp-action="Create" method="post" id="createOrderForm">
 
@@ -48,28 +47,23 @@
 
         <div class="row g-4 align-items-start">
 
-            <!-- العمود الرئيسي: مدخلات النموذج وبيانات الطلب -->
+            <!-- العمود الرئيسي: بطاقات النموذج الموزعة -->
             <div class="col-lg-8 col-xl-8">
-                <div class="form-card">
+                @await Html.PartialAsync("~/Views/Orders/_CreateClientInfo.cshtml", Model)
+                @await Html.PartialAsync("~/Views/Orders/_CreateOrderInfo.cshtml", Model)
+                @await Html.PartialAsync("~/Views/Orders/_CreateProjectInfo.cshtml", Model)
+                @await Html.PartialAsync("~/Views/Orders/_CreateNotes.cshtml", Model)
+                @await Html.PartialAsync("~/Views/Orders/_CreateSubmit.cshtml", Model)
+            </div>
 
-                    @* الأقسام الخمسة للنموذج — كل قسم في Partial مستقل *@
-                    @await Html.PartialAsync("~/Views/Orders/_CreateClientInfo.cshtml", Model)
-                    @await Html.PartialAsync("~/Views/Orders/_CreateOrderInfo.cshtml", Model)
-                    @await Html.PartialAsync("~/Views/Orders/_CreateProjectInfo.cshtml", Model)
-                    @await Html.PartialAsync("~/Views/Orders/_CreateNotes.cshtml", Model)
-                    @await Html.PartialAsync("~/Views/Orders/_CreateSubmit.cshtml", Model)
-
-                </div><!-- /.form-card -->
-            </div><!-- /.col-lg-8 -->
-
-            <!-- لوحة الحاسبة الثابتة — Partial مستقل -->
+            <!-- لوحة الحاسبة التقديرية الثابتة -->
             @await Html.PartialAsync("~/Views/Orders/_OrderEstimator.cshtml")
 
-        </div><!-- /.row -->
+        </div>
 
     </form>
 
-</div><!-- /.dashboard-page -->
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
@@ -98,10 +92,6 @@
 
             function formatNumber(n) {
                 if (n == null || isNaN(n) || n === 0) return '0';
-                // 'en-US' عمداً: بقية التطبيق يعرض الأرقام لاتينية — عدّادات لوحة
-                // المعلومات والتقارير (dashboard.js/reports.js) وأسعار الخادم كلها
-                // كذلك. 'ar-EG' كانت تُخرج أرقاماً عربية-هندية (١٢٬٥٠٠) فيرى
-                // المستخدم نظامين للأرقام في نفس النظام.
                 return Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
             }
 
@@ -117,11 +107,11 @@
                 const total = unit * qty;
                 const formattedTotal = total > 0 ? formatNumber(total) + ' ر.ي' : '-';
 
-                // الشريط السفلي
+                // الشريط السفلي للجوال
                 if (unitPriceEl) unitPriceEl.textContent = formattedUnit;
                 if (totalEl) totalEl.textContent = formattedTotal;
 
-                // اللوحة الثابتة الجانبية
+                // اللوحة الثابتة الجانبية للديسكتوب
                 if (summaryConcreteName) summaryConcreteName.textContent = concreteName;
                 if (summaryUnitPrice) summaryUnitPrice.textContent = formattedUnit;
                 if (summaryQuantity) summaryQuantity.textContent = qty > 0 ? qty + ' م³' : '-';

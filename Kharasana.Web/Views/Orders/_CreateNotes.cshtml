@@ -1,32 +1,37 @@
 @model Kharasana.Web.ViewModels.Orders.CreatePhoneOrderViewModel
 
 <!-- ============================================================
-4. NOTES - ملاحظات
+4. NOTES - بطاقة الملاحظات وطلب السعر التفضيلي
 ============================================================ -->
-<div class="form-section-title">
-    <i class="bi bi-chat-left-text"></i>
-    <span>ملاحظات إضافية</span>
-</div>
-
-<div class="row">
-    <div class="col-12 mb-3">
+<div class="card border-0 shadow-sm rounded-3 mb-4 order-form-card">
+    <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary-subtle text-primary rounded-circle p-2 px-3 fw-bold">4</span>
+            <h6 class="mb-0 fw-bold text-dark fs-6">
+                <i class="bi bi-chat-left-text text-primary me-1"></i> ملاحظات إضافية وتفضيلات السعر
+            </h6>
+        </div>
+        <span class="badge bg-light text-secondary border">اختياري</span>
+    </div>
+    <div class="card-body p-4">
         <div class="p-3 bg-light rounded-3 border mb-3">
             <div class="form-check form-switch mb-1">
-                <input class="form-check-input" type="checkbox" role="switch" asp-for="RequestSpecialPrice" id="requestSpecialPriceSwitch">
-                <label class="form-check-label fw-bold text-dark" for="requestSpecialPriceSwitch">
+                <input class="form-check-input" type="checkbox" role="switch" asp-for="RequestSpecialPrice" id="requestSpecialPriceSwitch" style="cursor: pointer; width: 2.6em; height: 1.3em;">
+                <label class="form-check-label fw-bold text-dark ms-2" for="requestSpecialPriceSwitch" style="cursor: pointer;">
                     <i class="bi bi-tag-fill text-warning me-1"></i> طلب سعر تفضيلي / مراعاة بالكمية ("اكسبوني زبون")
                 </label>
             </div>
-            <small class="text-muted d-block ms-4">
-                تفعيل هذا الخيار ينبه إدارة المصنع لدراسة تقديم خصم تشجيعي على سعر المتر لهذا الطلب لكسب تعاملك المستمر.
+            <small class="text-muted d-block ms-4 ps-2">
+                تفعيل هذا الخيار ينبه إدارة ومحاسبي المصنع لتقديم تسعير تشجيعي لهذا العميل عند المراجعة.
             </small>
         </div>
 
-        <label asp-for="Notes" class="form-label fw-bold">
-            <i class="bi bi-pencil"></i> ملاحظات
-        </label>
-        <textarea asp-for="Notes" rows="3" class="form-control" placeholder="أي ملاحظات إضافية حول موقع الصب أو تفاصيل الطلب..."></textarea>
-        <span asp-validation-for="Notes" class="text-danger"></span>
-        <small class="text-muted">حقل اختياري</small>
+        <div>
+            <label asp-for="Notes" class="form-label fw-bold small text-secondary">
+                <i class="bi bi-pencil text-primary me-1"></i> أية تعليمات خاصة أو ملاحظات لفريق الإنتاج والنقل
+            </label>
+            <textarea asp-for="Notes" rows="3" class="form-control fs-6" placeholder="مثال: تعليمات بخصوص ضيق مدخل الموقع، توقيت فتح الشارع، أوقات الصب المفضلة..."></textarea>
+            <span asp-validation-for="Notes" class="text-danger small"></span>
+        </div>
     </div>
 </div>

@@ -1,70 +1,74 @@
 <!-- ============================================================
 DESKTOP STICKY ESTIMATOR PANEL - حاسبة وملخص التكلفة لشاشات الكمبيوتر
-(لا نموذج: عناصرها كلها بلا قيمة أولية — تُحدَّث من سكريبت الصفحة)
+(تُحدَّث لحظياً عبر سكريبت الصفحة عند تغيير أي حقل)
 ============================================================ -->
 <div class="col-lg-4 col-xl-4">
-    <div class="order-estimator-sticky">
-        <div class="estimator-header">
-            <h5 class="estimator-title">
-                <i class="bi bi-calculator-fill"></i>
+    <div class="card border-0 shadow-sm rounded-3 order-estimator-sticky bg-white overflow-hidden">
+        <!-- ترويسة اللوحة -->
+        <div class="estimator-header bg-primary text-white p-3 px-4 d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold d-flex align-items-center gap-2 text-white">
+                <i class="bi bi-calculator-fill fs-5"></i>
                 ملخص وتكلفة الطلب
-            </h5>
-            <span class="estimator-badge">حساب فوري</span>
+            </h6>
+            <span class="badge bg-white text-primary fw-bold">حساب فوري</span>
         </div>
 
-        <div class="estimator-body">
-            <div class="estimator-row">
-                <span class="estimator-label"><i class="bi bi-person me-1"></i> العميل:</span>
-                <span class="estimator-value estimator-value--clamp text-truncate" id="summaryClientName">لم يُحدد بعد</span>
+        <!-- جسم الملخص -->
+        <div class="estimator-body p-3 px-4">
+            <div class="estimator-row py-2 d-flex justify-content-between align-items-center border-bottom">
+                <span class="text-secondary small fw-bold"><i class="bi bi-person me-1 text-primary"></i> العميل:</span>
+                <span class="fw-bold text-dark text-truncate" style="max-width: 170px;" id="summaryClientName">لم يُحدد بعد</span>
             </div>
 
-            <div class="estimator-row">
-                <span class="estimator-label"><i class="bi bi-box-seam me-1"></i> الصنف:</span>
-                <span class="estimator-value estimator-value--clamp text-truncate" id="summaryConcreteName">-- اختر النوع --</span>
+            <div class="estimator-row py-2 d-flex justify-content-between align-items-center border-bottom">
+                <span class="text-secondary small fw-bold"><i class="bi bi-layers me-1 text-primary"></i> الصنف:</span>
+                <span class="fw-bold text-dark text-truncate" style="max-width: 170px;" id="summaryConcreteName">-- اختر النوع --</span>
             </div>
 
-            <div class="estimator-row">
-                <span class="estimator-label"><i class="bi bi-tag me-1"></i> سعر المتر:</span>
-                <span class="estimator-value" id="summaryUnitPrice">-</span>
+            <div class="estimator-row py-2 d-flex justify-content-between align-items-center border-bottom">
+                <span class="text-secondary small fw-bold"><i class="bi bi-tag me-1 text-primary"></i> سعر المتر:</span>
+                <span class="fw-bold text-dark" id="summaryUnitPrice">-</span>
             </div>
 
-            <div class="estimator-row">
-                <span class="estimator-label"><i class="bi bi-rulers me-1"></i> الكمية:</span>
-                <span class="estimator-value" id="summaryQuantity">-</span>
+            <div class="estimator-row py-2 d-flex justify-content-between align-items-center border-bottom">
+                <span class="text-secondary small fw-bold"><i class="bi bi-rulers me-1 text-primary"></i> الكمية:</span>
+                <span class="fw-bold text-primary" id="summaryQuantity">-</span>
             </div>
 
-            <div class="estimator-row">
-                <span class="estimator-label"><i class="bi bi-truck me-1"></i> النقل:</span>
-                <span class="estimator-value" id="summaryTransport">نقل المصنع</span>
+            <div class="estimator-row py-2 d-flex justify-content-between align-items-center border-bottom">
+                <span class="text-secondary small fw-bold"><i class="bi bi-truck me-1 text-primary"></i> وسيلة النقل:</span>
+                <span class="fw-bold text-dark" id="summaryTransport">نقل المصنع</span>
             </div>
 
-            <div class="estimator-row">
-                <span class="estimator-label"><i class="bi bi-water me-1"></i> المضخة:</span>
-                <span class="estimator-value" id="summaryPump">لا</span>
+            <div class="estimator-row py-2 d-flex justify-content-between align-items-center">
+                <span class="text-secondary small fw-bold"><i class="bi bi-water me-1 text-primary"></i> خدمة المضخة:</span>
+                <span class="fw-bold text-dark" id="summaryPump">لا</span>
             </div>
         </div>
 
-        <!-- إجمالي التكلفة التقديرية للخرسانة -->
-        <div class="estimator-total-box">
-            <div class="estimator-total-label">تكلفة الخرسانة التقديرية</div>
-            <div class="estimator-total-amount" id="summaryTotalAmount">0 <small style="font-size: 0.9rem; font-weight: normal;">ر.ي</small></div>
+        <!-- صندوق الإجمالي التقديري -->
+        <div class="p-3 mx-4 my-2 rounded-3 text-center bg-primary-subtle border border-primary-subtle">
+            <span class="text-primary small fw-bold d-block mb-1">إجمالي تكلفة الخرسانة التقديرية</span>
+            <div class="fs-2 fw-extrabold text-primary" id="summaryTotalAmount">0 <small class="fs-6 fw-normal">ر.ي</small></div>
         </div>
 
-        <div class="estimator-note">
-            <i class="bi bi-info-circle me-1"></i>
-            الحساب فوري ومبني على سعر المتر للصنف والكمية المحددة. قد تُضاف تكلفة النقل أو المضخة بالاتفاق.
-        </div>
+        <div class="p-3 px-4 pt-1">
+            <div class="alert alert-light border small text-muted mb-3 d-flex align-items-start gap-2 p-2">
+                <i class="bi bi-info-circle text-primary mt-1 flex-shrink-0"></i>
+                <span>الحساب فوري مبني على سعر المتر للخلطة والكمية. قد تضاف أجور النقل والمضخة وفقاً للموقع.</span>
+            </div>
 
-        <!-- أزرار الإجراء السريع في اللوحة الثابتة -->
-        <div class="estimator-actions">
-            <button type="submit" class="btn btn-outline-primary btn-lg d-none d-lg-flex" id="stickySubmitBtn" form="createOrderForm"
-                    onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm\' aria-hidden=\'true\'></span> <span role=\'status\'>جاري الحفظ...</span>';">
-                <i class="bi bi-check-circle"></i> إنشاء الطلب الآن
-            </button>
+            <!-- أزرار الإجراء السريع في اللوحة الثابتة -->
+            <div class="d-none d-lg-flex flex-column gap-2 mb-2">
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-2" id="stickySubmitBtn" form="createOrderForm"
+                        onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm\' aria-hidden=\'true\'></span> <span>جاري الحفظ...</span>';">
+                    <i class="bi bi-check2-circle fs-5"></i> حفظ وإنشاء الطلب
+                </button>
 
-            <a asp-action="Index" class="btn btn-outline-secondary d-none d-lg-flex">
-                <i class="bi bi-arrow-right"></i> إلغاء والعودة
-            </a>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-1">
+                    <i class="bi bi-arrow-right"></i> إلغاء والعودة للقائمة
+                </a>
+            </div>
         </div>
     </div>
-</div><!-- /.col-lg-4 -->
+</div>

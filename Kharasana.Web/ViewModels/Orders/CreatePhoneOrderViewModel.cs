@@ -64,10 +64,31 @@ namespace Kharasana.Web.ViewModels.Orders
         [StringLength(500, ErrorMessage = "وصف الموقع لا يزيد عن 500 حرف")]
         public string? SiteDescription { get; set; }
 
+        [Display(Name = "أقرب معلم مميز")]
+        [StringLength(300, ErrorMessage = "المعلم المميز لا يزيد عن 300 حرف")]
+        public string? Landmarks { get; set; }
+
+        [Display(Name = "اسم المشرف المسؤول بالموقع")]
+        [StringLength(150, ErrorMessage = "اسم المشرف لا يزيد عن 150 حرف")]
+        public string? SupervisorName { get; set; }
+
+        [Display(Name = "رقم هاتف المشرف بالموقع")]
+        [RegularExpression(@"^[0-9]{7,15}$", ErrorMessage = "رقم هاتف المشرف غير صالح")]
+        public string? SupervisorPhone { get; set; }
+
 
         // ============================================================
         // 4. CONCRETE INFO - معلومات الخرسانة
         // ============================================================
+
+        [Display(Name = "نوع الإسمنت")]
+        public CementType CementType { get; set; } = CementType.Ordinary;
+
+        [Display(Name = "مقاس الكري (حجم الحجر)")]
+        public AggregateSize AggregateSize { get; set; } = AggregateSize.Size20mm;
+
+        [Display(Name = "الإضافات الكيميائية")]
+        public Admixture Admixture { get; set; } = Admixture.Plasticizer;
 
         [Required(ErrorMessage = "نوع البلاطة مطلوب")]
         [Display(Name = "نوع البلاطة")]

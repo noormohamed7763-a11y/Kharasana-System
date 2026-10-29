@@ -226,7 +226,29 @@ public class UsersController : ControllerBase
     }
 
     // ============================================================
-    // 5. UPDATE MY PROFILE - تعديل الملف الشخصي
+    // 5. GET MY PROFILE - جلب الملف الشخصي للمستخدم الحالي
+    // ============================================================
+    /// <summary>جلب بيانات الملف الشخصي للمستخدم الحالي.</summary>
+    /// <response code="200">تم جلب البيانات بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> GetMyProfile()
+    {
+        var caller = User.GetCallerContext();
+
+        var user = await _userService.GetByIdAsync(caller.UserId);
+
+        return Ok(new ApiResponse<UserDto>
+        {
+            Success = true,
+            Message = Messages.UserRetrievedSuccessfully,
+            Data = user
+        });
+    }
+
+    // ============================================================
+    // 5.b UPDATE MY PROFILE - تعديل الملف الشخصي
     // ============================================================
     /// <summary>تعديل الملف الشخصي للمستخدم الحالي.</summary>
     /// <param name="dto">البيانات الجديدة للملف الشخصي.</param>

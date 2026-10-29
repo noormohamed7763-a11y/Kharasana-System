@@ -1,4 +1,4 @@
-﻿using Kharasana.Domain.Enums;
+using Kharasana.Domain.Enums;
 
 namespace Kharasana.Application.DTOs.Order;
 
@@ -15,6 +15,12 @@ public class PhoneOrderDto
     public string? ProjectOwnerName { get; set; }
     public string? SiteArea { get; set; }
     public string? SiteDescription { get; set; }
+    public string? Landmarks { get; set; }
+    public string? SupervisorName { get; set; }
+    public string? SupervisorPhone { get; set; }
+    public CementType CementType { get; set; } = CementType.Ordinary;
+    public AggregateSize AggregateSize { get; set; } = AggregateSize.Size20mm;
+    public Admixture Admixture { get; set; } = Admixture.Plasticizer;
     public SlabType SlabType { get; set; }
     public decimal Quantity { get; set; }
     public bool NeedPump { get; set; }
