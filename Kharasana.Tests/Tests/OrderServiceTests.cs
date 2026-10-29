@@ -39,7 +39,7 @@ public class OrderServiceTests : IDisposable
         var orderHelper = new OrderHelperService(_unitOfWork);
         var orderQueryService = new OrderQueryService(_unitOfWork, orderHelper);
         var orderCommandService = new OrderCommandService(_unitOfWork, passwordHasher);
-        var orderWorkflowService = new OrderWorkflowService(_unitOfWork);
+        var orderWorkflowService = new OrderWorkflowService(_unitOfWork, new FakeTrackingService());
         _orderService = new OrderService(
             passwordHasher, _unitOfWork, orderQueryService, orderCommandService, orderWorkflowService);
     }
@@ -1124,7 +1124,7 @@ public class OrderServiceTests : IDisposable
         var orderHelper = new OrderHelperService(concurrencyUoW);
         var orderQueryService = new OrderQueryService(concurrencyUoW, orderHelper);
         var orderCommandService = new OrderCommandService(concurrencyUoW, passwordHasher);
-        var orderWorkflowService = new OrderWorkflowService(concurrencyUoW);
+        var orderWorkflowService = new OrderWorkflowService(concurrencyUoW, new FakeTrackingService());
         var orderService = new OrderService(
             passwordHasher, concurrencyUoW, orderQueryService, orderCommandService, orderWorkflowService);
 

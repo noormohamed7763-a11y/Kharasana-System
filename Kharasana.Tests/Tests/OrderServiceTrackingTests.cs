@@ -40,7 +40,7 @@ public class OrderServiceTrackingTests : IDisposable
         var orderHelper = new OrderHelperService(uow);
         var orderQueryService = new OrderQueryService(uow, orderHelper);
         var orderCommandService = new OrderCommandService(uow, passwordHasher);
-        var orderWorkflowService = new OrderWorkflowService(uow);
+        var orderWorkflowService = new OrderWorkflowService(uow, new FakeTrackingService());
         _orderService = new OrderService(passwordHasher, uow, orderQueryService, orderCommandService, orderWorkflowService);
     }
 

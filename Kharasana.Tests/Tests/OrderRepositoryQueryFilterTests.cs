@@ -172,7 +172,7 @@ public class OrderRepositoryQueryFilterTests : IDisposable
             uow,
             new OrderQueryService(uow, orderHelper),
             new OrderCommandService(uow, passwordHasher),
-            new OrderWorkflowService(uow));
+            new OrderWorkflowService(uow, new FakeTrackingService()));
 
         var result = await service.GetPagedAsync(
             factoryId: null, clientId: null, driverId: null,

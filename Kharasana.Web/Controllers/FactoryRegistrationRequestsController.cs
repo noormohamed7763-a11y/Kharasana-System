@@ -92,7 +92,7 @@ namespace Kharasana.Web.Controllers
             return View(vm);
         }
 
-        [HttpPost]
+        [HttpPost("Approve/{id:int}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Approve(int id)
         {
@@ -102,7 +102,7 @@ namespace Kharasana.Web.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        [HttpPost]
+        [HttpPost("Reject/{id:int}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reject(int id, string reason)
         {
