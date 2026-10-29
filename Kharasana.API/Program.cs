@@ -17,6 +17,9 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using Kharasana.Application.Services.Tracking;
+using Kharasana.Application.Interfaces.Services;
+using Kharasana.API.Hubs;
 using System.Threading.RateLimiting;
 
 namespace Kharasana.API;
@@ -77,6 +80,8 @@ public class Program
         // Register Layers
         builder.Services.AddApplication();
         builder.Services.AddInfrastructure(builder.Configuration);
+        builder.Services.AddSignalR();
+        builder.Services.AddSingleton<ITrackingService, TrackingService>();
 
         // Add API Versioning
         builder.Services.AddApiVersioning(options =>
@@ -354,7 +359,9 @@ public class Program
         app.UseAuthorization();
 
         app.MapControllers();
+        app.MapHub<TrackingHub>("/trackingHub");
         app.MapHealthChecks("/health");
+        app.MapHub<TrackingHub>("/tracking");
 
         app.Run();
     }

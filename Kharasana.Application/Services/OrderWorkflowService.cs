@@ -11,10 +11,12 @@ namespace Kharasana.Application.Services;
 public class OrderWorkflowService : IOrderWorkflowService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITrackingService _trackingService;
 
-    public OrderWorkflowService(IUnitOfWork unitOfWork)
+    public OrderWorkflowService(IUnitOfWork unitOfWork, ITrackingService trackingService)
     {
         _unitOfWork = unitOfWork;
+        _trackingService = trackingService;
     }
 
     public async Task<ServiceResult> SetPriceAsync(int id, decimal unitPrice, int callerId, UserRole callerRole, int? callerFactoryId)
@@ -200,6 +202,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         order.DeliveredAt = DateTime.UtcNow;
         order.UpdatedAt = DateTime.UtcNow;
 
+        _trackingService.RemoveOrder(order.OrderId);
         ReleaseDriver(order);
 
         _unitOfWork.Orders.Update(order);
