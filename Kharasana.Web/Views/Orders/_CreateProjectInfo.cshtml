@@ -1,47 +1,94 @@
 @model Kharasana.Web.ViewModels.Orders.CreatePhoneOrderViewModel
 
 <!-- ============================================================
-3. PROJECT INFO - معلومات المشروع
+3. PROJECT INFO - بطاقة موقع الصب وتفاصيل المشروع
 ============================================================ -->
-<div class="form-section-title">
-    <i class="bi bi-building"></i>
-    <span>معلومات المشروع</span>
-</div>
-
-<div class="row">
-    <div class="col-md-6 mb-3">
-        <label asp-for="ProjectName" class="form-label fw-bold">
-            <i class="bi bi-tag"></i> اسم المشروع
-        </label>
-        <input asp-for="ProjectName" class="form-control" placeholder="اسم المشروع (اختياري)" />
-        <span asp-validation-for="ProjectName" class="text-danger"></span>
-        <small class="text-muted">حقل اختياري</small>
+<div class="card border-0 shadow-sm rounded-3 mb-4 order-form-card">
+    <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary-subtle text-primary rounded-circle p-2 px-3 fw-bold">3</span>
+            <h6 class="mb-0 fw-bold text-dark fs-6">
+                <i class="bi bi-geo-alt-fill text-primary me-1"></i> موقع الصب وتفاصيل المشروع
+            </h6>
+        </div>
+        <span class="badge bg-light text-secondary border">الموقع والمشرف</span>
     </div>
+    <div class="card-body p-4">
+        <!-- الصف 1: اسم المشروع واسم المالك -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label asp-for="ProjectName" class="form-label fw-bold small text-secondary">
+                    <i class="bi bi-tag text-primary me-1"></i> اسم المشروع / العمارة
+                </label>
+                <div class="input-group">
+                    <input asp-for="ProjectName" class="form-control form-control-lg fs-6" placeholder="مثال: برج السلام، فيلا الأمل..." />
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-buildings"></i></span>
+                </div>
+                <span asp-validation-for="ProjectName" class="text-danger small"></span>
+            </div>
 
-    <div class="col-md-6 mb-3">
-        <label asp-for="ProjectOwnerName" class="form-label fw-bold">
-            <i class="bi bi-person-badge"></i> اسم مالك المشروع
-        </label>
-        <input asp-for="ProjectOwnerName" class="form-control" placeholder="اسم المالك (اختياري)" />
-        <span asp-validation-for="ProjectOwnerName" class="text-danger"></span>
-        <small class="text-muted">حقل اختياري</small>
-    </div>
+            <div class="col-md-6">
+                <label asp-for="ProjectOwnerName" class="form-label fw-bold small text-secondary">
+                    <i class="bi bi-person-badge text-primary me-1"></i> اسم المالك / المقاول
+                </label>
+                <div class="input-group">
+                    <input asp-for="ProjectOwnerName" class="form-control form-control-lg fs-6" placeholder="اسم مالك المشروع أو المقاول المسؤول..." />
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-person-vcard"></i></span>
+                </div>
+                <span asp-validation-for="ProjectOwnerName" class="text-danger small"></span>
+            </div>
+        </div>
 
-    <div class="col-md-6 mb-3">
-        <label asp-for="SiteArea" class="form-label fw-bold">
-            <i class="bi bi-geo-alt"></i> المنطقة
-        </label>
-        <input asp-for="SiteArea" class="form-control" placeholder="المنطقة (اختياري)" />
-        <span asp-validation-for="SiteArea" class="text-danger"></span>
-        <small class="text-muted">حقل اختياري</small>
-    </div>
+        <!-- الصف 2: المشرف المسؤول في الموقع ورقم هاتفه -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label asp-for="SupervisorName" class="form-label fw-bold small text-secondary">
+                    <i class="bi bi-person-check text-primary me-1"></i> المشرف المستلم في الموقع
+                </label>
+                <div class="input-group">
+                    <input asp-for="SupervisorName" class="form-control form-control-lg fs-6" placeholder="مثال: المهندس أحمد / المقاول علي..." />
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
+                </div>
+                <span asp-validation-for="SupervisorName" class="text-danger small"></span>
+            </div>
 
-    <div class="col-md-6 mb-3">
-        <label asp-for="SiteDescription" class="form-label fw-bold">
-            <i class="bi bi-file-text"></i> وصف الموقع
-        </label>
-        <input asp-for="SiteDescription" class="form-control" placeholder="وصف الموقع (اختياري)" />
-        <span asp-validation-for="SiteDescription" class="text-danger"></span>
-        <small class="text-muted">حقل اختياري</small>
+            <div class="col-md-6">
+                <label asp-for="SupervisorPhone" class="form-label fw-bold small text-secondary">
+                    <i class="bi bi-telephone text-primary me-1"></i> رقم هاتف المشرف بالموقع
+                </label>
+                <div class="input-group">
+                    <input asp-for="SupervisorPhone" class="form-control form-control-lg fs-6" dir="ltr" placeholder="77XXXXXXX" />
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-phone"></i></span>
+                </div>
+                <span asp-validation-for="SupervisorPhone" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <!-- الصف 3: المنطقة، وصف الموقع، والمعالم المميزة (توزيع ثلاثي متناسق للديسكتوب) -->
+        <div class="row g-3">
+            <div class="col-lg-4 col-md-6">
+                <label asp-for="SiteArea" class="form-label fw-bold small text-secondary">
+                    <i class="bi bi-pin-map text-primary me-1"></i> المنطقة / الحي
+                </label>
+                <input asp-for="SiteArea" class="form-control form-control-lg fs-6" placeholder="مثال: حدة، الأصبحي، بيت بوس..." />
+                <span asp-validation-for="SiteArea" class="text-danger small"></span>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
+                <label asp-for="SiteDescription" class="form-label fw-bold small text-secondary">
+                    <i class="bi bi-compass text-primary me-1"></i> وصف الشارع أو الموقع
+                </label>
+                <input asp-for="SiteDescription" class="form-control form-control-lg fs-6" placeholder="مثال: شارع 24 المتفرع من الرئيسي..." />
+                <span asp-validation-for="SiteDescription" class="text-danger small"></span>
+            </div>
+
+            <div class="col-lg-4 col-md-12">
+                <label asp-for="Landmarks" class="form-label fw-bold small text-secondary">
+                    <i class="bi bi-signpost-2 text-primary me-1"></i> أقرب معلم مميز
+                </label>
+                <input asp-for="Landmarks" class="form-control form-control-lg fs-6" placeholder="مثال: بجوار جامع التوحيد أو خلف المدرسة..." />
+                <span asp-validation-for="Landmarks" class="text-danger small"></span>
+            </div>
+        </div>
     </div>
 </div>

@@ -320,6 +320,9 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Property<bool>("IsManuallyPriced")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Landmarks")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal?>("Latitude")
                         .HasColumnType("decimal(18,2)");
 

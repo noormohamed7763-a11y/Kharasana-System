@@ -1,4 +1,5 @@
-﻿using Kharasana.Domain.Entities;
+using Kharasana.Domain.Entities;
+using Kharasana.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -31,6 +32,24 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.SiteDescription)
             .HasMaxLength(500);
 
+        builder.Property(o => o.SupervisorName)
+            .HasMaxLength(150);
+
+        builder.Property(o => o.SupervisorPhone)
+            .HasMaxLength(20);
+
+        builder.Property(o => o.CementType)
+            .HasConversion<int>()
+            .HasDefaultValue(CementType.Ordinary);
+
+        builder.Property(o => o.AggregateSize)
+            .HasConversion<int>()
+            .HasDefaultValue(AggregateSize.Size20mm);
+
+        builder.Property(o => o.Admixture)
+            .HasConversion<int>()
+            .HasDefaultValue(Admixture.Plasticizer);
+
         builder.Property(o => o.SlabType)
             .HasConversion<int>();
         builder.Property(o => o.TransportMethod)
@@ -46,9 +65,6 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasPrecision(18, 2);
 
         // ✅ دفتر الحساب: صافي المبلغ المستحق بعد الخصم.
-        //    تحديد الدقة صريح لأن EF يحذّر (Model.Validation 30000) على العمود العشري
-        //    بلا نوع مخزَّن محدَّد: "No store type was specified for the decimal property
-        //    'NetAmount'" — وهو اقتطاع صامت لأي قيمة لا تتّسع في النطاق الافتراضي.
         builder.Property(o => o.NetAmount)
             .HasPrecision(18, 2);
 

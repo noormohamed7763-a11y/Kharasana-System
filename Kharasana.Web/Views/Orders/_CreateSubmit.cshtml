@@ -1,33 +1,35 @@
 @model Kharasana.Web.ViewModels.Orders.CreatePhoneOrderViewModel
 
 <!-- ============================================================
-5. SUBMIT - أزرار الإرسال السفلية
+5. SUBMIT - شريط أزرار الإجراء أسفل النموذج
 ============================================================ -->
-<div class="d-flex flex-wrap gap-3 mt-4 pt-3 border-top justify-content-between align-items-center">
-    <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary btn-lg px-4 d-lg-none" id="submitBtn"
-                onclick="this.disabled=true; this.form.submit(); this.innerHTML='<span class=\'spinner-border spinner-border-sm\' aria-hidden=\'true\'></span> <span role=\'status\'>جاري الحفظ...</span>';">
-            <i class="bi bi-check-circle"></i> إنشاء الطلب
-        </button>
-        <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-4">
-            <i class="bi bi-x-circle"></i> إلغاء
-        </a>
-    </div>
-    <!-- رسالة إرشادية لشاشات الكمبيوتر لأن الحاسبة تظهر بجانب النموذج مباشرة -->
-    <div class="d-none d-lg-flex align-items-center text-muted small">
-        <i class="bi bi-info-circle me-1 text-primary"></i>
-        <span>تفاصيل الحساب والتكلفة التقديرية تُحدَّث فورياً في اللوحة الجانبية المقابلة</span>
-    </div>
-
-    <!-- ملخص مالي يظهر فقط على الشاشات المتوسطة والصغيرة (عندما تكون الحاسبة أسفل النموذج) -->
-    <div class="d-flex d-lg-none align-items-center gap-3">
-        <div class="text-end">
-            <span class="text-muted small d-block">سعر المتر:</span>
-            <div id="selectedUnitPrice" class="fw-bold text-dark">-</div>
+<div class="card border-0 shadow-sm rounded-3 p-4 mb-4 bg-white">
+    <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <button type="submit" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow-sm d-flex align-items-center gap-2" id="submitBtn"
+                    onclick="this.disabled=true; this.form.submit(); this.innerHTML='<span class=\'spinner-border spinner-border-sm\' aria-hidden=\'true\'></span> <span>جاري الحفظ والإنشاء...</span>';">
+                <i class="bi bi-check2-circle fs-5"></i> حفظ وإنشاء الطلب الآن
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-4 py-3 d-flex align-items-center gap-2">
+                <i class="bi bi-arrow-right"></i> إلغاء والعودة
+            </a>
         </div>
-        <div class="text-end">
-            <span class="text-muted small d-block">الإجمالي التقديري:</span>
-            <div id="calculatedTotal" class="fw-bold text-primary fs-5">-</div>
+
+        <!-- ملخص السعر المصغر لشاشات الجوال والشاشات المتوسطة -->
+        <div class="d-flex d-lg-none align-items-center gap-4 bg-light p-2 px-3 rounded-3 border">
+            <div>
+                <span class="text-muted small d-block">سعر المتر:</span>
+                <span id="selectedUnitPrice" class="fw-bold text-dark">-</span>
+            </div>
+            <div class="border-start ps-3">
+                <span class="text-muted small d-block">الإجمالي التقديري:</span>
+                <span id="calculatedTotal" class="fw-bold text-primary fs-5">-</span>
+            </div>
+        </div>
+
+        <div class="d-none d-lg-flex align-items-center text-muted small">
+            <i class="bi bi-shield-check text-success fs-5 me-2"></i>
+            <span>سيتم تدقيق الحسابات وتعيين السائق بعد مراجعة الطلب مباشرة.</span>
         </div>
     </div>
 </div>
