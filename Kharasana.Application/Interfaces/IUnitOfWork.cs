@@ -14,6 +14,7 @@ public interface IUnitOfWork : IDisposable
     IRawMaterialRepository RawMaterials { get; }
     IProductionBatchRepository ProductionBatches { get; }
     ITripRepository Trips { get; }
+    IOrderStatusHistoryRepository OrderStatusHistories { get; }
 
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();
