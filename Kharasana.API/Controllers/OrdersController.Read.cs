@@ -4,6 +4,8 @@ using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Client;
 using Kharasana.Application.DTOs.Customer;
 using Kharasana.Application.DTOs.Order;
+using Kharasana.Application.DTOs.Trips;
+using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

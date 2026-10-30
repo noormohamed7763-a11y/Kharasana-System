@@ -180,5 +180,13 @@ namespace Kharasana.Web.Services.Interfaces
         /// <param name="model">بيانات السائق ورقم الشاحنة</param>
         /// <returns>true إذا تم التعيين بنجاح</returns>
         Task<ServiceResult> AssignDriverAsync(int id, AssignDriverViewModel model);
+
+        /// <summary>
+        /// جلب الطلبات الجاهزة للجدولة لوقت محدد
+        /// </summary>
+        /// <param name="factoryId">معرف المصنع</param>
+        /// <param name="date">التاريخ المطلوب جلب الطلبات</param>
+        /// <returns>قائمة الطلبات الجاهزة للجدولة</returns>
+        Task<IEnumerable<OrderDto>?> GetReadyForDispatchAsync(int factoryId, DateTime date);
     }
 }

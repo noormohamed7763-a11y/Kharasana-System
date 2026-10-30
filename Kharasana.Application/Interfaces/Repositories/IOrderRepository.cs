@@ -49,4 +49,9 @@ public interface IOrderRepository : IGenericRepository<Order>
 
     /// <summary>Reports: order count grouped by concrete type.</summary>
     Task<List<ConcreteTypeCountDto>> GetCountByConcreteTypeAsync(int? factoryId);
+
+    /// <summary>
+    /// جلب الطلبات الجاهزة للجدولة لهذا اليوم (المعتمدة، المجدولة، أو في الطريق).
+    /// </summary>
+    Task<IReadOnlyList<Order>> GetReadyForDispatchAsync(int factoryId, DateTime date);
 }

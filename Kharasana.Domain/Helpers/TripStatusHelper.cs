@@ -1,32 +1,31 @@
 using Kharasana.Domain.Enums;
+using System.Linq;
 
 namespace Kharasana.Domain.Helpers;
 
 public static class TripStatusHelper
 {
-    public static string GetArabicName(TripStatus s) => s switch
-    {
-        TripStatus.Scheduled => "مجدولة",
-        TripStatus.Departed => "خرجت من المصنع",
-        TripStatus.OnTheWay => "في الطريق",
-        TripStatus.AtSite => "في الموقع",
-        TripStatus.Unloaded => "تم التفريغ",
-        TripStatus.Completed => "مكتملة",
-        TripStatus.Cancelled => "ملغاة",
-        _ => "غير معروف"
-    };
-
-    public static TripStatus[] GetAllowed(TripStatus current) => current switch
+    public static TripStatus[] GetAllowedTransitions(TripStatus status) => status switch
     {
         TripStatus.Scheduled => new[] { TripStatus.Departed, TripStatus.Cancelled },
         TripStatus.Departed => new[] { TripStatus.AtSite, TripStatus.Cancelled },
         TripStatus.AtSite => new[] { TripStatus.Unloaded, TripStatus.Cancelled },
         TripStatus.Unloaded => new[] { TripStatus.Completed },
-        TripStatus.Completed => Array.Empty<TripStatus>(),
-        TripStatus.Cancelled => Array.Empty<TripStatus>(),
-        _ => Array.Empty<TripStatus>()
+        TripStatus.Completed => System.Array.Empty<TripStatus>(),
+        TripStatus.Cancelled => System.Array.Empty<TripStatus>(),
+        _ => System.Array.Empty<TripStatus>()
     };
 
-    public static bool CanTransition(TripStatus from, TripStatus to)
-        => GetAllowed(from).Contains(to);
+    public static bool CanTransition(TripStatus from, TripStatus to) => GetAllowedTransitions(from).Contains(to);
+
+    public static string GetArabicName(TripStatus s) => s switch
+    {
+        TripStatus.Scheduled => "مجدولة",
+        TripStatus.Departed => "خرجت من المصنع",
+        TripStatus.AtSite => "في الموقع",
+        TripStatus.Unloaded => "تم التفريغ",
+        TripStatus.Completed => "مكتملة",
+        TripStatus.Cancelled => "ملغاة",
+        _ => "غير معروفة"
+    };
 }

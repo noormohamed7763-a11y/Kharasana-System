@@ -500,6 +500,42 @@ namespace Kharasana.Infrastructure.Migrations
                     b.ToTable("OrderPayments", (string)null);
                 });
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.OrderStatusHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ChangedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PreviousStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderStatusHistories");
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.ProductionBatch", b =>
                 {
                     b.Property<int>("ProductionBatchId")
@@ -874,6 +910,25 @@ namespace Kharasana.Infrastructure.Migrations
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.OrderStatusHistory", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.User", "ChangedBy")
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChangedBy");
 
                     b.Navigation("Order");
                 });
