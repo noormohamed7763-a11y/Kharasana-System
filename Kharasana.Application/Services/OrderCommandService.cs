@@ -201,8 +201,11 @@ public class OrderCommandService : IOrderCommandService
             order.ConcreteTypeNameSnapshot = concreteType.Name;
             order.ConcreteTypeStrengthSnapshot = concreteType.Strength;
 
+            // تحديث السعر فقط إذا لم يكن السعر محدداً يدوياً
             if (!order.IsManuallyPriced)
+            {
                 order.UnitPrice = concreteType.UnitPrice;
+            }
         }
 
         order.ProjectName = dto.ProjectName;

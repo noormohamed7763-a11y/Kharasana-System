@@ -33,6 +33,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         order.UnitPrice = unitPrice;
         order.TotalPrice = unitPrice * order.Quantity;
         order.RecalculateNetAmount();
+        order.IsManuallyPriced = true; // تم تعيين السعر يدوياً
         order.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Orders.Update(order);
