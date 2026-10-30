@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IFinanceService, FinanceService>();
+        services.AddScoped<ITripService, TripService>();
 
         // FluentValidation
         services.AddValidatorsFromAssemblyContaining<RegisterClientValidator>();

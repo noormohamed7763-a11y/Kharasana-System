@@ -18,6 +18,7 @@ public static class OrderStatusHelper
         OrderStatus.OnTheWay => "في الطريق",
         OrderStatus.Delivered => "تم التسليم",
         OrderStatus.Closed => "مغلق",
+        OrderStatus.Scheduled => "مجدول",
         _ => "غير معروف"
     };
 
@@ -30,7 +31,8 @@ public static class OrderStatusHelper
     {
         OrderStatus.New => new[] { OrderStatus.Pending, OrderStatus.Rejected, OrderStatus.Cancelled },
         OrderStatus.Pending => new[] { OrderStatus.Approved, OrderStatus.Rejected, OrderStatus.Cancelled },
-        OrderStatus.Approved => new[] { OrderStatus.OnTheWay, OrderStatus.Cancelled },
+        OrderStatus.Approved => new[] { OrderStatus.Scheduled, OrderStatus.OnTheWay, OrderStatus.Cancelled },
+        OrderStatus.Scheduled => new[] { OrderStatus.OnTheWay, OrderStatus.Cancelled },
         OrderStatus.OnTheWay => new[] { OrderStatus.Delivered, OrderStatus.Cancelled },
         OrderStatus.Delivered => new[] { OrderStatus.Closed },
         OrderStatus.Rejected => Array.Empty<OrderStatus>(),

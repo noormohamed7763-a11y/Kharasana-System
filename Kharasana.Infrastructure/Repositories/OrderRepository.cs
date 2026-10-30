@@ -77,6 +77,14 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .FirstOrDefaultAsync(o => o.OrderId == id);
     }
 
+    public async Task<Order> GetByIdWithTripsAsync(int id)
+    {
+        return await _context.Orders
+            .Include(o => o.Trips.Where(t => !t.IsDeleted))
+            .FirstOrDefaultAsync(o => o.OrderId == id)
+            ?? throw new InvalidOperationException($"الطلب {id} غير موجود.");
+    }
+
     public async Task<Order?> GetByIdWithDetailsForUpdateAsync(int id)
     {
         return await OrdersWithDetails(trackChanges: true)

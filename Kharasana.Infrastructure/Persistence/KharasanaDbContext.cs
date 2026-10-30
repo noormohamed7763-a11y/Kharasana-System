@@ -21,6 +21,8 @@ public class KharasanaDbContext : DbContext
 
     public DbSet<OrderPayment> OrderPayments { get; set; }
 
+    public DbSet<Trip> Trips { get; set; }
+
     public DbSet<RawMaterial> RawMaterials { get; set; }
 
     public DbSet<ProductionBatch> ProductionBatches { get; set; }
@@ -53,6 +55,9 @@ public class KharasanaDbContext : DbContext
 
         modelBuilder.Entity<ProductionBatch>()
             .HasQueryFilter(p => !p.IsDeleted);
+
+        modelBuilder.Entity<Trip>()
+            .HasQueryFilter(t => !t.IsDeleted);
 
         base.OnModelCreating(modelBuilder);
     }

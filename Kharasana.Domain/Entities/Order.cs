@@ -95,6 +95,7 @@ public class Order
     public bool IsDeleted { get; set; } = false;
     
     public virtual ICollection<OrderPayment> Payments { get; set; } = new List<OrderPayment>();
+    public virtual ICollection<Trip> Trips { get; set; } = new List<Trip>();
 
     /// <summary>
     /// يعيد حساب صافي المبلغ المستحق = الإجمالي − الخصم.

@@ -55,5 +55,10 @@ public enum OrderStatus
     /// <summary>
     /// مغلق - تم إغلاق الطلب نهائياً
     /// </summary>
-    Closed = 7
+    Closed = 7,
+
+    /// <summary>
+    /// مجدول - تم توزيع الرحلات
+    /// </summary>
+    Scheduled = 8
 }

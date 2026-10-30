@@ -24,6 +24,7 @@ public class UnitOfWork : IUnitOfWork
     public IProductionBatchRepository ProductionBatches { get; }
     public IFactoryRegistrationRequestRepository FactoryRegistrationRequests { get; }
     public IActivationTokenRepository ActivationTokens { get; }
+    public ITripRepository Trips { get; }
 
     public UnitOfWork(KharasanaDbContext context)
     {
@@ -38,6 +39,7 @@ public class UnitOfWork : IUnitOfWork
         ProductionBatches = new ProductionBatchRepository(context);
         FactoryRegistrationRequests = new FactoryRegistrationRequestRepository(context);
         ActivationTokens = new ActivationTokenRepository(context);
+        Trips = new TripRepository(context);
     }
 
     private IDbContextTransaction? _currentTransaction;
