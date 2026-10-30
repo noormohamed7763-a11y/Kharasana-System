@@ -5,6 +5,7 @@ using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
+using Kharasana.Domain.Helpers;
 
 namespace Kharasana.Application.Services;
 
@@ -37,6 +38,9 @@ public class OrderWorkflowService : IOrderWorkflowService
         _unitOfWork.Orders.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
+        // تسجيل تغيير الحالة (Price Set = وضع السعر)
+        await LogStatusChangeAsync(order, OrderStatus.Pending, order.Status, callerId);
+
         return ServiceResult.Ok(Messages.PriceSavedSuccessfully);
     }
 
@@ -53,10 +57,12 @@ public class OrderWorkflowService : IOrderWorkflowService
         if (order.UnitPrice <= 0)
             throw new BusinessException(Messages.PriceRequiredBeforeApproval);
 
+        var previousStatus = order.Status;
         order.Status = OrderStatus.Approved;
         order.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Orders.Update(order);
+        await LogStatusChangeAsync(order, previousStatus, order.Status, callerId);
         await _unitOfWork.SaveChangesAsync();
 
         return ServiceResult.Ok(Messages.OrderApprovedSuccessfully);
@@ -69,6 +75,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         if (order.Status != OrderStatus.Pending)
             throw new BusinessException(Messages.OrderCannotBeRejectedInStatus);
 
+        var previousStatus = order.Status;
         order.Status = OrderStatus.Rejected;
         order.UpdatedAt = DateTime.UtcNow;
 
@@ -79,6 +86,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         _trackingService.RemoveOrder(order.OrderId);
 
         _unitOfWork.Orders.Update(order);
+        await LogStatusChangeAsync(order, previousStatus, order.Status, callerId, reason);
         await _unitOfWork.SaveChangesAsync();
 
         return ServiceResult.Ok(Messages.OrderRejectedSuccessfully);
@@ -99,6 +107,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         if (order.Status == OrderStatus.Rejected || order.Status == OrderStatus.Cancelled)
             throw new BusinessException(Messages.OrderAlreadyRejectedOrCancelled);
 
+        var previousStatus = order.Status;
         order.Status = OrderStatus.Cancelled;
         order.UpdatedAt = DateTime.UtcNow;
 
@@ -106,6 +115,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         _trackingService.RemoveOrder(order.OrderId);
 
         _unitOfWork.Orders.Update(order);
+        await LogStatusChangeAsync(order, previousStatus, order.Status, callerId);
         await _unitOfWork.SaveChangesAsync();
 
         return ServiceResult.Ok(Messages.OrderCancelledSuccessfully);
@@ -179,10 +189,12 @@ public class OrderWorkflowService : IOrderWorkflowService
         if (order.TransportMethod == TransportMethod.FactoryTransport && !order.DriverId.HasValue)
             throw new BusinessException(Messages.DriverRequiredForDelivery);
 
+        var previousStatus = order.Status;
         order.Status = OrderStatus.OnTheWay;
         order.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Orders.Update(order);
+        await LogStatusChangeAsync(order, previousStatus, order.Status, callerId);
         await _unitOfWork.SaveChangesAsync();
 
         return ServiceResult.Ok(Messages.DeliveryStartedSuccessfully);
@@ -200,6 +212,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         if (order.Status != OrderStatus.OnTheWay)
             throw new BusinessException(Messages.CannotDeliverNonOnTheWayOrder);
 
+        var previousStatus = order.Status;
         order.Status = OrderStatus.Delivered;
         order.DeliveredAt = DateTime.UtcNow;
         order.UpdatedAt = DateTime.UtcNow;
@@ -209,6 +222,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         _trackingService.RemoveOrder(order.OrderId);
 
         _unitOfWork.Orders.Update(order);
+        await LogStatusChangeAsync(order, previousStatus, order.Status, callerId);
         await _unitOfWork.SaveChangesAsync();
 
         return ServiceResult.Ok(Messages.OrderDeliveredSuccessfully);
@@ -221,11 +235,13 @@ public class OrderWorkflowService : IOrderWorkflowService
         if (order.Status != OrderStatus.Delivered)
             throw new BusinessException(Messages.CannotCloseNonDeliveredOrder);
 
+        var previousStatus = order.Status;
         order.Status = OrderStatus.Closed;
         order.ClosedAt = DateTime.UtcNow;
         order.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Orders.Update(order);
+        await LogStatusChangeAsync(order, previousStatus, order.Status, callerId);
         await _unitOfWork.SaveChangesAsync();
 
         return ServiceResult.Ok(Messages.OrderClosedSuccessfully);
@@ -241,6 +257,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         if (dto.Status == OrderStatus.Approved && order.UnitPrice <= 0)
             throw new BusinessException(Messages.PriceRequiredBeforeApproval);
 
+        var previousStatus = order.Status;
         order.Status = dto.Status;
         order.UpdatedAt = DateTime.UtcNow;
 
@@ -255,6 +272,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         _trackingService.RemoveOrder(order.OrderId);
 
         _unitOfWork.Orders.Update(order);
+        await LogStatusChangeAsync(order, previousStatus, order.Status, callerId, dto.Reason);
         await _unitOfWork.SaveChangesAsync();
 
         return ServiceResult.Ok(Messages.OrderStatusUpdated);
@@ -305,5 +323,20 @@ public class OrderWorkflowService : IOrderWorkflowService
             driver.UpdatedAt = DateTime.UtcNow;
             _unitOfWork.Users.Update(driver);
         }
+    }
+
+    private async Task LogStatusChangeAsync(Order order, OrderStatus previousStatus, OrderStatus newStatus, int userId, string? reason = null)
+    {
+        var history = new OrderStatusHistory
+        {
+            OrderId = order.OrderId,
+            PreviousStatus = previousStatus,
+            NewStatus = newStatus,
+            ChangedByUserId = userId,
+            ChangedAt = DateTime.UtcNow,
+            Reason = reason
+        };
+
+        await _unitOfWork.OrderStatusHistories.AddAsync(history);
     }
 }

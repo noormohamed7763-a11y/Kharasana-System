@@ -25,6 +25,7 @@ public class UnitOfWork : IUnitOfWork
     public IFactoryRegistrationRequestRepository FactoryRegistrationRequests { get; }
     public IActivationTokenRepository ActivationTokens { get; }
     public ITripRepository Trips { get; }
+    public IOrderStatusHistoryRepository OrderStatusHistories { get; }
 
     public UnitOfWork(KharasanaDbContext context)
     {
@@ -40,6 +41,7 @@ public class UnitOfWork : IUnitOfWork
         FactoryRegistrationRequests = new FactoryRegistrationRequestRepository(context);
         ActivationTokens = new ActivationTokenRepository(context);
         Trips = new TripRepository(context);
+        OrderStatusHistories = new OrderStatusHistoryRepository(context);
     }
 
     private IDbContextTransaction? _currentTransaction;

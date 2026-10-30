@@ -168,6 +168,7 @@ public class AdminAccountSeederTests : IDisposable
         public IFactoryRegistrationRequestRepository FactoryRegistrationRequests => throw Unreachable();
         public IActivationTokenRepository ActivationTokens => throw Unreachable();
         public ITripRepository Trips => throw Unreachable();
+        public IOrderStatusHistoryRepository OrderStatusHistories => throw Unreachable();
 
         public Task BeginTransactionAsync() => throw Unreachable();
         public Task CommitTransactionAsync() => throw Unreachable();
