@@ -1,0 +1,288 @@
+@{
+    ViewData["Title"] = "الجدولة اليومية";
+    var readyOrders = ViewBag.ReadyOrders as IEnumerable<Kharasana.Web.ViewModels.Orders.OrderDto>;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>@ViewData["Title"]</h2>
+        <div class="form-group">
+            <input type="date" id="dispatchDate" class="form-control" value="@(((DateTime)ViewBag.Date).ToString("yyyy-MM-dd"))" onchange="window.location.href='?date=' + this.value">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">الطلبات الجاهزة</div>
+                <div class="card-body p-0">
+                    @if (readyOrders != null && readyOrders.Any())
+                    {
+                        <table class="table table-hover mb-0 table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>رقم الطلب</th>
+                                    <th>العميل</th>
+                                    <th>الكمية</th>
+                                    <th>تاريخ الصب</th>
+                                    <th>الإجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var order in readyOrders)
+                                {
+                                    <tr class="order-row" data-order-id="@order.OrderId">
+                                        <td class="fw-medium">@order.OrderNumber</td>
+                                        <td>@order.ClientName</td>
+                                        <td>@order.Quantity.ToString("0.00") م³</td>
+                                        <td>@(order.PouringDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-success" onclick="openTripsModal(@order.OrderId, '@order.OrderNumber', @order.Quantity, '@(order.PouringDate?.ToString("yyyy-MM-dd") ?? "")')">
+                                                جدولة
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-truck2 fs-1 mb-2"></i>
+                            <p class="mb-0">لا توجد طلبات جاهزة للجدولة لهذا اليوم.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">تفاصيل الرحلة</div>
+                <div class="card-body">
+                    <div id="tripDetails" class="text-center text-muted py-4">
+                        <i class="bi bi-truck fs-1 mb-2"></i>
+                        <p class="mb-0">اختر طلباً لعرض تفاصيل الرحلة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal لتوزيع الرحلات -->
+<div class="modal fade" id="tripsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">توزيع الرحلات - الطلب #<span id="modalOrderNumber"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">الكمية المتوقعة:</label>
+                        <p class="mb-0"><strong><span id="modalQuantity"></span> م³</strong></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">تاريخ الصب:</label>
+                        <p class="mb-0"><strong><span id="modalPouringDate"></span></strong></p>
+                    </div>
+                </div>
+
+                <div id="existingTrips" class="mb-3">
+                    <h6>الرحلات الموجودة:</h6>
+                    <div id="tripsList">
+                        <p class="text-muted small">جاري التحميل...</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6>إضافة/تعديل رحلة جديدة</h6>
+                <form id="tripForm">
+                    <input type="hidden" id="tripOrderId">
+
+                    <div class="row mb-2">
+                        <div class="col-md-4">
+                            <label for="tripQuantity" class="form-label">الكمية (م³)</label>
+                            <input type="number" step="0.01" min="0.01" class="form-control" id="tripQuantity" value="0" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="tripDriverId" class="form-label">السائق</label>
+                            <select class="form-select" id="tripDriverId">
+                                <option value="">اختر سائقاً</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="tripTruckPlate" class="form-label">لوحة الشاحنة</label>
+                            <input type="text" class="form-control" id="tripTruckPlate" placeholder="مثال: 1234 أ">
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="tripHasPump">
+                                <label class="form-check-label" for="tripHasPump">بها مضخة</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="tripScheduledAt" class="form-label">الوقت المحدد</label>
+                            <input type="datetime-local" class="form-control" id="tripScheduledAt">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary" onclick="saveTrips()">حفظ الرحلات</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        // السواقة الحقيقية من الـ API (تم تمريرها عبر ViewBag)
+        const drivers = @Html.Raw(Json.Serialize(((IEnumerable<Kharasana.Web.ViewModels.Drivers.DriverListItemViewModel>)ViewBag.Drivers).ToList()));
+
+        function loadDrivers() {
+            const select = $('#tripDriverId');
+            select.empty().append('<option value="">اختر سائقاً</option>');
+            drivers.forEach(d => {
+                if (d.DriverStatus === 0) { // فقط السواقة المتاحة
+                    select.append($('<option>', { value: d.UserId, text: d.FullName }));
+                }
+            });
+        }
+
+        function openTripsModal(orderId, orderNumber, quantity, pouringDate) {
+            // تعبئة بيانات الطلب في العناصر
+            $('#modalOrderNumber').text(orderNumber);
+            $('#modalQuantity').text(quantity);
+            $('#modalPouringDate').text(pouringDate || '-');
+            $('#tripOrderId').val(orderId);
+            $('#tripQuantity').val(quantity);
+            $('#tripScheduledAt').val(getCurrentDateTimeLocal());
+
+            // إظهار الـ Modal
+            const modal = new bootstrap.Modal(document.getElementById('tripsModal'));
+            modal.show();
+
+            // تحميل الرحلات الموجودة
+            loadExistingTrips(orderId);
+        }
+
+        function getCurrentDateTimeLocal() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        async function loadExistingTrips(orderId) {
+            const container = $('#tripsList');
+            container.html('<p class="text-muted small">جاري التحميل...</p>');
+
+            try {
+                const response = await tripApiService.getByOrderAsync(orderId);
+                const trips = response || [];
+
+                if (trips.length === 0) {
+                    container.html('<p class="text-muted small">لا توجد رحلات مسجلة لهذا الطلب.</p>');
+                    return;
+                }
+
+                let html = '<table class="table table-sm table-bordered">';
+                html += '<thead class="table-light"><tr><th>#</th><th>الكمية</th><th>السائق</th><th>الحالة</th></tr></thead>';
+                html += '<tbody>';
+
+                trips.forEach((trip, index) => {
+                    html += `<tr>
+                        <td>${index + 1}</td>
+                        <td>${trip.quantity.toFixed(2)} م³</td>
+                        <td>${trip.driverName || '-'}</td>
+                        <td><span class="badge bg-${getStatusBadge(trip.status)}">${trip.statusNameAr}</span></td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.html(html);
+            } catch (error) {
+                console.error('Error loading trips:', error);
+                container.html('<p class="text-danger small">فشل في تحميل الرحلات.</p>');
+            }
+        }
+
+        function getStatusBadge(status) {
+            const map = {
+                0: 'secondary',      // Pending
+                1: 'primary',        // Scheduled
+                2: 'warning',        // InProgress
+                3: 'success',      // Completed
+                4: 'danger'         // Cancelled
+            };
+            return map[status] || 'secondary';
+        }
+
+        async function saveTrips() {
+            const orderId = $('#tripOrderId').val();
+            const trips = [];
+
+            // جمع البيانات من النموذج
+            const quantity = parseFloat($('#tripQuantity').val());
+            const driverId = $('#tripDriverId').val() || null;
+            const truckPlate = $('#tripTruckPlate').val() || null;
+            const hasPump = $('#tripHasPump').is(':checked');
+            const scheduledAt = $('#tripScheduledAt').val() || null;
+
+            if (quantity <= 0) {
+                alert('يجب إدخال كمية صالحة للرحلة');
+                return;
+            }
+
+            trips.push({
+                quantity: quantity,
+                driverId: driverId,
+                truckPlate: truckPlate,
+                hasPump: hasPump,
+                scheduledAt: scheduledAt
+            });
+
+            try {
+                // إنشاء الرحلات بالكملية
+                const batchDto = {
+                    trips: trips
+                };
+
+                const result = await tripApiService.createBatchAsync(orderId, batchDto);
+
+                if (result && result.length > 0) {
+                    alert(`تم حفظ ${result.length} رحلة بنجاح`);
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('tripsModal'));
+                    modal.hide();
+                    // إعادة تحميل القائمة
+                    loadExistingTrips(orderId);
+                } else {
+                    alert('فشل في حفظ الرحلات');
+                }
+            } catch (error) {
+                console.error('Error saving trips:', error);
+                alert('حدث خطأ أثناء حفظ الرحلات. يرجى المحاولة لاحقاً.');
+            }
+        }
+
+        // تحميل السواقة عند فتح الصفحة
+        $(document).ready(function() {
+            loadDrivers();
+        });
+    </script>
+}
