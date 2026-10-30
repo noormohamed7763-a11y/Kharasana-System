@@ -283,6 +283,21 @@ namespace Kharasana.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderId"));
 
+                    b.Property<int>("Admixture")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("AggregateSize")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("CementType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
@@ -379,6 +394,14 @@ namespace Kharasana.Infrastructure.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("SupervisorName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("SupervisorPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<decimal>("TotalDiscountAmount")
                         .HasPrecision(18, 2)
@@ -580,6 +603,88 @@ namespace Kharasana.Infrastructure.Migrations
                     b.HasIndex("FactoryId");
 
                     b.ToTable("RawMaterials", (string)null);
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.Trip", b =>
+                {
+                    b.Property<int>("TripId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TripId"));
+
+                    b.Property<DateTime?>("ArrivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DepartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DriverId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FactoryId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("HasPump")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PumpDriverId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TruckPlate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UnloadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("TripId");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("FactoryId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("PumpDriverId");
+
+                    b.ToTable("Trips");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>
@@ -811,6 +916,39 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Navigation("Factory");
                 });
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.Trip", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.User", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
+                        .WithMany()
+                        .HasForeignKey("FactoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.Order", "Order")
+                        .WithMany("Trips")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.User", "PumpDriver")
+                        .WithMany()
+                        .HasForeignKey("PumpDriverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("Factory");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("PumpDriver");
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>
                 {
                     b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
@@ -838,6 +976,8 @@ namespace Kharasana.Infrastructure.Migrations
             modelBuilder.Entity("Kharasana.Domain.Entities.Order", b =>
                 {
                     b.Navigation("Payments");
+
+                    b.Navigation("Trips");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>

@@ -13,6 +13,7 @@ public interface IUnitOfWork : IDisposable
     IOrderPaymentRepository OrderPayments { get; }
     IRawMaterialRepository RawMaterials { get; }
     IProductionBatchRepository ProductionBatches { get; }
+    ITripRepository Trips { get; }
 
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();

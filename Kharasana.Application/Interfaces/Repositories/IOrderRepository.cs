@@ -15,6 +15,8 @@ public interface IOrderRepository : IGenericRepository<Order>
     Task<List<Order>> GetByClientIdWithPaymentsAsync(int clientId);
 
     Task<Order?> GetByIdWithDetailsAsync(int id);
+    Task<Order> GetByIdWithTripsAsync(int id);
+
 
     /// <summary>
     /// قراءة الطلب مع تفاصيله <b>مع تتبّع التغييرات</b> — لمسارات التعديل فقط.
