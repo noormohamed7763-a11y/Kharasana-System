@@ -23,6 +23,8 @@ public class KharasanaDbContext : DbContext
 
     public DbSet<Trip> Trips { get; set; }
 
+    public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
+
     public DbSet<RawMaterial> RawMaterials { get; set; }
 
     public DbSet<ProductionBatch> ProductionBatches { get; set; }

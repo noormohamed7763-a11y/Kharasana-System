@@ -300,4 +300,21 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
 
         return grouped;
     }
+
+    public async Task<IReadOnlyList<Order>> GetReadyForDispatchAsync(int factoryId, DateTime date)
+    {
+        var start = date.Date;
+        var end = start.AddDays(1);
+
+        return await _context.Orders
+            .IgnoreQueryFilters()
+            .Where(o => !o.IsDeleted &&
+                        o.FactoryId == factoryId &&
+                        (o.Status == OrderStatus.Approved ||
+                         o.Status == OrderStatus.Scheduled ||
+                         o.Status == OrderStatus.OnTheWay) &&
+                        o.PouringDate >= start &&
+                        o.PouringDate < end)
+            .ToListAsync();
+    }
 }

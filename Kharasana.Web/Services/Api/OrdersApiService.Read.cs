@@ -165,5 +165,34 @@ namespace Kharasana.Web.Services.Api
                 return null;
             }
         }
+
+        // ============================================================
+        // GET READY FOR DISPATCH - جلب الطلبات الجاهزة للجدولة
+        // ============================================================
+        public async Task<IEnumerable<OrderDto>?> GetReadyForDispatchAsync(int factoryId, DateTime date)
+        {
+            try
+            {
+                var dateStr = date.ToString("yyyy-MM-dd");
+                var query = $"Orders/ready-for-dispatch?factoryId={factoryId}&date={dateStr}";
+                _logger.LogInformation("جلب الطلبات الجاهزة للجدولة — الاستعلام: {Query}", query);
+
+                var response = await _apiClient.GetAsync<ApiResponse<IEnumerable<OrderDto>>>(query);
+
+                if (response == null || !response.Success)
+                {
+                    _logger.LogWarning("GetReadyForDispatchAsync: فشل الجلب أو الردّ فارغ.");
+                    return null;
+                }
+
+                return response.Data;
+            }
+            catch (ApiServiceException) { throw; }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "استثناء في GetReadyForDispatchAsync: {Message}", ex.Message);
+                return null;
+            }
+        }
     }
 }
