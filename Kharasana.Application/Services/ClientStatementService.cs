@@ -83,7 +83,9 @@ public class ClientStatementService : IClientStatementService
                 });
 
                 // Payments (Credit)
-                events.AddRange(o.Payments.Select(p => new LedgerEvent
+                events.AddRange(o.Payments
+                    .Where(p => p.VerificationStatus == PaymentVerificationStatus.Verified)
+                    .Select(p => new LedgerEvent
                 {
                     Date = p.CreatedAt,
                     Type = "Payment",
