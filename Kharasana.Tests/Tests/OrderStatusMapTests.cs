@@ -68,7 +68,7 @@ public class OrderStatusMapTests
         var statuses = Enum.GetValues<OrderStatus>();
         var names = statuses.Select(OrderStatusHelper.GetArabicName).ToList();
 
-        statuses.Should().HaveCount(8);
+        statuses.Should().HaveCount(9);
         names.Should().OnlyContain(n => !string.IsNullOrWhiteSpace(n) && n != "غير معروف");
         names.Should().OnlyHaveUniqueItems(
             "حالتان بنفس النص تجعل الشاشة عاجزة عن التمييز بينهما");
@@ -183,7 +183,7 @@ public class OrderStatusMapTests
             .Select(m => (Status: m.Groups[1].Value, Suffix: m.Groups[2].Value))
             .ToList();
 
-        suffixes.Should().HaveCount(8, "كل حالة من الحالات الثماني لها لاحقة CSS");
+        suffixes.Should().HaveCount(9, "كل حالة من الحالات التسع لها لاحقة CSS");
         suffixes.Select(s => s.Status).Should().BeEquivalentTo(Enum.GetNames<OrderStatus>());
         suffixes.Select(s => s.Suffix).Should().OnlyHaveUniqueItems();
 

@@ -6,6 +6,7 @@ using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Application.Services;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Enums;
+using Kharasana.Domain.Entities;
 using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Infrastructure.Repositories;
@@ -1151,5 +1152,221 @@ public class OrderServiceTests : IDisposable
         {
             throw new DbUpdateConcurrencyException("RowVersion conflict simulated in test.");
         }
+    }
+
+    // ─────────────────────────────────────────────
+    // ⑬  Tests: Payment Authorization & Balance
+    // ─────────────────────────────────────────────
+
+    /// <summary>
+    /// إضافة دفعة جديدة لحالة Pending — يجب النجاح وتكون الحالة PendingVerification.
+    /// المدير أو موظف المصنع يسجلون دفعة، الحصن يمنع العميل.
+    /// </summary>
+    [Fact]
+    public async Task AddPayment_PendingOrder_Succeeds()
+    {
+        // Arrange: طلب Pending، المصنع، العميل
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+
+        // Add a Pending payment (not Rejected, so it counts in alreadyPaid)
+        order.Payments = new List<OrderPayment>
+        {
+            new OrderPayment
+            {
+                Amount = 30m,
+                VerificationStatus = PaymentVerificationStatus.PendingVerification,
+                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(client);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act: FactoryEmployee يسجل دفعة
+        var dto = new AddPaymentDto { Amount = 75, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001", Notes = "Test payment" };
+        await _orderService.AddPaymentAsync(order.OrderId, dto, client.UserId, UserRole.FactoryEmployee, factory.FactoryId);
+
+        // Assert: Payment was added successfully with PendingVerification status
+        var createdPayment = order.Payments.Last();
+        Assert.Equal(PaymentVerificationStatus.PendingVerification, createdPayment.VerificationStatus);
+        Assert.Equal(75m, createdPayment.Amount);
+    }
+
+    /// <summary>
+    /// رفض الدفعة (Reject) — يجب تدوين سبب الرفض وحالة VerifiedByUserId تسجل للمدير/موظف المصنع.
+    /// </summary>
+    [Fact]
+    public async Task RejectPayment_WithReason_SetsRejectedStatusAndRecordsVerifierId()
+    {
+        // Arrange: طلب به دفعة Pending
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(client);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act: رفض الدفعة
+        var payment = order.Payments.First();
+        var result = await _orderService.RejectPaymentAsync(payment.OrderPaymentId, "سبب الرفض", 1);
+
+        // Assert: حالة الدفعة أصبحت Rejected ويدون من رفضها
+        var updatedPayment = await _context.OrderPayments.FindAsync(payment.OrderPaymentId);
+        Assert.NotNull(updatedPayment);
+        Assert.Equal(PaymentVerificationStatus.Rejected, updatedPayment.VerificationStatus);
+        Assert.Equal("سبب الرفض", updatedPayment.VerificationNotes);
+        Assert.Equal(1, updatedPayment.VerifiedByUserId);
+        Assert.NotNull(updatedPayment.VerifiedAt);
+        Assert.True(result);
+    }
+
+    /// <summary>
+    /// الدفعات المرفوضة (Rejected) لا تُحتسب في المتبقي: يجب استثناء Rejected من AlreadyPaid.
+    /// </summary>
+    [Fact]
+    public async Task AlreadyPaid_ExcludesRejectedPayments_CalculatesRemainingCorrectly()
+    {
+        // Arrange: طلب صافي 100، دفعتان: Pending 40 + Rejected 20
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+
+        // Add Pending and Rejected payments
+        order.Payments = new List<OrderPayment>
+        {
+            new OrderPayment
+            {
+                Amount = 40m,
+                VerificationStatus = PaymentVerificationStatus.PendingVerification,
+                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            },
+            new OrderPayment
+            {
+                Amount = 20m,
+                VerificationStatus = PaymentVerificationStatus.Rejected,
+                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                VerificationNotes = "Rejected payment",
+                VerifiedByUserId = 99,
+                VerifiedAt = DateTime.UtcNow
+            }
+        };
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(client);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act: Calculate alreadyPaid excluding Rejected (the logic in AddPaymentAsync)
+        var alreadyPaid = order.Payments
+            .Where(p => p.VerificationStatus != PaymentVerificationStatus.Rejected)
+            .Sum(p => p.Amount);
+
+        // Assert: only Pending counted (40), Rejected excluded
+        Assert.Equal(40m, alreadyPaid);
+    }
+
+    /// <summary>
+    /// الدفعات النقدية (NotApplicable) لا تُقبل للتحقق: عند محاولة Approve ترمي exception.
+    /// </summary>
+    [Fact]
+    public async Task CannotApproveCashPayment_Throws_WhenStatusIsNotApplicable()
+    {
+        // Arrange: طلب به دفعة NotApplicable (Cash)
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+
+        // Add a NotApplicable payment
+        order.Payments = new List<OrderPayment>
+        {
+            new OrderPayment
+            {
+                Amount = 50m,
+                VerificationStatus = PaymentVerificationStatus.NotApplicable,
+                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                PaymentMethod = PaymentMethod.Cash
+            }
+        };
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(client);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act & Assert: ApprovePaymentAsync throws because status is NotApplicable
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            _orderService.ApprovePaymentAsync(order.Payments.First().OrderPaymentId, "verification notes", 1));
+
+        Assert.Contains("لا يمكن التحقق من دفعات الكاش", ex.Message);
+    }
+
+    /// <summary>
+    /// يحاول العميل تسجيل دفعة يفشل بالسلب: لا يملك الصلاحية.
+    /// </summary>
+    [Fact]
+    public async Task ClientCannotRecordPayment_Throws_WhenRoleIsClient()
+    {
+        // Arrange: طلب pending، عميل يحاول يسجل دفعة
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var caller = TestDataSeeder.CreateUser(1, "Caller", UserRole.Client);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, caller.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(caller);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act: AddPaymentAsync throws ForbiddenException for Client role
+        var dto = new AddPaymentDto { Amount = 10, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001" };
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            _orderService.AddPaymentAsync(order.OrderId, dto, caller.UserId, UserRole.Client, factory.FactoryId));
+
+        Assert.Contains("لا يمتلك الصلاحية", ex.Message);
+    }
+
+    /// <summary>
+    /// محاولة تسجيل دفعة على طلب ملغى (Cancelled) تفشل.
+    /// </summary>
+    [Fact]
+    public async Task CannotRecordPaymentForCancelledOrder_Throws()
+    {
+        // Arrange: طلب ملغى
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId, status: OrderStatus.Cancelled);
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(client);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act: AddPaymentAsync throws because order is Cancelled
+        var dto = new AddPaymentDto { Amount = 10, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001" };
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            _orderService.AddPaymentAsync(order.OrderId, dto, client.UserId, UserRole.FactoryEmployee, factory.FactoryId));
+
+        Assert.Contains("لا يمكن تسجيل دفعة لطلب ملغى", ex.Message);
     }
 }

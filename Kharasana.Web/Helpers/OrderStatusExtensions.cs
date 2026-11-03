@@ -56,6 +56,7 @@ namespace Kharasana.Web.Helpers
                 OrderStatus.OnTheWay => "ontheway",
                 OrderStatus.Delivered => "delivered",
                 OrderStatus.Closed => "closed",
+                OrderStatus.Scheduled => "scheduled",
                 _ => "default"
             };
         }
@@ -83,6 +84,7 @@ namespace Kharasana.Web.Helpers
                 OrderStatus.OnTheWay => 65,
                 OrderStatus.Delivered => 85,
                 OrderStatus.Closed => 100,
+                OrderStatus.Scheduled => 40,
                 _ => 10
             };
         }
@@ -102,6 +104,7 @@ namespace Kharasana.Web.Helpers
                 OrderStatus.OnTheWay => "bg-warning",
                 OrderStatus.Delivered => "bg-success",
                 OrderStatus.Closed => "bg-secondary",
+                OrderStatus.Scheduled => "bg-warning",
                 _ => "bg-info"
             };
         }

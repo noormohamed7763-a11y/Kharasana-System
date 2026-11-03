@@ -26,6 +26,10 @@ public class OrderPayment
 
     public DateTime? VerifiedAt { get; set; }
 
+    public int? VerifiedByUserId { get; set; }
+
     // Navigation property
     public Order Order { get; set; } = null!;
+
+    public virtual User? VerifiedBy { get; set; }
 }
