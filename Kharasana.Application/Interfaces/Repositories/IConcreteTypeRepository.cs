@@ -19,9 +19,9 @@ public interface IConcreteTypeRepository : IGenericRepository<ConcreteType>
 
     Task<ConcreteType?> GetByIdWithFactoryAsync(int id);
 
-    Task<PagedResult<ConcreteType>> GetPagedAsync(int pageNumber, int pageSize, string? search);
+    Task<PagedResult<ConcreteType>> GetPagedAsync(int pageNumber, int pageSize, string? search, bool? onlyActive = null);
 
-    Task<PagedResult<ConcreteType>> GetPagedByFactoryAsync(int factoryId, int pageNumber, int pageSize, string? search);
+    Task<PagedResult<ConcreteType>> GetPagedByFactoryAsync(int factoryId, int pageNumber, int pageSize, string? search, bool? onlyActive = null);
 
     /// <summary>
     /// البحث عن نوع خرسانة <b>غير محذوف</b> بالاسم داخل المصنع — محترمًا فلتر الحذف الناعم العام.

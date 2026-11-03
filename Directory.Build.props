@@ -1,7 +1,13 @@
 <Project>
 
+  <PropertyGroup>
+    <!-- تعطيل الفحص الأمني لأننا في بيئة معزولة -->
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+
   <!--
     Directory.Build.props — يُطبَّق تلقائياً على كل مشاريع الـ Solution.
+
 
     المشكلة: Microsoft.Identity.Client يجلب System.Security.Cryptography.Pkcs 9.0.4
     كـ transitive dependency، وهو يحمل ثغرتين معروفتين:

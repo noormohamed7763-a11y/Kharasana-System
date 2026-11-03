@@ -18,19 +18,19 @@ public class ConcreteTypeService : IConcreteTypeService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<PagedResult<ConcreteTypeDto>> GetAllAsync(int pageNumber = 1, int pageSize = 20, string? search = null, int? factoryId = null)
+    public async Task<PagedResult<ConcreteTypeDto>> GetAllAsync(int pageNumber = 1, int pageSize = 20, string? search = null, int? factoryId = null, bool? onlyActive = null)
     {
         PagedResult<ConcreteType> concreteTypes;
 
         if (factoryId.HasValue)
         {
             concreteTypes = await _unitOfWork.ConcreteTypes
-                .GetPagedByFactoryAsync(factoryId.Value, pageNumber, pageSize, search);
+                .GetPagedByFactoryAsync(factoryId.Value, pageNumber, pageSize, search, onlyActive);
         }
         else
         {
             concreteTypes = await _unitOfWork.ConcreteTypes
-                .GetPagedAsync(pageNumber, pageSize, search);
+                .GetPagedAsync(pageNumber, pageSize, search, onlyActive);
         }
 
         return new PagedResult<ConcreteTypeDto>

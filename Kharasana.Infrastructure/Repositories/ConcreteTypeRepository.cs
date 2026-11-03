@@ -72,9 +72,13 @@ public class ConcreteTypeRepository
                 && (excludeConcreteTypeId == null || x.ConcreteTypeId != excludeConcreteTypeId));
     }
 
-    public async Task<PagedResult<ConcreteType>> GetPagedAsync(int pageNumber, int pageSize, string? search)
+    public async Task<PagedResult<ConcreteType>> GetPagedAsync(int pageNumber, int pageSize, string? search, bool? onlyActive = null)
     {
         IQueryable<ConcreteType> query = _context.ConcreteTypes.AsNoTracking().Include(x => x.Factory);
+        if (onlyActive.HasValue && onlyActive.Value)
+        {
+            query = query.Where(x => x.IsActive);
+        }
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(x => x.Name.Contains(search));
@@ -86,9 +90,13 @@ public class ConcreteTypeRepository
         return new PagedResult<ConcreteType> { Items = items, TotalCount = totalCount, PageNumber = pageNumber, PageSize = pageSize };
     }
 
-    public async Task<PagedResult<ConcreteType>> GetPagedByFactoryAsync(int factoryId, int pageNumber, int pageSize, string? search)
+    public async Task<PagedResult<ConcreteType>> GetPagedByFactoryAsync(int factoryId, int pageNumber, int pageSize, string? search, bool? onlyActive = null)
     {
         IQueryable<ConcreteType> query = _context.ConcreteTypes.AsNoTracking().Include(x => x.Factory).Where(x => x.FactoryId == factoryId);
+        if (onlyActive.HasValue && onlyActive.Value)
+        {
+            query = query.Where(x => x.IsActive);
+        }
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(x => x.Name.Contains(search));
