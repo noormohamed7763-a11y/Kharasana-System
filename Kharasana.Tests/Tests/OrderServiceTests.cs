@@ -1165,38 +1165,29 @@ public class OrderServiceTests : IDisposable
     [Fact]
     public async Task AddPayment_PendingOrder_Succeeds()
     {
-        // Arrange: طلب Pending، المصنع، العميل
+        // Arrange: طلب pending، المصنع، العميل
+        // NetAmount = Quantity × UnitPrice = 1 × 150 = 150
         var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
         var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
         var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
-        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId, quantity: 1, unitPrice: 150m);
+        order.RecalculateNetAmount(); // ✅ لضمان أن NetAmount = TotalPrice = 150
 
-        // Add a Pending payment (not Rejected, so it counts in alreadyPaid)
-        order.Payments = new List<OrderPayment>
-        {
-            new OrderPayment
-            {
-                Amount = 30m,
-                VerificationStatus = PaymentVerificationStatus.PendingVerification,
-                PaymentDate = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
-            }
-        };
-
+        // No pre-existing payments, so remaining = NetAmount = 150
         _context.Factories.Add(factory);
         _context.Users.Add(client);
         _context.ConcreteTypes.Add(concreteType);
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
 
-        // Act: FactoryEmployee يسجل دفعة
-        var dto = new AddPaymentDto { Amount = 75, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001", Notes = "Test payment" };
+        // Act: FactoryEmployee يسجل أول دفعة (50 <= remaining 150)
+        var dto = new AddPaymentDto { Amount = 50, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001", Notes = "Test payment" };
         await _orderService.AddPaymentAsync(order.OrderId, dto, client.UserId, UserRole.FactoryEmployee, factory.FactoryId);
 
         // Assert: Payment was added successfully with PendingVerification status
         var createdPayment = order.Payments.Last();
         Assert.Equal(PaymentVerificationStatus.PendingVerification, createdPayment.VerificationStatus);
-        Assert.Equal(75m, createdPayment.Amount);
+        Assert.Equal(50m, createdPayment.Amount);
     }
 
     /// <summary>
@@ -1315,7 +1306,7 @@ public class OrderServiceTests : IDisposable
         var ex = await Assert.ThrowsAsync<BusinessException>(() =>
             _orderService.ApprovePaymentAsync(order.Payments.First().OrderPaymentId, "verification notes", 1));
 
-        Assert.Contains("لا يمكن التحقق من دفعات الكاش", ex.Message);
+        Assert.Contains("لا يمكن اعتماد", ex.Message);
     }
 
     /// <summary>
@@ -1341,7 +1332,7 @@ public class OrderServiceTests : IDisposable
         var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
             _orderService.AddPaymentAsync(order.OrderId, dto, caller.UserId, UserRole.Client, factory.FactoryId));
 
-        Assert.Contains("لا يمتلك الصلاحية", ex.Message);
+        Assert.Contains("غير مخول لتسجيل دفعات", ex.Message);
     }
 
     /// <summary>
