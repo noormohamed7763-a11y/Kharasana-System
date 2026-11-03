@@ -1,3 +1,4 @@
+using System;
 using System.Security.Cryptography;
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
@@ -268,10 +269,13 @@ public class OrderCommandService : IOrderCommandService
         if (order.Status is OrderStatus.Cancelled or OrderStatus.Rejected)
             throw new BusinessException(Messages.CannotRecordPaymentForCancelledOrder);
 
-        // ✅ منع تجاوز المتبقي: بدونه يُسجَّل مبلغ أكبر من المستحق فيبقى الرصيد
-        //    سالباً، وهو ما تعني «دفعة زائدة» لا رصيداً مستحقاً على العميل.
+        // ✅ حساب المتبقي: استثنِ الدفعات المرفوضة (Rejected) والممحولة (Soft Deleted).
+        //    المدفوعات التي تحسب: Pending, Verified, وNotApplicable (الكاش).
+        var alreadyPaid = order.Payments
+            .Where(p => p.VerificationStatus != PaymentVerificationStatus.Rejected)
+            .Sum(p => p.Amount);
+
         var netAmount = order.NetAmount;
-        var alreadyPaid = order.Payments.Sum(p => p.Amount);
         var remaining = netAmount - alreadyPaid;
 
         if (dto.Amount > remaining)
@@ -292,6 +296,14 @@ public class OrderCommandService : IOrderCommandService
         };
 
         await _unitOfWork.OrderPayments.AddAsync(payment);
+
+        // ✅ مسّ تحديث الطلب لتفعيل حارس RowVersion: تسجيل دفعة يغيّر رصيد الطلب
+        //    منطقياً، فتغييره هنا يجعل SaveChanges يُرسل UPDATE على Orders محروساً
+        //    بـ RowVersion. لو سجّل طلبان دفعتين في آنٍ واحد انطلاقاً من رصيد واحد
+        //    (سباق التحقق من المتبقي)، يفسح الثاني بـ DbUpdateConcurrencyException
+        //    يلتقطه الـ Middleware ويرد 409 بدل تجاوز المتبقي بصمت.
+        order.UpdatedAt = DateTime.UtcNow;
+
         await _unitOfWork.SaveChangesAsync();
     }
 
@@ -308,9 +320,22 @@ public class OrderCommandService : IOrderCommandService
         if (payment.VerificationStatus == PaymentVerificationStatus.NotApplicable)
             throw new BusinessException(Messages.PaymentCannotBeApprovedCash);
 
+        // ✅ تأشير الصلاحيات: مدير يستطيع أي دفعة، وموظف المصنع somente إذا belonged لمصنعه
+        var order = await _unitOfWork.Orders.GetByIdWithDetailsForUpdateAsync(payment.OrderId);
+        if (order == null)
+            throw new NotFoundException(Messages.OrderNotFound);
+
+        if (order.Status is OrderStatus.Cancelled or OrderStatus.Rejected)
+            throw new BusinessException(Messages.CannotRecordPaymentForCancelledOrder);
+
+        // ✅ التحقق من belonging للمصنع: Admin يتجاوز، FactoryEmployee ينتظر مصنعه
+        //    التحقق يتم في طبقة controller بفحص Role + FactoryId, وهنا نكتفي بالتأكد من
+        //    أن الطلب غير ملغى/مرفوض ولا يحوي حالة incompatible.
+
         payment.VerificationStatus = PaymentVerificationStatus.Verified;
         payment.VerificationNotes = verificationNotes;
         payment.VerifiedAt = DateTime.UtcNow;
+        payment.VerifiedByUserId = approverId;
 
         _unitOfWork.OrderPayments.Update(payment);
         await _unitOfWork.SaveChangesAsync();
@@ -330,6 +355,7 @@ public class OrderCommandService : IOrderCommandService
         payment.VerificationStatus = PaymentVerificationStatus.Rejected;
         payment.VerificationNotes = rejectionReason;
         payment.VerifiedAt = DateTime.UtcNow;
+        payment.VerifiedByUserId = approverId;
 
         _unitOfWork.OrderPayments.Update(payment);
         await _unitOfWork.SaveChangesAsync();

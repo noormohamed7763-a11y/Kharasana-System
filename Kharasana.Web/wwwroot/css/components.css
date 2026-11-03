@@ -244,6 +244,11 @@
     color: var(--danger-text);
 }
 
+.status-scheduled {
+    background: var(--warning-soft);
+    color: var(--warning-text);
+}
+
 .status-secondary {
     background: rgba(117, 117, 117, 0.12);
     color: var(--text-muted);
@@ -252,6 +257,11 @@
 .status-primary {
     background: var(--tertiary-soft);
     color: var(--tertiary-text);
+}
+
+.bg-scheduled {
+    background: var(--warning-soft);
+    color: var(--warning-text);
 }
 
 .status-default {
