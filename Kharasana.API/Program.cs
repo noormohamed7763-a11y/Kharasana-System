@@ -297,26 +297,7 @@ public class Program
 
         var app = builder.Build();
 
-        // ✅ تطبيق ترحيلات قاعدة البيانات مع حماية التطبيق من السقوط عند الإقلاع
-        try
-        {
-            using var scope = app.Services.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<KharasanaDbContext>();
-            await dbContext.Database.MigrateAsync();
-
-            var startupLogger = app.Services
-                .GetRequiredService<ILoggerFactory>()
-                .CreateLogger(nameof(AdminAccountSeeder));
-            await AdminAccountSeeder.SeedAsync(app.Services, app.Configuration, startupLogger);
-        }
-        catch (Exception ex)
-        {
-            var startupLogger = app.Services
-                .GetRequiredService<ILoggerFactory>()
-                .CreateLogger("StartupMigration");
-            startupLogger.LogError(ex, "تعذر تطبيق الترحيلات أو الـ Seeding عند الإقلاع");
-        }
-
+        // ⚡ تم نقل ترحيلات قاعدة البيانات إلى منفذ النشر (CI/CD) لضمان استقرار التطبيق أثناء أي تغييرات في schema.
         app.UseMiddleware<ExceptionMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
