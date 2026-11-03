@@ -26,6 +26,7 @@ namespace Kharasana.API.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/[controller]")]
 [Authorize] // حد أدنى: توكن صالح
 public class UsersController : ControllerBase
 {

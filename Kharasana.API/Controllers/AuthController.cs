@@ -20,6 +20,7 @@ namespace Kharasana.API.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/[controller]")]
 [AllowAnonymous] // لا يحتاج توكن للوصول إلى التسجيل والدخول
 public class AuthController : ControllerBase
 {

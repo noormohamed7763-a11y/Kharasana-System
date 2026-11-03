@@ -17,6 +17,7 @@ namespace Kharasana.API.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/[controller]")]
 [Authorize]
 public class ConcreteTypesController : ControllerBase
 {
@@ -50,15 +51,9 @@ public class ConcreteTypesController : ControllerBase
     {
         var caller = User.GetCallerContext();
         int? factoryId = caller.Role == UserRole.FactoryEmployee ? caller.FactoryId : null;
+        bool? onlyActive = caller.Role == UserRole.Client ? true : null;
 
-        var concreteTypes = await _concreteTypeService.GetAllAsync(pageNumber, pageSize, search, factoryId);
-
-        // ✅ Client لا يرى إلا الأنواع النشطة
-        if (caller.Role == UserRole.Client)
-        {
-            concreteTypes.Items = concreteTypes.Items.Where(t => t.IsActive).ToList();
-            concreteTypes.TotalCount = concreteTypes.Items.Count();
-        }
+        var concreteTypes = await _concreteTypeService.GetAllAsync(pageNumber, pageSize, search, factoryId, onlyActive);
 
         return Ok(new ApiResponse<PagedResult<ConcreteTypeDto>>
         {
