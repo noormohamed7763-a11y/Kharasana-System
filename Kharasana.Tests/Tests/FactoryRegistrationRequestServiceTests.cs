@@ -520,7 +520,7 @@ internal class FakeUserService : IUserService
     public Task<bool> UpdateAsync(int id, UpdateUserDto dto) => Task.FromResult(true);
     public Task<bool> DeleteAsync(int id) => Task.FromResult(true);
     public Task<bool> UpdateMyProfileAsync(int userId, UpdateMyProfileDto dto) => Task.FromResult(true);
-    public Task<bool> UpdateDriverStatusAsync(int driverId, UpdateDriverStatusDto dto, UserRole callerRole, int? callerFactoryId) => Task.FromResult(true);
+    public Task<bool> UpdateDriverStatusAsync(int driverId, UpdateDriverStatusDto dto, UserRole callerRole, int? callerFactoryId, int callerUserId) => Task.FromResult(true);
     public Task<bool> ToggleDriverActiveAsync(int driverId, UserRole callerRole, int? callerFactoryId) => Task.FromResult(true);
 }
 
