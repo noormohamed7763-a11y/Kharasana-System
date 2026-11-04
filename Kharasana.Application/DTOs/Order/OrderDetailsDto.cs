@@ -40,6 +40,14 @@ public class OrderDetailsDto
     public bool NeedPump { get; set; }
     public int? FloorNumber { get; set; }
     public decimal? UnitPrice { get; set; }
+
+    /// <summary>
+    /// هل سُعِّر الطلب يدوياً؟ يقرؤه تطبيق Flutter من تفاصيل الطلب
+    /// (isManuallyPriced في order_details_dto.dart) لتمييز السعر المُعتمد
+    /// من موظف المصنع عن سعر الكتالوج.
+    /// </summary>
+    public bool IsManuallyPriced { get; set; }
+
     public decimal? TotalPrice { get; set; }
     public decimal? TotalDiscountAmount { get; set; }
     public decimal? NetAmount { get; set; }
