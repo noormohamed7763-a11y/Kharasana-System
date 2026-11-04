@@ -109,7 +109,8 @@ public static class OrderMapper
             Status = order.Status,
             Notes = order.Notes,
             Latitude = order.Latitude,
-            Longitude = order.Longitude
+            Longitude = order.Longitude,
+            IsManuallyPriced = order.IsManuallyPriced
         };
     }
 }
