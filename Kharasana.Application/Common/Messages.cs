@@ -185,6 +185,7 @@ public static class Messages
 
     public const string DriverNotAvailable = "السائق المحدد غير متاح حاليًا (مشغول أو غير متصل).";
     public const string DriverStatusUpdatedSuccessfully = "تم تحديث حالة السائق بنجاح.";
+    public const string NotAuthorizedToUpdateAnotherDriver = "غير مخول بتحديث حالة سائق آخر. يمكنك تحديث حالتك الخاصة فقط.";
 
     #endregion
 

@@ -316,14 +316,15 @@ public class UsersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">السائق غير موجود.</response>
     [HttpPut("{id:int}/driver-status")]
-    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrDriver)]
     [ServiceFilter(typeof(ValidationFilter<UpdateDriverStatusDto>))]
     public async Task<IActionResult> UpdateDriverStatus(int id, [FromBody] UpdateDriverStatusDto dto)
     {
         var caller = User.GetCallerContext();
 
-        // ✅ الخدمة ستتحقق من الصلاحيات (عند FactoryEmployee تتحقق من FactoryId)
-        await _userService.UpdateDriverStatusAsync(id, dto, caller.Role, caller.FactoryId);
+        // ✅ الخدمة تتحقق من الصلاحيات: موظف المصنع يرى سائقي مصنعه فقط،
+        //    والسائق يحدّث حالته الشخصية فقط (وليس حالة سائق آخر)
+        await _userService.UpdateDriverStatusAsync(id, dto, caller.Role, caller.FactoryId, caller.UserId);
 
         return Ok(ApiResponse.Ok(Messages.DriverStatusUpdatedSuccessfully));
     }

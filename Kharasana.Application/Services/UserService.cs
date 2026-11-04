@@ -206,7 +206,7 @@ public class UserService : IUserService
     }
 
     public async Task<bool> UpdateDriverStatusAsync(
-        int driverId, UpdateDriverStatusDto dto, UserRole callerRole, int? callerFactoryId)
+        int driverId, UpdateDriverStatusDto dto, UserRole callerRole, int? callerFactoryId, int callerUserId)
     {
         var driver = await _unitOfWork.Users.GetByIdAsync(driverId);
         if (driver == null)
@@ -220,6 +220,12 @@ public class UserService : IUserService
         {
             if (!callerFactoryId.HasValue || driver.FactoryId != callerFactoryId.Value)
                 throw new ForbiddenException(Messages.FactoryEmployeeFactoryMismatch);
+        }
+
+        // ✅ التحقق من صلاحية السائق: السائق يحدّث حالته الشخصية فقط
+        if (callerRole == UserRole.Driver && driverId != callerUserId)
+        {
+            throw new ForbiddenException(Messages.NotAuthorizedToUpdateAnotherDriver);
         }
 
         driver.DriverStatus = dto.DriverStatus;

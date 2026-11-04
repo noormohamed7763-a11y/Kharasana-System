@@ -20,7 +20,7 @@ public interface IUserService
     Task<bool> DeleteAsync(int id);
 
     Task<bool> UpdateDriverStatusAsync(
-        int driverId, UpdateDriverStatusDto dto, UserRole callerRole, int? callerFactoryId);
+        int driverId, UpdateDriverStatusDto dto, UserRole callerRole, int? callerFactoryId, int callerUserId);
 
     Task<bool> ToggleDriverActiveAsync(
         int driverId, UserRole callerRole, int? callerFactoryId);
