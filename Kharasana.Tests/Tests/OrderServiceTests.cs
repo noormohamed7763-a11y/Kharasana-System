@@ -1201,6 +1201,18 @@ public class OrderServiceTests : IDisposable
         var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
         var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
         var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+        order.Payments = new List<OrderPayment>
+        {
+            new OrderPayment
+            {
+                Amount = 50m,
+                PaymentMethod = PaymentMethod.BankDeposit,
+                ReferenceNumber = "REF-REJECT-001",
+                VerificationStatus = PaymentVerificationStatus.PendingVerification,
+                CreatedAt = DateTime.UtcNow,
+                PaymentDate = DateTime.UtcNow
+            }
+        };
 
         _context.Factories.Add(factory);
         _context.Users.Add(client);
@@ -1358,6 +1370,6 @@ public class OrderServiceTests : IDisposable
         var ex = await Assert.ThrowsAsync<BusinessException>(() =>
             _orderService.AddPaymentAsync(order.OrderId, dto, client.UserId, UserRole.FactoryEmployee, factory.FactoryId));
 
-        Assert.Contains("لا يمكن تسجيل دفعة لطلب ملغى", ex.Message);
+        Assert.Contains("لا يمكن تسجيل دفعة على طلب ملغى.", ex.Message);
     }
 }
