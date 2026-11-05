@@ -1,5 +1,7 @@
 using System;
 using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Order;
@@ -16,16 +18,35 @@ public class OrderCommandService : IOrderCommandService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IIdempotencyService _idempotencyService;
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public OrderCommandService(IUnitOfWork unitOfWork, IPasswordHasher passwordHasher)
+    public OrderCommandService(IUnitOfWork unitOfWork, IPasswordHasher passwordHasher, IIdempotencyService idempotencyService)
     {
         _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
+        _idempotencyService = idempotencyService;
     }
 
     public async Task<OrderDetailsDto> CreateAsync(
-        CreateOrderDto dto, int currentUserId, UserRole currentRole, int? currentUserFactoryId = null)
+        CreateOrderDto dto, int currentUserId, UserRole currentRole, string? idempotencyKey = null, int? currentUserFactoryId = null)
     {
+        // ✅ Idempotency Check - إذا تم توفير مفتاح، نتحقق منه أولاً
+        string? requestHash = null;
+        if (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            requestHash = ComputeRequestHash(dto, currentUserId, "CreateOrder");
+
+            var (isDuplicate, existingResult, statusCode) = await _idempotencyService
+                .CheckAndInitializeAsync<OrderDetailsDto>(idempotencyKey, currentUserId, "CreateOrder", requestHash);
+
+            if (isDuplicate && existingResult != null)
+            {
+                // عملية مكررة - إرجاع النتيجة المخزنة
+                return existingResult;
+            }
+        }
+
         var factory = await _unitOfWork.Factories.GetByIdIncludingDeletedAsync(dto.FactoryId);
         if (factory == null)
             throw new NotFoundException(Messages.FactoryNotFound);
@@ -73,11 +94,46 @@ public class OrderCommandService : IOrderCommandService
         await _unitOfWork.Orders.AddAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
-        return OrderMapper.MapToDetailsDto(order, hidePricing: false);
+        var result = OrderMapper.MapToDetailsDto(order, hidePricing: false);
+
+        // ✅ تسجيل نجاح العملية في Idempotency
+        if (!string.IsNullOrWhiteSpace(idempotencyKey) && requestHash != null)
+        {
+            await _idempotencyService.CompleteAsync(idempotencyKey, currentUserId, "CreateOrder", result, 201);
+        }
+
+        return result;
     }
 
-    public async Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId)
+    /// <summary>
+    /// يحسب تجزئة (Hash) للطلب لتحديد ما إذا كانت البيانات متطابقة عند إعادة الإرسال.
+    /// </summary>
+    private static string ComputeRequestHash<T>(T request, int userId, string operationType)
     {
+        using var sha256 = SHA256.Create();
+        var json = JsonSerializer.Serialize(request, JsonOptions);
+        var combined = $"{userId}:{operationType}:{json}";
+        var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(combined));
+        return Convert.ToHexString(hashBytes);
+    }
+
+    public async Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId, string? idempotencyKey = null, int currentUserId = 0)
+    {
+        // ✅ Idempotency Check
+        string? requestHash = null;
+        if (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            requestHash = ComputeRequestHash(dto, currentUserId, "CreatePhoneOrder");
+
+            var (isDuplicate, existingResult, statusCode) = await _idempotencyService
+                .CheckAndInitializeAsync<PhoneOrderResultDto>(idempotencyKey, currentUserId, "CreatePhoneOrder", requestHash);
+
+            if (isDuplicate && existingResult != null)
+            {
+                return existingResult;
+            }
+        }
+
         var normalizedPhone = YemeniPhoneHelper.Normalize(dto.ClientPhone);
         if (normalizedPhone == null)
             throw new BusinessException(Messages.InvalidYemeniPhone);
@@ -126,7 +182,6 @@ public class OrderCommandService : IOrderCommandService
             };
 
             await _unitOfWork.Users.AddAsync(client);
-            // تمت إزالة SaveChangesAsync هنا ليتم الحفظ في النهاية مع الطلب
         }
         else if (client.Role == UserRole.Client)
         {
@@ -167,12 +222,20 @@ public class OrderCommandService : IOrderCommandService
         await _unitOfWork.Orders.AddAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
-        return new PhoneOrderResultDto
+        var result = new PhoneOrderResultDto
         {
             Order = OrderMapper.MapToDetailsDto(order, hidePricing: false),
             NewClientTemporaryPassword = temporaryPassword,
             NewClientPhone = temporaryPassword == null ? null : normalizedPhone
         };
+
+        // ✅ تسجيل نجاح العملية في Idempotency
+        if (!string.IsNullOrWhiteSpace(idempotencyKey) && requestHash != null)
+        {
+            await _idempotencyService.CompleteAsync(idempotencyKey, currentUserId, "CreatePhoneOrder", result, 201);
+        }
+
+        return result;
     }
 
     public async Task<OrderDto> UpdateOrderAsync(int id, UpdateOrderDto dto, int callerId, UserRole callerRole, int? callerFactoryId)
@@ -252,7 +315,7 @@ public class OrderCommandService : IOrderCommandService
         return true;
     }
 
-    public async Task AddPaymentAsync(int orderId, AddPaymentDto dto, int userId, UserRole role, int? factoryId)
+    public async Task AddPaymentAsync(int orderId, AddPaymentDto dto, int userId, UserRole role, string? idempotencyKey = null, int? factoryId = null)
     {
         // ✅ تسجيل الدفعة حركة مالية: مخصّصة للمدير ولموظف المصنع فقط.
         //    <c>GetOrderOrThrowAsync</c> وحده لا يكفي: يبقي للعميل والسائق حقّ
@@ -260,6 +323,27 @@ public class OrderCommandService : IOrderCommandService
         //    العميل تسجيل دفعة على طلبه — وهو يمسّ دفتر حسابات المصنع.
         if (role is not (UserRole.Admin or UserRole.FactoryEmployee))
             throw new ForbiddenException(Messages.NotAuthorizedToRecordPayment);
+
+        // ✅ Idempotency Check — يمنع تكرار تسجيل نفس الدفعة عند إعادة الإرسال
+        //    (مثال: انقطع الاتصال بعد نجاح التسجيل، فيعيده Flutter بالمفتاح نفسه).
+        string? requestHash = null;
+        bool isNewOperation = false;
+
+        if (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            requestHash = ComputeRequestHash(new { orderId, dto }, userId, "AddPayment");
+
+            var (isDuplicate, _, _) = await _idempotencyService
+                .CheckAndInitializeAsync<bool>(idempotencyKey, userId, "AddPayment", requestHash);
+
+            if (isDuplicate)
+            {
+                // ✅ دفعة سابقة مكتملة بنفس المفتاح — لا ننشئ جديدة، النتيجة محفوظة
+                return;
+            }
+
+            isNewOperation = true;
+        }
 
         var order = await GetOrderOrThrowAsync(orderId, userId, role, factoryId);
 
@@ -305,6 +389,12 @@ public class OrderCommandService : IOrderCommandService
         order.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.SaveChangesAsync();
+
+        // ✅ تسجيل نجاح العملية في Idempotency
+        if (isNewOperation && !string.IsNullOrWhiteSpace(idempotencyKey) && requestHash != null)
+        {
+            await _idempotencyService.CompleteAsync(idempotencyKey, userId, "AddPayment", true, 200);
+        }
     }
 
     /// <summary>

@@ -3,6 +3,7 @@ using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Repositories;
+using Kharasana.Application.Interfaces.Services;
 using Kharasana.Application.Services;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Enums;
@@ -13,6 +14,7 @@ using Kharasana.Infrastructure.Repositories;
 using Kharasana.Tests.TestData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Moq;
 
 namespace Kharasana.Tests.Tests;
 
@@ -39,7 +41,21 @@ public class OrderServiceTests : IDisposable
         var passwordHasher = new PasswordHasher();
         var orderHelper = new OrderHelperService(_unitOfWork);
         var orderQueryService = new OrderQueryService(_unitOfWork, orderHelper);
-        var orderCommandService = new OrderCommandService(_unitOfWork, passwordHasher);
+        var mockIdempotencyService = new Mock<IIdempotencyService>();
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<OrderDetailsDto>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, (OrderDetailsDto?)null, 0));
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<PhoneOrderResultDto>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, (PhoneOrderResultDto?)null, 0));
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<bool>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, false, 0));
+        mockIdempotencyService
+            .Setup(x => x.CompleteAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
+        var orderCommandService = new OrderCommandService(_unitOfWork, passwordHasher, mockIdempotencyService.Object);
         var orderWorkflowService = new OrderWorkflowService(_unitOfWork, new FakeTrackingService());
         _orderService = new OrderService(
             passwordHasher, _unitOfWork, orderQueryService, orderCommandService, orderWorkflowService);
@@ -1124,7 +1140,14 @@ public class OrderServiceTests : IDisposable
         var passwordHasher = new PasswordHasher();
         var orderHelper = new OrderHelperService(concurrencyUoW);
         var orderQueryService = new OrderQueryService(concurrencyUoW, orderHelper);
-        var orderCommandService = new OrderCommandService(concurrencyUoW, passwordHasher);
+        var mockIdempotencyService = new Mock<IIdempotencyService>();
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<bool>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, false, 0));
+        mockIdempotencyService
+            .Setup(x => x.CompleteAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+        var orderCommandService = new OrderCommandService(concurrencyUoW, passwordHasher, mockIdempotencyService.Object);
         var orderWorkflowService = new OrderWorkflowService(concurrencyUoW, new FakeTrackingService());
         var orderService = new OrderService(
             passwordHasher, concurrencyUoW, orderQueryService, orderCommandService, orderWorkflowService);
@@ -1152,6 +1175,19 @@ public class OrderServiceTests : IDisposable
         {
             throw new DbUpdateConcurrencyException("RowVersion conflict simulated in test.");
         }
+    }
+
+    private OrderCommandService CreateCommandServiceWithMockIdempotency(UnitOfWork uow, IPasswordHasher passwordHasher)
+    {
+        var mockIdempotencyService = new Mock<IIdempotencyService>();
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<bool>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, false, 0));
+        mockIdempotencyService
+            .Setup(x => x.CompleteAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
+        return new OrderCommandService(uow, passwordHasher, mockIdempotencyService.Object);
     }
 
     // ─────────────────────────────────────────────
@@ -1182,7 +1218,7 @@ public class OrderServiceTests : IDisposable
 
         // Act: FactoryEmployee يسجل أول دفعة (50 <= remaining 150)
         var dto = new AddPaymentDto { Amount = 50, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001", Notes = "Test payment" };
-        await _orderService.AddPaymentAsync(order.OrderId, dto, client.UserId, UserRole.FactoryEmployee, factory.FactoryId);
+        await _orderService.AddPaymentAsync(order.OrderId, dto, client.UserId, UserRole.FactoryEmployee, idempotencyKey: null, factory.FactoryId);
 
         // Assert: Payment was added successfully with PendingVerification status
         var createdPayment = order.Payments.Last();
@@ -1342,7 +1378,7 @@ public class OrderServiceTests : IDisposable
         // Act: AddPaymentAsync throws ForbiddenException for Client role
         var dto = new AddPaymentDto { Amount = 10, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001" };
         var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
-            _orderService.AddPaymentAsync(order.OrderId, dto, caller.UserId, UserRole.Client, factory.FactoryId));
+            _orderService.AddPaymentAsync(order.OrderId, dto, caller.UserId, UserRole.Client, idempotencyKey: null, factory.FactoryId));
 
         Assert.Contains("غير مخول لتسجيل دفعات", ex.Message);
     }
