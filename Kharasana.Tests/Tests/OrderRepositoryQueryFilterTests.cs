@@ -6,6 +6,8 @@ using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Infrastructure.Repositories;
 using Kharasana.Tests.TestData;
+using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace Kharasana.Tests.Tests;
 
@@ -167,11 +169,20 @@ public class OrderRepositoryQueryFilterTests : IDisposable
         var uow = new UnitOfWork(_context);
         var passwordHasher = new PasswordHasher();
         var orderHelper = new OrderHelperService(uow);
+
+        var mockIdempotencyService = new Mock<IIdempotencyService>();
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<OrderDetailsDto>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, (OrderDetailsDto?)null, 0));
+        mockIdempotencyService
+            .Setup(x => x.CompleteAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
         IOrderService service = new OrderService(
             passwordHasher,
             uow,
             new OrderQueryService(uow, orderHelper),
-            new OrderCommandService(uow, passwordHasher),
+            new OrderCommandService(uow, passwordHasher, mockIdempotencyService.Object),
             new OrderWorkflowService(uow, new FakeTrackingService()));
 
         var result = await service.GetPagedAsync(

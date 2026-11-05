@@ -1,4 +1,5 @@
 using Kharasana.Application.DTOs.Order;
+using Kharasana.Application.Interfaces.Services;
 using Kharasana.Application.Services;
 using Kharasana.Domain.Enums;
 using Kharasana.Infrastructure.Authentication;
@@ -6,6 +7,7 @@ using Kharasana.Infrastructure.Persistence;
 using Kharasana.Infrastructure.Repositories;
 using Kharasana.Tests.TestData;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace Kharasana.Tests.Tests;
 
@@ -35,7 +37,16 @@ public class OrderConcreteTypeSnapshotTests : IDisposable
         var passwordHasher = new PasswordHasher();
         var orderHelper = new OrderHelperService(_unitOfWork);
         var orderQueryService = new OrderQueryService(_unitOfWork, orderHelper);
-        var orderCommandService = new OrderCommandService(_unitOfWork, passwordHasher);
+
+        var mockIdempotencyService = new Mock<IIdempotencyService>();
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<OrderDetailsDto>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, (OrderDetailsDto?)null, 0));
+        mockIdempotencyService
+            .Setup(x => x.CompleteAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
+        var orderCommandService = new OrderCommandService(_unitOfWork, passwordHasher, mockIdempotencyService.Object);
         var orderWorkflowService = new OrderWorkflowService(_unitOfWork, new FakeTrackingService());
         _orderService = new OrderService(passwordHasher, _unitOfWork, orderQueryService, orderCommandService, orderWorkflowService);
     }

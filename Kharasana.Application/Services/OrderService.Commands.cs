@@ -11,17 +11,17 @@ public partial class OrderService
     // CREATE ORDER - Delegates to OrderCommandService
     // ============================================================
     public async Task<OrderDetailsDto> CreateAsync(
-        CreateOrderDto dto, int currentUserId, UserRole currentRole, int? currentUserFactoryId = null)
+        CreateOrderDto dto, int currentUserId, UserRole currentRole, string? idempotencyKey = null, int? currentUserFactoryId = null)
     {
-        return await _orderCommandService.CreateAsync(dto, currentUserId, currentRole, currentUserFactoryId);
+        return await _orderCommandService.CreateAsync(dto, currentUserId, currentRole, idempotencyKey, currentUserFactoryId);
     }
 
     // ============================================================
     // CREATE PHONE ORDER - Delegates to OrderCommandService
     // ============================================================
-    public async Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId)
+    public async Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId, string? idempotencyKey = null, int currentUserId = 0)
     {
-        return await _orderCommandService.CreatePhoneOrderAsync(dto, employeeFactoryId);
+        return await _orderCommandService.CreatePhoneOrderAsync(dto, employeeFactoryId, idempotencyKey, currentUserId);
     }
 
     // ============================================================
@@ -43,8 +43,8 @@ public partial class OrderService
     // ============================================================
     // ADD PAYMENT - Delegates to OrderCommandService
     // ============================================================
-    public async Task AddPaymentAsync(int orderId, AddPaymentDto dto, int callerId, UserRole callerRole, int? callerFactoryId)
+    public async Task AddPaymentAsync(int orderId, AddPaymentDto dto, int callerId, UserRole callerRole, string? idempotencyKey = null, int? callerFactoryId = null)
     {
-        await _orderCommandService.AddPaymentAsync(orderId, dto, callerId, callerRole, callerFactoryId);
+        await _orderCommandService.AddPaymentAsync(orderId, dto, callerId, callerRole, idempotencyKey, callerFactoryId);
     }
 }

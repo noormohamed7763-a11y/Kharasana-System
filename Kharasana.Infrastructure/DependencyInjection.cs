@@ -41,6 +41,7 @@ public static class DependencyInjection
         // Repositories — مطلوبة من قبل ClientStatementService
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IIdempotencyRecordRepository, IdempotencyRecordRepository>();
 
         // Authentication Services
         services.AddScoped<IPasswordHasher, PasswordHasher>();

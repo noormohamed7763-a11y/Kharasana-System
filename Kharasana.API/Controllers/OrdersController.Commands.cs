@@ -18,17 +18,19 @@ public partial class OrdersController
     // ============================================================
     /// <summary>إنشاء طلب جديد (يُنشئه العميل بنفسه، أو المصنع/المدير بالنيابة).</summary>
     /// <param name="dto">بيانات الطلب الجديد.</param>
+    /// <param name="idempotencyKey">مفتاح Idempotency لمنع تكرار العملية (Header: Idempotency-Key).</param>
     /// <response code="201">تم إنشاء الطلب بنجاح.</response>
     /// <response code="400">بيانات غير صالحة.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="409">مفتاح Idempotency مستخدم مع بيانات مختلفة.</response>
     [HttpPost]
     [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]
     [ServiceFilter(typeof(ValidationFilter<CreateOrderDto>))]
-    public async Task<IActionResult> Create([FromBody] CreateOrderDto dto)
+    public async Task<IActionResult> Create([FromBody] CreateOrderDto dto, [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey)
     {
         var caller = User.GetCallerContext();
 
-        var result = await _orderService.CreateAsync(dto, caller.UserId, caller.Role, caller.FactoryId);
+        var result = await _orderService.CreateAsync(dto, caller.UserId, caller.Role, idempotencyKey, caller.FactoryId);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -78,13 +80,15 @@ public partial class OrdersController
     /// في الاستجابة <b>مرة واحدة فقط</b> لتسليمها للعميل — لا تُخزَّن نصاً صريحاً ولا تُعاد لاحقاً.
     /// </remarks>
     /// <param name="dto">بيانات الطلب الهاتفي.</param>
+    /// <param name="idempotencyKey">مفتاح Idempotency لمنع تكرار العملية (Header: Idempotency-Key).</param>
     /// <response code="201">تم إنشاء الطلب بنجاح.</response>
     /// <response code="400">بيانات غير صالحة.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    /// <response code="409">مفتاح Idempotency مستخدم مع بيانات مختلفة.</response>
     [HttpPost("phone-order")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     [ServiceFilter(typeof(ValidationFilter<PhoneOrderDto>))]
-    public async Task<IActionResult> CreatePhoneOrder([FromBody] PhoneOrderDto dto)
+    public async Task<IActionResult> CreatePhoneOrder([FromBody] PhoneOrderDto dto, [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey)
     {
         var caller = User.GetCallerContext();
 
@@ -101,7 +105,7 @@ public partial class OrdersController
             employeeFactoryId = dto.FactoryId;
         }
 
-        var result = await _orderService.CreatePhoneOrderAsync(dto, employeeFactoryId);
+        var result = await _orderService.CreatePhoneOrderAsync(dto, employeeFactoryId, idempotencyKey, caller.UserId);
 
         return CreatedAtAction(
             nameof(GetById),
