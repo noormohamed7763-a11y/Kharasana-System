@@ -14,6 +14,7 @@ public class CreateRawMaterialDto
     public string Name { get; set; } = null!;
     public decimal CurrentStock { get; set; }
     public string Unit { get; set; } = null!;
+    public int? FactoryId { get; set; }
 }
 
 public class UpdateRawMaterialStockDto

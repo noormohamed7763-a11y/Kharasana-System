@@ -1,15 +1,20 @@
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Kharasana.Infrastructure.Workers;
 using Xunit;
 using FluentAssertions;
 using System.Net;
 
 namespace Kharasana.ContractTests.Tests;
 
-public class ApiVersionTests : IClassFixture<WebApplicationFactory<Kharasana.API.Program>>
+public class ApiVersionTests : IClassFixture<ApiVersionTestFactory>
 {
-    private readonly WebApplicationFactory<Kharasana.API.Program> _factory;
+    private readonly ApiVersionTestFactory _factory;
 
-    public ApiVersionTests(WebApplicationFactory<Kharasana.API.Program> factory)
+    public ApiVersionTests(ApiVersionTestFactory factory)
     {
         _factory = factory;
     }
@@ -32,5 +37,21 @@ public class ApiVersionTests : IClassFixture<WebApplicationFactory<Kharasana.API
         var response = await client.GetAsync("/api/v1/registration-requests/paged");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+}
+
+public sealed class ApiVersionTestFactory : WebApplicationFactory<Kharasana.API.Program>
+{
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.ConfigureTestServices(services =>
+        {
+            var worker = services.FirstOrDefault(descriptor =>
+                descriptor.ServiceType == typeof(IHostedService)
+                && descriptor.ImplementationType == typeof(ProactiveAlertsWorker));
+
+            if (worker != null)
+                services.Remove(worker);
+        });
     }
 }

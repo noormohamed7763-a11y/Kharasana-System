@@ -1,9 +1,11 @@
 using Kharasana.API;
 using Kharasana.Infrastructure.Persistence;
+using Kharasana.Infrastructure.Workers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Kharasana.Tests.Integration
@@ -22,6 +24,14 @@ namespace Kharasana.Tests.Integration
                 foreach (var descriptor in descriptors)
                 {
                     services.Remove(descriptor);
+                }
+
+                var alertWorker = services.FirstOrDefault(descriptor =>
+                    descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(ProactiveAlertsWorker));
+                if (alertWorker != null)
+                {
+                    services.Remove(alertWorker);
                 }
 
                 // إضافة DbContext جديد باستخدام In-Memory database

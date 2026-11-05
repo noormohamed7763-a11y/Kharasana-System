@@ -1,0 +1,32 @@
+@model Kharasana.Web.ViewModels.RawMaterials.RawMaterialViewModel
+@using Kharasana.Web.Models.Components
+
+@{
+    ViewData["Title"] = "تفاصيل المادة الخام";
+}
+
+<div class="dashboard-page dashboard-page--narrow">
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-box-seam",
+            Title = ViewData["Title"]?.ToString() ?? string.Empty,
+            Description = Model.Name
+        })
+
+    <div class="form-card shadow-sm">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">الاسم</dt>
+            <dd class="col-sm-8">@Model.Name</dd>
+            <dt class="col-sm-4">الرصيد الحالي</dt>
+            <dd class="col-sm-8">@Model.CurrentStock</dd>
+            <dt class="col-sm-4">الوحدة</dt>
+            <dd class="col-sm-8">@Model.Unit</dd>
+            <dt class="col-sm-4">رقم المصنع</dt>
+            <dd class="col-sm-8">@Model.FactoryId</dd>
+        </dl>
+    </div>
+
+    <a asp-action="Index" class="btn btn-outline-secondary mt-3">العودة إلى المخزون</a>
+</div>

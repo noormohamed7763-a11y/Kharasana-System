@@ -1,9 +1,11 @@
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.ProductionBatches;
+using Kharasana.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Kharasana.Web.Controllers;
 
+[SessionAuthorize("Admin,FactoryEmployee")]
 public class ProductionBatchesController : BaseController
 {
     private readonly IProductionBatchService _productionBatchService;

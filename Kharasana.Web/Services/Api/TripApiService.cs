@@ -16,32 +16,32 @@ public class TripApiService : ITripApiService
 
     public async Task<IReadOnlyList<TripDto>> GetByOrderAsync(int orderId)
     {
-        var response = await _apiClient.GetAsync<ApiResponse<IReadOnlyList<TripDto>>>($"orders/{orderId}/trips");
+        var response = await _apiClient.GetAsync<ApiResponse<IReadOnlyList<TripDto>>>($"Trips/orders/{orderId}/trips");
         return response?.Success == true ? (response.Data ?? new List<TripDto>()) : new List<TripDto>();
     }
 
     public async Task<TripDto?> CreateAsync(int orderId, CreateTripDto dto)
     {
-        var response = await _apiClient.PostAsync<TripDto>($"orders/{orderId}/trips", dto);
-        return response;
+        var response = await _apiClient.PostAsync<ApiResponse<TripDto>>($"Trips/orders/{orderId}/trips", dto);
+        return response?.Success == true ? response.Data : null;
     }
 
     public async Task<IReadOnlyList<TripDto>> CreateBatchAsync(int orderId, CreateTripsBatchDto dto)
     {
-        var response = await _apiClient.PostAsync<IReadOnlyList<TripDto>>($"orders/{orderId}/trips/batch", dto);
-        return response ?? new List<TripDto>();
+        var response = await _apiClient.PostAsync<ApiResponse<IReadOnlyList<TripDto>>>(
+            $"Trips/orders/{orderId}/trips/batch", dto);
+        return response?.Success == true ? response.Data ?? new List<TripDto>() : new List<TripDto>();
     }
 
     public async Task<TripDto?> UpdateStatusAsync(int tripId, UpdateTripStatusDto dto)
     {
-        // استخدام PutAsync بدلاً من PatchAsync لأن ApiClient لا يدعم Patch
-        var response = await _apiClient.PutAsync<TripDto>($"trips/{tripId}/status", dto);
-        return response;
+        var response = await _apiClient.PatchAsync<ApiResponse<TripDto>>($"Trips/{tripId}/status", dto);
+        return response?.Success == true ? response.Data : null;
     }
 
     public async Task<bool> SoftDeleteAsync(int tripId)
     {
-        var response = await _apiClient.DeleteAsync<object>($"trips/{tripId}");
-        return response != null;
+        var response = await _apiClient.DeleteAsync<ApiResponse<object>>($"Trips/{tripId}");
+        return response?.Success == true;
     }
 }

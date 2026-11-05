@@ -11,6 +11,13 @@ public class RawMaterialRepository : GenericRepository<RawMaterial>, IRawMateria
     {
     }
 
+    public async Task<IEnumerable<RawMaterial>> GetAllWithFactoryAsync()
+    {
+        return await _context.RawMaterials
+            .Include(material => material.Factory)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<RawMaterial>> GetByFactoryIdAsync(int factoryId)
     {
         return await _context.RawMaterials

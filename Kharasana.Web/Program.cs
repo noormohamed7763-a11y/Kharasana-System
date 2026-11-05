@@ -31,6 +31,8 @@ namespace Kharasana.Web
             builder.Services.AddMemoryCache();
             builder.Services.AddControllersWithViews(options =>
                 options.Filters.Add<UnhandledExceptionFilter>());
+            builder.Services.AddAntiforgery(options =>
+                options.HeaderName = "RequestVerificationToken");
 
             // المصادقة في هذا المشروع تعمل عبر Session + SessionAuthorizeAttribute
             builder.Services.AddDistributedMemoryCache();

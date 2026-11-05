@@ -1,10 +1,12 @@
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.RawMaterials;
+using Kharasana.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Kharasana.Application.Common;
 
 namespace Kharasana.Web.Controllers;
 
+[SessionAuthorize("Admin,FactoryEmployee")]
 public class RawMaterialsController : BaseController
 {
     private readonly IRawMaterialService _rawMaterialService;
@@ -34,6 +36,7 @@ public class RawMaterialsController : BaseController
     [HttpGet]
     public IActionResult Create()
     {
+        ViewBag.IsAdmin = RoleValue == Kharasana.Domain.Enums.UserRole.Admin;
         return View();
     }
 
@@ -43,12 +46,17 @@ public class RawMaterialsController : BaseController
     {
         if (!ModelState.IsValid)
         {
+            ViewBag.IsAdmin = RoleValue == Kharasana.Domain.Enums.UserRole.Admin;
             return View(viewModel);
         }
+
+        if (RoleValue == Kharasana.Domain.Enums.UserRole.FactoryEmployee)
+            viewModel.FactoryId = FactoryId;
 
         var success = await _rawMaterialService.CreateAsync(viewModel);
         if (!success)
         {
+            ViewBag.IsAdmin = RoleValue == Kharasana.Domain.Enums.UserRole.Admin;
             TempData[TempDataError] = "حدث خطأ أثناء إنشاء المادة الخام";
             return View(viewModel);
         }

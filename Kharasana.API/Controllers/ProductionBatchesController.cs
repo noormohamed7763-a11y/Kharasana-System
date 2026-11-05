@@ -28,8 +28,7 @@ public class ProductionBatchesController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var caller = User.GetCallerContext();
-        int factoryId = caller.FactoryId ?? 0;
-        var batches = await _productionBatchService.GetFactoryProductionBatchesAsync(factoryId);
+        var batches = await _productionBatchService.GetFactoryProductionBatchesAsync(caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<IEnumerable<ProductionBatchDto>>
         {
@@ -43,7 +42,7 @@ public class ProductionBatchesController : ControllerBase
     public async Task<IActionResult> GetByOrder(int orderId)
     {
         var caller = User.GetCallerContext();
-        var batches = await _productionBatchService.GetByOrderIdAsync(orderId);
+        var batches = await _productionBatchService.GetByOrderIdAsync(orderId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<IEnumerable<ProductionBatchDto>>
         {
@@ -53,12 +52,26 @@ public class ProductionBatchesController : ControllerBase
         });
     }
 
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var caller = User.GetCallerContext();
+        var batch = await _productionBatchService.GetByIdAsync(id, caller.Role, caller.FactoryId);
+
+        return Ok(new ApiResponse<ProductionBatchDto>
+        {
+            Success = true,
+            Message = Messages.ProductionBatchesRetrievedSuccessfully,
+            Data = batch
+        });
+    }
+
     [HttpPost("order/{orderId:int}")]
     [ServiceFilter(typeof(ValidationFilter<CreateProductionBatchDto>))]
     public async Task<IActionResult> Create(int orderId, [FromBody] CreateProductionBatchDto dto)
     {
         var caller = User.GetCallerContext();
-        var created = await _productionBatchService.CreateAsync(dto, orderId);
+        var created = await _productionBatchService.CreateAsync(dto, orderId, caller.Role, caller.FactoryId);
 
         return Ok(new ApiResponse<ProductionBatchDto>
         {
@@ -72,7 +85,7 @@ public class ProductionBatchesController : ControllerBase
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] ProductionStatus status)
     {
         var caller = User.GetCallerContext();
-        await _productionBatchService.UpdateStatusAsync(id, status, caller.FactoryId ?? 0);
+        await _productionBatchService.UpdateStatusAsync(id, status, caller.Role, caller.FactoryId);
 
         return Ok(ApiResponse.Ok(Messages.ProductionBatchStatusUpdatedSuccessfully));
     }
@@ -81,7 +94,7 @@ public class ProductionBatchesController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         var caller = User.GetCallerContext();
-        await _productionBatchService.DeleteAsync(id, caller.FactoryId ?? 0);
+        await _productionBatchService.DeleteAsync(id, caller.Role, caller.FactoryId);
 
         return Ok(ApiResponse.Ok(Messages.ProductionBatchDeletedSuccessfully));
     }

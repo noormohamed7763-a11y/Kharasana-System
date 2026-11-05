@@ -57,21 +57,25 @@
                     <thead class="table-light">
                         <tr>
                             <th>رقم الدفعة</th>
-                            <th>تاريخ الإنتاج</th>
+                            <th>رقم الطلب</th>
                             <th>نوع الخرسانة</th>
-                            <th>الكمية المخططة</th>
-                            <th>الكمية الفعلية</th>
+                            <th>الكمية</th>
+                            <th>الحالة</th>
+                            <th>تاريخ الإنشاء</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.Items)
                         {
                             <tr>
-                                <td>@item.BatchNumber</td>
-                                <td>@item.ProductionDate.ToShortDateString()</td>
+                                <td>@item.ProductionBatchId</td>
+                                <td>@item.OrderId</td>
                                 <td>@item.ConcreteTypeName</td>
-                                <td>@item.PlannedQuantity</td>
-                                <td>@item.ActualQuantity</td>
+                                <td>@item.Quantity</td>
+                                <td>@item.Status</td>
+                                <td>@item.CreatedAt.ToLocalTime().ToString("g")</td>
+                                <td><a asp-action="Details" asp-route-id="@item.ProductionBatchId" class="btn btn-sm btn-outline-secondary">التفاصيل</a></td>
                             </tr>
                         }
                     </tbody>

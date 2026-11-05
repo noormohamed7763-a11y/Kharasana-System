@@ -1,52 +1,73 @@
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.RawMaterials;
 using Kharasana.Application.Common;
-using System.Net.Http.Json;
+using Kharasana.Application.DTOs.RawMaterial;
 
 namespace Kharasana.Web.Services.Api;
 
 public class RawMaterialApiService : IRawMaterialService
 {
-    private readonly HttpClient _httpClient;
+    private readonly ApiClient _apiClient;
 
-    public RawMaterialApiService(HttpClient httpClient)
+    public RawMaterialApiService(ApiClient apiClient)
     {
-        _httpClient = httpClient;
+        _apiClient = apiClient;
     }
 
     public async Task<PagedResult<RawMaterialViewModel>> GetPagedAsync(int pageNumber, int pageSize, string? searchTerm)
     {
-        var queryParams = new List<string>
-        {
-            $"pageNumber={pageNumber}",
-            $"pageSize={pageSize}"
-        };
+        var response = await _apiClient.GetAsync<ApiResponse<IEnumerable<RawMaterialDto>>>("RawMaterials");
+        var materials = response?.Success == true && response.Data != null
+            ? response.Data.Select(Map).ToList()
+            : [];
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
+            materials = materials
+                .Where(material => material.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
 
-        var queryString = string.Join("&", queryParams);
-        var response = await _httpClient.GetFromJsonSafeAsync<PagedResult<RawMaterialViewModel>>($"api/RawMaterials?{queryString}");
+        pageNumber = Math.Max(1, pageNumber);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var totalCount = materials.Count;
 
-        return response ?? new PagedResult<RawMaterialViewModel>
+        return new PagedResult<RawMaterialViewModel>
         {
-            Items = [],
+            Items = materials.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList(),
             PageNumber = pageNumber,
             PageSize = pageSize,
-            TotalCount = 0
+            TotalCount = totalCount
         };
     }
 
     public async Task<RawMaterialViewModel?> GetByIdAsync(int id)
     {
-        return await _httpClient.GetFromJsonSafeAsync<RawMaterialViewModel>($"api/RawMaterials/{id}");
+        var response = await _apiClient.GetAsync<ApiResponse<RawMaterialDto>>($"RawMaterials/{id}");
+        return response?.Success == true && response.Data != null ? Map(response.Data) : null;
     }
 
     public async Task<bool> CreateAsync(CreateRawMaterialViewModel viewModel)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/RawMaterials", viewModel);
-        return response.IsSuccessStatusCode;
+        var response = await _apiClient.PostAsync<ApiResponse<RawMaterialDto>>(
+            "RawMaterials",
+            new CreateRawMaterialDto
+            {
+                Name = viewModel.Name,
+                CurrentStock = viewModel.InitialStock,
+                Unit = viewModel.Unit,
+                FactoryId = viewModel.FactoryId
+            });
+
+        return response?.Success == true;
     }
+
+    private static RawMaterialViewModel Map(RawMaterialDto material) => new()
+    {
+        RawMaterialId = material.RawMaterialId,
+        Name = material.Name,
+        CurrentStock = material.CurrentStock,
+        Unit = material.Unit,
+        FactoryId = material.FactoryId
+    };
 }
