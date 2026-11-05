@@ -50,6 +50,18 @@ public static class Messages
     public const string OrderDeletedSuccessfully = "تم حذف الطلب بنجاح.";
     public const string PaymentAddedSuccessfully = "تم تسجيل الدفعة بنجاح.";
 
+    public const string ProductionBatchesRetrievedSuccessfully = "تم جلب دفعات الإنتاج بنجاح.";
+    public const string ProductionBatchesByOrderRetrievedSuccessfully = "تم جلب دفعات الإنتاج للطلب بنجاح.";
+    public const string ProductionBatchCreatedSuccessfully = "تم إنشاء دفعة الإنتاج بنجاح.";
+    public const string ProductionBatchStatusUpdatedSuccessfully = "تم تحديث حالة دفعة الإنتاج بنجاح.";
+    public const string ProductionBatchDeletedSuccessfully = "تم حذف دفعة الإنتاج بنجاح.";
+
+    public const string RawMaterialsRetrievedSuccessfully = "تم جلب المواد الخام بنجاح.";
+    public const string RawMaterialRetrievedSuccessfully = "تم جلب المادة الخام بنجاح.";
+    public const string RawMaterialCreatedSuccessfully = "تم إنشاء المادة الخام بنجاح.";
+    public const string RawMaterialStockUpdatedSuccessfully = "تم تحديث الرصيد بنجاح.";
+    public const string RawMaterialDeletedSuccessfully = "تم حذف المادة الخام بنجاح.";
+
     #endregion
 
     #region Not Found Messages
@@ -186,6 +198,12 @@ public static class Messages
     public const string DriverNotAvailable = "السائق المحدد غير متاح حاليًا (مشغول أو غير متصل).";
     public const string DriverStatusUpdatedSuccessfully = "تم تحديث حالة السائق بنجاح.";
     public const string NotAuthorizedToUpdateAnotherDriver = "غير مخول بتحديث حالة سائق آخر. يمكنك تحديث حالتك الخاصة فقط.";
+
+    public const string TripsRetrievedSuccessfully = "تم جلب الرحلات بنجاح.";
+    public const string TripCreatedSuccessfully = "تم إنشاء الرحلة بنجاح.";
+    public const string TripsCreatedSuccessfully = "تم إنشاء الرحلات بنجاح.";
+    public const string TripStatusUpdatedSuccessfully = "تم تحديث حالة الرحلة بنجاح.";
+    public const string TripDeletedSuccessfully = "تم حذف الرحلة بنجاح.";
 
     #endregion
 

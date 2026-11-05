@@ -1,9 +1,10 @@
 using Asp.Versioning;
+using Kharasana.API.Common;
+using Kharasana.Application.Common;
+using Kharasana.Application.DTOs.RawMaterial;
 using Kharasana.Application.Interfaces.Services;
-using Kharasana.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Kharasana.API.Controllers;
 
@@ -21,40 +22,65 @@ public class RawMaterialsController : ControllerBase
         _rawMaterialService = rawMaterialService;
     }
 
-    private int GetFactoryId() => int.Parse(User.FindFirstValue("FactoryId") ?? "0");
-
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<RawMaterial>>> GetAll()
+    public async Task<IActionResult> GetAll()
     {
-        var materials = await _rawMaterialService.GetFactoryMaterialsAsync(GetFactoryId());
-        return Ok(materials);
+        var caller = User.GetCallerContext();
+        int factoryId = caller.FactoryId ?? 0;
+        var materials = await _rawMaterialService.GetFactoryMaterialsAsync(factoryId);
+
+        return Ok(new ApiResponse<IEnumerable<RawMaterialDto>>
+        {
+            Success = true,
+            Message = Messages.RawMaterialsRetrievedSuccessfully,
+            Data = materials
+        });
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<RawMaterial>> GetById(int id)
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id)
     {
-        var material = await _rawMaterialService.GetByIdAsync(id, GetFactoryId());
-        return Ok(material);
+        var caller = User.GetCallerContext();
+        var material = await _rawMaterialService.GetByIdAsync(id, caller.FactoryId ?? 0);
+
+        return Ok(new ApiResponse<RawMaterialDto>
+        {
+            Success = true,
+            Message = Messages.RawMaterialRetrievedSuccessfully,
+            Data = material
+        });
     }
 
     [HttpPost]
-    public async Task<ActionResult<RawMaterial>> Create(RawMaterial material)
+    [ServiceFilter(typeof(ValidationFilter<CreateRawMaterialDto>))]
+    public async Task<IActionResult> Create([FromBody] CreateRawMaterialDto dto)
     {
-        var created = await _rawMaterialService.CreateAsync(material, GetFactoryId());
-        return CreatedAtAction(nameof(GetById), new { id = created.RawMaterialId }, created);
+        var caller = User.GetCallerContext();
+        var created = await _rawMaterialService.CreateAsync(dto, caller.FactoryId ?? 0);
+
+        return Ok(new ApiResponse<RawMaterialDto>
+        {
+            Success = true,
+            Message = Messages.RawMaterialCreatedSuccessfully,
+            Data = created
+        });
     }
 
-    [HttpPut("{id}/stock")]
-    public async Task<IActionResult> UpdateStock(int id, [FromBody] decimal quantityChange)
+    [HttpPut("{id:int}/stock")]
+    public async Task<IActionResult> UpdateStock(int id, [FromBody] UpdateRawMaterialStockDto dto)
     {
-        await _rawMaterialService.UpdateStockAsync(id, quantityChange, GetFactoryId());
-        return NoContent();
+        var caller = User.GetCallerContext();
+        await _rawMaterialService.UpdateStockAsync(id, dto.QuantityChange, caller.FactoryId ?? 0);
+
+        return Ok(ApiResponse.Ok(Messages.RawMaterialStockUpdatedSuccessfully));
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        await _rawMaterialService.DeleteAsync(id, GetFactoryId());
-        return NoContent();
+        var caller = User.GetCallerContext();
+        await _rawMaterialService.DeleteAsync(id, caller.FactoryId ?? 0);
+
+        return Ok(ApiResponse.Ok(Messages.RawMaterialDeletedSuccessfully));
     }
 }
