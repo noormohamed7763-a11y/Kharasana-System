@@ -69,7 +69,8 @@ public class FactoryRegistrationRequestServiceTests : IDisposable
 
         var saved = await _context.FactoryRegistrationRequests.SingleOrDefaultAsync();
         saved.Should().NotBeNull();
-        saved!.FactoryName.Should().Be(dto.FactoryName);
+        result.Data.Should().Be(saved!.Id);
+        saved.FactoryName.Should().Be(dto.FactoryName);
         saved.ContactName.Should().Be(dto.OwnerName);
         saved.ContactEmail.Should().Be(dto.Email);
         saved.ContactPhone.Should().Be(dto.Phone);

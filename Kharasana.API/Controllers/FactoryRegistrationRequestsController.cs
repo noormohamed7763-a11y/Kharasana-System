@@ -3,6 +3,7 @@ using Kharasana.API.Common;
 using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Factory;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,7 +31,15 @@ public class FactoryRegistrationRequestsController : ControllerBase
     {
         var result = await _requestService.CreateRequestAsync(dto);
         if (!result.Succeeded) return BadRequest(ApiResponse.Fail(result.Message));
-        return CreatedAtAction(nameof(GetById), new { id = result.RequestId }, ApiResponse.Ok(Messages.CreatedSuccessfully));
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = result.Data },
+            new ApiResponse<int>
+            {
+                Success = true,
+                Message = result.Message,
+                Data = result.Data
+            });
     }
 
     [HttpGet]
@@ -38,7 +47,7 @@ public class FactoryRegistrationRequestsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var requests = await _requestService.GetAllRequestsAsync();
-        return Ok(new ApiResponse<IEnumerable<FactoryRegistrationRequestDto>>
+        return Ok(new ApiResponse<IEnumerable<FactoryRegistrationRequest>>
         {
             Success = true,
             Message = Messages.FactoriesRetrievedSuccessfully,
@@ -51,7 +60,7 @@ public class FactoryRegistrationRequestsController : ControllerBase
     public async Task<IActionResult> GetPaged([FromQuery] RegistrationRequestFilterParams filter)
     {
         var result = await _requestService.GetPagedRequestsAsync(filter);
-        return Ok(new ApiResponse<PagedResult<FactoryRegistrationRequestDto>>
+        return Ok(new ApiResponse<PagedResult<FactoryRegistrationRequest>>
         {
             Success = true,
             Message = Messages.FactoriesRetrievedSuccessfully,
@@ -65,7 +74,7 @@ public class FactoryRegistrationRequestsController : ControllerBase
     {
         var request = await _requestService.GetRequestDetailsAsync(id);
         if (request == null) return NotFound(ApiResponse.Fail(Messages.FactoryNotFound));
-        return Ok(new ApiResponse<FactoryRegistrationRequestDto>
+        return Ok(new ApiResponse<FactoryRegistrationRequest>
         {
             Success = true,
             Message = Messages.FactoryRetrievedSuccessfully,

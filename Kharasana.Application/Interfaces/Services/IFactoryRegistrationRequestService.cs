@@ -7,7 +7,7 @@ namespace Kharasana.Application.Interfaces.Services;
 
 public interface IFactoryRegistrationRequestService
 {
-    Task<ServiceResult> CreateRequestAsync(RegisterFactoryDto dto);
+    Task<ServiceResult<int>> CreateRequestAsync(RegisterFactoryDto dto);
     Task<IEnumerable<FactoryRegistrationRequest>> GetAllRequestsAsync();
     Task<FactoryRegistrationRequest?> GetRequestDetailsAsync(int requestId);
     Task<IEnumerable<FactoryRegistrationRequest>> GetPendingRequestsAsync();
