@@ -41,8 +41,10 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
 
     public async Task<ServiceResult> RegisterAsync(RegisterFactoryDto dto)
     {
-        return await _apiClient.PostAsync<ServiceResult>("registration-requests", dto)
-               ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
+        var response = await _apiClient.PostAsync<ApiResponse<int>>("registration-requests", dto);
+        return response?.Success == true
+            ? ServiceResult.Ok(response.Message)
+            : ServiceResult.Fail(response?.Message ?? "فشل الاتصال بالخدمة");
     }
 
     public async Task<ServiceResult> ApproveAsync(int id)

@@ -1404,7 +1404,9 @@ public class OrderServiceTests : IDisposable
         // Act: AddPaymentAsync throws because order is Cancelled
         var dto = new AddPaymentDto { Amount = 10, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001" };
         var ex = await Assert.ThrowsAsync<BusinessException>(() =>
-            _orderService.AddPaymentAsync(order.OrderId, dto, client.UserId, UserRole.FactoryEmployee, factory.FactoryId));
+            _orderService.AddPaymentAsync(
+                order.OrderId, dto, client.UserId, UserRole.FactoryEmployee,
+                callerFactoryId: factory.FactoryId));
 
         Assert.Contains("لا يمكن تسجيل دفعة على طلب ملغى.", ex.Message);
     }

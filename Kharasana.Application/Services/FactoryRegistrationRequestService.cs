@@ -21,7 +21,7 @@ public class FactoryRegistrationRequestService : IFactoryRegistrationRequestServ
         _whatsAppService = whatsAppService;
     }
 
-    public async Task<ServiceResult> CreateRequestAsync(RegisterFactoryDto dto)
+    public async Task<ServiceResult<int>> CreateRequestAsync(RegisterFactoryDto dto)
     {
         var request = new FactoryRegistrationRequest
         {
@@ -40,7 +40,7 @@ public class FactoryRegistrationRequestService : IFactoryRegistrationRequestServ
         await _unitOfWork.FactoryRegistrationRequests.AddAsync(request);
         await _unitOfWork.SaveChangesAsync();
 
-        return ServiceResult.Ok();
+        return ServiceResult<int>.Ok(request.Id);
     }
 
     public async Task<IEnumerable<FactoryRegistrationRequest>> GetAllRequestsAsync()
