@@ -146,6 +146,24 @@ public class Program
 
                 options.Events = new JwtBearerEvents
                 {
+                    // SignalR يرسل Bearer token في query string عند تفاوض WebSocket؛
+                    // نقبله لمساري Hub فقط ولا نوسّع طريقة المصادقة لبقية الـ API.
+                    OnMessageReceived = context =>
+                    {
+                        var requestPath = context.HttpContext.Request.Path;
+                        if (requestPath.StartsWithSegments("/trackingHub") ||
+                            requestPath.StartsWithSegments("/tracking"))
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            if (!string.IsNullOrEmpty(accessToken))
+                            {
+                                context.Token = accessToken;
+                            }
+                        }
+
+                        return Task.CompletedTask;
+                    },
+
                     // رد موحّد عربي عند غياب/تلف/انتهاء التوكن (401)
                     OnChallenge = context =>
                     {

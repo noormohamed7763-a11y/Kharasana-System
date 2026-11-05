@@ -11,6 +11,8 @@ public class KharasanaDbContext : DbContext
     }
 
     // DbSets
+    public DbSet<IdempotencyRecord> IdempotencyRecords { get; set; }
+
     public DbSet<Factory> Factories { get; set; }
 
     public DbSet<User> Users { get; set; }

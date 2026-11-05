@@ -8,6 +8,7 @@ using Kharasana.Infrastructure.Persistence;
 using Kharasana.Infrastructure.Repositories;
 using Kharasana.Tests.TestData;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace Kharasana.Tests.Tests;
 
@@ -39,7 +40,22 @@ public class OrderServiceTrackingTests : IDisposable
         var uow = new UnitOfWork(_context);
         var orderHelper = new OrderHelperService(uow);
         var orderQueryService = new OrderQueryService(uow, orderHelper);
-        var orderCommandService = new OrderCommandService(uow, passwordHasher);
+
+        var mockIdempotencyService = new Mock<IIdempotencyService>();
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<OrderDetailsDto>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, (OrderDetailsDto?)null, 0));
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<PhoneOrderResultDto>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, (PhoneOrderResultDto?)null, 0));
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<bool>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, false, 0));
+        mockIdempotencyService
+            .Setup(x => x.CompleteAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
+        var orderCommandService = new OrderCommandService(uow, passwordHasher, mockIdempotencyService.Object);
         var orderWorkflowService = new OrderWorkflowService(uow, new FakeTrackingService());
         _orderService = new OrderService(passwordHasher, uow, orderQueryService, orderCommandService, orderWorkflowService);
     }

@@ -9,15 +9,15 @@ namespace Kharasana.Application.Interfaces.Services;
 public interface IOrderCommandService
 {
     Task<OrderDetailsDto> CreateAsync(
-        CreateOrderDto dto, int currentUserId, Domain.Enums.UserRole currentRole, int? currentUserFactoryId = null);
+        CreateOrderDto dto, int currentUserId, Domain.Enums.UserRole currentRole, string? idempotencyKey = null, int? currentUserFactoryId = null);
 
-    Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId);
+    Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId, string? idempotencyKey = null, int currentUserId = 0);
 
     Task<OrderDto> UpdateOrderAsync(int id, UpdateOrderDto dto, int userId, Domain.Enums.UserRole role, int? factoryId);
 
     Task<bool> DeleteOrderAsync(int id, int callerId, Domain.Enums.UserRole callerRole, int? callerFactoryId);
 
-    Task AddPaymentAsync(int orderId, AddPaymentDto dto, int userId, Domain.Enums.UserRole role, int? factoryId);
+    Task AddPaymentAsync(int orderId, AddPaymentDto dto, int userId, Domain.Enums.UserRole role, string? idempotencyKey = null, int? factoryId = null);
 
     // ============================================================
     // 5. PAYMENT VERIFICATION (Hawala Ledger)

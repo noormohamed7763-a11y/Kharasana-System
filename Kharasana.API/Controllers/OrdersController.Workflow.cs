@@ -204,19 +204,21 @@ public partial class OrdersController
     /// </remarks>
     /// <param name="id">معرّف الطلب.</param>
     /// <param name="dto">بيانات الدفعة (المبلغ، طريقة الدفع، المرجع، الملاحظات).</param>
+    /// <param name="idempotencyKey">مفتاح Idempotency لمنع تكرار تسجيل الدفعة (Header: Idempotency-Key).</param>
     /// <response code="200">تم تسجيل الدفعة بنجاح.</response>
     /// <response code="400">بيانات غير صالحة أو تجاوز المبلغ للمتبقي.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">الدور لا يملك صلاحية تسجيل دفعات.</response>
     /// <response code="404">الطلب غير موجود.</response>
+    /// <response code="409">مفتاح Idempotency مستخدم مع بيانات مختلفة.</response>
     [HttpPost("{id:int}/payments")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     [ServiceFilter(typeof(ValidationFilter<AddPaymentDto>))]
-    public async Task<IActionResult> AddPayment(int id, [FromBody] AddPaymentDto dto)
+    public async Task<IActionResult> AddPayment(int id, [FromBody] AddPaymentDto dto, [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey)
     {
         var caller = User.GetCallerContext();
 
-        await _orderService.AddPaymentAsync(id, dto, caller.UserId, caller.Role, caller.FactoryId);
+        await _orderService.AddPaymentAsync(id, dto, caller.UserId, caller.Role, idempotencyKey, caller.FactoryId);
 
         return Ok(ApiResponse.Ok(Messages.PaymentAddedSuccessfully));
     }

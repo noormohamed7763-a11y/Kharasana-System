@@ -33,6 +33,9 @@ public static class DependencyInjection
         services.AddScoped<IFinanceService, FinanceService>();
         services.AddScoped<ITripService, TripService>();
 
+        // 5. Idempotency Service
+        services.AddScoped<IIdempotencyService, IdempotencyService>();
+
         // FluentValidation
         services.AddValidatorsFromAssemblyContaining<RegisterClientValidator>();
 

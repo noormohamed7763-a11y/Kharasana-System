@@ -30,9 +30,9 @@ public interface IOrderService
     // 2. CREATE
     // ============================================================
     Task<OrderDetailsDto> CreateAsync(
-        CreateOrderDto dto, int currentUserId, UserRole currentRole, int? currentUserFactoryId = null);
+        CreateOrderDto dto, int currentUserId, UserRole currentRole, string? idempotencyKey = null, int? currentUserFactoryId = null);
 
-    Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId);
+    Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId, string? idempotencyKey = null, int currentUserId = 0);
 
     Task<OrderDto> UpdateOrderAsync(int id, UpdateOrderDto dto, int userId, UserRole role, int? factoryId);
 
@@ -64,7 +64,7 @@ public interface IOrderService
     // ============================================================
 
     /// <summary>تسجيل دفعة جديدة على طلب — للمدير وموظف المصنع فقط.</summary>
-    Task AddPaymentAsync(int orderId, AddPaymentDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task AddPaymentAsync(int orderId, AddPaymentDto dto, int callerId, UserRole callerRole, string? idempotencyKey = null, int? callerFactoryId = null);
 
     // ============================================================
     // 5. PAYMENT VERIFICATION (Hawala Ledger)

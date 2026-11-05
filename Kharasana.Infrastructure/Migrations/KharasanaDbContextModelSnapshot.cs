@@ -275,6 +275,56 @@ namespace Kharasana.Infrastructure.Migrations
                     b.ToTable("FactoryRegistrationRequests", (string)null);
                 });
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.IdempotencyRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("OperationType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("ResultEntityId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResultPayload")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int>("StatusCode")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Key")
+                        .IsUnique();
+
+                    b.ToTable("IdempotencyRecords", (string)null);
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.Order", b =>
                 {
                     b.Property<int>("OrderId")
@@ -493,9 +543,14 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Property<DateTime?>("VerifiedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("VerifiedByUserId")
+                        .HasColumnType("int");
+
                     b.HasKey("OrderPaymentId");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("VerifiedByUserId");
 
                     b.ToTable("OrderPayments", (string)null);
                 });
@@ -869,6 +924,17 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Navigation("ProcessedBy");
                 });
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.IdempotencyRecord", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.Order", b =>
                 {
                     b.HasOne("Kharasana.Domain.Entities.User", "Client")
@@ -911,7 +977,13 @@ namespace Kharasana.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Kharasana.Domain.Entities.User", "VerifiedBy")
+                        .WithMany()
+                        .HasForeignKey("VerifiedByUserId");
+
                     b.Navigation("Order");
+
+                    b.Navigation("VerifiedBy");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.OrderStatusHistory", b =>
