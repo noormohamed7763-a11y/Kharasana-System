@@ -1,12 +1,12 @@
-using Kharasana.Domain.Entities;
+using Kharasana.Application.DTOs.RawMaterial;
 
 namespace Kharasana.Application.Interfaces.Services;
 
 public interface IRawMaterialService
 {
-    Task<IEnumerable<RawMaterial>> GetFactoryMaterialsAsync(int factoryId);
-    Task<RawMaterial> GetByIdAsync(int id, int factoryId);
-    Task<RawMaterial> CreateAsync(RawMaterial material, int factoryId);
+    Task<IEnumerable<RawMaterialDto>> GetFactoryMaterialsAsync(int factoryId);
+    Task<RawMaterialDto> GetByIdAsync(int id, int factoryId);
+    Task<RawMaterialDto> CreateAsync(CreateRawMaterialDto dto, int factoryId);
     Task UpdateStockAsync(int id, decimal quantityChange, int factoryId);
     Task DeleteAsync(int id, int factoryId);
 }

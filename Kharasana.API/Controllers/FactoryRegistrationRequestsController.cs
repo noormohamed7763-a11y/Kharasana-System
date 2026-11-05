@@ -9,11 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Kharasana.API.Controllers;
 
-/// <summary>
-/// إدارة طلبات تسجيل المصانع: قراءة، قبول، رفض.
-/// - تقديم الطلب: عام (بدون مصادقة) — المصنع الجديد لا يملك حساباً بعد.
-/// - القراءة والقبول والرفض: للمدير فقط.
-/// </summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/registration-requests")]
@@ -28,74 +23,84 @@ public class FactoryRegistrationRequestsController : ControllerBase
         _requestService = requestService;
     }
 
-    /// <summary>تقديم طلب تسجيل مصنع جديد — عام، لا يحتاج مصادقة.</summary>
     [HttpPost]
     [AllowAnonymous]
     [ServiceFilter(typeof(ValidationFilter<RegisterFactoryDto>))]
     public async Task<IActionResult> Register([FromBody] RegisterFactoryDto dto)
     {
         var result = await _requestService.CreateRequestAsync(dto);
-        if (!result.Succeeded) return BadRequest(result.Message);
-        return Ok();
+        if (!result.Succeeded) return BadRequest(ApiResponse.Fail(result.Message));
+        return CreatedAtAction(nameof(GetById), new { id = result.RequestId }, ApiResponse.Ok(Messages.CreatedSuccessfully));
     }
 
-    /// <summary>جلب جميع الطلبات (بدون ترقيم) — للمدير فقط.</summary>
     [HttpGet]
     [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> GetAll()
     {
         var requests = await _requestService.GetAllRequestsAsync();
-        return Ok(requests);
+        return Ok(new ApiResponse<IEnumerable<FactoryRegistrationRequestDto>>
+        {
+            Success = true,
+            Message = Messages.FactoriesRetrievedSuccessfully,
+            Data = requests
+        });
     }
 
-    /// <summary>
-    /// جلب الطلبات مع دعم الترقيم والبحث والفلترة بالحالة.
-    /// </summary>
     [HttpGet("paged")]
     [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> GetPaged([FromQuery] RegistrationRequestFilterParams filter)
     {
         var result = await _requestService.GetPagedRequestsAsync(filter);
-        return Ok(result);
+        return Ok(new ApiResponse<PagedResult<FactoryRegistrationRequestDto>>
+        {
+            Success = true,
+            Message = Messages.FactoriesRetrievedSuccessfully,
+            Data = result
+        });
     }
 
-    /// <summary>تفاصيل طلب واحد بمعرّفه.</summary>
     [HttpGet("{id:int}")]
     [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> GetById(int id)
     {
         var request = await _requestService.GetRequestDetailsAsync(id);
-        if (request == null) return NotFound();
-        return Ok(request);
+        if (request == null) return NotFound(ApiResponse.Fail(Messages.FactoryNotFound));
+        return Ok(new ApiResponse<FactoryRegistrationRequestDto>
+        {
+            Success = true,
+            Message = Messages.FactoryRetrievedSuccessfully,
+            Data = request
+        });
     }
 
-    /// <summary>قبول طلب تسجيل — للمدير فقط. ينشئ مصنعاً وحساباً تلقائياً.</summary>
     [HttpPost("{id:int}/approve")]
     [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Approve(int id)
     {
         var result = await _requestService.ApproveRequestAsync(id);
-        if (!result.Succeeded) return BadRequest(result.Message);
-        return Ok();
+        if (!result.Succeeded) return BadRequest(ApiResponse.Fail(result.Message));
+        return Ok(ApiResponse.Ok(Messages.CreatedSuccessfully));
     }
 
-    /// <summary>رفض طلب تسجيل مع سبب الرفض — للمدير فقط.</summary>
     [HttpPost("{id:int}/reject")]
     [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Reject(int id, [FromBody] string reason)
     {
         var result = await _requestService.RejectRequestAsync(id, reason);
-        if (!result.Succeeded) return BadRequest(result.Message);
-        return Ok();
+        if (!result.Succeeded) return BadRequest(ApiResponse.Fail(result.Message));
+        return Ok(ApiResponse.Ok(Messages.OrderRejectedSuccessfully));
     }
 
-    /// <summary>جلب أعداد الطلبات حسب الحالة.</summary>
     [HttpGet("status-counts")]
     [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> GetStatusCounts()
     {
         var counts = await _requestService.GetStatusCountsAsync();
-        return Ok(new { Pending = counts.Pending, Approved = counts.Approved, Rejected = counts.Rejected });
+        return Ok(new ApiResponse<object>
+        {
+            Success = true,
+            Message = Messages.ReportsRetrievedSuccessfully,
+            Data = new { Pending = counts.Pending, Approved = counts.Approved, Rejected = counts.Rejected }
+        });
     }
-
 }
