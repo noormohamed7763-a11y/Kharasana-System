@@ -1,0 +1,34 @@
+@model Kharasana.Web.ViewModels.ProductionBatches.ProductionBatchViewModel
+@using Kharasana.Web.Models.Components
+
+@{
+    ViewData["Title"] = "تفاصيل دفعة الإنتاج";
+}
+
+<div class="dashboard-page dashboard-page--narrow">
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-gear-wide-connected",
+            Title = ViewData["Title"]?.ToString() ?? string.Empty,
+            Description = $"دفعة الإنتاج رقم {Model.ProductionBatchId}"
+        })
+
+    <div class="form-card shadow-sm">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">رقم الطلب</dt>
+            <dd class="col-sm-8">@Model.OrderId</dd>
+            <dt class="col-sm-4">نوع الخرسانة</dt>
+            <dd class="col-sm-8">@Model.ConcreteTypeName</dd>
+            <dt class="col-sm-4">الكمية</dt>
+            <dd class="col-sm-8">@Model.Quantity</dd>
+            <dt class="col-sm-4">الحالة</dt>
+            <dd class="col-sm-8">@Model.Status</dd>
+            <dt class="col-sm-4">تاريخ الإنشاء</dt>
+            <dd class="col-sm-8">@Model.CreatedAt.ToLocalTime().ToString("g")</dd>
+        </dl>
+    </div>
+
+    <a asp-action="Index" class="btn btn-outline-secondary mt-3">العودة إلى الإنتاج</a>
+</div>

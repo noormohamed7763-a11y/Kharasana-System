@@ -27,7 +27,7 @@ public class RawMaterialsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var caller = User.GetCallerContext();
-        int factoryId = caller.FactoryId ?? 0;
+        int? factoryId = caller.Role == Kharasana.Domain.Enums.UserRole.Admin ? null : caller.FactoryId;
         var materials = await _rawMaterialService.GetFactoryMaterialsAsync(factoryId);
 
         return Ok(new ApiResponse<IEnumerable<RawMaterialDto>>
@@ -42,7 +42,8 @@ public class RawMaterialsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var caller = User.GetCallerContext();
-        var material = await _rawMaterialService.GetByIdAsync(id, caller.FactoryId ?? 0);
+        int? factoryId = caller.Role == Kharasana.Domain.Enums.UserRole.Admin ? null : caller.FactoryId;
+        var material = await _rawMaterialService.GetByIdAsync(id, factoryId);
 
         return Ok(new ApiResponse<RawMaterialDto>
         {
@@ -57,7 +58,13 @@ public class RawMaterialsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateRawMaterialDto dto)
     {
         var caller = User.GetCallerContext();
-        var created = await _rawMaterialService.CreateAsync(dto, caller.FactoryId ?? 0);
+        var factoryId = caller.Role == Kharasana.Domain.Enums.UserRole.Admin
+            ? dto.FactoryId
+            : caller.FactoryId;
+        if (!factoryId.HasValue)
+            return BadRequest(ApiResponse.Fail(Messages.FactoryNotFound));
+
+        var created = await _rawMaterialService.CreateAsync(dto, factoryId.Value);
 
         return Ok(new ApiResponse<RawMaterialDto>
         {
@@ -71,7 +78,8 @@ public class RawMaterialsController : ControllerBase
     public async Task<IActionResult> UpdateStock(int id, [FromBody] UpdateRawMaterialStockDto dto)
     {
         var caller = User.GetCallerContext();
-        await _rawMaterialService.UpdateStockAsync(id, dto.QuantityChange, caller.FactoryId ?? 0);
+        int? factoryId = caller.Role == Kharasana.Domain.Enums.UserRole.Admin ? null : caller.FactoryId;
+        await _rawMaterialService.UpdateStockAsync(id, dto.QuantityChange, factoryId);
 
         return Ok(ApiResponse.Ok(Messages.RawMaterialStockUpdatedSuccessfully));
     }
@@ -80,7 +88,8 @@ public class RawMaterialsController : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         var caller = User.GetCallerContext();
-        await _rawMaterialService.DeleteAsync(id, caller.FactoryId ?? 0);
+        int? factoryId = caller.Role == Kharasana.Domain.Enums.UserRole.Admin ? null : caller.FactoryId;
+        await _rawMaterialService.DeleteAsync(id, factoryId);
 
         return Ok(ApiResponse.Ok(Messages.RawMaterialDeletedSuccessfully));
     }

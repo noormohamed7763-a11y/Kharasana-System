@@ -71,6 +71,12 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.TotalDiscountAmount)
             .HasPrecision(18, 2);
 
+        builder.Property(o => o.Latitude)
+            .HasPrecision(10, 7);
+
+        builder.Property(o => o.Longitude)
+            .HasPrecision(10, 7);
+
         // ✅ لقطة اسم النوع — نفس سقف ConcreteType.Name (100) كي لا يُقتطع الاسم عند الحفظ.
         builder.Property(o => o.ConcreteTypeNameSnapshot)
             .HasMaxLength(100);

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Kharasana.Web.ViewModels.RawMaterials;
 
 public class RawMaterialViewModel
@@ -14,4 +16,7 @@ public class CreateRawMaterialViewModel
     public string Name { get; set; } = null!;
     public decimal InitialStock { get; set; }
     public string Unit { get; set; } = null!;
+
+    [Range(1, int.MaxValue)]
+    public int? FactoryId { get; set; }
 }

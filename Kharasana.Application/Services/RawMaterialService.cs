@@ -1,4 +1,5 @@
 using Kharasana.Application.DTOs.RawMaterial;
+using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Application.Interfaces.Services;
@@ -15,9 +16,11 @@ public class RawMaterialService : IRawMaterialService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IEnumerable<RawMaterialDto>> GetFactoryMaterialsAsync(int factoryId)
+    public async Task<IEnumerable<RawMaterialDto>> GetFactoryMaterialsAsync(int? factoryId)
     {
-        var materials = await _unitOfWork.RawMaterials.GetByFactoryIdAsync(factoryId);
+        var materials = factoryId.HasValue
+            ? await _unitOfWork.RawMaterials.GetByFactoryIdAsync(factoryId.Value)
+            : await _unitOfWork.RawMaterials.GetAllWithFactoryAsync();
         return materials.Select(m => new RawMaterialDto
         {
             RawMaterialId = m.RawMaterialId,
@@ -28,11 +31,12 @@ public class RawMaterialService : IRawMaterialService
         });
     }
 
-    public async Task<RawMaterialDto> GetByIdAsync(int id, int factoryId)
+    public async Task<RawMaterialDto> GetByIdAsync(int id, int? factoryId)
     {
         var material = await _unitOfWork.RawMaterials.GetByIdAsync(id);
-        if (material == null || material.FactoryId != factoryId)
-            throw new Exception("المادة غير موجودة أو لا تتبع لهذا المصنع");
+        if (material == null)
+            throw new NotFoundException("المادة غير موجودة.");
+        EnsureFactoryAccess(material.FactoryId, factoryId);
 
         return new RawMaterialDto
         {
@@ -67,26 +71,34 @@ public class RawMaterialService : IRawMaterialService
         };
     }
 
-    public async Task UpdateStockAsync(int id, decimal quantityChange, int factoryId)
+    public async Task UpdateStockAsync(int id, decimal quantityChange, int? factoryId)
     {
         var material = await GetByIdAsync(id, factoryId);
         // We need to fetch the actual entity again since GetByIdAsync returns DTO now
         var entity = await _unitOfWork.RawMaterials.GetByIdAsync(id);
-        if (entity == null || entity.FactoryId != factoryId)
-            throw new Exception("المادة غير موجودة أو لا تتبع لهذا المصنع");
+        if (entity == null)
+            throw new NotFoundException("المادة غير موجودة.");
+        EnsureFactoryAccess(entity.FactoryId, factoryId);
 
         entity.CurrentStock += quantityChange;
         _unitOfWork.RawMaterials.Update(entity);
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(int id, int factoryId)
+    public async Task DeleteAsync(int id, int? factoryId)
     {
         var material = await _unitOfWork.RawMaterials.GetByIdAsync(id);
-        if (material == null || material.FactoryId != factoryId)
-            throw new Exception("المادة غير موجودة أو لا تتبع لهذا المصنع");
+        if (material == null)
+            throw new NotFoundException("المادة غير موجودة.");
+        EnsureFactoryAccess(material.FactoryId, factoryId);
 
         _unitOfWork.RawMaterials.Delete(material);
         await _unitOfWork.SaveChangesAsync();
+    }
+
+    private static void EnsureFactoryAccess(int entityFactoryId, int? callerFactoryId)
+    {
+        if (callerFactoryId.HasValue && callerFactoryId.Value != entityFactoryId)
+            throw new ForbiddenException("ليس لديك صلاحية على بيانات هذا المصنع.");
     }
 }

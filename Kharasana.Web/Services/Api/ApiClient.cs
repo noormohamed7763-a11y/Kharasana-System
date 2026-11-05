@@ -350,6 +350,17 @@ public class ApiClient
             cancellationToken);
     }
 
+    public async Task<T?> PatchAsync<T>(string url, object data, CancellationToken cancellationToken = default)
+    {
+        var json = JsonSerializer.Serialize(data);
+        using var request = new HttpRequestMessage(HttpMethod.Patch, url)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        return await SendAsync<T>("PATCH", url, request, cancellationToken);
+    }
+
     /// <summary>
     /// PUT بدون جسم (body) — للعمليات مثل toggle-active
     /// </summary>

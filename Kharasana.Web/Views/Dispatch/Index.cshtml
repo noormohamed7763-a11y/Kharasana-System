@@ -102,6 +102,7 @@
 
                 <h6>إضافة/تعديل رحلة جديدة</h6>
                 <form id="tripForm">
+                    @Html.AntiForgeryToken()
                     <input type="hidden" id="tripOrderId">
 
                     <div class="row mb-2">
@@ -150,13 +151,35 @@
     <script>
         // السواقة الحقيقية من الـ API (تم تمريرها عبر ViewBag)
         const drivers = @Html.Raw(Json.Serialize(((IEnumerable<Kharasana.Web.ViewModels.Drivers.DriverListItemViewModel>)ViewBag.Drivers).ToList()));
+        const tripApiService = {
+            async getByOrderAsync(orderId) {
+                const url = '@Url.Action("GetTrips", "Dispatch")' + '?orderId=' + encodeURIComponent(orderId);
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('تعذّر تحميل الرحلات');
+                return await response.json();
+            },
+            async createBatchAsync(orderId, batchDto) {
+                const url = '@Url.Action("CreateTrips", "Dispatch")' + '?orderId=' + encodeURIComponent(orderId);
+                const token = document.querySelector('#tripForm input[name="__RequestVerificationToken"]').value;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(batchDto)
+                });
+                if (!response.ok) throw new Error('تعذّر حفظ الرحلات');
+                return await response.json();
+            }
+        };
 
         function loadDrivers() {
             const select = $('#tripDriverId');
             select.empty().append('<option value="">اختر سائقاً</option>');
             drivers.forEach(d => {
-                if (d.DriverStatus === 0) { // فقط السواقة المتاحة
-                    select.append($('<option>', { value: d.UserId, text: d.FullName }));
+                if (d.driverStatus === 0) {
+                    select.append($('<option>', { value: d.userId, text: d.fullName }));
                 }
             });
         }

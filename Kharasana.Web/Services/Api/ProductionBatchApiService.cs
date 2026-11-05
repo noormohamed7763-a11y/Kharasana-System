@@ -1,52 +1,77 @@
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.ProductionBatches;
 using Kharasana.Application.Common;
-using System.Net.Http.Json;
+using Kharasana.Application.DTOs.ProductionBatch;
 
 namespace Kharasana.Web.Services.Api;
 
 public class ProductionBatchApiService : IProductionBatchService
 {
-    private readonly HttpClient _httpClient;
+    private readonly ApiClient _apiClient;
 
-    public ProductionBatchApiService(HttpClient httpClient)
+    public ProductionBatchApiService(ApiClient apiClient)
     {
-        _httpClient = httpClient;
+        _apiClient = apiClient;
     }
 
     public async Task<PagedResult<ProductionBatchViewModel>> GetPagedAsync(int pageNumber, int pageSize, string? searchTerm)
     {
-        var queryParams = new List<string>
-        {
-            $"pageNumber={pageNumber}",
-            $"pageSize={pageSize}"
-        };
+        var response = await _apiClient.GetAsync<ApiResponse<IEnumerable<ProductionBatchDto>>>("ProductionBatches");
+        var batches = response?.Success == true && response.Data != null
+            ? response.Data.Select(Map).ToList()
+            : [];
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
+            batches = batches
+                .Where(batch => batch.OrderId.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                    || batch.ConcreteTypeName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
 
-        var queryString = string.Join("&", queryParams);
-        var response = await _httpClient.GetFromJsonSafeAsync<PagedResult<ProductionBatchViewModel>>($"api/ProductionBatches?{queryString}");
+        pageNumber = Math.Max(1, pageNumber);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var totalCount = batches.Count;
 
-        return response ?? new PagedResult<ProductionBatchViewModel>
+        return new PagedResult<ProductionBatchViewModel>
         {
-            Items = [],
+            Items = batches.OrderByDescending(batch => batch.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList(),
             PageNumber = pageNumber,
             PageSize = pageSize,
-            TotalCount = 0
+            TotalCount = totalCount
         };
     }
 
     public async Task<ProductionBatchViewModel?> GetByIdAsync(int id)
     {
-        return await _httpClient.GetFromJsonSafeAsync<ProductionBatchViewModel>($"api/ProductionBatches/{id}");
+        var response = await _apiClient.GetAsync<ApiResponse<ProductionBatchDto>>($"ProductionBatches/{id}");
+        return response?.Success == true && response.Data != null ? Map(response.Data) : null;
     }
 
     public async Task<bool> CreateAsync(CreateProductionBatchViewModel viewModel)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/ProductionBatches", viewModel);
-        return response.IsSuccessStatusCode;
+        var response = await _apiClient.PostAsync<ApiResponse<ProductionBatchDto>>(
+            $"ProductionBatches/order/{viewModel.OrderId}",
+            new CreateProductionBatchDto
+            {
+                ConcreteTypeId = viewModel.ConcreteTypeId,
+                Quantity = viewModel.Quantity
+            });
+
+        return response?.Success == true;
     }
+
+    private static ProductionBatchViewModel Map(ProductionBatchDto batch) => new()
+    {
+        ProductionBatchId = batch.ProductionBatchId,
+        OrderId = batch.OrderId,
+        ConcreteTypeId = batch.ConcreteTypeId,
+        ConcreteTypeName = batch.ConcreteTypeName,
+        Quantity = batch.Quantity,
+        Status = batch.Status,
+        CreatedAt = batch.CreatedAt
+    };
 }
