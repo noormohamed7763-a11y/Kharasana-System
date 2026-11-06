@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Kharasana.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -19,7 +19,8 @@ namespace Kharasana.Web.Controllers
         public const string TempDataWarning = "Warning";
 
         protected string? Token =>
-            HttpContext.Session.GetString("Token"); // Token لا يزال في الجلسة
+            HttpContext.Session.GetString("Token") ??
+            User.FindFirst("access_token")?.Value;
 
         protected string? FullName =>
             User.FindFirst(ClaimTypes.Name)?.Value;

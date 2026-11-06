@@ -1,4 +1,4 @@
-﻿/**
+/**
  * إدارة عمليات الطلبات في واجهة الويب.
  * يشمل: تحديث السعر الإجمالي، التحقق من المدخلات، وإدارة أزرار الحفظ.
  */
@@ -193,9 +193,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Helper function to get CSRF token (assuming it's in a meta tag)
+    // Helper function to get CSRF token (supports multiple tabs and dynamic elements)
     function getCsrfToken() {
-        return document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.content) return meta.content;
+        const input = document.querySelector('input[name="__RequestVerificationToken"]');
+        return input ? input.value : '';
     }
 
     // Helper function to display messages (for price saving)

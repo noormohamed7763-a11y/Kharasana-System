@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Web.Controllers;
 using Kharasana.Web.Localization;
 using System.IdentityModel.Tokens.Jwt;
@@ -42,10 +42,23 @@ public class SessionAuthorizeAttribute : ActionFilterAttribute
         var session = context.HttpContext.Session;
         var token = session.GetString("Token");
 
+        // ✅ دعم فتح عدة تبويبات متزامنة واستعادة الجلسة:
+        // إذا كان التوكن غير موجود في الـ Session (مثلاً عند فتح تبويبة جديدة أو تفرع طلبات متزامنة)،
+        // نستعيده تلقائياً من كوكي المصادقة المشفر الموثوق (WebCookie) ونعيده للجلسة
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            var cookieToken = context.HttpContext.User?.FindFirst("access_token")?.Value;
+            if (!string.IsNullOrWhiteSpace(cookieToken) && !TokenIsExpired(cookieToken))
+            {
+                token = cookieToken;
+                session.SetString("Token", token);
+            }
+        }
+
         // التحقق من وجود التوكن وصلاحيته
         if (string.IsNullOrWhiteSpace(token) || TokenIsExpired(token))
         {
-            session.Clear();
+            session.Remove("Token");
 
             // ✅ سبب الخروج: كانت إعادة التوجيه صامتة، فيهبط المستخدم على نموذج الدخول
             //    بلا أي تفسير. صفحة الدخول تعرض TempData[Error] في تنبيه أحمر
@@ -67,7 +80,7 @@ public class SessionAuthorizeAttribute : ActionFilterAttribute
         // التحقق من الدور إذا كان مطلوباً — يدعم قائمة أدوار مفصولة بفواصل (مثل "Admin,FactoryEmployee")
         if (!string.IsNullOrWhiteSpace(_requiredRole))
         {
-            var userRole = context.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userRole = context.HttpContext.User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
 
             var allowedRoles = _requiredRole
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
