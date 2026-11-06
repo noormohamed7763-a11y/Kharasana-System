@@ -1,4 +1,4 @@
-﻿@{
+@{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     Func<string, string> isActive = (controller) =>
@@ -34,6 +34,24 @@
             <a asp-controller="Orders" asp-action="Index" class="@isActive("Orders")">
                 <i class="bi bi-clipboard-check"></i>
                 <span>الطلبات</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="Dispatch" asp-action="Index" class="@isActive("Dispatch")">
+                <i class="bi bi-calendar2-week"></i>
+                <span>جدولة الصبات والرحلات</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="ProductionBatches" asp-action="Index" class="@isActive("ProductionBatches")">
+                <i class="bi bi-gear-wide-connected"></i>
+                <span>خلطات الإنتاج</span>
+            </a>
+        </li>
+        <li>
+            <a asp-controller="RawMaterials" asp-action="Index" class="@isActive("RawMaterials")">
+                <i class="bi bi-layers-half"></i>
+                <span>المواد الخام والمخزون</span>
             </a>
         </li>
         <li>

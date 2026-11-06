@@ -193,6 +193,35 @@
                             }
                         </dd>
 
+                        @if (!string.IsNullOrWhiteSpace(Model.SupervisorName))
+                        {
+                            <dt class="col-sm-4 text-muted">المشرف بالموقع</dt>
+                            <dd class="col-sm-8 fw-bold">@Model.SupervisorName</dd>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.SupervisorPhone))
+                        {
+                            <dt class="col-sm-4 text-muted">هاتف المشرف</dt>
+                            <dd class="col-sm-8" dir="ltr">
+                                @await Html.PartialAsync(
+                                    "~/Views/Shared/Components/_PhoneActions.cshtml",
+                                    new PhoneActionsViewModel
+                                    {
+                                        Phone = Model.SupervisorPhone,
+                                        ContactLabel = "مشرف الموقع",
+                                        Variant = PhoneActionsVariant.Outline,
+                                        AlignEnd = false,
+                                        WhatsAppMessage = $"السلام عليكم مهندس، بخصوص صبة طلب الخرسانة رقم {Model.OrderNumber}"
+                                    })
+                            </dd>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Landmarks))
+                        {
+                            <dt class="col-sm-4 text-muted">معالم بارزة</dt>
+                            <dd class="col-sm-8"><i class="bi bi-pin-map text-primary me-1"></i>@Model.Landmarks</dd>
+                        }
+
                         <dt class="col-sm-4 text-muted">نوع البلاطة</dt>
                         <dd class="col-sm-8">@slabName</dd>
 
@@ -237,6 +266,15 @@
 
                         <dt class="col-sm-4 text-muted">سعر المتر</dt>
                         <dd class="col-sm-8">@Model.UnitPrice.FormatPrice()</dd>
+
+                        <dt class="col-sm-4 text-muted">نوع الإسمنت</dt>
+                        <dd class="col-sm-8"><span class="badge bg-secondary-subtle text-secondary-emphasis">@Model.CementType.GetDisplayName()</span></dd>
+
+                        <dt class="col-sm-4 text-muted">مقاس الكري</dt>
+                        <dd class="col-sm-8">@Model.AggregateSize.GetDisplayName()</dd>
+
+                        <dt class="col-sm-4 text-muted">الإضافات</dt>
+                        <dd class="col-sm-8">@Model.Admixture.GetDisplayName()</dd>
 
                         <dt class="col-sm-4 text-muted">الإجمالي</dt>
                         <dd class="col-sm-8 fw-bold text-primary">@Model.TotalPrice.FormatPrice()</dd>
