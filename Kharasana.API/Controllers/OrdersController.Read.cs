@@ -182,7 +182,7 @@ public partial class OrdersController
     /// <response code="403">العميل خارج نطاق مصنع موظف المصنع.</response>
     /// <response code="404">العميل غير موجود.</response>
     [HttpGet("customers/{userId:int}/statement")]
-    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]
     public async Task<IActionResult> GetClientStatement(int userId)
     {
         var caller = User.GetCallerContext();

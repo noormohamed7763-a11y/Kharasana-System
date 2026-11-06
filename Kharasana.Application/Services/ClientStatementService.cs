@@ -33,6 +33,11 @@ public class ClientStatementService : IClientStatementService
             throw new UnauthorizedException(Messages.CallerFactoryIdNotFound);
         }
 
+        if (caller.Role == UserRole.Client && caller.UserId != clientId)
+        {
+            throw new ForbiddenException(Messages.ClientNotInCallerFactory);
+        }
+
         var client = await _userRepository.GetByIdAsync(clientId);
         if (client == null || client.Role != UserRole.Client)
         {
