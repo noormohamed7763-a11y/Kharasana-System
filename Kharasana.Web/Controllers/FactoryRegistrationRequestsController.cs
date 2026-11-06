@@ -97,8 +97,13 @@ namespace Kharasana.Web.Controllers
         public async Task<IActionResult> Approve(int id)
         {
             var result = await _apiService.ApproveAsync(id);
-            if (result.Succeeded) return RedirectToAction(nameof(Index));
-            TempData["Error"] = result.Message;
+            if (result.Succeeded)
+            {
+                TempData[TempDataSuccess] = "تم قبول واعتماد طلب تسجيل المصنع وتفعيل حسابه بنجاح.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData[TempDataError] = result.Message;
             return RedirectToAction(nameof(Details), new { id });
         }
 
@@ -107,8 +112,13 @@ namespace Kharasana.Web.Controllers
         public async Task<IActionResult> Reject(int id, string reason)
         {
             var result = await _apiService.RejectAsync(id, reason);
-            if (result.Succeeded) return RedirectToAction(nameof(Index));
-            TempData["Error"] = result.Message;
+            if (result.Succeeded)
+            {
+                TempData[TempDataSuccess] = "تم رفض طلب التسجيل بنجاح.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData[TempDataError] = result.Message;
             return RedirectToAction(nameof(Details), new { id });
         }
     }

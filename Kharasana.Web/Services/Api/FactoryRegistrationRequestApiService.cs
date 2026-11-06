@@ -16,8 +16,8 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
 
     public async Task<IEnumerable<FactoryRegistrationRequest>> GetAllAsync()
     {
-        return await _apiClient.GetAsync<IEnumerable<FactoryRegistrationRequest>>("registration-requests")
-               ?? Enumerable.Empty<FactoryRegistrationRequest>();
+        var response = await _apiClient.GetAsync<ApiResponse<IEnumerable<FactoryRegistrationRequest>>>("registration-requests");
+        return response?.Data ?? Enumerable.Empty<FactoryRegistrationRequest>();
     }
 
     public async Task<PagedResult<FactoryRegistrationRequest>> GetPagedRequestsAsync(RegistrationRequestFilterParams filter)
@@ -30,13 +30,14 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
         if (filter.Status.HasValue)
             url += $"&status={(int)filter.Status.Value}";
 
-        return await _apiClient.GetAsync<PagedResult<FactoryRegistrationRequest>>(url)
-               ?? new PagedResult<FactoryRegistrationRequest>();
+        var response = await _apiClient.GetAsync<ApiResponse<PagedResult<FactoryRegistrationRequest>>>(url);
+        return response?.Data ?? new PagedResult<FactoryRegistrationRequest>();
     }
 
     public async Task<FactoryRegistrationRequest?> GetByIdAsync(int id)
     {
-        return await _apiClient.GetAsync<FactoryRegistrationRequest>($"registration-requests/{id}");
+        var response = await _apiClient.GetAsync<ApiResponse<FactoryRegistrationRequest>>($"registration-requests/{id}");
+        return response?.Data;
     }
 
     public async Task<ServiceResult> RegisterAsync(RegisterFactoryDto dto)
@@ -49,19 +50,24 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
 
     public async Task<ServiceResult> ApproveAsync(int id)
     {
-        return await _apiClient.PostAsync<ServiceResult>($"registration-requests/{id}/approve", new { })
-               ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
+        var response = await _apiClient.PostAsync<ApiResponse<object>>($"registration-requests/{id}/approve", new { });
+        return response?.Success == true
+            ? ServiceResult.Ok(response.Message)
+            : ServiceResult.Fail(response?.Message ?? "فشل الاتصال بالخدمة");
     }
 
     public async Task<ServiceResult> RejectAsync(int id, string reason)
     {
-        return await _apiClient.PostAsync<ServiceResult>($"registration-requests/{id}/reject", reason)
-               ?? ServiceResult.Fail("فشل الاتصال بالخدمة");
+        var response = await _apiClient.PostAsync<ApiResponse<object>>($"registration-requests/{id}/reject", reason ?? string.Empty);
+        return response?.Success == true
+            ? ServiceResult.Ok(response.Message)
+            : ServiceResult.Fail(response?.Message ?? "فشل الاتصال بالخدمة");
     }
 
     public async Task<RegistrationStatusCountsDto?> GetRegistrationStatusCountsAsync()
     {
-        return await _apiClient.GetAsync<RegistrationStatusCountsDto>("registration-requests/status-counts");
+        var response = await _apiClient.GetAsync<ApiResponse<RegistrationStatusCountsDto>>("registration-requests/status-counts");
+        return response?.Data;
     }
 
     public async Task<int> GetPendingRequestsCountAsync()
