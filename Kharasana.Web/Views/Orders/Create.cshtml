@@ -70,7 +70,7 @@
     <script nonce="@ViewBag.CspNonce">
         (function () {
             const concreteSelect = document.getElementById('concreteTypeSelect');
-            const qtyInput = document.querySelector('input[name="Quantity"]');
+            const qtyInput = document.getElementById('quantityInput') || document.querySelector('input[name="Quantity"]');
             const unitPriceEl = document.getElementById('selectedUnitPrice');
             const totalEl = document.getElementById('calculatedTotal');
 
@@ -83,12 +83,49 @@
             const summaryPump = document.getElementById('summaryPump');
             const summaryTotalAmount = document.getElementById('summaryTotalAmount');
 
-            const clientNameInput = document.querySelector('input[name="ClientFullName"]');
-            const clientPhoneInput = document.querySelector('input[name="ClientPhone"]');
+            const clientNameInput = document.getElementById('clientFullNameInput') || document.querySelector('input[name="ClientFullName"]');
+            const clientPhoneInput = document.getElementById('clientPhoneInput') || document.querySelector('input[name="ClientPhone"]');
             const transportRadios = document.querySelectorAll('input[name="TransportMethod"]');
             const needPumpSwitch = document.getElementById('needPumpSwitch');
             const floorNumberInput = document.querySelector('input[name="FloorNumber"]');
             const floorNumberContainer = document.getElementById('floorNumberContainer');
+
+            // عناصر المواصفات الفنية
+            const slabTypeSelect = document.getElementById('slabTypeSelect');
+            const cementTypeSelect = document.getElementById('cementTypeSelect');
+            const aggregateSizeSelect = document.getElementById('aggregateSizeSelect');
+            const admixtureSelect = document.getElementById('admixtureSelect');
+
+            // عناصر بطاقة استعلام العميل
+            const clientLookupBadge = document.getElementById('clientLookupBadge');
+            const lookupBadgeClientName = document.getElementById('lookupBadgeClientName');
+            const lookupBadgeOrdersCount = document.getElementById('lookupBadgeOrdersCount');
+            const lookupBadgeLastSiteInfo = document.getElementById('lookupBadgeLastSiteInfo');
+            const btnAutoFillLastSite = document.getElementById('btnAutoFillLastSite');
+            const phoneSearchSpinner = document.getElementById('phoneSearchSpinner');
+
+            // عناصر المشروع والموقع
+            const projectNameInput = document.getElementById('projectNameInput');
+            const projectOwnerNameInput = document.getElementById('projectOwnerNameInput');
+            const supervisorNameInput = document.getElementById('supervisorNameInput');
+            const supervisorPhoneInput = document.getElementById('supervisorPhoneInput');
+            const siteAreaInput = document.getElementById('siteAreaInput');
+            const siteDescriptionInput = document.getElementById('siteDescriptionInput');
+            const landmarksInput = document.getElementById('landmarksInput');
+
+            // عناصر حاسبة الحجم
+            const toggleVolumeCalcBtn = document.getElementById('toggleVolumeCalcBtn');
+            const closeVolumeCalcBtn = document.getElementById('closeVolumeCalcBtn');
+            const volumeCalcPanel = document.getElementById('volumeCalcPanel');
+            const calcLength = document.getElementById('calcLength');
+            const calcWidth = document.getElementById('calcWidth');
+            const calcThickness = document.getElementById('calcThickness');
+            const calcIncludeWaste = document.getElementById('calcIncludeWaste');
+            const calcResultDisplay = document.getElementById('calcResultDisplay');
+            const applyVolumeBtn = document.getElementById('applyVolumeBtn');
+
+            let lastSiteData = null;
+            let phoneLookupTimeout = null;
 
             function formatNumber(n) {
                 if (n == null || isNaN(n) || n === 0) return '0';
@@ -161,6 +198,205 @@
                 }
             }
 
+            // ============================================================
+            // 5. PHONE AUTO LOOKUP - استعلام ذكي فوري برقم الهاتف
+            // ============================================================
+            function performPhoneLookup() {
+                const phone = clientPhoneInput ? clientPhoneInput.value.trim() : '';
+                if (phone.length < 7) {
+                    if (clientLookupBadge) clientLookupBadge.classList.add('d-none');
+                    lastSiteData = null;
+                    return;
+                }
+
+                if (phoneSearchSpinner) {
+                    phoneSearchSpinner.innerHTML = '<span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+                }
+
+                fetch('/Orders/LookupClientByPhone?phone=' + encodeURIComponent(phone))
+                    .then(res => res.json())
+                    .then(data => {
+                        if (phoneSearchSpinner) {
+                            phoneSearchSpinner.innerHTML = '<i class="bi bi-phone"></i>';
+                        }
+                        if (data && data.found) {
+                            if (clientLookupBadge) clientLookupBadge.classList.remove('d-none');
+                            if (lookupBadgeClientName) lookupBadgeClientName.textContent = data.clientName || 'عميل مسجل';
+                            if (lookupBadgeOrdersCount) {
+                                const count = data.ordersCount || 0;
+                                lookupBadgeOrdersCount.textContent = count > 1 ? `${count} صبات سابقة` : 'صبة واحدة سابقة';
+                            }
+                            if (clientNameInput && (!clientNameInput.value || clientNameInput.value.trim() === '')) {
+                                if (data.clientName) clientNameInput.value = data.clientName;
+                            }
+
+                            if (data.lastOrder) {
+                                lastSiteData = data.lastOrder;
+                                if (lookupBadgeLastSiteInfo) {
+                                    const proj = data.lastOrder.projectName || 'مشروع سابق';
+                                    const area = data.lastOrder.siteArea ? ` - ${data.lastOrder.siteArea}` : '';
+                                    lookupBadgeLastSiteInfo.innerHTML = `آخر صبة مسجلة: <strong>${proj}${area}</strong>`;
+                                }
+                                if (btnAutoFillLastSite) btnAutoFillLastSite.classList.remove('d-none');
+                            } else {
+                                lastSiteData = null;
+                                if (lookupBadgeLastSiteInfo) {
+                                    lookupBadgeLastSiteInfo.textContent = 'عميل معتمد مسجل في النظام.';
+                                }
+                                if (btnAutoFillLastSite) btnAutoFillLastSite.classList.add('d-none');
+                            }
+                            recalc();
+                        } else {
+                            if (clientLookupBadge) clientLookupBadge.classList.add('d-none');
+                            lastSiteData = null;
+                        }
+                    })
+                    .catch(() => {
+                        if (phoneSearchSpinner) {
+                            phoneSearchSpinner.innerHTML = '<i class="bi bi-phone"></i>';
+                        }
+                    });
+            }
+
+            if (clientPhoneInput) {
+                clientPhoneInput.addEventListener('input', function () {
+                    clearTimeout(phoneLookupTimeout);
+                    const val = this.value.trim();
+                    if (val.length >= 9) {
+                        phoneLookupTimeout = setTimeout(performPhoneLookup, 300);
+                    } else if (val.length < 7) {
+                        if (clientLookupBadge) clientLookupBadge.classList.add('d-none');
+                    }
+                });
+                clientPhoneInput.addEventListener('blur', function () {
+                    if (this.value.trim().length >= 7) {
+                        performPhoneLookup();
+                    }
+                });
+            }
+
+            // ============================================================
+            // 6. AUTO FILL LAST SITE DATA - استيراد تفاصيل الموقع السابق
+            // ============================================================
+            if (btnAutoFillLastSite) {
+                btnAutoFillLastSite.addEventListener('click', function () {
+                    if (!lastSiteData) return;
+                    if (projectNameInput && lastSiteData.projectName) projectNameInput.value = lastSiteData.projectName;
+                    if (projectOwnerNameInput && lastSiteData.projectOwnerName) projectOwnerNameInput.value = lastSiteData.projectOwnerName;
+                    if (supervisorNameInput && lastSiteData.supervisorName) supervisorNameInput.value = lastSiteData.supervisorName;
+                    if (supervisorPhoneInput && lastSiteData.supervisorPhone) supervisorPhoneInput.value = lastSiteData.supervisorPhone;
+                    if (siteAreaInput && lastSiteData.siteArea) siteAreaInput.value = lastSiteData.siteArea;
+                    if (siteDescriptionInput && lastSiteData.siteDescription) siteDescriptionInput.value = lastSiteData.siteDescription;
+                    if (landmarksInput && lastSiteData.landmarks) landmarksInput.value = lastSiteData.landmarks;
+
+                    if (lastSiteData.concreteTypeId && concreteSelect) {
+                        concreteSelect.value = lastSiteData.concreteTypeId;
+                    }
+                    if (lastSiteData.slabType !== undefined && slabTypeSelect) {
+                        slabTypeSelect.value = lastSiteData.slabType;
+                    }
+                    if (lastSiteData.cementType !== undefined && cementTypeSelect) {
+                        cementTypeSelect.value = lastSiteData.cementType;
+                    }
+                    if (lastSiteData.aggregateSize !== undefined && aggregateSizeSelect) {
+                        aggregateSizeSelect.value = lastSiteData.aggregateSize;
+                    }
+                    if (lastSiteData.admixture !== undefined && admixtureSelect) {
+                        admixtureSelect.value = lastSiteData.admixture;
+                    }
+                    if (lastSiteData.needPump !== undefined && needPumpSwitch) {
+                        needPumpSwitch.checked = lastSiteData.needPump;
+                    }
+                    if (lastSiteData.floorNumber !== null && lastSiteData.floorNumber !== undefined && floorNumberInput) {
+                        floorNumberInput.value = lastSiteData.floorNumber + 1; // اقتراح الطابق التالي تلقائياً
+                    }
+
+                    recalc();
+
+                    btnAutoFillLastSite.innerHTML = '<i class="bi bi-check2 me-1"></i> تم الاستيراد بنجاح';
+                    btnAutoFillLastSite.classList.remove('btn-outline-primary');
+                    btnAutoFillLastSite.classList.add('btn-success', 'text-white');
+                    setTimeout(() => {
+                        btnAutoFillLastSite.innerHTML = '<i class="bi bi-magic me-1"></i> استيراد بيانات آخر موقع صب';
+                        btnAutoFillLastSite.classList.remove('btn-success', 'text-white');
+                        btnAutoFillLastSite.classList.add('btn-outline-primary');
+                    }, 2500);
+                });
+            }
+
+            // ============================================================
+            // 7. POUR PRESETS - النماذج الهندسية السريعة
+            // ============================================================
+            const presetButtons = document.querySelectorAll('.btn-pour-preset');
+            presetButtons.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const slab = this.dataset.slab;
+                    const pump = this.dataset.pump === 'true';
+                    const cement = this.dataset.cement;
+                    const agg = this.dataset.aggregate;
+                    const adm = this.dataset.admixture;
+
+                    if (slabTypeSelect && slab !== undefined) slabTypeSelect.value = slab;
+                    if (needPumpSwitch) needPumpSwitch.checked = pump;
+                    if (cementTypeSelect && cement !== undefined) cementTypeSelect.value = cement;
+                    if (aggregateSizeSelect && agg !== undefined) aggregateSizeSelect.value = agg;
+                    if (admixtureSelect && adm !== undefined) admixtureSelect.value = adm;
+
+                    presetButtons.forEach(b => b.classList.remove('active', 'fw-bold'));
+                    this.classList.add('active', 'fw-bold');
+
+                    recalc();
+                });
+            });
+
+            // ============================================================
+            // 8. SLAB VOLUME CALCULATOR - حاسبة أبعاد السقف والكمية
+            // ============================================================
+            function updateVolumeCalc() {
+                const len = parseFloat(calcLength?.value || '0');
+                const wid = parseFloat(calcWidth?.value || '0');
+                const thickCm = parseFloat(calcThickness?.value || '0');
+                const incWaste = calcIncludeWaste ? calcIncludeWaste.checked : true;
+
+                if (len > 0 && wid > 0 && thickCm > 0) {
+                    const baseVol = len * wid * (thickCm / 100);
+                    const finalVol = incWaste ? (baseVol * 1.05) : baseVol;
+                    if (calcResultDisplay) calcResultDisplay.textContent = finalVol.toFixed(2);
+                } else {
+                    if (calcResultDisplay) calcResultDisplay.textContent = '0';
+                }
+            }
+
+            toggleVolumeCalcBtn?.addEventListener('click', function () {
+                if (volumeCalcPanel) {
+                    volumeCalcPanel.classList.toggle('d-none');
+                    if (!volumeCalcPanel.classList.contains('d-none') && calcLength) {
+                        calcLength.focus();
+                    }
+                }
+            });
+
+            closeVolumeCalcBtn?.addEventListener('click', function () {
+                if (volumeCalcPanel) volumeCalcPanel.classList.add('d-none');
+            });
+
+            [calcLength, calcWidth, calcThickness, calcIncludeWaste].forEach(el => {
+                el?.addEventListener('input', updateVolumeCalc);
+                el?.addEventListener('change', updateVolumeCalc);
+            });
+
+            applyVolumeBtn?.addEventListener('click', function () {
+                const calculated = parseFloat(calcResultDisplay?.textContent || '0');
+                if (calculated > 0 && qtyInput) {
+                    qtyInput.value = calculated.toFixed(1);
+                    if (volumeCalcPanel) volumeCalcPanel.classList.add('d-none');
+                    recalc();
+                }
+            });
+
+            // ============================================================
+            // EVENT LISTENERS & FORM SUBMISSION
+            // ============================================================
             concreteSelect?.addEventListener('change', recalc);
             qtyInput?.addEventListener('input', recalc);
             clientNameInput?.addEventListener('input', recalc);
@@ -169,8 +405,30 @@
             floorNumberInput?.addEventListener('input', recalc);
             transportRadios.forEach(r => r.addEventListener('change', recalc));
 
-            document.addEventListener('DOMContentLoaded', recalc);
+            document.addEventListener('DOMContentLoaded', function () {
+                recalc();
+                if (clientPhoneInput && clientPhoneInput.value.trim().length >= 7) {
+                    performPhoneLookup();
+                }
+            });
             recalc();
+
+            const form = document.getElementById('createOrderForm');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    if (window.jQuery && $(form).valid && !$(form).valid()) return;
+                    const submitBtn = document.getElementById('submitBtn');
+                    const stickyBtn = document.getElementById('stickySubmitBtn');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> <span>جاري الحفظ...</span>';
+                    }
+                    if (stickyBtn) {
+                        stickyBtn.disabled = true;
+                        stickyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> <span>جاري الحفظ...</span>';
+                    }
+                });
+            }
         })();
     </script>
 }

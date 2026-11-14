@@ -737,7 +737,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <partial name="_ValidationScriptsPartial" />
 
-    <script>
+    <script nonce="@(ViewBag.CspNonce ?? Context.Items["CspNonce"])">
         document.getElementById('regForm').addEventListener('submit', function() {
             if ($(this).valid()) {
                 document.getElementById('btnText').classList.add('d-none');

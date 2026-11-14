@@ -15,18 +15,25 @@
             Description = Model.Name
         })
 
-    <div class="form-card shadow-sm">
+    <div class="erp-section-card shadow-sm mb-4">
         <dl class="row mb-0">
-            <dt class="col-sm-4">الاسم</dt>
-            <dd class="col-sm-8">@Model.Name</dd>
-            <dt class="col-sm-4">الرصيد الحالي</dt>
-            <dd class="col-sm-8">@Model.CurrentStock</dd>
-            <dt class="col-sm-4">الوحدة</dt>
-            <dd class="col-sm-8">@Model.Unit</dd>
-            <dt class="col-sm-4">رقم المصنع</dt>
-            <dd class="col-sm-8">@Model.FactoryId</dd>
+            <dt class="col-sm-4 text-muted mb-2">اسم المادة</dt>
+            <dd class="col-sm-8 fw-bold mb-2">@Model.Name</dd>
+
+            <dt class="col-sm-4 text-muted mb-2">الرصيد المخزني الحالي</dt>
+            <dd class="col-sm-8 fw-bold text-primary mb-2">@Model.CurrentStock.ToString("N2") @Model.Unit</dd>
+
+            <dt class="col-sm-4 text-muted mb-2">وحدة القياس</dt>
+            <dd class="col-sm-8 mb-2"><span class="badge bg-secondary-subtle text-secondary-emphasis">@Model.Unit</span></dd>
+
+            <dt class="col-sm-4 text-muted">رقم المصنع التابع له</dt>
+            <dd class="col-sm-8">#@Model.FactoryId</dd>
         </dl>
     </div>
 
-    <a asp-action="Index" class="btn btn-outline-secondary mt-3">العودة إلى المخزون</a>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-arrow-right me-1"></i> العودة إلى المخزون
+        </a>
+    </div>
 </div>

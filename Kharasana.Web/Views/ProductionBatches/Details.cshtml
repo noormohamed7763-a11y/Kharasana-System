@@ -15,20 +15,48 @@
             Description = $"دفعة الإنتاج رقم {Model.ProductionBatchId}"
         })
 
-    <div class="form-card shadow-sm">
+    <div class="erp-section-card shadow-sm mb-4">
         <dl class="row mb-0">
-            <dt class="col-sm-4">رقم الطلب</dt>
-            <dd class="col-sm-8">@Model.OrderId</dd>
-            <dt class="col-sm-4">نوع الخرسانة</dt>
-            <dd class="col-sm-8">@Model.ConcreteTypeName</dd>
-            <dt class="col-sm-4">الكمية</dt>
-            <dd class="col-sm-8">@Model.Quantity</dd>
-            <dt class="col-sm-4">الحالة</dt>
-            <dd class="col-sm-8">@Model.Status</dd>
-            <dt class="col-sm-4">تاريخ الإنشاء</dt>
-            <dd class="col-sm-8">@Model.CreatedAt.ToLocalTime().ToString("g")</dd>
+            <dt class="col-sm-4 text-muted mb-2">رقم الطلب</dt>
+            <dd class="col-sm-8 mb-2">
+                <a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.OrderId" class="fw-bold text-primary">
+                    <i class="bi bi-link-45deg"></i> طلب #@Model.OrderId
+                </a>
+            </dd>
+
+            <dt class="col-sm-4 text-muted mb-2">نوع الخرسانة</dt>
+            <dd class="col-sm-8 fw-semibold mb-2">@Model.ConcreteTypeName</dd>
+
+            <dt class="col-sm-4 text-muted mb-2">الكمية المقررة</dt>
+            <dd class="col-sm-8 fw-bold mb-2">@Model.Quantity.ToString("N2") م³</dd>
+
+            <dt class="col-sm-4 text-muted mb-2">الحالة الحالية</dt>
+            <dd class="col-sm-8 mb-2">
+                @switch (Model.Status)
+                {
+                    case Kharasana.Domain.Enums.ProductionStatus.Completed:
+                        <span class="status-badge status-success"><i class="bi bi-check-circle-fill me-1"></i>مكتملة</span>
+                        break;
+                    case Kharasana.Domain.Enums.ProductionStatus.InProgress:
+                        <span class="status-badge status-warning"><i class="bi bi-gear-fill me-1"></i>قيد الخلط</span>
+                        break;
+                    case Kharasana.Domain.Enums.ProductionStatus.Cancelled:
+                        <span class="status-badge status-danger"><i class="bi bi-x-circle-fill me-1"></i>ملغاة</span>
+                        break;
+                    default:
+                        <span class="status-badge status-secondary"><i class="bi bi-clock me-1"></i>قيد الانتظار</span>
+                        break;
+                }
+            </dd>
+
+            <dt class="col-sm-4 text-muted">تاريخ ووقت الإنشاء</dt>
+            <dd class="col-sm-8">@Model.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
         </dl>
     </div>
 
-    <a asp-action="Index" class="btn btn-outline-secondary mt-3">العودة إلى الإنتاج</a>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-arrow-right me-1"></i> العودة إلى الإنتاج
+        </a>
+    </div>
 </div>

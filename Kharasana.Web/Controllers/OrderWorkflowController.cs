@@ -57,6 +57,33 @@ namespace Kharasana.Web.Controllers
         }
 
         // ============================================================
+        // QUICK QUOTE AND APPROVE - تسعير واعتماد فوري بنقرة واحدة (AJAX)
+        // ============================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> QuickQuoteAndApprove(int id, [FromBody] SavePriceDto dto)
+        {
+            if (!EnsureValidId(id))
+                return AjaxInvalidId();
+
+            if (dto == null || dto.UnitPrice <= 0)
+                return AjaxFail("يرجى إدخال سعر صحيح للمتر.");
+
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
+
+            var priceResult = await _ordersApiService.SavePriceAsync(id, dto.UnitPrice);
+            if (!priceResult.Succeeded)
+                return AjaxFail(priceResult.Message);
+
+            var approveResult = await _ordersApiService.ApproveOrderAsync(id);
+            if (approveResult.Succeeded)
+                return AjaxSuccess("تم تحديد السعر واعتماد الطلب بنجاح. يمكنك الآن الانتقال لجدولة الخلاطات.");
+
+            return AjaxFail(approveResult.Message);
+        }
+
+        // ============================================================
         // APPROVE - موافقة العميل (AJAX)
         // ============================================================
         [HttpPost]
