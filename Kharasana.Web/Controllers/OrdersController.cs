@@ -22,17 +22,20 @@ namespace Kharasana.Web.Controllers
         private readonly IOrdersApiService _ordersApiService;
         private readonly ILookupApiService _lookupApiService;
         private readonly IFactoryApiService _factoryService;
+        private readonly IClientApiService _clientApiService;
         private readonly ILogger<OrdersController> _logger;
 
         public OrdersController(
             IOrdersApiService ordersApiService,
             ILookupApiService lookupApiService,
             IFactoryApiService factoryService,
+            IClientApiService clientApiService,
             ILogger<OrdersController> logger)
         {
             _ordersApiService = ordersApiService ?? throw new ArgumentNullException(nameof(ordersApiService));
             _lookupApiService = lookupApiService ?? throw new ArgumentNullException(nameof(lookupApiService));
             _factoryService = factoryService ?? throw new ArgumentNullException(nameof(factoryService));
+            _clientApiService = clientApiService ?? throw new ArgumentNullException(nameof(clientApiService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 

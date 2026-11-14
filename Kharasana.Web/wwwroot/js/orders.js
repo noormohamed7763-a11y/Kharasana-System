@@ -117,6 +117,53 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
+    // AJAX Quick Quote & Approve in Details View
+    // ============================================================
+    const quickQuoteAndApproveBtn = document.getElementById('quickQuoteAndApproveBtn');
+    if (quickQuoteAndApproveBtn) {
+        quickQuoteAndApproveBtn.addEventListener('click', async function () {
+            const priceInput = document.getElementById('quickQuotePriceInput');
+            const unitPrice = parseFloat(priceInput?.value || '0');
+
+            if (isNaN(unitPrice) || unitPrice <= 0) {
+                alert('يرجى إدخال سعر صحيح للمتر أكبر من صفر.');
+                if (priceInput) priceInput.focus();
+                return;
+            }
+
+            this.disabled = true;
+            this.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> جاري الاعتماد...`;
+
+            try {
+                const orderId = this.dataset.orderId;
+                const response = await fetch(`/OrderWorkflow/QuickQuoteAndApprove/${orderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ unitPrice: unitPrice })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'فشلت عملية الاعتماد.');
+                    this.disabled = false;
+                    this.innerHTML = `<i class="bi bi-check2-all fs-5"></i> تسعير واعتماد فوري`;
+                }
+            } catch (error) {
+                console.error('Error in QuickQuoteAndApprove:', error);
+                alert('حدث خطأ في الاتصال بالخادم.');
+                this.disabled = false;
+                this.innerHTML = `<i class="bi bi-check2-all fs-5"></i> تسعير واعتماد فوري`;
+            }
+        });
+    }
+
+    // ============================================================
     // AJAX Add Payment in Details View
     // ============================================================
     const addPaymentModal = document.getElementById('addPaymentModal');

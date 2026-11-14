@@ -51,9 +51,9 @@
     }
     else
     {
-        <div class="card shadow-sm">
+        <div class="erp-section-card p-0 shadow-sm mb-4">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="erp-table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
                             <th>رقم الدفعة</th>
@@ -62,20 +62,44 @@
                             <th>الكمية</th>
                             <th>الحالة</th>
                             <th>تاريخ الإنشاء</th>
-                            <th></th>
+                            <th class="text-center">الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.Items)
                         {
                             <tr>
-                                <td>@item.ProductionBatchId</td>
-                                <td>@item.OrderId</td>
+                                <td class="fw-bold">#@item.ProductionBatchId</td>
+                                <td>
+                                    <a asp-controller="Orders" asp-action="Details" asp-route-id="@item.OrderId" class="fw-semibold text-primary">
+                                        طلب #@item.OrderId
+                                    </a>
+                                </td>
                                 <td>@item.ConcreteTypeName</td>
-                                <td>@item.Quantity</td>
-                                <td>@item.Status</td>
-                                <td>@item.CreatedAt.ToLocalTime().ToString("g")</td>
-                                <td><a asp-action="Details" asp-route-id="@item.ProductionBatchId" class="btn btn-sm btn-outline-secondary">التفاصيل</a></td>
+                                <td dir="ltr" class="text-end fw-semibold">@item.Quantity.ToString("N2") م³</td>
+                                <td>
+                                    @switch (item.Status)
+                                    {
+                                        case Kharasana.Domain.Enums.ProductionStatus.Completed:
+                                            <span class="status-badge status-success"><i class="bi bi-check-circle-fill me-1"></i>مكتملة</span>
+                                            break;
+                                        case Kharasana.Domain.Enums.ProductionStatus.InProgress:
+                                            <span class="status-badge status-warning"><i class="bi bi-gear-fill me-1"></i>قيد الخلط</span>
+                                            break;
+                                        case Kharasana.Domain.Enums.ProductionStatus.Cancelled:
+                                            <span class="status-badge status-danger"><i class="bi bi-x-circle-fill me-1"></i>ملغاة</span>
+                                            break;
+                                        default:
+                                            <span class="status-badge status-secondary"><i class="bi bi-clock me-1"></i>قيد الانتظار</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>@item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td class="text-center">
+                                    <a asp-action="Details" asp-route-id="@item.ProductionBatchId" class="btn btn-sm btn-outline-secondary px-3">
+                                        <i class="bi bi-eye me-1"></i>التفاصيل
+                                    </a>
+                                </td>
                             </tr>
                         }
                     </tbody>

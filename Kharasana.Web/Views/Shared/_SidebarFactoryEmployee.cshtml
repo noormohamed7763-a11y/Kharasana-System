@@ -55,6 +55,12 @@
             </a>
         </li>
         <li>
+            <a asp-controller="Finance" asp-action="Index" class="@isActive("Finance")">
+                <i class="bi bi-wallet2"></i>
+                <span>تدقيق الحوالات المالية</span>
+            </a>
+        </li>
+        <li>
             <a asp-controller="Clients" asp-action="Index" class="@isActive("Clients")">
                 <i class="bi bi-people-fill"></i>
                 <span>العملاء</span>

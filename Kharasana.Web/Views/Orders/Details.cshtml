@@ -1,5 +1,6 @@
 @model Kharasana.Web.ViewModels.Orders.OrderDto
 @using Kharasana.Domain.Enums
+@using Kharasana.Domain.Common
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.ViewModels.Shared
 
@@ -17,12 +18,34 @@
     var statusCssClass = Model.Status.GetCssClass();
 
     var factoryId = ViewBag.FactoryId ?? 0;
+    var isOrderFactory = ViewBag.UserRole == Roles.FactoryEmployee && factoryId == Model.FactoryId;
+    var isAdmin = ViewBag.UserRole == Roles.Admin;
+    var canManage = isOrderFactory || isAdmin;
 
     var slabName = Enum.IsDefined(typeof(SlabType), Model.SlabType)
         ? ((SlabType)Model.SlabType).GetDisplayName()
         : "غير محدد";
 
     var transportName = Model.TransportMethod.GetDisplayName();
+
+    // تجهيز رسالة ورابط واتساب لمشاركة ملخص الصبة
+    var normalizedPhone = !string.IsNullOrWhiteSpace(Model.ClientPhone)
+        ? YemeniPhoneHelper.Normalize(Model.ClientPhone) ?? Model.ClientPhone.Replace("+", "").Replace(" ", "").Trim()
+        : string.Empty;
+    var waMessage = $"*أمر صب خرسانة جاهزة - {Model.OrderNumber}*\n" +
+                    $"• العميل: {Model.ClientName}\n" +
+                    $"• المشروع: {Model.ProjectName ?? "-"}\n" +
+                    $"• المنطقة: {Model.SiteArea ?? "-"}\n" +
+                    $"• صنف الخرسانة: {Model.ConcreteTypeName}\n" +
+                    $"• الكمية: {Model.Quantity} م³\n" +
+                    $"• تاريخ الصب: {Model.PouringDate:yyyy-MM-dd}\n" +
+                    (Model.UnitPrice.HasValue ? $"• سعر المتر: {Model.UnitPrice.Value:N0} ر.ي\n" : "") +
+                    (Model.TotalPrice.HasValue ? $"• الإجمالي: {Model.TotalPrice.Value:N0} ر.ي\n" : "") +
+                    $"• الحالة: {statusArabic}\n" +
+                    $"شكراً لتعاملكم معنا.";
+    var whatsAppSummaryUrl = string.IsNullOrWhiteSpace(normalizedPhone)
+        ? $"https://wa.me/?text={Uri.EscapeDataString(waMessage)}"
+        : $"https://wa.me/{normalizedPhone}?text={Uri.EscapeDataString(waMessage)}";
 }
 
 <div class="dashboard-page dashboard-page--print-ticket">
@@ -45,7 +68,19 @@
             </h1>
             <p>إدارة ومتابعة الطلب من البداية إلى النهاية</p>
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            @if (canManage)
+            {
+                <a asp-action="Create" asp-route-fromOrderId="@Model.OrderId" class="btn btn-outline-success btn-lg" title="تكرار وإنشاء صبة جديدة لنفس هذا المشروع والموقع">
+                    <i class="bi bi-arrow-repeat"></i> صبة جديدة لنفس الموقع
+                </a>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.ClientPhone))
+            {
+                <a href="@whatsAppSummaryUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-lg" title="مشاركة ملخص أمر الصب مع العميل عبر واتساب">
+                    <i class="bi bi-whatsapp"></i> مشاركة بالواتساب
+                </a>
+            }
             @* ✅ data-print بدل onclick="window.print()": سياسة CSP في
                SecurityHeadersMiddleware تسمح بـ script-src 'self' + nonce فقط،
                فالمعالجات المضمّنة (inline handlers) تُحجب صامتةً في المتصفح
@@ -75,7 +110,7 @@
     <!-- ============================================================
     PROGRESS BAR - شريط التقدم
     ============================================================ -->
-    <div class="erp-section-card">
+    <div class="erp-section-card mb-4">
         <div class="erp-section-title">
             <i class="bi bi-graph-up-arrow"></i>
             تقدم الطلب
@@ -96,6 +131,52 @@
             </div>
         </div>
     </div>
+
+    <!-- ============================================================
+    OPERATIONAL FAST ACTION BAR - شريط الإجراءات والقرارات السريعة
+    ============================================================ -->
+    @if (canManage && (Model.Status == OrderStatus.New || Model.Status == OrderStatus.Pending))
+    {
+        <div class="alert alert-primary border-primary shadow-sm rounded-3 p-3 mb-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary text-white p-2 px-3 fs-4">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1 text-primary">المراجعة والاعتماد الفوري لموظف المصنع</h6>
+                    <span class="small text-muted">يمكنك تحديد سعر المتر واعتماد الطلب فورياً في خطوة واحدة أثناء مكالمة العميل:</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="input-group" style="max-width: 220px;">
+                    <input type="number" step="0.01" min="0.01" class="form-control fw-bold" id="quickQuotePriceInput" placeholder="سعر المتر" value="@(Model.UnitPrice > 0 ? Model.UnitPrice : "")" />
+                    <span class="input-group-text bg-light small fw-bold">ر.ي/م³</span>
+                </div>
+                <button type="button" class="btn btn-primary fw-bold px-3 d-flex align-items-center gap-2" id="quickQuoteAndApproveBtn" data-order-id="@Model.OrderId">
+                    <i class="bi bi-check2-all fs-5"></i> تسعير واعتماد فوري
+                </button>
+            </div>
+        </div>
+    }
+    else if (canManage && Model.Status == OrderStatus.Approved)
+    {
+        <div class="alert alert-success border-success shadow-sm rounded-3 p-3 mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success text-white p-2 px-3 fs-4">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1 text-success">الطلب معتمد ومؤكد للصب!</h6>
+                    <span class="small text-muted">تم الاتفاق على السعر وتأكيد الطلب. انتقل إلى لوحة العمليات والتوزيع لجدولة وتعيين شاحنات الخلاطات.</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <a asp-controller="Dispatch" asp-action="Index" class="btn btn-success fw-bold px-4">
+                    <i class="bi bi-kanban me-1"></i> فتح غرفة العمليات والجدولة (Dispatch)
+                </a>
+            </div>
+        </div>
+    }
 
     <!-- ============================================================
     MAIN INFO - معلومات العميل والمشروع
