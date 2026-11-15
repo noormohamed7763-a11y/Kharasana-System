@@ -52,3 +52,9 @@ Documents/
 
 # ملاحظة: لا تُضِف Kharasana.Tests/ هنا — المشروع مُتعقَّب في Git،
 # وإضافته تُخفي أي ملف اختبار جديد بصمت فيتوقف CI عن تشغيله.
+
+# Backups & archives
+*.tar.gz
+*.zip
+*.bak
+backup_*

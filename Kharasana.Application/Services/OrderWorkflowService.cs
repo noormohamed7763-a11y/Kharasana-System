@@ -126,7 +126,7 @@ public class OrderWorkflowService : IOrderWorkflowService
     {
         var order = await GetOrderOrThrowAsync(id, callerId, callerRole, callerFactoryId);
 
-        if (order.Status != OrderStatus.Approved)
+        if (order.Status is not (OrderStatus.Approved or OrderStatus.Scheduled))
             throw new BusinessException(Messages.DriverAssignmentOnlyForApprovedOrders);
 
         if (order.TransportMethod == TransportMethod.ClientOwnTransport)
@@ -184,7 +184,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             throw new ForbiddenException(Messages.OrderNotAssignedForStartDelivery);
         }
 
-        if (order.Status != OrderStatus.Approved)
+        if (order.Status is not (OrderStatus.Approved or OrderStatus.Scheduled))
             throw new BusinessException(Messages.CannotStartDeliveryForNonApprovedOrder);
 
         if (order.TransportMethod == TransportMethod.FactoryTransport && !order.DriverId.HasValue)
@@ -218,7 +218,6 @@ public class OrderWorkflowService : IOrderWorkflowService
         order.DeliveredAt = DateTime.UtcNow;
         order.UpdatedAt = DateTime.UtcNow;
 
-        _trackingService.RemoveOrder(order.OrderId);
         ReleaseDriver(order);
         _trackingService.RemoveOrder(order.OrderId);
 
@@ -269,8 +268,10 @@ public class OrderWorkflowService : IOrderWorkflowService
             order.ClosedAt = DateTime.UtcNow;
 
         if (dto.Status is OrderStatus.Delivered or OrderStatus.Rejected or OrderStatus.Cancelled)
+        {
             ReleaseDriver(order);
-        _trackingService.RemoveOrder(order.OrderId);
+            _trackingService.RemoveOrder(order.OrderId);
+        }
 
         _unitOfWork.Orders.Update(order);
         await LogStatusChangeAsync(order, previousStatus, order.Status, callerId, dto.Reason);
