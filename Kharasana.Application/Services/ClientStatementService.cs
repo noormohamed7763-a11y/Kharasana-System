@@ -3,8 +3,8 @@ using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Client;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Domain.Entities;
 using Kharasana.Application.Mapping;
-using Kharasana.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,21 +44,29 @@ public class ClientStatementService : IClientStatementService
             throw new NotFoundException(Messages.ClientNotFound);
         }
 
-        var orders = await _orderRepository.GetByClientIdWithPaymentsAsync(clientId);
-
-        // Factory employees can only view statements for clients in their factory
-        if (caller.Role == UserRole.FactoryEmployee)
+        var orders = new List<Order>();
+        int pageNumber = 1;
+        const int pageSize = 200; // reasonable default
+        while (true)
         {
-            if (!orders.Any(o => o.FactoryId == caller.FactoryId))
-            {
-                throw new ForbiddenException(Messages.ClientNotInCallerFactory);
-            }
+            var page = await _orderRepository.GetByClientIdWithPaymentsPagedAsync(
+                clientId,
+                caller.Role == UserRole.FactoryEmployee ? caller.FactoryId : null,
+                pageNumber,
+                pageSize);
+            if (page == null || page.Count == 0)
+                break;
+            orders.AddRange(page);
+            if (page.Count < pageSize)
+                break; // last page
+            pageNumber++;
         }
 
-        // Restrict factory employees to their own factory.
-        if (caller.Role == UserRole.FactoryEmployee)
+        // Factory employees can only view statements for clients in their factory.
+        // The repository already filtered by factoryId, but keep a guard for safety.
+        if (caller.Role == UserRole.FactoryEmployee && !orders.Any())
         {
-            orders = orders.Where(o => o.FactoryId == caller.FactoryId).ToList();
+            throw new ForbiddenException(Messages.ClientNotInCallerFactory);
         }
 
         var orderDtos = orders
@@ -69,68 +77,47 @@ public class ClientStatementService : IClientStatementService
         var ledgerItems = new List<ClientStatementItemDto>();
         decimal runningBalance = 0;
 
-        // Sort all financial events chronologically
-        var allEvents = orders
-            .SelectMany(o =>
-            {
-                var events = new List<LedgerEvent>();
+        // Build ledger items iteratively to reduce memory usage
+        // 1. Sort orders chronologically
+        var sortedOrders = orders.OrderBy(o => o.CreatedAt).ToList();
 
-                // Order creation (Debit)
-                events.Add(new LedgerEvent
-                {
-                    Date = o.CreatedAt,
-                    Type = "Order",
-                    Description = string.Format(Messages.OrderNumberStatement, o.OrderNumber),
-                    Reference = o.ProjectName,
-                    Amount = o.NetAmount,
-                    OrderId = o.OrderId,
-                    OrderNumber = o.OrderNumber
-                });
-
-                // Payments (Credit)
-                events.AddRange(o.Payments
-                    .Where(p => p.VerificationStatus == PaymentVerificationStatus.Verified)
-                    .Select(p => new LedgerEvent
-                {
-                    Date = p.CreatedAt,
-                    Type = "Payment",
-                    Description = string.Format(Messages.PaymentStatement, p.Amount, PaymentMethodHelper.GetArabicName(p.PaymentMethod)),
-                    Reference = p.ReferenceNumber,
-                    Amount = p.Amount,
-                    OrderId = o.OrderId,
-                    OrderNumber = o.OrderNumber
-                }));
-
-                return events;
-            })
-            .OrderBy(e => e.Date)
-            .ToList();
-
-        foreach (var evt in allEvents)
+        foreach (var order in sortedOrders)
         {
-            var item = new ClientStatementItemDto
+            // Debit entry for the order
+            var debitItem = new ClientStatementItemDto
             {
-                Date = evt.Date,
-                Reference = evt.Reference,
-                OrderId = evt.OrderId,
-                OrderNumber = evt.OrderNumber
+                Date = order.CreatedAt,
+                Reference = order.ProjectName,
+                OrderId = order.OrderId,
+                OrderNumber = order.OrderNumber,
+                Description = string.Format(Messages.OrderNumberStatement, order.OrderNumber),
+                Debit = order.NetAmount
             };
+            runningBalance += order.NetAmount;
+            debitItem.RunningBalance = runningBalance;
+            ledgerItems.Add(debitItem);
 
-            if (evt.Type == "Order")
-            {
-                item.Description = evt.Description;
-                item.Debit = evt.Amount;
-                runningBalance += evt.Amount;
-            }
-            else if (evt.Type == "Payment")
-            {
-                item.Description = evt.Description;
-                item.Credit = evt.Amount;
-                runningBalance -= evt.Amount;
-            }
+            // Credit entries for verified payments, ordered by payment date
+            var verifiedPayments = order.Payments
+                .Where(p => p.VerificationStatus == PaymentVerificationStatus.Verified)
+                .OrderBy(p => p.CreatedAt);
 
-            item.RunningBalance = runningBalance;
-            ledgerItems.Add(item);
+            foreach (var payment in verifiedPayments)
+            {
+                var creditItem = new ClientStatementItemDto
+                {
+                    Date = payment.CreatedAt,
+                    Reference = payment.ReferenceNumber,
+                    OrderId = order.OrderId,
+                    OrderNumber = order.OrderNumber,
+                    Description = string.Format(Messages.PaymentStatement, payment.Amount,
+                        PaymentMethodHelper.GetArabicName(payment.PaymentMethod)),
+                    Credit = payment.Amount
+                };
+                runningBalance -= payment.Amount;
+                creditItem.RunningBalance = runningBalance;
+                ledgerItems.Add(creditItem);
+            }
         }
 
         // 6. Calculate Summary

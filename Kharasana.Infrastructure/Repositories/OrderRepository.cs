@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Customer;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.DTOs.Report;
@@ -16,6 +16,20 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     public OrderRepository(KharasanaDbContext context)
         : base(context)
     {
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     /// <summary>
@@ -62,12 +76,59 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
 
         return trackChanges ? query : query.AsNoTracking();
     }
-
-    public async Task<List<Order>> GetByClientIdWithPaymentsAsync(int clientId)
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
     {
-        return await OrdersWithDetails(trackChanges: false)
-            .Where(o => o.ClientId == clientId)
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
             .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<List<Order>> GetByClientIdWithPaymentsAsync(int clientId, int? factoryId = null)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .ToListAsync();
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
     }
 
@@ -75,6 +136,20 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     {
         return await OrdersWithDetails(trackChanges: false)
             .FirstOrDefaultAsync(o => o.OrderId == id);
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     public async Task<Order> GetByIdWithTripsAsync(int id)
@@ -84,11 +159,39 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .FirstOrDefaultAsync(o => o.OrderId == id)
             ?? throw new InvalidOperationException($"الطلب {id} غير موجود.");
     }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
 
     public async Task<Order?> GetByIdWithDetailsForUpdateAsync(int id)
     {
         return await OrdersWithDetails(trackChanges: true)
             .FirstOrDefaultAsync(o => o.OrderId == id);
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     public async Task<PagedResult<OrderDto>> GetPagedAsync(
@@ -123,6 +226,20 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             query = query.Where(
                 ArabicTextNormalization.Or(numberOrNameMatch, o => hasPhoneDigits && o.Client.Phone != null && o.Client.Phone.Contains(phoneDigits)));
         }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
 
         var totalCount = await query.CountAsync();
 
@@ -146,7 +263,21 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
                 Status = o.Status,
                 PouringDate = o.PouringDate,
                 CreatedAt = o.CreatedAt
-            })
+            }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    })
             .ToListAsync();
 
         return new PagedResult<OrderDto>
@@ -155,7 +286,35 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             PageNumber = pageNumber,
             PageSize = pageSize,
             TotalCount = totalCount
-        };
+        }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    };
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     /// <summary>
@@ -180,7 +339,21 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
                 o.Client.Email,
                 o.Client.WhatsApp,
                 o.Client.IsActive
-            })
+            }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    })
             .Select(g => new CustomerSummaryDto
             {
                 UserId = g.Key.ClientId,
@@ -192,13 +365,55 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
                 OrdersCount = g.Count(),
                 TotalQuantity = g.Sum(o => o.Quantity),
                 LastOrderDate = g.Max(o => (DateTime?)o.CreatedAt)
-            });
+            }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    });
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     public async Task<CustomerSummaryDto?> GetFactoryCustomerAsync(int customerId, int? factoryId)
     {
         return await CustomerSummaryQuery(factoryId)
             .FirstOrDefaultAsync(c => c.UserId == customerId);
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     public async Task<PagedResult<CustomerSummaryDto>> GetFactoryCustomersAsync(
@@ -219,6 +434,20 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             grouped = grouped.Where(
                 ArabicTextNormalization.Or(customerNameMatch, c => hasPhoneDigits && c.Phone != null && c.Phone.Contains(phoneDigits)));
         }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
 
         var totalCount = await grouped.CountAsync();
 
@@ -234,7 +463,35 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             PageNumber = pageNumber,
             PageSize = pageSize,
             TotalCount = totalCount
-        };
+        }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    };
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     // ============================================================
@@ -254,7 +511,21 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             {
                 Status = g.Key,
                 Count = g.Count()
-            })
+            }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    })
             .OrderBy(x => x.Status)
             .ToListAsync();
 
@@ -263,6 +534,20 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             item.StatusName = OrderStatusHelper.GetArabicName(item.Status);
 
         return grouped;
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     public async Task<List<ConcreteTypeCountDto>> GetCountByConcreteTypeAsync(int? factoryId)
@@ -294,11 +579,39 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
                     ConcreteTypeName = g.Key.Name,
                     Count = g.Count(),
                     TotalQuantity = g.Sum(o => o.Quantity)
-                })
+                }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    })
             .OrderByDescending(x => x.Count)
             .ToListAsync();
 
         return grouped;
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     public async Task<IReadOnlyList<Order>> GetReadyForDispatchAsync(int factoryId, DateTime date)
@@ -315,6 +628,20 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
                          o.Status == OrderStatus.OnTheWay) &&
                         o.PouringDate >= start &&
                         o.PouringDate < end)
+            .ToListAsync();
+    }
+    public async Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200)
+    {
+        var query = OrdersWithDetails(trackChanges: false)
+            .Where(o => o.ClientId == clientId);
+        if (factoryId.HasValue)
+        {
+            query = query.Where(o => o.FactoryId == factoryId.Value);
+        }
+        return await query
+            .OrderBy(o => o.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
     }
 }
