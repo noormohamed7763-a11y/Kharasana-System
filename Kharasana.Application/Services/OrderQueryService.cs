@@ -50,7 +50,7 @@ public class OrderQueryService : IOrderQueryService
         return result;
     }
 
-    public async Task<IEnumerable<OrderDto>> GetOrdersByDriverIdAsync(int driverId, CallerContext caller)
+    public async Task<PagedResult<OrderDto>> GetOrdersByDriverIdAsync(int driverId, CallerContext caller, int pageNumber = 1, int pageSize = 200)
     {
         if (caller.Role != UserRole.Admin && caller.Role != UserRole.FactoryEmployee)
         {
@@ -76,10 +76,11 @@ public class OrderQueryService : IOrderQueryService
             driverId: driverId,
             status: null,
             search: null,
-            pageNumber: 1,
-            pageSize: 100_000);
+            pageNumber: pageNumber,
+            pageSize: pageSize);
 
-        return result.Items
-            .OrderByDescending(o => o.CreatedAt);
+        // Order by descending creation date
+        result.Items = result.Items.OrderByDescending(o => o.CreatedAt).ToList();
+        return result;
     }
 }

@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Customer;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.DTOs.Report;
@@ -12,7 +12,8 @@ public interface IOrderRepository : IGenericRepository<Order>
     /// <summary>
     /// قراءة الطلب مع تفاصيله للعرض فقط (AsNoTracking).
     /// </summary>
-    Task<List<Order>> GetByClientIdWithPaymentsAsync(int clientId);
+    Task<List<Order>> GetByClientIdWithPaymentsAsync(int clientId, int? factoryId = null);
+    Task<List<Order>> GetByClientIdWithPaymentsPagedAsync(int clientId, int? factoryId = null, int pageNumber = 1, int pageSize = 200);
 
     Task<Order?> GetByIdWithDetailsAsync(int id);
     Task<Order> GetByIdWithTripsAsync(int id);

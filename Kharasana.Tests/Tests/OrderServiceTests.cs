@@ -3,7 +3,7 @@ using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Repositories;
-using Kharasana.Application.Interfaces.Services;
+using FluentAssertions;
 using Kharasana.Application.Services;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Enums;
@@ -14,7 +14,8 @@ using Kharasana.Infrastructure.Repositories;
 using Kharasana.Tests.TestData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Moq;
+using System.Linq;
+using Microsoft.AspNetCore.Identity;
 
 namespace Kharasana.Tests.Tests;
 
@@ -1177,7 +1178,7 @@ public class OrderServiceTests : IDisposable
         }
     }
 
-    private OrderCommandService CreateCommandServiceWithMockIdempotency(UnitOfWork uow, IPasswordHasher passwordHasher)
+    private OrderCommandService CreateCommandServiceWithMockIdempotency(UnitOfWork uow, IPasswordHasher<User> passwordHasher)
     {
         var mockIdempotencyService = new Mock<IIdempotencyService>();
         mockIdempotencyService

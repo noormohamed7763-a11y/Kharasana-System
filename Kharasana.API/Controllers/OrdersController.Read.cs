@@ -83,17 +83,17 @@ public partial class OrdersController
     /// <response code="403">المتصل لا يملك صلاحية، أو السائق خارج نطاق مصنع موظف المصنع.</response>
     [HttpGet("by-driver/{driverId:int}")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
-    public async Task<IActionResult> GetByDriver(int driverId)
+    public async Task<IActionResult> GetByDriver(int driverId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 200)
     {
         var caller = User.GetCallerContext();
 
-        var orders = await _orderService.GetOrdersByDriverIdAsync(driverId, caller);
+        var result = await _orderService.GetOrdersByDriverIdAsync(driverId, caller, pageNumber, pageSize);
 
-        return Ok(new ApiResponse<IEnumerable<OrderDto>>
+        return Ok(new ApiResponse<PagedResult<OrderDto>>
         {
             Success = true,
             Message = Messages.OrdersRetrievedSuccessfully,
-            Data = orders
+            Data = result
         });
     }
 

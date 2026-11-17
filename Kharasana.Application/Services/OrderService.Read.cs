@@ -38,8 +38,8 @@ public partial class OrderService
     // ============================================================
     // GET ORDERS BY DRIVER ID (for reports) - Delegates to OrderQueryService
     // ============================================================
-    public async Task<IEnumerable<OrderDto>> GetOrdersByDriverIdAsync(int driverId, CallerContext caller)
+    public async Task<PagedResult<OrderDto>> GetOrdersByDriverIdAsync(int driverId, CallerContext caller, int pageNumber = 1, int pageSize = 200)
     {
-        return await _orderQueryService.GetOrdersByDriverIdAsync(driverId, caller);
+        return await _orderQueryService.GetOrdersByDriverIdAsync(driverId, caller, pageNumber, pageSize);
     }
 }
