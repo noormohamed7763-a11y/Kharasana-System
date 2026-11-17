@@ -17,6 +17,10 @@ using Microsoft.Extensions.Options;
 using System.Linq;
 using Microsoft.AspNetCore.Identity;
 
+using Moq;
+using Kharasana.Application.Interfaces.Services;
+using IPasswordHasher = Kharasana.Application.Interfaces.Services.IPasswordHasher;
+
 namespace Kharasana.Tests.Tests;
 
 /// <summary>
@@ -501,10 +505,10 @@ public class OrderServiceTests : IDisposable
             driverId: 200, caller: new CallerContext(10, UserRole.Admin, null));
 
         // Assert
-        orders.Should().HaveCount(3);
-        orders.Select(o => o.CreatedAt).Should().BeInDescendingOrder();
-        orders.First().CreatedAt.Should().Be(new DateTime(2024, 1, 5));
-        orders.Last().CreatedAt.Should().Be(new DateTime(2024, 1, 1));
+        orders.Items.Should().HaveCount(3);
+        orders.Items.Select(o => o.CreatedAt).Should().BeInDescendingOrder();
+        orders.Items.First().CreatedAt.Should().Be(new DateTime(2024, 1, 5));
+        orders.Items.Last().CreatedAt.Should().Be(new DateTime(2024, 1, 1));
     }
 
     [Fact]
@@ -526,8 +530,8 @@ public class OrderServiceTests : IDisposable
             driverId: 201, caller: new CallerContext(20, UserRole.FactoryEmployee, 1));
 
         // Assert
-        orders.Should().HaveCount(1);
-        orders.First().OrderId.Should().Be(order.OrderId);
+        orders.Items.Should().HaveCount(1);
+        orders.Items.First().OrderId.Should().Be(order.OrderId);
     }
 
     [Fact]
@@ -620,7 +624,7 @@ public class OrderServiceTests : IDisposable
             driverId: 9999, caller: new CallerContext(10, UserRole.Admin, null));
 
         // Assert
-        orders.Should().BeEmpty();
+        orders.Items.Should().BeEmpty();
     }
 
     // ─────────────────────────────────────────────
@@ -1178,7 +1182,7 @@ public class OrderServiceTests : IDisposable
         }
     }
 
-    private OrderCommandService CreateCommandServiceWithMockIdempotency(UnitOfWork uow, IPasswordHasher<User> passwordHasher)
+    private OrderCommandService CreateCommandServiceWithMockIdempotency(UnitOfWork uow, IPasswordHasher passwordHasher)
     {
         var mockIdempotencyService = new Mock<IIdempotencyService>();
         mockIdempotencyService
