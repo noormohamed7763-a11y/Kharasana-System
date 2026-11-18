@@ -72,20 +72,29 @@ public class TripService : ITripService
     // Mapper
     private TripDto MapToDto(Trip trip)
     {
-        // TODO: Expand this to fetch DriverName and PumpDriverName from the User entity using Include or Projection
         return new TripDto
         {
             TripId = trip.TripId,
             OrderId = trip.OrderId,
+            FactoryId = trip.FactoryId,
             Sequence = trip.Sequence,
             Quantity = trip.Quantity,
             DriverId = trip.DriverId,
+            DriverName = trip.Driver?.FullName,
             TruckPlate = trip.TruckPlate,
             HasPump = trip.HasPump,
+            PumpDriverId = trip.PumpDriverId,
+            PumpDriverName = trip.PumpDriver?.FullName,
             Status = trip.Status,
             StatusNameAr = TripStatusHelper.GetArabicName(trip.Status),
             ScheduledAt = trip.ScheduledAt,
-            CompletedAt = trip.CompletedAt
+            DepartedAt = trip.DepartedAt,
+            ArrivedAt = trip.ArrivedAt,
+            UnloadedAt = trip.UnloadedAt,
+            CompletedAt = trip.CompletedAt,
+            Notes = trip.Notes,
+            CreatedAt = trip.CreatedAt,
+            UpdatedAt = trip.UpdatedAt
         };
     }
 
@@ -129,11 +138,18 @@ public class TripService : ITripService
         var order = await _uow.Orders.GetByIdAsync(orderId)
                     ?? throw new NotFoundException($"لم يتم العثور على الطلب رقم {orderId}");
 
-        // Permission check
-        if (role != UserRole.Admin && (!factoryId.HasValue || order.FactoryId != factoryId.Value))
+        var trips = await _uow.Trips.GetByOrderIdAsync(orderId);
+        var authorized = role switch
+        {
+            UserRole.Admin => true,
+            UserRole.Client => order.ClientId == callerId,
+            UserRole.FactoryEmployee => factoryId.HasValue && order.FactoryId == factoryId.Value,
+            UserRole.Driver => trips.Any(t => t.DriverId == callerId || t.PumpDriverId == callerId),
+            _ => false
+        };
+        if (!authorized)
             throw new ForbiddenException("ليس لديك صلاحية لعرض رحلات هذا الطلب.");
 
-        var trips = await _uow.Trips.GetByOrderIdAsync(orderId);
         return trips.Select(MapToDto).ToList();
     }
 
