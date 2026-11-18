@@ -23,12 +23,36 @@ public class ApiClient
         Converters = { new JsonStringEnumConverter() }
     };
 
-    /// <summary>نموذج مبسّط لقراءة Message من جسم خطأ الـ API دون ربط Web بهيكل Application.</summary>
+    /// <summary>نموذج مرن لقراءة رسائل الخطأ من جسم الـ API سواء كان ApiResponse أو ProblemDetails أو ModelState.</summary>
     private sealed class ApiErrorEnvelope
     {
         public bool Success { get; set; }
         public string? Message { get; set; }
+        public string? Title { get; set; }
+        public string? Detail { get; set; }
+        public Dictionary<string, string[]>? Errors { get; set; }
         public object? Data { get; set; }
+
+        public string? GetBestDisplayMessage()
+        {
+            if (!string.IsNullOrWhiteSpace(Message))
+                return Message;
+
+            if (!string.IsNullOrWhiteSpace(Detail))
+                return Detail;
+
+            if (Errors != null && Errors.Count > 0)
+            {
+                var first = Errors.Values.SelectMany(v => v).FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+                if (!string.IsNullOrWhiteSpace(first))
+                    return first;
+            }
+
+            if (!string.IsNullOrWhiteSpace(Title) && Title.Any(c => c >= 0x0600 && c <= 0x06FF))
+                return Title;
+
+            return null;
+        }
     }
 
     public ApiClient(
@@ -66,36 +90,61 @@ public class ApiClient
     /// </summary>
     private string? GetToken()
     {
+        var context = _httpContextAccessor.HttpContext;
+        if (context == null) return null;
+
+        // ✅ التخزين المؤقت في Items لكل طلب لتقليل الوصول المتكرر
+        if (context.Items.TryGetValue("ApiToken", out var cachedToken))
+            return cachedToken as string;
+
+        // 1. القراءة من المطالبات الموثقة والمشفرة في كوكي المصادقة أولاً
+        var cookieToken = context.User?.FindFirst("access_token")?.Value;
+        if (!string.IsNullOrEmpty(cookieToken))
+        {
+            context.Items["ApiToken"] = cookieToken;
+            return cookieToken;
+        }
+
+        // 2. الرجوع للجلسة كبديل في حال عدم توفره في الكوكي
         try
         {
-            return _httpContextAccessor.HttpContext?.Session.GetString("Token");
+            var token = context.Session.GetString("Token");
+            if (!string.IsNullOrEmpty(token))
+                context.Items["ApiToken"] = token;
+
+            return token;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to read session token. TraceId={TraceId}", CurrentTraceId);
+            _logger.LogError(ex, "تعذّرت قراءة رمز الجلسة. التتبّع={TraceId}", CurrentTraceId);
             return null;
         }
     }
 
     /// <summary>
-    /// يحوّل حالة HTTP إلى رسالة عربية مناسبة، مع تفضيل رسالة الـ API الأصلية
+    /// يحوّل حالة HTTP إلى نموذج خطأ مناسب، مع تفضيل رسالة الـ API الأصلية
     /// عندما يعيد الخادم ApiResponse بجسم قابل للقراءة.
     /// </summary>
-    private static string ComposeUserMessage(HttpStatusCode statusCode, string? apiMessage)
+    private static ApiError ComposeApiError(HttpStatusCode statusCode, string? apiMessage)
     {
-        if (!string.IsNullOrWhiteSpace(apiMessage))
-            return apiMessage;
-
-        return statusCode switch
+        var error = statusCode switch
         {
-            HttpStatusCode.Unauthorized => AppMessages.Common.Unauthorized,
-            HttpStatusCode.Forbidden => AppMessages.Common.Forbidden,
-            HttpStatusCode.NotFound => AppMessages.Common.NotFound,
-            HttpStatusCode.Conflict => "البيانات مستخدمة مسبقاً أو متعارضة.",
-            HttpStatusCode.TooManyRequests => "طلبات كثيرة من جهازك. انتظر قليلاً ثم أعد المحاولة.",
-            _ when (int)statusCode >= 500 => AppMessages.Common.ServerError,
-            _ => AppMessages.Common.OperationFailed
+            HttpStatusCode.Unauthorized => ApiErrorCatalog.Unauthorized,
+            HttpStatusCode.Forbidden => ApiErrorCatalog.Forbidden,
+            HttpStatusCode.NotFound => ApiErrorCatalog.NotFound,
+            HttpStatusCode.Conflict => ApiErrorCatalog.Conflict,
+            HttpStatusCode.BadRequest => ApiErrorCatalog.BadRequest,
+            _ when (int)statusCode >= 500 => ApiErrorCatalog.ServerError,
+            _ => ApiErrorCatalog.Unknown
         };
+
+        if (!string.IsNullOrWhiteSpace(apiMessage))
+        {
+            // نستخدم رسالة الـ API الأصلية إذا توفرت ولكن نحتفظ بنفس الكود
+            return error with { UserMessageTemplate = apiMessage };
+        }
+
+        return error;
     }
 
     private async Task<T?> HandleResponseAsync<T>(
@@ -107,7 +156,7 @@ public class ApiClient
 
         // ✅ تسجيل معلومات الاستجابة بدون المحتوى
         _logger.LogInformation(
-            "API {Method} {Url} returned StatusCode: {StatusCode}",
+            "الـ API {Method} {Url} أعاد الحالة: {StatusCode}",
             method,
             url,
             (int)response.StatusCode);
@@ -115,7 +164,7 @@ public class ApiClient
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogWarning(
-                "API {Method} {Url} returned non-success StatusCode: {StatusCode}. TraceId={TraceId}",
+                "الـ API {Method} {Url} أعاد حالة غير ناجحة: {StatusCode}. التتبّع={TraceId}",
                 method,
                 url,
                 (int)response.StatusCode,
@@ -129,7 +178,7 @@ public class ApiClient
                 // تسجيل محتوى الخطأ (مقتطعاً) للمساعدة في التشخيص
                 var truncated = content.Length > 500 ? content[..500] + "..." : content;
                 _logger.LogWarning(
-                    "API {Method} {Url} error body: {Body}. TraceId={TraceId}",
+                    "جسم خطأ الـ API {Method} {Url}: {Body}. التتبّع={TraceId}",
                     method,
                     url,
                     truncated,
@@ -137,28 +186,26 @@ public class ApiClient
 
                 try
                 {
-                    var error = JsonSerializer.Deserialize<ApiErrorEnvelope>(content, JsonOptions);
-                    apiMessage = string.IsNullOrWhiteSpace(error?.Message) ? null : error.Message;
+                    var envelope = JsonSerializer.Deserialize<ApiErrorEnvelope>(content, JsonOptions);
+                    apiMessage = envelope?.GetBestDisplayMessage();
                 }
                 catch
                 {
-                    // الجسم ليس ApiResponse (مثلاً 401 بلا جسم من مستوى Framework) — يبقى null ونلجأ للرسالة العامة
+                    // الجسم ليس JSON (مثلاً 401 بلا جسم من مستوى Framework) — يبقى null ونلجأ للرسالة العامة
                 }
             }
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                _logger.LogInformation("Unauthorized. Clearing session. TraceId={TraceId}", CurrentTraceId);
-                _httpContextAccessor.HttpContext?.Session.Clear();
+                _logger.LogInformation("غير مُصرَّح. التتبّع={TraceId}", CurrentTraceId);
             }
 
-            var userMessage = ComposeUserMessage(response.StatusCode, apiMessage);
+            var error = ComposeApiError(response.StatusCode, apiMessage);
 
             throw new ApiServiceException(
                 response.StatusCode,
-                userMessage,
-                apiMessage,
-                CurrentTraceId);
+                error,
+                traceId: CurrentTraceId);
         }
 
         try
@@ -167,11 +214,10 @@ public class ApiClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "❌ Failed to deserialize successful response for {Method} {Url}. TraceId={TraceId}", method, url, CurrentTraceId);
+            _logger.LogError(ex, "تعذّر تحليل ردّ ناجح لـ {Method} {Url}. التتبّع={TraceId}", method, url, CurrentTraceId);
             throw new ApiServiceException(
                 HttpStatusCode.OK,
-                AppMessages.Common.ServerError,
-                apiResponseMessage: null,
+                ApiErrorCatalog.Unknown,
                 traceId: CurrentTraceId,
                 innerException: ex);
         }
@@ -195,10 +241,10 @@ public class ApiClient
     /// </summary>
     private void ThrowTransportException(string method, string url, Exception ex)
     {
-        var userMessage = ex switch
+        var error = ex switch
         {
-            HttpRequestException => AppMessages.Common.NetworkError,
-            _ => AppMessages.Common.ServerError
+            HttpRequestException => ApiErrorCatalog.NetworkError,
+            _ => ApiErrorCatalog.ServerError
         };
 
         var statusCode = ex switch
@@ -207,7 +253,7 @@ public class ApiClient
             _ => HttpStatusCode.InternalServerError
         };
 
-        throw new ApiServiceException(statusCode, userMessage, traceId: CurrentTraceId, innerException: ex);
+        throw new ApiServiceException(statusCode, error, traceId: CurrentTraceId, innerException: ex);
     }
 
     /// <summary>
@@ -240,16 +286,16 @@ public class ApiClient
             if (cancellationToken.IsCancellationRequested)
                 throw; // إلغاء خارجي (غادر المستخدم الصفحة) — لا حاجة لرسالة
 
-            _logger.LogWarning("{Method} {Url} timed out. TraceId={TraceId}", method, url, CurrentTraceId);
+            _logger.LogWarning("انتهت مهلة {Method} {Url}. التتبّع={TraceId}", method, url, CurrentTraceId);
             throw new ApiServiceException(
                 HttpStatusCode.GatewayTimeout,
-                "استغرق الاتصال بالنظام وقتاً طويلاً. حاول مرة أخرى.",
+                AppMessages.Common.RequestTimeout,
                 traceId: CurrentTraceId,
                 innerException: ex);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while {Method} {Url}. TraceId={TraceId}", method, url, CurrentTraceId);
+            _logger.LogError(ex, "استثناء أثناء {Method} {Url}. التتبّع={TraceId}", method, url, CurrentTraceId);
             ThrowTransportException(method, url, ex);
             return default;
         }
@@ -271,9 +317,9 @@ public class ApiClient
         var json = JsonSerializer.Serialize(data);
 
         // ✅ تسجيل معلومات الطلب بدون المحتوى
-        _logger.LogInformation("📤 Sending POST request to {Url}", url);
+        _logger.LogInformation("إرسال طلب POST إلى {Url}", url);
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
@@ -290,9 +336,9 @@ public class ApiClient
         var json = JsonSerializer.Serialize(data);
 
         // ✅ تسجيل معلومات الطلب بدون المحتوى
-        _logger.LogInformation("📤 Sending PUT request to {Url}", url);
+        _logger.LogInformation("إرسال طلب PUT إلى {Url}", url);
 
-        var request = new HttpRequestMessage(HttpMethod.Put, url)
+        using var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
@@ -304,14 +350,25 @@ public class ApiClient
             cancellationToken);
     }
 
+    public async Task<T?> PatchAsync<T>(string url, object data, CancellationToken cancellationToken = default)
+    {
+        var json = JsonSerializer.Serialize(data);
+        using var request = new HttpRequestMessage(HttpMethod.Patch, url)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        return await SendAsync<T>("PATCH", url, request, cancellationToken);
+    }
+
     /// <summary>
     /// PUT بدون جسم (body) — للعمليات مثل toggle-active
     /// </summary>
     public async Task<T?> PutAsync<T>(string url, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("📤 Sending PUT request to {Url} (no body)", url);
+        _logger.LogInformation("إرسال طلب PUT إلى {Url} (بلا جسم)", url);
 
-        var request = new HttpRequestMessage(HttpMethod.Put, url)
+        using var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = new StringContent("{ }", Encoding.UTF8, "application/json")
         };
@@ -340,9 +397,9 @@ public class ApiClient
         using var streamContent = new StreamContent(fileStream);
         content.Add(streamContent, parameterName, fileName);
 
-        _logger.LogInformation("📤 Sending Multipart POST to {Url} with file {FileName}", url, fileName);
+        _logger.LogInformation("إرسال طلب POST متعدّد الأجزاء إلى {Url} بالملف {FileName}", url, fileName);
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = content
         };

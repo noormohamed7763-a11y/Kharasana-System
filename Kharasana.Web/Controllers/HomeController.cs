@@ -39,7 +39,7 @@ namespace Kharasana.Web.Controllers
             if (statusCode == 404 || statusCode == 403)
             {
                 _logger.LogInformation(
-                    "Page not found or forbidden. StatusCode={StatusCode} RequestId={RequestId} Path={Path}",
+                    "صفحة غير موجودة أو ممنوعة. الحالة={StatusCode} الطلب={RequestId} المسار={Path}",
                     statusCode, requestId, HttpContext.Request.Path);
 
                 return View(new ErrorViewModel
@@ -51,7 +51,7 @@ namespace Kharasana.Web.Controllers
 
             // 500 (أو أي خطأ آخر): نسجّل الخطأ مع رقمه المرجعي ليتسنى ربط الشاشة بالسجل
             _logger.LogError(
-                "Unhandled exception rendered the Error page. RequestId={RequestId} Path={Path}",
+                "استثناء غير معالَج عرض صفحة الخطأ. الطلب={RequestId} المسار={Path}",
                 requestId, HttpContext.Request.Path);
 
             return View(new ErrorViewModel

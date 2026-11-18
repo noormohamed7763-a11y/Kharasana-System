@@ -1,8 +1,9 @@
-﻿// ==========================
+// ==========================
 // Confirmation Modal — يُستخدم بدل confirm() في كل الصفحات
 // ==========================
 (function () {
     let pendingForm = null;
+    let pendingButton = null;
     let confirmModal = null;
 
     function ensureModal() {
@@ -12,26 +13,31 @@
         modal.className = 'modal fade';
         modal.id = 'confirmActionModal';
         modal.tabIndex = -1;
-        modal.innerHTML =
-            '<div class="modal-dialog">' +
-                '<div class="modal-content">' +
-                    '<div class="modal-header">' +
-                        '<h5 class="modal-title">تأكيد</h5>' +
-                        '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>' +
-                    '</div>' +
-                    '<div class="modal-body" id="confirmModalBody"></div>' +
-                    '<div class="modal-footer">' +
-                        '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>' +
-                        '<button type="button" class="btn btn-danger" id="confirmModalYes">تأكيد</button>' +
-                    '</div>' +
-                '</div>' +
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        modalContent.innerHTML =
+            '<div class="modal-header">' +
+                '<h5 class="modal-title">تأكيد</h5>' +
+                '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>' +
+            '</div>' +
+            '<div class="modal-body" id="confirmModalBody"></div>' +
+            '<div class="modal-footer">' +
+                '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>' +
+                '<button type="button" class="btn btn-danger" id="confirmModalYes">تأكيد</button>' +
             '</div>';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'modal-dialog';
+        dialog.appendChild(modalContent);
+
+        modal.appendChild(dialog);
         document.body.appendChild(modal);
 
         confirmModal = new bootstrap.Modal(modal);
 
         modal.addEventListener('hidden.bs.modal', function () {
             pendingForm = null;
+            pendingButton = null;
         });
 
         document.getElementById('confirmModalYes').addEventListener('click', function () {
@@ -39,6 +45,15 @@
             if (pendingForm) {
                 pendingForm.submit();
                 pendingForm = null;
+            } else if (pendingButton) {
+                // ✅ تنفيذ مؤجل لزر [data-confirm]: النقر الأول فتح الـ Modal،
+                //    وهذا النقر (من داخل الـ Modal) يُنفّذ الإجراء. العلامة
+                //    __confirming تمنع إعادة فتح الـ Modal في نفس الزر.
+                const btn = pendingButton;
+                pendingButton = null;
+                btn.dataset.confirming = 'true';
+                btn.click();
+                delete btn.dataset.confirming;
             }
         });
     }
@@ -50,8 +65,26 @@
         e.preventDefault();
         const message = form.getAttribute('data-confirm');
         pendingForm = form;
+        pendingButton = null;
         ensureModal();
         document.getElementById('confirmModalBody').textContent = message || 'هل أنت متأكد؟';
+        confirmModal.show();
+    }, true);
+
+    // أزرار [data-confirm]: النقر الأول يفتح الـ Modal بدل confirm()،
+    // والنقر الثاني (من زر «تأكيد» في الـ Modal) يُكمل الإجراء الأصلي.
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest ? e.target.closest('button[data-confirm]') : null;
+        if (!btn) return;
+        if (btn.dataset.confirming === 'true') return; // نقر التأكيد من داخل الـ Modal
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingForm = null;
+        pendingButton = btn;
+        ensureModal();
+        document.getElementById('confirmModalBody').textContent =
+            btn.getAttribute('data-confirm') || 'هل أنت متأكد؟';
         confirmModal.show();
     }, true);
 })();
@@ -152,11 +185,15 @@ document.addEventListener('keydown', function (e) {
     });
 
     function checkEmpty(tbody, table) {
-        const rows = tbody.querySelectorAll('tr');
-        let visibleCount = 0;
-        rows.forEach(function (row) {
-            if (row.style.display !== 'none') visibleCount++;
-        });
+        // صفّ «لا نتائج» نفسه يُستثنى من العدّ: كان يُحتسب صفًا ظاهرًا فيُزال،
+        // وإزالته تجعل العدّ صفرًا فيُضاف من جديد — والمراقب يرصد كل إضافة/إزالة،
+        // فيدور الاثنان في حلقة لا تنتهي بمجرد أن تُخفى كل الصفوف (أول بحث بلا نتائج).
+        const rows = Array.from(tbody.querySelectorAll('tr'))
+            .filter(function (row) { return !row.classList.contains('no-results-row'); });
+
+        const visibleCount = rows.filter(function (row) {
+            return row.style.display !== 'none';
+        }).length;
 
         let noResults = tbody.querySelector('.no-results-row');
         if (visibleCount === 0 && rows.length > 0) {
@@ -164,10 +201,22 @@ document.addEventListener('keydown', function (e) {
                 const colCount = table.querySelector('thead th') ? table.querySelectorAll('thead th').length : 10;
                 noResults = document.createElement('tr');
                 noResults.className = 'no-results-row';
-                noResults.innerHTML = '<td colspan="' + colCount + '" class="text-center text-muted py-4">' +
-                    '<i class="bi bi-search" style="font-size: 2rem; opacity: 0.4;"></i>' +
-                    '<p class="mt-2 mb-0">لم يتم العثور على نتائج</p>' +
-                    '</td>';
+                noResults.innerHTML = '';
+                const td = document.createElement('td');
+                td.colSpan = colCount;
+                td.className = 'text-center text-muted py-4';
+
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-search';
+                icon.style.cssText = 'font-size: 2rem; opacity: 0.4;';
+
+                const p = document.createElement('p');
+                p.className = 'mt-2 mb-0';
+                p.textContent = 'لم يتم العثور على نتائج';
+
+                td.appendChild(icon);
+                td.appendChild(p);
+                noResults.appendChild(td);
                 tbody.appendChild(noResults);
             }
         } else if (noResults) {
@@ -211,13 +260,21 @@ document.addEventListener('keydown', function (e) {
 
         const filter = btn.dataset.filter;
 
-        document.querySelectorAll('#factoryOrdersTableBody tr[data-status]').forEach(function (row) {
-            if (filter === 'All' || row.dataset.status === filter) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+        const rows = document.querySelectorAll('#factoryOrdersTableBody tr[data-status]');
+        let visibleCount = 0;
+
+        rows.forEach(function (row) {
+            const show = filter === 'All' || row.dataset.status === filter;
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
         });
+
+        // نتيجة فارغة بعد التصفية: القائمة ليست فارغة (وإلا ظهرت رسالة "لا توجد طلبات
+        // مسجلة") لكن لا صف يطابق الفلتر — فبدون هذا يبقى الجدول فارغًا بلا تفسير.
+        const emptyRow = document.getElementById('factoryOrdersFilterEmpty');
+        if (emptyRow) {
+            emptyRow.classList.toggle('d-none', !(rows.length > 0 && visibleCount === 0));
+        }
 
         document.querySelectorAll('.order-filter-btn').forEach(function (b) {
             b.classList.remove('active', 'btn-primary');
@@ -235,6 +292,12 @@ document.addEventListener('keydown', function (e) {
     document.addEventListener('click', async function (e) {
         const btn = e.target.closest('.btn-toggle-active');
         if (!btn) return;
+
+        // ✅ حارس طلب جارٍ: كل نداء يقلب الحالة على الخادم (IsActive = !IsActive)، فالنقر
+        //    المزدوج كان يرسل POSTين ويعيد السجل إلى حالته الأولى بينما تعرض الواجهة
+        //    نتيجة النقرة الأخيرة وحدها — فيفترق ما تراه العين عمّا في قاعدة البيانات.
+        if (btn.dataset.busy === 'true') return;
+        btn.dataset.busy = 'true';
 
         const driverId = btn.dataset.driverId;
         const isActive = btn.dataset.isActive === 'true';
@@ -278,6 +341,8 @@ document.addEventListener('keydown', function (e) {
             btn.classList.add(isActive ? 'text-danger' : 'text-success');
             if (icon) icon.className = 'bi ' + (isActive ? 'bi-stop-circle' : 'bi-play-circle');
             showToast('خطأ', 'تعذر تحديث حالة السائق. حاول مرة أخرى.', 'danger');
+        } finally {
+            btn.dataset.busy = 'false';
         }
     });
 })();
@@ -332,13 +397,8 @@ document.addEventListener('keydown', function (e) {
         }
     });
 
-    // #printReportBtn: print the report
-    document.addEventListener('click', function (e) {
-        if (e.target.closest('#printReportBtn')) {
-            e.preventDefault();
-            window.print();
-        }
-    });
+    // (زر طباعة تقرير السائق #printReportBtn أُزيل من هنا: صار يستعمل
+    //  data-print مثل بقية أزرار الطباعة — معالج واحد أعلى الملف.)
 })();
 
 // ==========================
@@ -382,7 +442,19 @@ document.addEventListener('keydown', function (e) {
 
     document.addEventListener('mouseover', function (e) {
         const link = e.target.closest('a[href]');
-        if (!link) return;
+
+        // ✅ HTMLAnchorElement فقط: مرساة SVG تُعيد href كائنًا (SVGAnimatedString) لا
+        //    نصًّا، فيُحوَّل إلى "[object SVGAnimatedString]" ويُرسَل طلبًا بلا معنى.
+        if (!(link instanceof HTMLAnchorElement)) return;
+
+        // ✅ روابط نفس الأصل فقط: الطلب الخارجي يحجبه CSP (connect-src 'self') فيظهر
+        //    خطأ في طرفية المتصفح بلا أي فائدة، ويكشف نطاق الصفحة لطرف ثالث.
+        if (link.origin !== location.origin) return;
+
+        // مرساة داخل الصفحة أو رابط تنزيل — لا تحميل مسبق لهما
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#')) return;
+        if (link.hasAttribute('download')) return;
 
         const url = link.href;
         if (!url || url === location.href) return;
@@ -401,20 +473,74 @@ document.addEventListener('keydown', function (e) {
 })();
 
 // ==========================
-// Request Deduplication — تجنب طلبات مكررة
+// Copy to Clipboard Helper
 // ==========================
-(function () {
-    const pending = new Map();
+document.addEventListener('click', function (e) {
+    const copyBtn = e.target.closest('[data-copy]');
+    if (!copyBtn) return;
 
-    window.kharasanaFetch = function (url, options) {
-        const key = url + (options?.method || 'GET');
-        if (pending.has(key)) return pending.get(key);
+    const textToCopy = copyBtn.getAttribute('data-copy');
+    if (!textToCopy) return;
 
-        const promise = fetch(url, options).finally(function () {
-            pending.delete(key);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(function () {
+            const originalContent = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="bi bi-check-lg text-success"></i>';
+            setTimeout(function () {
+                copyBtn.innerHTML = originalContent;
+            }, 1800);
+            if (typeof showToast === 'function') {
+                showToast('تم النسخ بنجاح', textToCopy, 'success');
+            }
+        }).catch(function () {
+            copyFallback(textToCopy, copyBtn);
         });
+    } else {
+        copyFallback(textToCopy, copyBtn);
+    }
+});
 
-        pending.set(key, promise);
-        return promise;
-    };
-})();
+function copyFallback(text, btn) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        if (typeof showToast === 'function') {
+            showToast('تم النسخ بنجاح', text, 'success');
+        }
+    } catch (err) {}
+    document.body.removeChild(textarea);
+}
+
+// ==========================
+// Print Helper — data-print
+// بديل onclick="window.print()" الذي تحجبه سياسة CSP (script-src بلا unsafe-inline).
+// نفس أسلوب data-copy: معالج واحد مُفوَّض على document لكل أزرار الطباعة.
+// ==========================
+document.addEventListener('click', function (e) {
+    const printBtn = e.target.closest('[data-print]');
+    if (!printBtn) return;
+
+    e.preventDefault();
+    window.print();
+});
+
+// ==========================
+// Toolbar Filters — data-toolbar-autosubmit
+// إرسال نموذج شريط البحث فور تغيير أي قائمة فلترة.
+// بديل onchange="applyFilters()" المضمّن الذي تحجبه سياسة CSP، وبديل دالة
+// applyFilters التي كانت في orders.js: كانت تنسخ قيمة القائمة إلى حقل مخفي
+// مرآة ثم تُرسل النموذج — مساران للقيمة نفسها. الآن القائمة نفسها تحمل name
+// فتُرسل مع النموذج، وهذا المعالج يُرسله فقط.
+// ==========================
+document.addEventListener('change', function (e) {
+    const filter = e.target.closest('[data-toolbar-autosubmit]');
+    if (!filter) return;
+
+    const form = filter.form;
+    if (form) form.submit();
+});

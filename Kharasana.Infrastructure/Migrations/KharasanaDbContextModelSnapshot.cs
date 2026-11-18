@@ -22,6 +22,41 @@ namespace Kharasana.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.ActivationToken", b =>
+                {
+                    b.Property<int>("ActivationTokenId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ActivationTokenId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ActivationTokenId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivationTokens", (string)null);
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.ConcreteType", b =>
                 {
                     b.Property<int>("ConcreteTypeId")
@@ -159,6 +194,137 @@ namespace Kharasana.Infrastructure.Migrations
                     b.ToTable("Factories", (string)null);
                 });
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.FactoryRegistrationRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CommercialId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ContactEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ContactPhone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FactoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FactoryName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ProcessedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RequestedConcreteTypes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FactoryId")
+                        .IsUnique()
+                        .HasFilter("[FactoryId] IS NOT NULL");
+
+                    b.HasIndex("ProcessedByUserId");
+
+                    b.ToTable("FactoryRegistrationRequests", (string)null);
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.IdempotencyRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("OperationType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("ResultEntityId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResultPayload")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int>("StatusCode")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Key")
+                        .IsUnique();
+
+                    b.ToTable("IdempotencyRecords", (string)null);
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.Order", b =>
                 {
                     b.Property<int>("OrderId")
@@ -167,6 +333,21 @@ namespace Kharasana.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderId"));
 
+                    b.Property<int>("Admixture")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("AggregateSize")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("CementType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
@@ -174,6 +355,13 @@ namespace Kharasana.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<int>("ConcreteTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcreteTypeNameSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ConcreteTypeStrengthSnapshot")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -194,8 +382,26 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsManuallyPriced")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Landmarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Latitude")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)");
+
                     b.Property<bool>("NeedPump")
                         .HasColumnType("bit");
+
+                    b.Property<decimal>("NetAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
@@ -241,6 +447,18 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<string>("SupervisorName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("SupervisorPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("TotalDiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("TotalPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -276,9 +494,290 @@ namespace Kharasana.Infrastructure.Migrations
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("FactoryId", "Status");
+                    b.HasIndex("FactoryId", "CreatedAt");
+
+                    b.HasIndex("FactoryId", "Status")
+                        .HasDatabaseName("IX_Orders_FactoryId_Status_Filtered")
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Orders", (string)null);
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.OrderPayment", b =>
+                {
+                    b.Property<int>("OrderPaymentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderPaymentId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("VerificationNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("VerificationStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("VerifiedByUserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("OrderPaymentId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("VerifiedByUserId");
+
+                    b.ToTable("OrderPayments", (string)null);
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.OrderStatusHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ChangedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PreviousStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderStatusHistories");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.ProductionBatch", b =>
+                {
+                    b.Property<int>("ProductionBatchId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductionBatchId"));
+
+                    b.Property<int>("ConcreteTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FactoryId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ProductionBatchId");
+
+                    b.HasIndex("ConcreteTypeId");
+
+                    b.HasIndex("FactoryId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("FactoryId", "Status")
+                        .HasDatabaseName("IX_ProductionBatches_FactoryId_Status_Filtered")
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("ProductionBatches", (string)null);
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.RawMaterial", b =>
+                {
+                    b.Property<int>("RawMaterialId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RawMaterialId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("CurrentStock")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("FactoryId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("MinStockLevel")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("RawMaterialId");
+
+                    b.HasIndex("FactoryId");
+
+                    b.ToTable("RawMaterials", (string)null);
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.Trip", b =>
+                {
+                    b.Property<int>("TripId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TripId"));
+
+                    b.Property<DateTime?>("ArrivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DepartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DriverId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FactoryId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("HasPump")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PumpDriverId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TruckPlate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UnloadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("TripId");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("FactoryId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("PumpDriverId");
+
+                    b.ToTable("Trips");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>
@@ -341,6 +840,13 @@ namespace Kharasana.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("RefreshToken")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
@@ -369,11 +875,27 @@ namespace Kharasana.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("[Phone] IS NOT NULL");
 
+                    b.HasIndex("RefreshToken")
+                        .HasFilter("[RefreshToken] IS NOT NULL");
+
                     b.HasIndex("Role");
 
-                    b.HasIndex("Role", "FactoryId");
+                    b.HasIndex("Role", "FactoryId")
+                        .HasDatabaseName("IX_Users_FactoryId_Role_Filtered")
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.ActivationToken", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.ConcreteType", b =>
@@ -385,6 +907,34 @@ namespace Kharasana.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Factory");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.FactoryRegistrationRequest", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
+                        .WithOne()
+                        .HasForeignKey("Kharasana.Domain.Entities.FactoryRegistrationRequest", "FactoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kharasana.Domain.Entities.User", "ProcessedBy")
+                        .WithMany()
+                        .HasForeignKey("ProcessedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Factory");
+
+                    b.Navigation("ProcessedBy");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.IdempotencyRecord", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.Order", b =>
@@ -421,6 +971,113 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Navigation("Factory");
                 });
 
+            modelBuilder.Entity("Kharasana.Domain.Entities.OrderPayment", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.Order", "Order")
+                        .WithMany("Payments")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.User", "VerifiedBy")
+                        .WithMany()
+                        .HasForeignKey("VerifiedByUserId");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("VerifiedBy");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.OrderStatusHistory", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.User", "ChangedBy")
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChangedBy");
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.ProductionBatch", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.ConcreteType", "ConcreteType")
+                        .WithMany()
+                        .HasForeignKey("ConcreteTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
+                        .WithMany()
+                        .HasForeignKey("FactoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ConcreteType");
+
+                    b.Navigation("Factory");
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.RawMaterial", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
+                        .WithMany()
+                        .HasForeignKey("FactoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Factory");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.Trip", b =>
+                {
+                    b.HasOne("Kharasana.Domain.Entities.User", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
+                        .WithMany()
+                        .HasForeignKey("FactoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.Order", "Order")
+                        .WithMany("Trips")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kharasana.Domain.Entities.User", "PumpDriver")
+                        .WithMany()
+                        .HasForeignKey("PumpDriverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("Factory");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("PumpDriver");
+                });
+
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>
                 {
                     b.HasOne("Kharasana.Domain.Entities.Factory", "Factory")
@@ -443,6 +1100,13 @@ namespace Kharasana.Infrastructure.Migrations
                     b.Navigation("Orders");
 
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("Kharasana.Domain.Entities.Order", b =>
+                {
+                    b.Navigation("Payments");
+
+                    b.Navigation("Trips");
                 });
 
             modelBuilder.Entity("Kharasana.Domain.Entities.User", b =>

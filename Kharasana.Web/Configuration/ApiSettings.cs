@@ -23,7 +23,7 @@ namespace Kharasana.Web.Configuration
                 }
                 catch
                 {
-                    // قيمة إعداد غير صحيحة — يطبَّع السبب في استدعاء BuildLogoUrl
+                    // قيمة إعداد غير صحيحة — يطبَّع السبب في استدعاء LogoFiles.BuildUrl
                     // بدل أن تنهار خدمة الـ DI نفسها.
                     return BaseUrl.TrimEnd('/');
                 }

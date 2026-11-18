@@ -20,7 +20,10 @@
 .content-body {
     flex: 1;
     width: 100%;
-    padding: 16px var(--page-padding) var(--space-6);
+    /* الهامش كله يتبع --page-padding: 16px للشاشات الصغيرة، و24px لسطح المكتب
+       عبر تجاوز الجذر في variables.css. كان الهامش العلوي 16px مكتوبة مباشرة
+       فيبقى ضيّقاً على الشاشات الكبيرة بينما الجانبي يتوسّع. */
+    padding: var(--page-padding) var(--page-padding) var(--space-6);
     background: var(--background);
     box-sizing: border-box;
 }
@@ -74,16 +77,31 @@
 
 /* ==========================================================
    CONTENT CONTAINER — منع امتداد المحتوى على الشاشات العريضة
+   ----------------------------------------------------------
+   .container: مستخدم بشكل نادر (Bootstrap fallback)
+   .dashboard-page بلا معدِّل: صفحات القوائم (Orders, Clients, Users...)
+   المعدِّلات --narrow و--wide-form لها max-width خاص بهما في dashboard.css
+   فلا تدخل هنا لتجنب تعارض القيم.
 ========================================================== */
 .content-body .container,
-.main-content .container {
-    max-width: 1400px;
+.main-content .container,
+.content-body > .dashboard-page:not([class*="--narrow"]):not([class*="--wide-form"]):not([class*="--print"]) {
+    max-width: 1600px;
     margin-inline: auto;
 }
 
 @media (min-width: 1920px) {
     .content-body .container,
-    .main-content .container {
-        max-width: 1600px;
+    .main-content .container,
+    .content-body > .dashboard-page:not([class*="--narrow"]):not([class*="--wide-form"]):not([class*="--print"]) {
+        max-width: 1920px;
+    }
+}
+
+@media (min-width: 2560px) {
+    .content-body .container,
+    .main-content .container,
+    .content-body > .dashboard-page:not([class*="--narrow"]):not([class*="--wide-form"]):not([class*="--print"]) {
+        max-width: 100%;
     }
 }

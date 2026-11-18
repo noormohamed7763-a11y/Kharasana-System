@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<Kharasana.Web.ViewModels.Factories.FactoryListItemViewModel>
+@using Kharasana.Domain.Enums
 @using Kharasana.Web.Models.Components
 
 @{
@@ -23,7 +24,7 @@
              }' />
 
     <!-- 2. بطاقات الملخصات الإحصائية (KPI Cards) -->
-    <div class="summary-cards-grid mb-3">
+    <div class="summary-cards-grid summary-cards-grid--four mb-3">
         @await Html.PartialAsync(
         "~/Views/Shared/Components/_SummaryCard.cshtml",
         new SummaryCardViewModel
@@ -31,8 +32,7 @@
             Title = "إجمالي المصانع",
             Value = totalFactories.ToString(),
             Icon = "bi-buildings",
-            IconClass = "kpi-icon-primary",
-            LinkUrl = Url.Action("Index", "Factories")
+            IconClass = "kpi-icon-primary"
         })
         @await Html.PartialAsync(
         "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -41,8 +41,7 @@
             Title = "المصانع النشطة",
             Value = activeFactories.ToString(),
             Icon = "bi-building-check",
-            IconClass = "kpi-icon-success",
-            LinkUrl = Url.Action("Index", "Factories")
+            IconClass = "kpi-icon-success"
         })
         @await Html.PartialAsync(
         "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -51,8 +50,7 @@
             Title = "المصانع المتوقفة",
             Value = inactiveFactories.ToString(),
             Icon = "bi-building-dash",
-            IconClass = "kpi-icon-danger",
-            LinkUrl = Url.Action("Index", "Factories")
+            IconClass = "kpi-icon-danger"
         })
         @await Html.PartialAsync(
         "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -61,17 +59,20 @@
             Title = "معدل التشغيل",
             Value = totalFactories > 0 ? $"{(activeFactories * 100) / totalFactories}%" : "0%",
             Icon = "bi-activity",
-            IconClass = "kpi-icon-info",
-            LinkUrl = Url.Action("Index", "Factories")
+            IconClass = "kpi-icon-info"
         })
     </div>
 
     <!-- 3. شريط التحكم والبحث الموحد -->
-    <div class="erp-toolbar d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3 p-3 bg-white rounded-3 shadow-sm border">
-        <div class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap">
+    @* البحث والفلترة هنا يعملان داخل الصفحة الحالية (factories.js) لا على الخادم،
+       فالبطاقة نفسها التي تستعملها صفحة أنواع الخرسانة — بلا نموذج إرسال.
+       كانت البطاقة مركّبة يدوياً (`erp-toolbar` + `bg-white rounded-3 shadow-sm
+       border`) وبأبعاد مكتوبة style مضمّناً على صندوق البحث. *@
+    <div class="form-card mb-3 p-3 shadow-sm">
+        <div class="row g-2 align-items-center">
 
             <!-- أ. صندوق البحث -->
-            <div style="min-width: 260px; flex-grow: 1; max-width: 400px;">
+            <div class="col-lg-6">
                 @{
                     var searchModel = new Kharasana.Web.Models.Components.Search.SearchBoxViewModel
                     {
@@ -83,7 +84,7 @@
             </div>
 
             <!-- ب. قائمة الفلترة -->
-            <div>
+            <div class="col-lg-3 col-md-6">
                 @{
                     var filterModel = new Kharasana.Web.Models.Components.FilterDropdownViewModel
                     {
@@ -100,6 +101,13 @@
                 <partial name="Components/_FilterDropdown" model="filterModel" />
             </div>
 
+            <div class="col-auto ms-auto">
+                <span class="text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    البحث والفلترة يعملان داخل الصفحة الحالية
+                </span>
+            </div>
+
         </div>
     </div>
 
@@ -114,7 +122,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="createAccountModalLabel">إنشاء حساب جديد للمصنع</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
             </div>
             <div class="modal-body">
                 <form id="createAccountForm">
@@ -138,15 +146,21 @@
 
                     <div class="mb-3">
                         <label for="modalPassword" class="form-label">كلمة المرور</label>
-                        <input type="password" class="form-control" id="modalPassword" name="Password" required minlength="6" />
+                        <input type="password" class="form-control" id="modalPassword" name="Password" required minlength="8" />
                     </div>
 
                     <div class="mb-3">
                         <label for="modalConfirmPassword" class="form-label">تأكيد كلمة المرور</label>
-                        <input type="password" class="form-control" id="modalConfirmPassword" name="ConfirmPassword" required minlength="6" />
+                        <input type="password" class="form-control" id="modalConfirmPassword" name="ConfirmPassword" required minlength="8" />
                     </div>
 
-                    <input type="hidden" name="Role" value="1" />
+                    @* ✅ الدور يُشتق من الـ enum لا من رقم مكتوب: كان value="1" بينما FactoryEmployee=2
+                       (تغيّرت الأرقام في commit «إصلاح ثغرة Admin = 0») فكان النموذج يطلب إنشاء مدير
+                       فترفضه الخدمة دائماً — أي أن إنشاء حساب المصنع كان معطلاً بالكامل. *@
+                    <input type="hidden"
+                           id="modalRole"
+                           name="Role"
+                           value="@((int)UserRole.FactoryEmployee)" />
 
                     <div id="modalErrorMessage" class="alert alert-danger d-none mb-3"></div>
 

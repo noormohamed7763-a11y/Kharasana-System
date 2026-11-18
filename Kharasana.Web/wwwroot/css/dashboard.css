@@ -8,9 +8,10 @@
        لتجنب التباعد المزدوج (gap + margin) الذي كان يُنشئ فراغات كبيرة.
 
        لا نضيف padding أفقي إضافي هنا — .content-body (layout.css) يوفر
-       الـ gutter الجانبي (16px). إضافة padding من هذا العنصر كان يضيّق
-       الحاوية الفعلية بـ 44px إضافية ويضغط المحتوى على اللابتوب —
-       وهذا أحد أسباب الازدحام التي أزلناها.
+       الـ gutter الجانبي من --page-padding (16px للشاشات الصغيرة و24px
+       لسطح المكتب). إضافة padding من هذا العنصر كان يضيّق الحاوية الفعلية
+       بـ 44px إضافية ويضغط المحتوى على اللابتوب — وهذا أحد أسباب الازدحام
+       التي أزلناها.
 
        ملاحظة: أزلنا max-width و margin:auto من .content-body (layout.css) —
        المحتوى يأخذ العرض الكامل المتاح بعد خصم الـ Sidebar الثابت (260px)
@@ -25,12 +26,42 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    container-name: dashboard-content;
+    container-type: inline-size;
 }
 
 /* إزالة الفراغ السفلي للعنصر الأخير في أي صفحة dashboard-page */
 .dashboard-page > :last-child {
     margin-bottom: 0;
 }
+
+/* ==========================================================
+   NARROW PAGE — صفحات النماذج والبيانات (لا القوائم)
+   ----------------------------------------------------------
+   الصفحات التي محتواها نموذج أو بطاقات بيانات: عرضها الكامل على شاشة
+   1920px يجعل حقل col-md-6 بعرض ~780px وحقل col-12 بعرض ~1560px، فيصعب
+   تتبّع السطر بالعين ويُهدر فراغ أفقي كبير. الحدّ هنا (‎--form-max-width‎)
+   يُوسّط الصفحة بما فيها رأسها، فيبقى زر الرأس مُحاذياً لحدّ البطاقة.
+
+   لا يمسّ اللابتوب: عند 1440px يكون المتاح بعد خصم الـ Sidebar والهوامش
+   ~1130px أي فوق الحدّ، فلا يتغيّر شيء. ولا يمسّ صفحات القوائم لأنها لا
+   تحمل هذا المعدِّل — الجداول تستفيد من العرض الكامل بخلاف النماذج. */
+.dashboard-page--narrow {
+    max-width: var(--form-max-width);
+    margin-inline: auto;
+}
+
+/*
+   --wide-form: صفحات النموذج التي تحمل لوحة جانبية (مثل Create Order).
+   العمودان (col-lg-8 + col-lg-4) على 1100px يُنتجان col-md-6 بعرض ~330px.
+   رفع الحدّ إلى 1380px يُعطي col-md-6 عرضاً ~420px — أكثر راحة للديسكتوب
+   مع بقاء صفحات النماذج الفردية على --narrow كما هي.
+*/
+.dashboard-page--wide-form {
+    max-width: 1380px;
+    margin-inline: auto;
+}
+
 
 /* ==========================================================
    HERO BANNER (Pro Max Version)
@@ -586,24 +617,6 @@ a.kpi-card--link {
     color: var(--info);
 }
 
-.progress-track {
-    margin-top: auto;
-    padding-top: var(--space-1);
-}
-
-.progress-percent {
-    font-weight: 800;
-    color: var(--primary);
-    font-size: var(--text-lg);
-    font-variant-numeric: tabular-nums;
-}
-
-.progress-caption {
-    color: var(--text-muted);
-    font-size: var(--text-sm);
-    font-weight: 600;
-}
-
 .progress {
     background: var(--surface-low);
     border-radius: var(--radius-pill);
@@ -614,6 +627,21 @@ a.kpi-card--link {
 .progress-bar {
     background: var(--primary);
     border-radius: var(--radius-pill);
+}
+
+/* شريط النسبة داخل جداول التقارير: أنحف وأقصر من الشريط العام.
+   كان ارتفاعه وحدّاه الأدنى والأقصى مكتوبة style مضمّناً في Reports/Index. */
+.progress--report {
+    height: 6px;
+    min-width: 40px;
+    max-width: 80px;
+}
+
+.report-status-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
 }
 
 /* Order Status Visual Bar — شريط توزيع الطلبات حسب الحالة */
@@ -632,6 +660,20 @@ a.kpi-card--link {
 
 .order-status-segment:hover {
     opacity: 0.8;
+}
+
+/* ألوان الشرائح — كانت مكتوبة style مضمّناً في _FactoryDashboard.cshtml
+   (background: var(--warning/--success/--info)) بجوار العرض الذي هو بيانات. */
+.order-status-segment--pending {
+    background: var(--warning);
+}
+
+.order-status-segment--approved {
+    background: var(--success);
+}
+
+.order-status-segment--ontheway {
+    background: var(--info);
 }
 
 /* Order Filter Buttons */

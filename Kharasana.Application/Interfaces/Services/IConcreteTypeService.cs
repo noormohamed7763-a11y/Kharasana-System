@@ -1,10 +1,16 @@
 ﻿using Kharasana.Application.DTOs.ConcreteType;
+using Kharasana.Application.Common;
 
 namespace Kharasana.Application.Interfaces.Services;
 
 public interface IConcreteTypeService
 {
-    Task<IEnumerable<ConcreteTypeDto>> GetAllAsync(int? factoryId = null);
+    Task<PagedResult<ConcreteTypeDto>> GetAllAsync(int pageNumber = 1, int pageSize = 20, string? search = null, int? factoryId = null, bool? onlyActive = null);
+
+    /// <summary>الأنواع المحذوفة حذفًا ناعمًا (المؤرشفة) — عكس <see cref="GetAllAsync"/> الذي يستبعدها.</summary>
+    /// <param name="factoryId">مصنع بعينه (موظف المصنع)، أو <c>null</c> لكل المصانع (المدير).</param>
+    Task<IEnumerable<ConcreteTypeDto>> GetArchivedAsync(int? factoryId = null);
+
     Task<ConcreteTypeDto> GetByIdAsync(int id, int? currentFactoryId = null);
     Task<ConcreteTypeDto> CreateAsync(CreateConcreteTypeDto dto, int? currentFactoryId = null);
     Task<bool> UpdateAsync(int id, UpdateConcreteTypeDto dto, int? currentFactoryId = null);

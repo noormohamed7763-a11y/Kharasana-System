@@ -16,6 +16,7 @@ public sealed class RequestLoggingMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<RequestLoggingMiddleware> _logger;
     private readonly HashSet<string> _staticExtensions;
+    private const int SlowRequestThresholdMs = 1000;
 
     public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
     {
@@ -52,7 +53,7 @@ public sealed class RequestLoggingMiddleware
             sw.Stop();
             _logger.LogError(
                 ex,
-                "Request failed: {Method} {Path} -> 500 after {DurationMs} ms (TraceId={TraceId})",
+                "فشل الطلب: {Method} {Path} ← 500 بعد {DurationMs} مللي ثانية (التتبّع={TraceId})",
                 method, path, sw.ElapsedMilliseconds, traceId);
             throw; // يُواصله UseExceptionHandler — لا نبتلع الاستثناء
         }
@@ -65,13 +66,20 @@ public sealed class RequestLoggingMiddleware
         {
             // حالة لم يقم أحد برفع استثناء لها صراحة (مثل خطأ من وسيط آخر دون throw)
             _logger.LogWarning(
-                "Request ended with server error: {Method} {Path} -> {StatusCode} after {DurationMs} ms (TraceId={TraceId})",
+                "انتهى الطلب بخطأ خادم: {Method} {Path} ← {StatusCode} بعد {DurationMs} مللي ثانية (التتبّع={TraceId})",
+                method, path, statusCode, sw.ElapsedMilliseconds, traceId);
+        }
+        else if (sw.ElapsedMilliseconds > SlowRequestThresholdMs)
+        {
+            // تنبيه للطلبات البطيئة — تساعد على تحديد اختناقات الأداء
+            _logger.LogWarning(
+                "طلب بطيء: {Method} {Path} ← {StatusCode} بعد {DurationMs} مللي ثانية (التتبّع={TraceId})",
                 method, path, statusCode, sw.ElapsedMilliseconds, traceId);
         }
         else
         {
             _logger.LogInformation(
-                "Request: {Method} {Path} -> {StatusCode} after {DurationMs} ms (TraceId={TraceId})",
+                "الطلب: {Method} {Path} ← {StatusCode} بعد {DurationMs} مللي ثانية (التتبّع={TraceId})",
                 method, path, statusCode, sw.ElapsedMilliseconds, traceId);
         }
     }

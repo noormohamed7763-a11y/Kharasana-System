@@ -26,7 +26,7 @@ namespace Kharasana.Web.Services.Interfaces
             int pageSize = 20,
             string? search = null,
             int? factoryId = null,
-            int? status = null); // ✅ أضف معامل status
+            int? status = null);
 
         /// <summary>
         /// عدّ الطلبات حسب الحالة عبر كل الصفحات (وليست عناصر الصفحة الحالية)
@@ -63,8 +63,11 @@ namespace Kharasana.Web.Services.Interfaces
         /// إنشاء طلب هاتفي (بواسطة موظف المصنع)
         /// </summary>
         /// <param name="model">بيانات الطلب الهاتفي</param>
-        /// <returns>تفاصيل الطلب المنشأ</returns>
-        Task<OrderDto?> CreatePhoneOrderAsync(CreatePhoneOrderViewModel model);
+        /// <returns>
+        /// تفاصيل الطلب المنشأ، ومعها كلمة المرور المؤقتة إن أُنشئ حساب عميل جديد
+        /// (تُعرض مرة واحدة فقط لتسليمها للعميل)
+        /// </returns>
+        Task<PhoneOrderResultDto?> CreatePhoneOrderAsync(CreatePhoneOrderViewModel model);
 
 
         // ============================================================
@@ -84,7 +87,7 @@ namespace Kharasana.Web.Services.Interfaces
         /// </summary>
         /// <param name="id">معرف الطلب</param>
         /// <returns>true إذا تم الحذف بنجاح</returns>
-        Task<bool> DeleteOrderAsync(int id);
+        Task<ServiceResult> DeleteOrderAsync(int id);
 
 
         // ============================================================
@@ -97,7 +100,7 @@ namespace Kharasana.Web.Services.Interfaces
         /// <param name="id">معرف الطلب</param>
         /// <param name="unitPrice">سعر المتر</param>
         /// <returns>true إذا تم الحفظ بنجاح</returns>
-        Task<bool> SavePriceAsync(int id, decimal unitPrice);
+        Task<ServiceResult> SavePriceAsync(int id, decimal unitPrice);
 
 
         // ============================================================
@@ -109,7 +112,7 @@ namespace Kharasana.Web.Services.Interfaces
         /// </summary>
         /// <param name="id">معرف الطلب</param>
         /// <returns>true إذا تمت الموافقة بنجاح</returns>
-        Task<bool> ApproveOrderAsync(int id);
+        Task<ServiceResult> ApproveOrderAsync(int id);
 
         /// <summary>
         /// رفض الطلب من قبل المصنع (New/Pending → Rejected)
@@ -117,14 +120,14 @@ namespace Kharasana.Web.Services.Interfaces
         /// <param name="id">معرف الطلب</param>
         /// <param name="reason">سبب الرفض (اختياري)</param>
         /// <returns>true إذا تم الرفض بنجاح</returns>
-        Task<bool> RejectOrderAsync(int id, string? reason); // ✅ أضف ? لتكون اختيارية
+        Task<ServiceResult> RejectOrderAsync(int id, string? reason);
 
         /// <summary>
         /// إلغاء الطلب من قبل العميل أو الموظف (قبل التسليم)
         /// </summary>
         /// <param name="id">معرف الطلب</param>
         /// <returns>true إذا تم الإلغاء بنجاح</returns>
-        Task<bool> CancelOrderAsync(int id);
+        Task<ServiceResult> CancelOrderAsync(int id);
 
 
         // ============================================================
@@ -136,25 +139,38 @@ namespace Kharasana.Web.Services.Interfaces
         /// </summary>
         /// <param name="id">معرف الطلب</param>
         /// <returns>true إذا تم بدء التوصيل بنجاح</returns>
-        Task<bool> StartDeliveryAsync(int id);
+        Task<ServiceResult> StartDeliveryAsync(int id);
 
         /// <summary>
         /// تأكيد تسليم الطلب (OnTheWay → Delivered)
         /// </summary>
         /// <param name="id">معرف الطلب</param>
         /// <returns>true إذا تم تأكيد التسليم بنجاح</returns>
-        Task<bool> DeliverOrderAsync(int id);
+        Task<ServiceResult> DeliverOrderAsync(int id);
 
         /// <summary>
         /// إغلاق الطلب نهائياً (Delivered → Closed)
         /// </summary>
         /// <param name="id">معرف الطلب</param>
         /// <returns>true إذا تم الإغلاق بنجاح</returns>
-        Task<bool> CloseOrderAsync(int id);
+        Task<ServiceResult> CloseOrderAsync(int id);
 
 
         // ============================================================
-        // 7. DRIVER - السائق
+        // 7. PAYMENTS - الدفعات
+        // ============================================================
+
+        /// <summary>
+        /// تسجيل دفعة جديدة على الطلب
+        /// </summary>
+        /// <param name="id">معرف الطلب</param>
+        /// <param name="model">بيانات الدفعة</param>
+        /// <returns>نتيجة العملية</returns>
+        Task<ServiceResult> AddPaymentAsync(int id, AddPaymentViewModel model);
+
+
+        // ============================================================
+        // 8. DRIVER - السائق
         // ============================================================
 
         /// <summary>
@@ -163,6 +179,14 @@ namespace Kharasana.Web.Services.Interfaces
         /// <param name="id">معرف الطلب</param>
         /// <param name="model">بيانات السائق ورقم الشاحنة</param>
         /// <returns>true إذا تم التعيين بنجاح</returns>
-        Task<bool> AssignDriverAsync(int id, AssignDriverViewModel model);
+        Task<ServiceResult> AssignDriverAsync(int id, AssignDriverViewModel model);
+
+        /// <summary>
+        /// جلب الطلبات الجاهزة للجدولة لوقت محدد
+        /// </summary>
+        /// <param name="factoryId">معرف المصنع</param>
+        /// <param name="date">التاريخ المطلوب جلب الطلبات</param>
+        /// <returns>قائمة الطلبات الجاهزة للجدولة</returns>
+        Task<IEnumerable<OrderDto>?> GetReadyForDispatchAsync(int factoryId, DateTime date);
     }
 }

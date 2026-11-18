@@ -1,0 +1,72 @@
+@model Kharasana.Web.ViewModels.Orders.PaymentReceiptViewModel
+
+@{
+    // سند قبض / إيصال دفع — تُطبع فقط (d-none d-print-block)
+    var factoryName = string.IsNullOrWhiteSpace(Model.FactoryName) ? "مصنع خرسانة جاهزة" : Model.FactoryName;
+    var paymentMethodArabic = Model.PaymentMethodArabic;
+    var referenceNo = Model.ReferenceNo ?? "-";
+}
+
+<div class="print-payment-receipt d-none d-print-block">
+    <div class="receipt-header text-center">
+        <div class="d-flex justify-content-between mb-2">
+            <div>
+                <h4 class="fw-bold mb-1">سند قبض</h4>
+                <div class="text-muted small">رقم الطلب: #@Model.OrderNumber</div>
+            </div>
+            <div>
+                <span class="badge bg-primary small">ريال يمني (ريال)</span>
+            </div>
+        </div>
+        <div class="text-end">
+            <div class="small"><strong>تاريخ الدفع:</strong> @Model.PaymentDateDisplay</div>
+            <div class="small"><strong>رقم السند:</strong> #@Model.PaymentId</div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-6">
+            <table class="ticket-table">
+                <tbody>
+                    <tr><th>اسم العميل</th><td>@Model.ClientName</td></tr>
+                    <tr><th>رقم الهاتف</th><td dir="ltr">@Model.ClientPhone</td></tr>
+                    <tr><th>اسم المصنع</th><td>@factoryName</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-6">
+            <table class="ticket-table">
+                <tbody>
+                    <tr><th>مبلغ الدفع</th><td class="fw-bold text-primary">@Model.Amount.FormatPrice()</td></tr>
+                    <tr><th>طريقة الدفع</th><td>@paymentMethodArabic</td></tr>
+                    <tr><th>رقم المرجع</th><td>@referenceNo</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Notes))
+    {
+        <div class="p-2 border mb-3 small">
+            <strong>ملاحظات:</strong>
+            @Model.Notes
+        </div>
+    }
+
+    <div class="receipt-footer text-center">
+        <div class="mt-3">
+            <hr/>
+            <div class="row text-center">
+                <div class="col-6">
+                    <strong>المستلم</strong>
+                    <div class="ticket-sig-line"></div>
+                    <small>الاسم والتوقيع</small>
+                </div>
+                <div class="col-6">
+                    <strong>الختم</strong>
+                    <div class="ticket-sig-line"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

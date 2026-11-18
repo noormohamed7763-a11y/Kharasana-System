@@ -52,7 +52,7 @@
     </div>
 
     <!-- T2. Summary Cards Component (KPIs) — بطاقات قابلة للنقر عبر _SummaryCard -->
-    <div class="summary-cards-grid mb-4">
+    <div class="summary-cards-grid summary-cards-grid--four mb-4">
         @await Html.PartialAsync(
         "~/Views/Shared/Components/_SummaryCard.cshtml",
         new SummaryCardViewModel
@@ -98,12 +98,12 @@
     <!-- T3. Charts Section -->
     <!-- T3.1 رسم "نظرة عامة على النظام" (Bar Chart): المصانع + العملاء + موظفو المصانع + السائقون + الطلبات -->
     <div class="row g-4 mb-4">
-        <div class="col-xl-8 col-lg-12">
+        <div class="col-xl-7 col-lg-12">
             <div class="erp-section-card">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="erp-section-title"><i class="bi bi-graph-up"></i>نظرة عامة على النظام</h5>
                 </div>
-                <div class="chart-container">
+                <div class="chart-container" style="height: var(--chart-height-bar);">
                     <canvas id="systemOverviewChart" role="img" aria-label="رسم بياني أعمدة لنظرة عامة على النظام: المصانع والعملاء وموظفو المصانع والسائقون والطلبات" aria-describedby="overviewDataTable" data-chart-values='@Html.Raw(systemOverviewJson)'></canvas>
                     @* جدول بديل لقارئات الشاشة — مخفي بصرياً (Bootstrap .visually-hidden) بنفس قيم الرسم *@
                     <table id="overviewDataTable" class="visually-hidden">
@@ -124,12 +124,12 @@
         </div>
 
         <!-- T3.2 رسم توزيع المستخدمين حسب الدور (Doughnut) -->
-        <div class="col-xl-4 col-lg-12">
+        <div class="col-xl-5 col-lg-12">
             <div class="erp-section-card">
                 <div class="mb-3">
                     <h5 class="erp-section-title"><i class="bi bi-pie-chart-fill"></i>توزيع المستخدمين حسب الدور</h5>
                 </div>
-                <div class="chart-container d-flex align-items-center justify-content-center">
+                <div class="chart-container d-flex align-items-center justify-content-center" style="height: var(--chart-height-doughnut);">
                     <canvas id="systemStatusChart" role="img" aria-label="رسم بياني دائري لتوزيع المستخدمين حسب الدور" aria-describedby="statusDataTable" data-chart-values='@Html.Raw(systemStatusJson)'></canvas>
                     @* جدول بديل لقارئات الشاشة — مخفي بصرياً (Bootstrap .visually-hidden) بنفس قيم الرسم *@
                     <table id="statusDataTable" class="visually-hidden">
@@ -150,14 +150,17 @@
 
     <!-- T4. Recent Orders & Activity Timeline -->
     <div class="row g-4">
-        <div class="col-xl-8 col-lg-12">
+        <div class="col-xl-12 col-lg-12">
             <div class="erp-section-card">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="erp-section-title"><i class="bi bi-receipt"></i>أحدث الطلبات</h5>
                     <a asp-controller="Orders" asp-action="Index" class="btn-erp-outline">عرض الكل <i class="bi bi-arrow-left ms-1"></i></a>
                 </div>
                 <div class="table-responsive">
-                    <table class="table erp-table align-middle mb-0">
+                    @* بلا كلاس `table` من Bootstrap: قواعده (الحشو `--bs-table-cell-padding-*`
+                       وخلفية الخلايا) تتقدّم على قواعد `.erp-table` فتعطي هذا الجدول
+                       وحدها حشواً وخلفية مختلفين عن بقية جداول النظام. *@
+                    <table class="erp-table align-middle mb-0">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -220,21 +223,6 @@
             </div>
         </div>
 
-        <div class="col-xl-4 col-lg-12">
-            <div class="erp-section-card">
-                <div class="mb-3 d-flex justify-content-between align-items-center">
-                    <h5 class="erp-section-title"><i class="bi bi-clock-history"></i>آخر الأنشطة</h5>
-                </div>
-                <div class="activity-timeline">
-                    <!-- لا يوجد مصدر نشاطات حقيقي في النظام حالياً — نعرض حالة فارغة صادقة بدلاً من بيانات مخترعة -->
-                    <div class="chart-empty-state">
-                        <i class="bi bi-clock-history"></i>
-                        <span>لا توجد نشاطات حديثة مسجلة بعد</span>
-                        <small class="text-muted">ستظهر هنا آخر العمليات المهمة في النظام (طلبات، عملاء، مصانع، سائقون) عند تسجيلها.</small>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
 </div>

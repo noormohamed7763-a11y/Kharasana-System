@@ -1,5 +1,6 @@
 using Kharasana.Application.Common;
 using Kharasana.Web.Filters;
+using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Reports;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +24,7 @@ public class ReportsController : BaseController
 
         if (report == null)
         {
-            TempData[TempDataError] = "تعذر تحميل بيانات التقارير.";
+            TempData[TempDataError] = AppMessages.Error.ReportsLoad;
             report = new ReportsViewModel();
         }
 

@@ -3,15 +3,23 @@ using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Repositories;
+using FluentAssertions;
 using Kharasana.Application.Services;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Enums;
+using Kharasana.Domain.Entities;
 using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Infrastructure.Repositories;
 using Kharasana.Tests.TestData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Linq;
+using Microsoft.AspNetCore.Identity;
+
+using Moq;
+using Kharasana.Application.Interfaces.Services;
+using IPasswordHasher = Kharasana.Application.Interfaces.Services.IPasswordHasher;
 
 namespace Kharasana.Tests.Tests;
 
@@ -36,8 +44,26 @@ public class OrderServiceTests : IDisposable
 
         // نحتاج IPasswordHasher لـ CreatePhoneOrder — نستخدم BCrypt الحقيقي
         var passwordHasher = new PasswordHasher();
+        var orderHelper = new OrderHelperService(_unitOfWork);
+        var orderQueryService = new OrderQueryService(_unitOfWork, orderHelper);
+        var mockIdempotencyService = new Mock<IIdempotencyService>();
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<OrderDetailsDto>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, (OrderDetailsDto?)null, 0));
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<PhoneOrderResultDto>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, (PhoneOrderResultDto?)null, 0));
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<bool>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, false, 0));
+        mockIdempotencyService
+            .Setup(x => x.CompleteAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
+        var orderCommandService = new OrderCommandService(_unitOfWork, passwordHasher, mockIdempotencyService.Object);
+        var orderWorkflowService = new OrderWorkflowService(_unitOfWork, new FakeTrackingService());
         _orderService = new OrderService(
-            passwordHasher, _unitOfWork);
+            passwordHasher, _unitOfWork, orderQueryService, orderCommandService, orderWorkflowService);
     }
 
     // ─────────────────────────────────────────────
@@ -56,7 +82,7 @@ public class OrderServiceTests : IDisposable
             order.OrderId, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
 
         // Assert
-        result.Should().BeTrue();
+        result.Succeeded.Should().BeTrue();
         var updated = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
         updated!.Status.Should().Be(OrderStatus.Approved);
     }
@@ -476,13 +502,13 @@ public class OrderServiceTests : IDisposable
 
         // Act — Admin يرى جميع الطلبات مرتبة تنازلياً
         var orders = await _orderService.GetOrdersByDriverIdAsync(
-            driverId: 200, callerFactoryId: null, callerRole: UserRole.Admin);
+            driverId: 200, caller: new CallerContext(10, UserRole.Admin, null));
 
         // Assert
-        orders.Should().HaveCount(3);
-        orders.Select(o => o.CreatedAt).Should().BeInDescendingOrder();
-        orders.First().CreatedAt.Should().Be(new DateTime(2024, 1, 5));
-        orders.Last().CreatedAt.Should().Be(new DateTime(2024, 1, 1));
+        orders.Items.Should().HaveCount(3);
+        orders.Items.Select(o => o.CreatedAt).Should().BeInDescendingOrder();
+        orders.Items.First().CreatedAt.Should().Be(new DateTime(2024, 1, 5));
+        orders.Items.Last().CreatedAt.Should().Be(new DateTime(2024, 1, 1));
     }
 
     [Fact]
@@ -501,11 +527,11 @@ public class OrderServiceTests : IDisposable
 
         // Act — موظف المصنع 1 يرى طلبات سائق المصنع 1
         var orders = await _orderService.GetOrdersByDriverIdAsync(
-            driverId: 201, callerFactoryId: 1, callerRole: UserRole.FactoryEmployee);
+            driverId: 201, caller: new CallerContext(20, UserRole.FactoryEmployee, 1));
 
         // Assert
-        orders.Should().HaveCount(1);
-        orders.First().OrderId.Should().Be(order.OrderId);
+        orders.Items.Should().HaveCount(1);
+        orders.Items.First().OrderId.Should().Be(order.OrderId);
     }
 
     [Fact]
@@ -526,7 +552,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — موظف المصنع 1 يحاول رؤية طلبات سائق المصنع 900
         var act = () => _orderService.GetOrdersByDriverIdAsync(
-            driverId: 202, callerFactoryId: 1, callerRole: UserRole.FactoryEmployee);
+            driverId: 202, caller: new CallerContext(20, UserRole.FactoryEmployee, 1));
 
         // Assert
         await act.Should().ThrowAsync<ForbiddenException>()
@@ -544,7 +570,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — موظف المصنع يحاول إنشاء تقرير لمستخدم ليس سائقاً
         var act = () => _orderService.GetOrdersByDriverIdAsync(
-            driverId: 300, callerFactoryId: 1, callerRole: UserRole.FactoryEmployee);
+            driverId: 300, caller: new CallerContext(20, UserRole.FactoryEmployee, 1));
 
         // Assert
         await act.Should().ThrowAsync<ForbiddenException>()
@@ -562,7 +588,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — العميل يحاول رؤية تقرير السائق
         var act = () => _orderService.GetOrdersByDriverIdAsync(
-            driverId: 203, callerFactoryId: null, callerRole: UserRole.Client);
+            driverId: 203, caller: new CallerContext(90, UserRole.Client, null));
 
         // Assert
         await act.Should().ThrowAsync<ForbiddenException>()
@@ -580,7 +606,7 @@ public class OrderServiceTests : IDisposable
 
         // Act — سائق يحاول رؤية تقرير سائق آخر
         var act = () => _orderService.GetOrdersByDriverIdAsync(
-            driverId: 204, callerFactoryId: 1, callerRole: UserRole.Driver);
+            driverId: 204, caller: new CallerContext(204, UserRole.Driver, 1));
 
         // Assert
         await act.Should().ThrowAsync<ForbiddenException>()
@@ -595,10 +621,10 @@ public class OrderServiceTests : IDisposable
 
         // Act — سائق غير موجود
         var orders = await _orderService.GetOrdersByDriverIdAsync(
-            driverId: 9999, callerFactoryId: null, callerRole: UserRole.Admin);
+            driverId: 9999, caller: new CallerContext(10, UserRole.Admin, null));
 
         // Assert
-        orders.Should().BeEmpty();
+        orders.Items.Should().BeEmpty();
     }
 
     // ─────────────────────────────────────────────
@@ -664,7 +690,7 @@ public class OrderServiceTests : IDisposable
             callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
 
         // Assert
-        result.Should().BeTrue();
+        result.Succeeded.Should().BeTrue();
         var updated = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
         updated!.Status.Should().Be(OrderStatus.Rejected);
     }
@@ -808,6 +834,302 @@ public class OrderServiceTests : IDisposable
     }
 
     // ─────────────────────────────────────────────
+    // ⑪  إصلاحات منطق الطلب: تحرير السائق عند الحذف، شرط السعر عند الاعتماد،
+    //     إعادة التسعير عند تغيير نوع الخرسانة، وإعادة تعيين السائق نفسه
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Delete_OrderWithAssignedDriver_ReleasesDriver()
+    {
+        // Arrange — طلب معتمد مسند لسائق حالته Busy
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(210, "سائق_محجوز", 1, status: DriverStatus.Busy);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(OrderStatus.Approved, unitPrice: 150m);
+        order.DriverId = driver.UserId;
+        await _context.SaveChangesAsync();
+
+        // Act
+        await _orderService.DeleteOrderAsync(
+            order.OrderId, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert — السائق عاد متاحًا؛ لولا ذلك بقي محجوزًا على طلب محذوف لا يمكن الوصول إليه
+        var driverAfter = await _context.Users.AsNoTracking().FirstAsync(u => u.UserId == driver.UserId);
+        driverAfter.DriverStatus.Should().Be(DriverStatus.Available);
+    }
+
+    [Fact]
+    public async Task UpdateStatus_ToApproved_WithoutPrice_Throws()
+    {
+        // Arrange — طلب قيد الانتظار بلا سعر
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(OrderStatus.Pending, unitPrice: 0m);
+
+        // Act — المسار المخصّص للمدير: Pending → Approved مباشرة
+        var act = () => _orderService.UpdateStatusAsync(
+            order.OrderId, new UpdateOrderStatusDto { Status = OrderStatus.Approved },
+            callerId: 10, UserRole.Admin, callerFactoryId: null);
+
+        // Assert — نفس قاعدة ApproveOrderAsync، فلا يُلتفّ على التسعير الإلزامي من هذا المسار
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.PriceRequiredBeforeApproval);
+    }
+
+    [Fact]
+    public async Task UpdateStatus_ToApproved_WithPrice_Succeeds()
+    {
+        // Arrange
+        await SeedOrderEnvironmentAsync();
+        var order = CreateAndSeedOrder(OrderStatus.Pending, unitPrice: 150m);
+
+        // Act
+        await _orderService.UpdateStatusAsync(
+            order.OrderId, new UpdateOrderStatusDto { Status = OrderStatus.Approved },
+            callerId: 10, UserRole.Admin, callerFactoryId: null);
+
+        // Assert
+        var updated = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
+        updated!.Status.Should().Be(OrderStatus.Approved);
+    }
+
+    [Fact]
+    public async Task UpdateOrder_ChangingConcreteType_RepricesAndReturnsNewTypeName()
+    {
+        // Arrange — نوعان في المصنع نفسه بسعرين مختلفين، والطلب مسعَّر بسعر النوع الأول
+        await SeedOrderEnvironmentAsync();
+        var newType = TestDataSeeder.CreateConcreteType(2, 1, "C40", 40, 400m);
+        _context.ConcreteTypes.Add(newType);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(OrderStatus.Pending, unitPrice: 150m, quantity: 10);
+
+        // Act
+        var result = await _orderService.UpdateOrderAsync(
+            order.OrderId, new UpdateOrderDto
+            {
+                ConcreteTypeId = newType.ConcreteTypeId,
+                Quantity = 10m,
+                SlabType = order.SlabType,
+                TransportMethod = order.TransportMethod
+            },
+            callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert — السعر يتبع النوع الجديد، والاستجابة تُعيد اسم النوع الجديد لا القديم
+        result.ConcreteTypeName.Should().Be("C40");
+        result.TotalPrice.Should().Be(4000m);
+
+        var stored = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
+        stored!.ConcreteTypeId.Should().Be(newType.ConcreteTypeId);
+        stored.UnitPrice.Should().Be(400m);
+        stored.TotalPrice.Should().Be(4000m);
+    }
+
+    [Fact]
+    public async Task UpdateOrder_ChangingConcreteType_KeepsManuallySetPrice()
+    {
+        // Arrange — سعر مُتفاوض عليه يدويًا (200) يخالف سعر النوع الحالي في القائمة (150)
+        await SeedOrderEnvironmentAsync();
+        var newType = TestDataSeeder.CreateConcreteType(2, 1, "C40", 40, 400m);
+        _context.ConcreteTypes.Add(newType);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(OrderStatus.Pending, unitPrice: 200m, quantity: 10);
+        order.IsManuallyPriced = true; // تعيين يدوي للتأكد من عدم إعادة التسعير
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _orderService.UpdateOrderAsync(
+            order.OrderId, new UpdateOrderDto
+            {
+                ConcreteTypeId = newType.ConcreteTypeId,
+                Quantity = 10m,
+                SlabType = order.SlabType,
+                TransportMethod = order.TransportMethod
+            },
+            callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert — النوع تغيّر لكن السعر المتفاوض عليه بقي كما هو
+        result.ConcreteTypeName.Should().Be("C40");
+        result.TotalPrice.Should().Be(2000m);
+    }
+
+    [Fact]
+    public async Task AssignDriver_SameDriverAgain_UpdatesTruckPlate()
+    {
+        // Arrange — طلب معتمد مسند لسائق، فصار Busy بسبب هذا الطلب نفسه
+        await SeedOrderEnvironmentAsync();
+        var driver = TestDataSeeder.CreateDriver(211, "سائق_معاد", 1, status: DriverStatus.Available);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        var order = CreateAndSeedOrder(OrderStatus.Approved, unitPrice: 150m);
+
+        await _orderService.AssignDriverAsync(order.OrderId, new AssignDriverDto
+        {
+            DriverId = driver.UserId,
+            TruckPlate = "أ ب ج 111"
+        }, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Act — إعادة تعيين السائق نفسه برقم شاحنة جديد
+        await _orderService.AssignDriverAsync(order.OrderId, new AssignDriverDto
+        {
+            DriverId = driver.UserId,
+            TruckPlate = "د هـ و 222"
+        }, callerId: 20, UserRole.FactoryEmployee, callerFactoryId: 1);
+
+        // Assert — لم تفشل بـ DriverNotAvailable، ورقم الشاحنة تحدّث والسائق ما زال مشغولًا
+        var updated = await _unitOfWork.Orders.GetByIdWithDetailsAsync(order.OrderId);
+        updated!.TruckPlate.Should().Be("د هـ و 222");
+        updated.DriverId.Should().Be(driver.UserId);
+
+        var driverAfter = await _context.Users.AsNoTracking().FirstAsync(u => u.UserId == driver.UserId);
+        driverAfter.DriverStatus.Should().Be(DriverStatus.Busy);
+    }
+
+    // ─────────────────────────────────────────────
+    // ⑫  كلمة المرور المؤقتة لعميل الطلبات الهاتفية
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreatePhoneOrder_NewClient_ReturnsReadableTemporaryPassword()
+    {
+        // Arrange — رقم غير مسجَّل مسبقاً
+        await SeedOrderEnvironmentAsync();
+
+        var dto = new PhoneOrderDto
+        {
+            ClientPhone = "771110005",
+            ClientFullName = "عميل_هاتفي",
+            FactoryId = 1,
+            ConcreteTypeId = 1,
+            Quantity = 10
+        };
+
+        // Act
+        var result = await _orderService.CreatePhoneOrderAsync(dto, employeeFactoryId: 1);
+
+        // Assert — الحساب أُنشئ بكلمة مرور مقروءة (10 محارف بلا 0/O/1/l/I) تُعاد مرة واحدة
+        result.NewClientTemporaryPassword.Should().NotBeNullOrWhiteSpace();
+        result.NewClientTemporaryPassword.Should().MatchRegex("^[A-HJ-NP-Za-hi-kmnp-z2-9]{10}$");
+        result.NewClientPhone.Should().Be("967771110005");
+
+        // Assert — المخزَّن تجزئة فقط، والكلمة المعروضة تطابقها فعلاً فيستطيع العميل الدخول
+        var stored = await _context.Users.AsNoTracking()
+            .FirstAsync(u => u.Phone == "967771110005");
+        stored.PasswordHash.Should().NotBe(result.NewClientTemporaryPassword);
+        BCrypt.Net.BCrypt.Verify(result.NewClientTemporaryPassword, stored.PasswordHash).Should().BeTrue();
+
+        // Assert — الطلب نفسه أُنشئ منسوباً للعميل الجديد
+        result.Order.ClientId.Should().Be(stored.UserId);
+    }
+
+    [Fact]
+    public async Task CreatePhoneOrder_ExistingClient_ReturnsNoTemporaryPassword()
+    {
+        // Arrange — الرقم مسجَّل لعميل قائم (الهاتف يُخزَّن مُطبَّعاً: 967771234567)
+        await SeedOrderEnvironmentAsync();
+        var existing = TestDataSeeder.CreateUser(92, "عميل_قائم", UserRole.Client, phone: "771234567");
+        _context.Users.Add(existing);
+        await _context.SaveChangesAsync();
+
+        var dto = new PhoneOrderDto
+        {
+            ClientPhone = "0771234567",
+            ClientFullName = "اسم_لا_يُستخدم",
+            FactoryId = 1,
+            ConcreteTypeId = 1,
+            Quantity = 10
+        };
+
+        // Act
+        var result = await _orderService.CreatePhoneOrderAsync(dto, employeeFactoryId: 1);
+
+        // Assert — لا كلمة مرور جديدة ولا تغيير لحساب قائم
+        result.NewClientTemporaryPassword.Should().BeNull();
+        result.NewClientPhone.Should().BeNull();
+        result.Order.ClientId.Should().Be(existing.UserId);
+    }
+
+    // ─────────────────────────────────────────────
+    // ⑧  ملخص عميل واحد (GetCustomerSummaryAsync)
+    //
+    // سبب الوجود: صفحة تفاصيل العميل كانت تجلب أول 100 عميل من قائمة مُصفّحة
+    // ثم تبحث فيهم محلياً، فتُبلّغ «غير موجود» عن كل عميل يقع بعد الصفحة الأولى.
+    // الآن هناك قراءة مباشرة لعميل واحد بنفس استعلام القائمة (ونفس عزل المصنع).
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetCustomerSummary_ReturnsAccountFieldsAndAggregates()
+    {
+        // Arrange
+        _context.Factories.Add(TestDataSeeder.CreateFactory(1, "مصنع_أ"));
+        var client = TestDataSeeder.CreateUser(
+            400, "عميل_ملخص", UserRole.Client,
+            email: "summary@test.local", phone: "777400400");
+        client.WhatsApp = YemeniPhoneHelper.Normalize("777400401");
+        _context.Users.Add(client);
+        _context.Orders.AddRange(
+            TestDataSeeder.CreateOrder(1, 400, 1, 1, quantity: 10, unitPrice: 100m),
+            TestDataSeeder.CreateOrder(2, 400, 1, 1, quantity: 5, unitPrice: 100m));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var summary = await _orderService.GetCustomerSummaryAsync(400, factoryId: null);
+
+        // Assert — بيانات الحساب (كانت كلها غائبة عن الاستعلام: بريد/واتساب/حالة)
+        summary.Should().NotBeNull();
+        summary!.UserId.Should().Be(400);
+        summary.FullName.Should().Be("عميل_ملخص");
+        summary.Email.Should().Be("summary@test.local",
+            "صفحة التفاصيل كانت تعرض «-» للبريد دائماً لأن الحقل لم يكن في المشروع");
+        summary.WhatsApp.Should().Be(YemeniPhoneHelper.Normalize("777400401"));
+        summary.IsActive.Should().BeTrue(
+            "كانت تُقرأ false دائماً فتظهر حالة الحساب «موقوف» لعميل نشط");
+
+        // Assert — التجميعات
+        summary.OrdersCount.Should().Be(2);
+        summary.TotalQuantity.Should().Be(15);
+        summary.LastOrderDate.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetCustomerSummary_HonoursFactoryScope()
+    {
+        // Arrange — للعميل طلب في المصنع ١ فقط
+        _context.Factories.AddRange(
+            TestDataSeeder.CreateFactory(1, "مصنع_أ"),
+            TestDataSeeder.CreateFactory(2, "مصنع_ب"));
+        _context.Users.Add(TestDataSeeder.CreateUser(401, "عميل_ب", UserRole.Client));
+        _context.Orders.Add(TestDataSeeder.CreateOrder(1, 401, 1, 1));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var insideOwnFactory = await _orderService.GetCustomerSummaryAsync(401, factoryId: 1);
+        var insideOtherFactory = await _orderService.GetCustomerSummaryAsync(401, factoryId: 2);
+
+        // Assert — نفس العزل الذي تفرضه قائمة العملاء (لا تسريب عميل مصنع آخر)
+        insideOwnFactory.Should().NotBeNull();
+        insideOtherFactory.Should().BeNull(
+            "لا طلبات لهذا العميل في المصنع ٢، فلا يجوز أن يظهر لموظفه");
+    }
+
+    [Fact]
+    public async Task GetCustomerSummary_CustomerWithoutOrders_ReturnsNull()
+    {
+        // Arrange — مستخدم بدور عميل بلا أي طلب (الحالة التي تُترجم إلى 404)
+        _context.Users.Add(TestDataSeeder.CreateUser(402, "عميل_بلا_طلبات", UserRole.Client));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var summary = await _orderService.GetCustomerSummaryAsync(402, factoryId: null);
+
+        // Assert
+        summary.Should().BeNull("الملخص مبني على الطلبات، فلا وجود لعميل بلا طلبات");
+    }
+
+    // ─────────────────────────────────────────────
     // ⑨  معالجة تعارض التواريع (Concurrency)
     // ─────────────────────────────────────────────
 
@@ -820,8 +1142,20 @@ public class OrderServiceTests : IDisposable
 
         // استخدام UnitOfWork الذي يرمي DbUpdateConcurrencyException لمحاكاة التعارض
         var concurrencyUoW = new ConcurrencyTestingUnitOfWork(_context);
+        var passwordHasher = new PasswordHasher();
+        var orderHelper = new OrderHelperService(concurrencyUoW);
+        var orderQueryService = new OrderQueryService(concurrencyUoW, orderHelper);
+        var mockIdempotencyService = new Mock<IIdempotencyService>();
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<bool>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, false, 0));
+        mockIdempotencyService
+            .Setup(x => x.CompleteAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+        var orderCommandService = new OrderCommandService(concurrencyUoW, passwordHasher, mockIdempotencyService.Object);
+        var orderWorkflowService = new OrderWorkflowService(concurrencyUoW, new FakeTrackingService());
         var orderService = new OrderService(
-            new PasswordHasher(), concurrencyUoW);
+            passwordHasher, concurrencyUoW, orderQueryService, orderCommandService, orderWorkflowService);
 
         // Act — محاكاة تعارض RowVersion عند حفظ الطلب
         var act = () => orderService.ApproveOrderAsync(
@@ -846,5 +1180,239 @@ public class OrderServiceTests : IDisposable
         {
             throw new DbUpdateConcurrencyException("RowVersion conflict simulated in test.");
         }
+    }
+
+    private OrderCommandService CreateCommandServiceWithMockIdempotency(UnitOfWork uow, IPasswordHasher passwordHasher)
+    {
+        var mockIdempotencyService = new Mock<IIdempotencyService>();
+        mockIdempotencyService
+            .Setup(x => x.CheckAndInitializeAsync<bool>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, false, 0));
+        mockIdempotencyService
+            .Setup(x => x.CompleteAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
+        return new OrderCommandService(uow, passwordHasher, mockIdempotencyService.Object);
+    }
+
+    // ─────────────────────────────────────────────
+    // ⑬  Tests: Payment Authorization & Balance
+    // ─────────────────────────────────────────────
+
+    /// <summary>
+    /// إضافة دفعة جديدة لحالة Pending — يجب النجاح وتكون الحالة PendingVerification.
+    /// المدير أو موظف المصنع يسجلون دفعة، الحصن يمنع العميل.
+    /// </summary>
+    [Fact]
+    public async Task AddPayment_PendingOrder_Succeeds()
+    {
+        // Arrange: طلب pending، المصنع، العميل
+        // NetAmount = Quantity × UnitPrice = 1 × 150 = 150
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId, quantity: 1, unitPrice: 150m);
+        order.RecalculateNetAmount(); // ✅ لضمان أن NetAmount = TotalPrice = 150
+
+        // No pre-existing payments, so remaining = NetAmount = 150
+        _context.Factories.Add(factory);
+        _context.Users.Add(client);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act: FactoryEmployee يسجل أول دفعة (50 <= remaining 150)
+        var dto = new AddPaymentDto { Amount = 50, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001", Notes = "Test payment" };
+        await _orderService.AddPaymentAsync(order.OrderId, dto, client.UserId, UserRole.FactoryEmployee, idempotencyKey: null, factory.FactoryId);
+
+        // Assert: Payment was added successfully with PendingVerification status
+        var createdPayment = order.Payments.Last();
+        Assert.Equal(PaymentVerificationStatus.PendingVerification, createdPayment.VerificationStatus);
+        Assert.Equal(50m, createdPayment.Amount);
+    }
+
+    /// <summary>
+    /// رفض الدفعة (Reject) — يجب تدوين سبب الرفض وحالة VerifiedByUserId تسجل للمدير/موظف المصنع.
+    /// </summary>
+    [Fact]
+    public async Task RejectPayment_WithReason_SetsRejectedStatusAndRecordsVerifierId()
+    {
+        // Arrange: طلب به دفعة Pending
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+        order.Payments = new List<OrderPayment>
+        {
+            new OrderPayment
+            {
+                Amount = 50m,
+                PaymentMethod = PaymentMethod.BankDeposit,
+                ReferenceNumber = "REF-REJECT-001",
+                VerificationStatus = PaymentVerificationStatus.PendingVerification,
+                CreatedAt = DateTime.UtcNow,
+                PaymentDate = DateTime.UtcNow
+            }
+        };
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(client);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act: رفض الدفعة
+        var payment = order.Payments.First();
+        var result = await _orderService.RejectPaymentAsync(payment.OrderPaymentId, "سبب الرفض", 1);
+
+        // Assert: حالة الدفعة أصبحت Rejected ويدون من رفضها
+        var updatedPayment = await _context.OrderPayments.FindAsync(payment.OrderPaymentId);
+        Assert.NotNull(updatedPayment);
+        Assert.Equal(PaymentVerificationStatus.Rejected, updatedPayment.VerificationStatus);
+        Assert.Equal("سبب الرفض", updatedPayment.VerificationNotes);
+        Assert.Equal(1, updatedPayment.VerifiedByUserId);
+        Assert.NotNull(updatedPayment.VerifiedAt);
+        Assert.True(result);
+    }
+
+    /// <summary>
+    /// الدفعات المرفوضة (Rejected) لا تُحتسب في المتبقي: يجب استثناء Rejected من AlreadyPaid.
+    /// </summary>
+    [Fact]
+    public async Task AlreadyPaid_ExcludesRejectedPayments_CalculatesRemainingCorrectly()
+    {
+        // Arrange: طلب صافي 100، دفعتان: Pending 40 + Rejected 20
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+
+        // Add Pending and Rejected payments
+        order.Payments = new List<OrderPayment>
+        {
+            new OrderPayment
+            {
+                Amount = 40m,
+                VerificationStatus = PaymentVerificationStatus.PendingVerification,
+                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            },
+            new OrderPayment
+            {
+                Amount = 20m,
+                VerificationStatus = PaymentVerificationStatus.Rejected,
+                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                VerificationNotes = "Rejected payment",
+                VerifiedByUserId = 99,
+                VerifiedAt = DateTime.UtcNow
+            }
+        };
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(client);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act: Calculate alreadyPaid excluding Rejected (the logic in AddPaymentAsync)
+        var alreadyPaid = order.Payments
+            .Where(p => p.VerificationStatus != PaymentVerificationStatus.Rejected)
+            .Sum(p => p.Amount);
+
+        // Assert: only Pending counted (40), Rejected excluded
+        Assert.Equal(40m, alreadyPaid);
+    }
+
+    /// <summary>
+    /// الدفعات النقدية (NotApplicable) لا تُقبل للتحقق: عند محاولة Approve ترمي exception.
+    /// </summary>
+    [Fact]
+    public async Task CannotApproveCashPayment_Throws_WhenStatusIsNotApplicable()
+    {
+        // Arrange: طلب به دفعة NotApplicable (Cash)
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+
+        // Add a NotApplicable payment
+        order.Payments = new List<OrderPayment>
+        {
+            new OrderPayment
+            {
+                Amount = 50m,
+                VerificationStatus = PaymentVerificationStatus.NotApplicable,
+                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                PaymentMethod = PaymentMethod.Cash
+            }
+        };
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(client);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act & Assert: ApprovePaymentAsync throws because status is NotApplicable
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            _orderService.ApprovePaymentAsync(order.Payments.First().OrderPaymentId, "verification notes", 1));
+
+        Assert.Contains("لا يمكن اعتماد", ex.Message);
+    }
+
+    /// <summary>
+    /// يحاول العميل تسجيل دفعة يفشل بالسلب: لا يملك الصلاحية.
+    /// </summary>
+    [Fact]
+    public async Task ClientCannotRecordPayment_Throws_WhenRoleIsClient()
+    {
+        // Arrange: طلب pending، عميل يحاول يسجل دفعة
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var caller = TestDataSeeder.CreateUser(1, "Caller", UserRole.Client);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, caller.UserId, factory.FactoryId, concreteType.ConcreteTypeId);
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(caller);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act: AddPaymentAsync throws ForbiddenException for Client role
+        var dto = new AddPaymentDto { Amount = 10, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001" };
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            _orderService.AddPaymentAsync(order.OrderId, dto, caller.UserId, UserRole.Client, idempotencyKey: null, factory.FactoryId));
+
+        Assert.Contains("غير مخول لتسجيل دفعات", ex.Message);
+    }
+
+    /// <summary>
+    /// محاولة تسجيل دفعة على طلب ملغى (Cancelled) تفشل.
+    /// </summary>
+    [Fact]
+    public async Task CannotRecordPaymentForCancelledOrder_Throws()
+    {
+        // Arrange: طلب ملغى
+        var factory = TestDataSeeder.CreateFactory(1, "Factory Test");
+        var client = TestDataSeeder.CreateUser(1, "Client Test", UserRole.Client, factory.FactoryId);
+        var concreteType = TestDataSeeder.CreateConcreteType(1, factory.FactoryId, "Concrete Type", 25, 150m);
+        var order = TestDataSeeder.CreateOrder(1, client.UserId, factory.FactoryId, concreteType.ConcreteTypeId, status: OrderStatus.Cancelled);
+
+        _context.Factories.Add(factory);
+        _context.Users.Add(client);
+        _context.ConcreteTypes.Add(concreteType);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // Act: AddPaymentAsync throws because order is Cancelled
+        var dto = new AddPaymentDto { Amount = 10, PaymentMethod = PaymentMethod.Cash, ReferenceNo = "REF001" };
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            _orderService.AddPaymentAsync(
+                order.OrderId, dto, client.UserId, UserRole.FactoryEmployee,
+                callerFactoryId: factory.FactoryId));
+
+        Assert.Contains("لا يمكن تسجيل دفعة على طلب ملغى.", ex.Message);
     }
 }

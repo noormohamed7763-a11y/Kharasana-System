@@ -1,22 +1,28 @@
-@model IEnumerable<Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeListItemViewModel>
+@model Kharasana.Application.Common.PagedResult<Kharasana.Web.ViewModels.ConcreteTypes.ConcreteTypeListItemViewModel>
 @using Kharasana.Web.Models.Components
 @using Kharasana.Web.Models.Components.Search
+@using Kharasana.Web.ViewModels.Components
 
 @{
     ViewData["Title"] = "أنواع الخرسانة";
 
-    var total = Model.Count();
-    var active = Model.Count(x => x.IsActive);
-    var factories = Model.Select(x => x.FactoryId).Distinct().Count();
-    var avgPrice = Model.Any()
-        ? Model.Average(x => x.UnitPrice)
+    var total = Model.TotalCount;
+    var active = Model.Items.Count(x => x.IsActive);
+    var factories = Model.Items.Select(x => x.FactoryId).Distinct().Count();
+    var avgPrice = Model.Items.Any()
+        ? Model.Items.Average(x => x.UnitPrice)
         : 0;
 }
 
 <div class="dashboard-page">
 
     @{
-        var factoryInactive = (string?)ViewBag.UserRole == Roles.FactoryEmployee && ViewBag.FactoryIsActive == false;
+        var role = (string?)ViewBag.UserRole;
+        var factoryInactive = role == Roles.FactoryEmployee && ViewBag.FactoryIsActive == false;
+
+        // الإنشاء للمدير وموظف المصنع فقط — مطابقةً لصلاحية الـ API (Create: AdminOrFactoryEmployee).
+        // العميل يرى القائمة وحدها، فلا يُعرض له زر إضافة يفشل بـ 403.
+        var canManage = role == Roles.Admin || role == Roles.FactoryEmployee;
     }
 
     @if (factoryInactive)
@@ -34,12 +40,26 @@
             Icon = "bi-box-seam",
             Title = "أنواع الخرسانة",
             Description = "إدارة جميع أنواع الخرسانة داخل النظام",
-            ActionText = factoryInactive ? string.Empty : "إضافة نوع خرسانة",
+            ActionText = canManage && !factoryInactive ? "إضافة نوع خرسانة" : string.Empty,
             ActionController = "ConcreteTypes",
             ActionMethod = "Create"
         })
 
-    <div class="summary-cards-grid mb-3">
+    @if (canManage)
+    {
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div class="nav nav-pills">
+                <a asp-action="Index" class="nav-link active">
+                    <i class="bi bi-box-seam me-1"></i> الأنواع النشطة
+                </a>
+                <a asp-action="Archived" class="nav-link">
+                    <i class="bi bi-archive me-1"></i> الأنواع المؤرشفة
+                </a>
+            </div>
+        </div>
+    }
+
+    <div class="summary-cards-grid summary-cards-grid--four mb-3">
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
                         new SummaryCardViewModel
@@ -78,22 +98,53 @@
                         })
     </div>
 
-    <!-- Search -->
-    <div class="mb-3">
-        <div class="row align-items-center">
-            <div class="col-lg-5">
-                @await Html.PartialAsync(
-                                "~/Views/Shared/Components/_SearchBox.cshtml",
-                                new SearchBoxViewModel
-                                {
-                                    InputId = "tableSearch",
-                                    Placeholder = "ابحث باسم النوع أو المصنع..."
-                                })
-            </div>
-        </div>
-    </div>
+    <!-- شريط البحث الموحّد -->
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_ListToolbar.cshtml",
+        new ListToolbarViewModel
+        {
+            PageSize = Model.PageSize,
+            Search = new SearchBoxViewModel
+            {
+                InputId = "search",
+                Placeholder = "ابحث باسم النوع أو المصنع...",
+                Value = (string?)ViewBag.Search ?? string.Empty
+            }
+        })
 
-    <partial name="_ConcreteTypeTable" model="Model" />
+    @if (Model.Items == null || !Model.Items.Any())
+    {
+        @await Html.PartialAsync(
+            "~/Views/Shared/Components/_EmptyState.cshtml",
+            new EmptyStateViewModel
+            {
+                ImageUrl = "/images/empty-concrete.png",
+                Title = "لا توجد أنواع خرسانة",
+                Message = "لم يتم العثور على أي أنواع خرسانة تطابق معايير البحث.",
+                ShowActionButton = canManage && !factoryInactive,
+                ActionController = "ConcreteTypes",
+                ActionAction = "Create",
+                ActionText = "إضافة نوع خرسانة"
+            })
+    }
+    else
+    {
+        ViewData["RowOffset"] = (Model.PageNumber - 1) * Model.PageSize;
+        <partial name="_ConcreteTypeTable" model="Model.Items" />
+    }
+
+    <!-- الترقيم -->
+    @await Html.PartialAsync("~/Views/Shared/Components/_Pagination.cshtml", new PaginationViewModel
+    {
+        CurrentPage = Model.PageNumber,
+        TotalPages = Model.TotalPages,
+        PageSize = Model.PageSize,
+        TotalCount = Model.TotalCount,
+        RouteValues = new Dictionary<string, string>
+        {
+            { "search", (string?)ViewBag.Search ?? string.Empty }
+        }
+    })
 
 </div>
 

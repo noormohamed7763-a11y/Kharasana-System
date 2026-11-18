@@ -1,4 +1,5 @@
-﻿using Kharasana.Application.Common.Exceptions;
+﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Hosting;
 
@@ -26,27 +27,34 @@ public class ImageStorageService : IImageStorageService
     public async Task<string> SaveImageAsync(Stream fileStream, string originalFileName, long fileLength, string folderName)
     {
         if (fileStream == null || fileLength <= 0)
-            throw new BusinessException("الملف المرفوع غير صالح.");
+            throw new BusinessException(Messages.InvalidUploadedFile);
 
         var extension = Path.GetExtension(originalFileName)?.ToLowerInvariant();
 
         if (string.IsNullOrEmpty(extension) || !AllowedExtensions.Contains(extension))
-            throw new BusinessException("امتداد الملف غير مدعوم. الامتدادات المسموحة: jpg, jpeg, png, webp.");
+            throw new BusinessException(Messages.UnsupportedFileExtension);
 
         if (fileLength > MaxFileSizeInBytes)
-            throw new BusinessException("حجم الملف يتجاوز الحد المسموح به (5 ميجابايت).");
+            throw new BusinessException(Messages.FileTooLarge);
 
         if (!IsValidMimeType(fileStream, extension))
-            throw new BusinessException("نوع محتوى الملف غير صالح أو لا يتطابق مع الامتداد.");
+            throw new BusinessException(Messages.InvalidFileContentType);
 
-        // ✅ استخدام Directory.GetCurrentDirectory() كحل احتياطي
-        var basePath = _env.WebRootPath;
-
-        if (string.IsNullOrEmpty(basePath))
+        // ✅ حارس اجتياز المسار على اسم المجلد: الوسيط جزء من عقد الواجهة، ولو مرّره
+        //    مستدعٍ من مدخلات المستخدم لصار ".." أو مسار مطلق يكتب خارج مجلد الصور.
+        //    المستدعي الحالي يمرّر "Factories" ثابتة — الحارس يمنع الانحدار مستقبلاً.
+        if (string.IsNullOrWhiteSpace(folderName)
+            || folderName.Contains("..", StringComparison.Ordinal)
+            || folderName.IndexOfAny('/', '\\') >= 0
+            || Path.IsPathRooted(folderName))
         {
-            // إذا كان WebRootPath فارغاً، استخدم مسار المشروع + wwwroot
-            basePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            throw new BusinessException(Messages.InvalidStorageFolder);
         }
+
+        // ✅ مسار wwwroot موحّد بين الحفظ والحذف — كان الحفظ يستخدم GetCurrentDirectory()
+        //    والحذف ContentRootPath، فيختلف المسار المُحلَّل بينهما عند غياب WebRootPath
+        //    (يُحفظ الملف في مكان ويُبحث عنه في آخر).
+        var basePath = ResolveWebRootPath();
 
         // ✅ تأكد من وجود المجلد
         var folderPath = Path.Combine(basePath, "Images", folderName);
@@ -78,11 +86,20 @@ public class ImageStorageService : IImageStorageService
             var headerBytes = reader.ReadBytes(12);
             fileStream.Position = 0;
 
+            // ملف أقصر من 4 بايت لا يكون صورة بصيغة مدعومة أصلاً.
+            if (headerBytes.Length < 4)
+                return false;
+
             return extension switch
             {
                 ".png" => headerBytes[0] == 0x89 && headerBytes[1] == 0x50 && headerBytes[2] == 0x4E && headerBytes[3] == 0x47,
                 ".jpg" or ".jpeg" => headerBytes[0] == 0xFF && headerBytes[1] == 0xD8,
-                ".webp" => headerBytes[0] == 0x52 && headerBytes[1] == 0x49 && headerBytes[2] == 0x46 && headerBytes[3] == 0x46,
+                // ✅ "RIFF" وحدها لا تكفي: كل ملفات AVI و WAV تبدأ بها أيضاً، فكان ملف
+                //    فيديو مُعاد تسميته إلى ‎.webp‎ يمرّ من فحص البصمة. بصمة WebP الحقيقية
+                //    هي "RIFF" في 0..3 و"WEBP" في 8..11 — وأي ملف WebP سليم لا يقل عن 12 بايت.
+                ".webp" => headerBytes.Length >= 12
+                           && headerBytes[0] == 0x52 && headerBytes[1] == 0x49 && headerBytes[2] == 0x46 && headerBytes[3] == 0x46
+                           && headerBytes[8] == 0x57 && headerBytes[9] == 0x45 && headerBytes[10] == 0x42 && headerBytes[11] == 0x50,
                 _ => false
             };
         }
@@ -97,18 +114,34 @@ public class ImageStorageService : IImageStorageService
         if (string.IsNullOrWhiteSpace(relativePath))
             return;
 
-        var webRootPath = _env.WebRootPath;
-        if (string.IsNullOrEmpty(webRootPath))
-        {
-            webRootPath = Path.Combine(_env.ContentRootPath, "wwwroot");
-        }
+        var webRootPath = ResolveWebRootPath();
+
+        // ✅ حارس اجتياز المسار (path traversal): المسار المحلَّل يجب أن يبقى داخل
+        //    wwwroot/Images. المصدر غير موثوق — factory.Logo يأتي من حقل يُدخله المستخدم
+        //    عند إنشاء المصنع، ومسار مثل "../../appsettings.json" كان يحذف ملفًا خارج المجلد.
+        var imagesRoot = Path.GetFullPath(Path.Combine(webRootPath, "Images"));
+        var imagesRootPrefix = imagesRoot.EndsWith(Path.DirectorySeparatorChar)
+            ? imagesRoot
+            : imagesRoot + Path.DirectorySeparatorChar;
 
         var trimmedPath = relativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var fullPath = Path.Combine(webRootPath, trimmedPath);
+        var fullPath = Path.GetFullPath(Path.Combine(webRootPath, trimmedPath));
+
+        // خارج مجلد الصور (اجتياز بـ .. أو مسار مطلق) — نتجاهل بدل الحذف.
+        if (!fullPath.StartsWith(imagesRootPrefix, StringComparison.OrdinalIgnoreCase))
+            return;
 
         if (File.Exists(fullPath))
         {
             File.Delete(fullPath);
         }
     }
+
+    /// <summary>
+    /// مسار wwwroot الموحّد لعمليتي الحفظ والحذف.
+    /// </summary>
+    private string ResolveWebRootPath()
+        => string.IsNullOrEmpty(_env.WebRootPath)
+            ? Path.Combine(_env.ContentRootPath, "wwwroot")
+            : _env.WebRootPath;
 }

@@ -58,8 +58,19 @@ async function submitCreateAccount(e) {
     const password = document.getElementById("modalPassword").value;
     const confirmPassword = document.getElementById("modalConfirmPassword").value;
 
-    if (password.length < 6) {
-        showError("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
+    // ✅ الدور يُقرأ من الحقل المخفي (مشتق من UserRole في الـ enum) لا من رقم مكتوب هنا.
+    //    كان مكتوباً role: 1 بينما FactoryEmployee=2 بعد إعادة ترقيم الأدوار،
+    //    فكان الطلب يصل بصفة Admin وترفضه الخدمة دائماً (لا يمكن إنشاء حساب مصنع).
+    const roleField = document.getElementById("modalRole");
+    const role = Number(roleField?.value);
+
+    if (password.length < 8) {
+        showError("كلمة المرور يجب أن تكون 8 أحرف على الأقل.");
+        return;
+    }
+
+    if (!Number.isInteger(role) || role <= 0) {
+        showError("تعذّر تحديد دور الحساب. أعد تحميل الصفحة.");
         return;
     }
 
@@ -75,7 +86,7 @@ async function submitCreateAccount(e) {
         phone,
         password,
         confirmPassword,
-        role: 1
+        role
     };
 
     try {
@@ -244,12 +255,8 @@ function initializeLogoUpload() {
 
 }
 
-// ==============================
-// ✅ حذف شعار المصنع (مع تأكيد)
-// ==============================
-function confirmDeleteLogo() {
-    return confirm("هل أنت متأكد من حذف شعار المصنع؟");
-}
+// (أُزيلت `confirmDeleteLogo`: لم يكن لها أي مستدعٍ — نماذج حذف الشعار كلها
+//  تحمل `data-confirm` ويتولّى site.js تأكيدها بنافذة موحّدة.)
 
 // ==============================
 // ✅ عرض الشعار في الجدول — عند فشل تحميل الصورة
@@ -274,5 +281,4 @@ function handleLogoError(imgElement) {
 // جعل الدوال متاحة عالمياً
 window.openCreateAccountModal = openCreateAccountModal;
 window.filterByStatus = filterByStatus;
-window.confirmDeleteLogo = confirmDeleteLogo;
 window.handleLogoError = handleLogoError;

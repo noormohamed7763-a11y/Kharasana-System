@@ -1,0 +1,134 @@
+@model Kharasana.Application.Common.PagedResult<Kharasana.Application.DTOs.Order.OrderPaymentDto>
+@using Kharasana.Domain.Enums
+@using Kharasana.Web.Models.Components
+@using Kharasana.Web.ViewModels.Components
+
+@{
+    ViewData["Title"] = "مكتب المراجعة المالية والحوالات";
+}
+
+<div class="dashboard-page">
+
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-wallet2",
+            Title = "مكتب المراجعة المالية والتدقيق",
+            Description = "تدقيق ومطابقة الحوالات البنكية وسندات الدفع المعلقة"
+        })
+
+    <div class="erp-section-card p-0 shadow-sm mb-4">
+        <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-clock-history text-warning me-2"></i> الدفعات والحوالات بانتظار التحقق
+            </h5>
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                @Model.TotalCount دفعة معلقة
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="erp-table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>رقم الطلب</th>
+                        <th>مبلغ الدفعة</th>
+                        <th>طريقة الدفع</th>
+                        <th>رقم الحوالة / المرجع</th>
+                        <th>تاريخ السند</th>
+                        <th>الحالة</th>
+                        <th>ملاحظات</th>
+                        <th class="text-center">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items == null || !Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
+                                <p class="mb-0">لا توجد دفعات أو حوالات معلقة بانتظار المراجعة والتدقيق حالياً.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var itemsList = Model.Items.ToList();
+                        @foreach (var payment in itemsList)
+                        {
+                            <tr>
+                                <td class="text-muted small">@(Model.PageSize * (Model.PageNumber - 1) + itemsList.IndexOf(payment) + 1)</td>
+                                <td>
+                                    <a asp-controller="Orders" asp-action="Details" asp-route-id="@payment.OrderId" class="fw-bold text-primary">
+                                        طلب #@payment.OrderId
+                                    </a>
+                                </td>
+                                <td dir="ltr" class="text-end fw-bold text-success">@payment.Amount.ToString("N0") ر.ي</td>
+                                <td><span class="badge bg-light text-dark border">@PaymentMethodHelper.GetArabicName(payment.PaymentMethod)</span></td>
+                                <td class="fw-medium">@(string.IsNullOrEmpty(payment.ReferenceNo) ? "—" : payment.ReferenceNo)</td>
+                                <td>@payment.PaymentDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    <span class="status-badge @(payment.VerificationStatus switch
+                                    {
+                                        PaymentVerificationStatus.Verified => "status-success",
+                                        PaymentVerificationStatus.Rejected => "status-danger",
+                                        _ => "status-warning"
+                                    })">
+                                        @(payment.VerificationStatus switch
+                                        {
+                                            PaymentVerificationStatus.PendingVerification => "بانتظار التحقق",
+                                            PaymentVerificationStatus.Verified => "معتمدة",
+                                            PaymentVerificationStatus.Rejected => "مرفوضة",
+                                            _ => "غير محدد"
+                                        })
+                                    </span>
+                                </td>
+                                <td class="text-muted small">@(string.IsNullOrEmpty(payment.VerificationNotes) ? "—" : payment.VerificationNotes)</td>
+                                <td class="text-center">
+                                    @if (payment.VerificationStatus == PaymentVerificationStatus.PendingVerification)
+                                    {
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <form asp-action="Approve" method="post" class="d-inline" data-confirm="هل أنت متأكد من اعتماد ومطابقة هذه الدفعة المالية؟">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="paymentId" value="@payment.Id" />
+                                                <input type="hidden" name="verificationNotes" value="تم التحقق من الحوالة وتدقيقها في الحساب البنكي" />
+                                                <button type="submit" class="btn btn-sm btn-success" title="اعتماد وقبول">
+                                                    <i class="bi bi-check-lg"></i> اعتماد
+                                                </button>
+                                            </form>
+
+                                            <form asp-action="Reject" method="post" class="d-inline" data-confirm="هل أنت متأكد من رفض هذه الحوالة؟">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="paymentId" value="@payment.Id" />
+                                                <input type="hidden" name="rejectionReason" value="تم الرفض: الحوالة غير واردة أو لا تطابق المبلغ المطلوب" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="رفض">
+                                                    <i class="bi bi-x-lg"></i> رفض
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">تمت المعالجة</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- الترقيم الموحّد -->
+    @await Html.PartialAsync("~/Views/Shared/Components/_Pagination.cshtml", new PaginationViewModel
+    {
+        CurrentPage = Model.PageNumber,
+        TotalPages = Model.TotalPages,
+        PageSize = Model.PageSize,
+        TotalCount = Model.TotalCount
+    })
+
+</div>

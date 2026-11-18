@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
@@ -25,9 +25,24 @@ public class UserRepository : GenericRepository<User>, IUserRepository
         return await _context.Users.FirstOrDefaultAsync(x => x.Phone == phone);
     }
 
-    public async Task<bool> EmailExistsAsync(string email)
+    public async Task<User?> GetByIdWithFactoryAsync(int id)
     {
-        return await _context.Users.AnyAsync(x => x.Email == email);
+        return await _context.Users
+            .AsNoTracking()
+            .Include(u => u.Factory)
+            .FirstOrDefaultAsync(u => u.UserId == id);
+    }
+
+    public async Task<bool> EmailExistsAsync(string email, int? excludeUserId = null)
+    {
+        var query = _context.Users.Where(x => x.Email == email);
+
+        if (excludeUserId.HasValue)
+        {
+            query = query.Where(x => x.UserId != excludeUserId.Value);
+        }
+
+        return await query.AnyAsync();
     }
 
     public async Task<bool> PhoneExistsAsync(string phone)
@@ -48,7 +63,6 @@ public class UserRepository : GenericRepository<User>, IUserRepository
         return ids.ToHashSet();
     }
 
-    // ✅ التعديل هنا: دعم استثناء المستخدم الحالي عند التحديث
     public async Task<bool> FactoryHasAccountAsync(int factoryId, int? excludeUserId = null)
     {
         var query = _context.Users.Where(u => u.FactoryId == factoryId && u.Role == UserRole.FactoryEmployee);
@@ -63,7 +77,7 @@ public class UserRepository : GenericRepository<User>, IUserRepository
 
     public async Task<PagedResult<User>> GetPagedAsync(
         UserRole? role, int? factoryId, DriverStatus? driverStatus, string? search,
-        int pageNumber, int pageSize)
+        int pageNumber, int pageSize, bool? isActive = null)
     {
         var query = _context.Users.AsNoTracking().AsQueryable();
 
@@ -75,6 +89,11 @@ public class UserRepository : GenericRepository<User>, IUserRepository
 
         if (driverStatus.HasValue)
             query = query.Where(u => u.DriverStatus == driverStatus.Value);
+
+        // ✅ على الخادم: التصفية في الذاكرة كانت تُجري على صفحة واحدة فقط،
+        //    فيغيب الحساب النشط إن سقط خارج الصفحة المجلوبة.
+        if (isActive.HasValue)
+            query = query.Where(u => u.IsActive == isActive.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -107,5 +126,12 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             PageSize = pageSize,
             TotalCount = totalCount
         };
+    }
+
+    public async Task<User?> GetByRefreshTokenAsync(string refreshToken)
+    {
+        return await _context.Users
+            .Include(u => u.Factory)
+            .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
     }
 }

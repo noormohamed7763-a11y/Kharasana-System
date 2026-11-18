@@ -48,7 +48,12 @@
                                 <span>@TempData[BaseController.TempDataError]</span>
                             </div>
                         }
-                        <div asp-validation-summary="All" class="alert alert-danger"></div>
+                        @* ModelOnly: الملخّص يعرض أخطاء النموذج ككل وحدها — وهي التي
+                           يضيفها AccountController بمفتاح فارغ (بيانات دخول خاطئة أو
+                           خطأ من الـ API) ولا يطبعها أي `asp-validation-for`. أما أخطاء
+                           الحقلين فلكلٍّ منها `asp-validation-for` خاص به، وكانت
+                           `All` تعرضها مرّتين: في الملخّص وتحته. *@
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                         <!-- حقل المستخدم -->
                         <div class="form-group mb-3">
@@ -60,6 +65,7 @@
                                 <input asp-for="EmailOrPhone"
                                        class="form-control"
                                        placeholder="أدخل البريد الإلكتروني أو رقم الهاتف"
+                                       autocomplete="username"
                                        required />
                             </div>
                             <span asp-validation-for="EmailOrPhone" class="text-danger"></span>
@@ -76,6 +82,7 @@
                                        id="passwordInput"
                                        class="form-control"
                                        placeholder="********"
+                                       autocomplete="current-password"
                                        required />
                                 <button type="button"
                                         id="togglePassword"
@@ -87,13 +94,10 @@
                             <span asp-validation-for="Password" class="text-danger"></span>
                         </div>
 
-                        <!-- تذكرني -->
-                        <div class="form-check mb-4">
-                            <input asp-for="RememberMe" class="form-check-input" id="rememberMe" />
-                            <label asp-for="RememberMe" class="form-check-label" for="rememberMe">
-                                تذكرني على هذا الجهاز
-                            </label>
-                        </div>
+                        @* أُزيل خيار «تذكرني»: كان وعدًا وظيفيًا غير منفّذ — لا
+                           AccountController.Login ولا AuthApiService.LoginAsync يقرآن
+                           العلم أو يرسلانه، وسلوك الجلسة واحد سواء وُضعت علامة أم لا.
+                           إبقاء مربع اختيار لا أثر له يضلّل المستخدم. *@
 
                         <!-- زر الدخول -->
                         <button type="submit" class="btn btn-login w-100" id="loginButton">
@@ -106,6 +110,10 @@
                                 جاري التحقق من البيانات...
                             </span>
                         </button>
+
+                        <div class="text-center mt-3">
+                            <a asp-controller="Registration" asp-action="Create" class="text-decoration-none">هل تملك مصنعاً؟ ابدأ التسجيل الآن</a>
+                        </div>
 
                     </form>
                 </div>

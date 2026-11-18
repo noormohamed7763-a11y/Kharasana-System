@@ -1,4 +1,7 @@
-﻿using Kharasana.Web.Filters;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Api;
 using Kharasana.Web.Models;
@@ -31,9 +34,11 @@ namespace Kharasana.Web.Controllers
         }
 
         /// <summary>
-        /// صفحة منع الوصول — تُستدعى من تكوين Cookie Authentication
-        /// (AccessDeniedPath) عندما يكون المستخدم مسجّلاً لكنه لا يملك صلاحية
-        /// للصفحة المطلوبة. تعيد استخدام صفحة الخطأ القياسية بحالة 403.
+        /// صفحة منع الوصول (403). <b>لا يناظرها تكوين ASP.NET Authorization</b>: هذا
+        /// المشروع لا يسجّل أي AuthenticationScheme (انظر Program.cs) والحراسة كلها عبر
+        /// <see cref="SessionAuthorizeAttribute"/>. الفعل باقٍ كصفحة 403 صريحة، ويُحوَّل
+        /// إليه من <c>DashboardController.Index</c> حين يكون موظف مصنعٍ بلا مصنعٍ مُسنَد
+        /// في جلسته (وإلا عرضت اللوحة بيانات بلا مصنع).
         /// </summary>
         [HttpGet]
         public IActionResult AccessDenied()
@@ -52,39 +57,50 @@ namespace Kharasana.Web.Controllers
 
             try
             {
+                // الخدمة ترمي استثناءً إذا فشل تسجيل الدخول
                 var result = await _authService.LoginAsync(model);
 
-                if (result == null)
-                {
-                    ModelState.AddModelError("", AppMessages.Error.InvalidLogin);
-                    return View(model);
-                }
+                // تفريغ الجلسة قبل كتابة الهوية الجديدة إلزامي
+                HttpContext.Session.Clear();
+                HttpContext.Session.SetString("Token", result!.Token);
 
-                HttpContext.Session.SetString("Token", result.Token);
-                HttpContext.Session.SetString("FullName", result.FullName);
-                HttpContext.Session.SetString("Role", result.Role);
+                // إصدار المطالبات (Claims)
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, result!.FullName),
+                    new Claim(ClaimTypes.NameIdentifier, result.UserId.ToString()),
+                    new Claim(ClaimTypes.Role, result.Role),
+                    new Claim("access_token", result.Token)
+                };
 
                 if (result.FactoryId.HasValue)
                 {
-                    HttpContext.Session.SetInt32("FactoryId", result.FactoryId.Value);
+                    claims.Add(new Claim("FactoryId", result.FactoryId.Value.ToString()));
+                }
 
-                    // تحميل اسم المصنع وشعاره مرة واحدة عند الدخول وتخزينهما في الجلسة
-                    // ليعرض الـ Navbar الشعار الدائري (مع بديل حرفي عند غيابه).
+                if (result.FactoryIsActive.HasValue)
+                {
+                    claims.Add(new Claim("FactoryIsActive", result.FactoryIsActive.Value.ToString()));
+                }
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2)
+                };
+                authProperties.StoreTokens(new[]
+                {
+                    new AuthenticationToken { Name = "access_token", Value = result.Token }
+                });
+
+                await HttpContext.SignInAsync("WebCookie", new ClaimsPrincipal(claimsIdentity), authProperties);
+
+                if (result.FactoryId.HasValue)
+                {
                     await CacheFactoryInfoAsync();
                 }
 
-                // ✅ تخزين حالة المصنع في الجلسة لاستخدامها في الواجهة
-                // (إخفاء الإجراءات غير المسموحة + بانر دائم عند التعطيل) — بلا نداء API إضافي.
-                if (result.FactoryIsActive.HasValue)
-                {
-                    HttpContext.Session.SetInt32("FactoryIsActive", result.FactoryIsActive.Value ? 1 : 0);
-                }
-                else
-                {
-                    HttpContext.Session.Remove("FactoryIsActive");
-                }
-
-                // ✅ تحذير بعد تسجيل الدخول (مثل: المصنع غير نشط) — يُعرض عبر _Alerts في الصفحة التالية
                 if (!string.IsNullOrWhiteSpace(result.Notification))
                     TempData[TempDataWarning] = result.Notification;
 
@@ -97,7 +113,8 @@ namespace Kharasana.Web.Controllers
             }
             catch (ApiServiceException ex)
             {
-                ModelState.AddModelError("", ex.Message);
+                // نبقى في صفحة الدخول ونعرض الرسالة الموحدة
+                ModelState.AddModelError(string.Empty, ex.Error.FormatMessage(ex.MessageArgs ?? Array.Empty<object>()));
                 return View(model);
             }
         }
@@ -127,14 +144,47 @@ namespace Kharasana.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [SessionAuthorize]
         public async Task<IActionResult> Logout()
         {
             await _authService.LogoutAsync();
-
+            await HttpContext.SignOutAsync("WebCookie");
             HttpContext.Session.Clear();
 
             return RedirectToAction(nameof(Login));
+        }
+
+        [HttpGet]
+        public IActionResult Activate(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return BadRequest("التوكن مفقود.");
+
+            // عرض نموذج تعيين كلمة المرور للمستخدم
+            return View(new ActivateAccountViewModel { TokenHash = token });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Activate(ActivateAccountViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                ModelState.AddModelError(string.Empty, "كلمتا المرور غير متطابقتين.");
+                return View(model);
+            }
+
+            var success = await _authService.ActivateAccountAsync(model.TokenHash, model.NewPassword);
+            if (success)
+            {
+                ViewBag.Message = "تم تفعيل الحساب وتعيين كلمة المرور بنجاح، يمكنك الآن تسجيل الدخول.";
+                return View("ActivateSuccess");
+            }
+
+            ViewBag.Message = "فشل تفعيل الحساب، الرابط قد يكون غير صالح أو منتهي الصلاحية.";
+            return View("ActivateError");
         }
     }
 }

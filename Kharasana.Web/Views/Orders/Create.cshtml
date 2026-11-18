@@ -1,374 +1,434 @@
 @model Kharasana.Web.ViewModels.Orders.CreatePhoneOrderViewModel
-@using Kharasana.Web.ViewModels.Shared
-@using Kharasana.Web.Models.Components
-@using Kharasana.Domain.Enums
 
 @{
     ViewData["Title"] = "إنشاء طلب جديد";
-
-    var concreteTypes = ViewBag.ConcreteTypes as List<LookupDto> ?? new List<LookupDto>();
 }
 
-<div class="dashboard-page">
+<div class="dashboard-page dashboard-page--wide-form">
 
     @await Html.PartialAsync(
-    "~/Views/Shared/Components/_PageHeader.cshtml",
-        new PageHeaderViewModel
+        "~/Views/Shared/Components/_PageHeader.cshtml",
+        new Kharasana.Web.Models.Components.PageHeaderViewModel
         {
             Icon = "bi-plus-circle",
             Title = "إنشاء طلب جديد",
-            Description = "إنشاء طلب خرسانة جديد للعميل"
+            Description = "إنشاء وتوثيق طلب خرسانة جديد لصالح العميل عبر موظف المصنع"
         })
+
+    @if (Model.HasPendingOrder && Model.PendingOrderId.HasValue)
+    {
+        <div class="alert alert-warning border-warning shadow-sm mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 p-3 rounded-3" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+                <div>
+                    <strong class="d-block">تنبيه بخصوص طلب سابق:</strong>
+                    <div>
+                        يوجد طلب سابق قيد الانتظار حالياً برقم <strong>@Model.PendingOrderNumber</strong>
+                        @(string.IsNullOrWhiteSpace(Model.PendingProjectName) ? "" : $"لمشروع ({Model.PendingProjectName})").
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <a asp-action="Edit" asp-route-id="@Model.PendingOrderId" class="btn btn-sm btn-warning text-dark fw-bold">
+                    <i class="bi bi-pencil-square me-1"></i> تعديل الطلب السابق بدلاً من إنشاء جديد
+                </a>
+            </div>
+        </div>
+    }
 
     <!-- ============================================================
     FORM - نموذج إنشاء الطلب
     ============================================================ -->
-    <div class="form-card">
-        <form asp-action="Create" method="post" id="createOrderForm">
+    <form asp-action="Create" method="post" id="createOrderForm">
 
-            @Html.AntiForgeryToken()
+        @Html.AntiForgeryToken()
 
-            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+        <div asp-validation-summary="All" class="alert alert-danger mb-4 @(ViewData.ModelState.IsValid ? "d-none" : "")" role="alert"></div>
 
-            <!-- ============================================================
-            1. CLIENT INFO - معلومات العميل
-            ============================================================ -->
-            <div class="form-section-title">
-                <i class="bi bi-person-circle"></i>
-                <span>معلومات العميل</span>
+        <div class="row g-4 align-items-start">
+
+            <!-- العمود الرئيسي: بطاقات النموذج الموزعة -->
+            <div class="col-lg-8 col-xl-8">
+                @await Html.PartialAsync("~/Views/Orders/_CreateClientInfo.cshtml", Model)
+                @await Html.PartialAsync("~/Views/Orders/_CreateOrderInfo.cshtml", Model)
+                @await Html.PartialAsync("~/Views/Orders/_CreateProjectInfo.cshtml", Model)
+                @await Html.PartialAsync("~/Views/Orders/_CreateNotes.cshtml", Model)
+                @await Html.PartialAsync("~/Views/Orders/_CreateSubmit.cshtml", Model)
             </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="ClientPhone" class="form-label fw-bold">
-                        <i class="bi bi-telephone"></i> رقم الهاتف
-                        <span class="text-danger">*</span>
-                    </label>
-                    <input asp-for="ClientPhone" class="form-control form-control-lg" placeholder="مثال: 771234567" dir="ltr" />
-                    <span asp-validation-for="ClientPhone" class="text-danger"></span>
-                    <small class="text-muted">رقم هاتف العميل (إلزامي)</small>
-                </div>
+            <!-- لوحة الحاسبة التقديرية الثابتة -->
+            @await Html.PartialAsync("~/Views/Orders/_OrderEstimator.cshtml")
 
-                <div class="col-md-6 mb-3">
-                    <label asp-for="ClientFullName" class="form-label fw-bold">
-                        <i class="bi bi-person"></i> الاسم الكامل للعميل
-                    </label>
-                    <input asp-for="ClientFullName" class="form-control form-control-lg" placeholder="اختياري - يُملأ إذا كان العميل جديداً" />
-                    <span asp-validation-for="ClientFullName" class="text-danger"></span>
-                    <small class="text-muted">مطلوب فقط عند إنشاء عميل جديد</small>
-                </div>
-            </div>
-
-            <!-- ============================================================
-            2. ORDER INFO - معلومات الطلب الأساسية
-            ============================================================ -->
-            <div class="form-section-title mt-3">
-                <i class="bi bi-box-seam"></i>
-                <span>معلومات الطلب</span>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="FactoryId" class="form-label fw-bold">
-                        <i class="bi bi-building"></i> المصنع
-                        <span class="text-danger">*</span>
-                    </label>
-                    <input asp-for="FactoryId" class="form-control form-control-lg" readonly />
-                    <span asp-validation-for="FactoryId" class="text-danger"></span>
-                    <small class="text-muted">يتم تحديد المصنع تلقائياً حسب حسابك</small>
-                </div>
-
-                <!-- ✅ نوع الخرسانة مع زر إضافة -->
-                <div class="col-md-6 mb-3">
-                    <label asp-for="ConcreteTypeId" class="form-label fw-bold">
-                        <i class="bi bi-box-seam"></i> نوع الخرسانة
-                        <span class="text-danger">*</span>
-                    </label>
-                    <div class="d-flex gap-2">
-                        <select asp-for="ConcreteTypeId" class="form-select form-select-lg" id="concreteTypeSelect">
-                            <option value="">-- اختر نوع الخرسانة --</option>
-                            @foreach (var item in concreteTypes)
-                            {
-                                <option value="@item.Id" data-unit-price="@item.UnitPrice">@item.Name</option>
-                            }
-                        </select>
-                        <button type="button" class="btn btn-outline-primary btn-lg"
-                                data-bs-toggle="modal" data-bs-target="#customConcreteModal"
-                                title="إنشاء نوع خرسانة مخصص">
-                            <i class="bi bi-plus-circle"></i>
-                        </button>
-                    </div>
-                    <span asp-validation-for="ConcreteTypeId" class="text-danger"></span>
-                    <small class="text-muted">اختر نوع الخرسانة المطلوب أو أضف نوعاً مخصصاً</small>
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Quantity" class="form-label fw-bold">
-                        <i class="bi bi-rulers"></i> الكمية (م³)
-                        <span class="text-danger">*</span>
-                    </label>
-                    <input asp-for="Quantity" class="form-control form-control-lg" type="number" step="0.01" min="0.1" placeholder="مثال: 25" />
-                    <span asp-validation-for="Quantity" class="text-danger"></span>
-                    <small class="text-muted">الكمية بالمتر المكعب</small>
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label asp-for="PouringDate" class="form-label fw-bold">
-                        <i class="bi bi-calendar-event"></i> تاريخ الصب
-                        <span class="text-danger">*</span>
-                    </label>
-                    <input asp-for="PouringDate" class="form-control form-control-lg" type="date" />
-                    <span asp-validation-for="PouringDate" class="text-danger"></span>
-                    <small class="text-muted">تاريخ صب الخرسانة</small>
-                </div>
-
-                <!-- ✅ نوع البلاطة -->
-                <div class="col-md-6 mb-3">
-                    <label asp-for="SlabType" class="form-label fw-bold">
-                        <i class="bi bi-grid"></i> نوع البلاطة
-                        <span class="text-danger">*</span>
-                    </label>
-                    <select asp-for="SlabType" class="form-select form-select-lg" asp-items="EnumHelper.GetSlabTypeSelectList()">
-                    </select>
-                    <span asp-validation-for="SlabType" class="text-danger"></span>
-                    <small class="text-muted">اختر نوع البلاطة المناسب</small>
-                </div>
-
-                <!-- ✅ طريقة النقل - Radio Buttons محسنة -->
-                <div class="col-md-12 mb-3">
-                    <label class="form-label fw-bold">
-                        <i class="bi bi-truck"></i> طريقة النقل
-                        <span class="text-danger">*</span>
-                    </label>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="transport-option p-3 border rounded-3 h-100">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio"
-                                           asp-for="TransportMethod"
-                                           value="@((int)TransportMethod.FactoryTransport)"
-                                           id="transportFactory" />
-                                    <label class="form-check-label fw-bold" for="transportFactory">
-                                        <i class="bi bi-truck text-primary fs-4 d-block"></i>
-                                        <span>نقل بواسطة المصنع</span>
-                                    </label>
-                                    <small class="text-muted d-block">يقوم المصنع بتوفير سيارات النقل</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="transport-option p-3 border rounded-3 h-100">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio"
-                                           asp-for="TransportMethod"
-                                           value="@((int)TransportMethod.ClientOwnTransport)"
-                                           id="transportClient" />
-                                    <label class="form-check-label fw-bold" for="transportClient">
-                                        <i class="bi bi-car-front text-success fs-4 d-block"></i>
-                                        <span>نقل ذاتي (العميل)</span>
-                                    </label>
-                                    <small class="text-muted d-block">العميل لديه وسيلة نقل خاصة</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <span asp-validation-for="TransportMethod" class="text-danger"></span>
-                </div>
-
-                <!-- ✅ بحاجة مضخة - مع تفعيل/تعطيل رقم الطابق -->
-                <div class="col-md-6 mb-3" id="pumpSection">
-                    <div class="form-check form-switch mt-3 pt-2">
-                        <input asp-for="NeedPump" class="form-check-input" type="checkbox" role="switch" id="needPumpSwitch" />
-                        <label asp-for="NeedPump" class="form-check-label fw-bold" for="needPumpSwitch">
-                            <i class="bi bi-water"></i> بحاجة مضخة
-                        </label>
-                        <small class="text-muted d-block">اختر إذا كان الطلب يحتاج إلى مضخة</small>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mb-3" id="floorNumberContainer">
-                    <label asp-for="FloorNumber" class="form-label fw-bold">
-                        <i class="bi bi-building"></i> رقم الطابق
-                        <span class="text-danger" id="floorRequired">*</span>
-                    </label>
-                    <input asp-for="FloorNumber" class="form-control form-control-lg" type="number" min="0" placeholder="مثال: 6" />
-                    <span asp-validation-for="FloorNumber" class="text-danger"></span>
-                    <small class="text-muted">مطلوب عند اختيار مضخة</small>
-                </div>
-            </div>
-
-            <!-- ============================================================
-            3. PROJECT INFO - معلومات المشروع
-            ============================================================ -->
-            <div class="form-section-title mt-3">
-                <i class="bi bi-building"></i>
-                <span>معلومات المشروع</span>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="ProjectName" class="form-label fw-bold">
-                        <i class="bi bi-tag"></i> اسم المشروع
-                    </label>
-                    <input asp-for="ProjectName" class="form-control form-control-lg" placeholder="اسم المشروع (اختياري)" />
-                    <span asp-validation-for="ProjectName" class="text-danger"></span>
-                    <small class="text-muted">حقل اختياري</small>
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label asp-for="ProjectOwnerName" class="form-label fw-bold">
-                        <i class="bi bi-person-badge"></i> اسم مالك المشروع
-                    </label>
-                    <input asp-for="ProjectOwnerName" class="form-control form-control-lg" placeholder="اسم المالك (اختياري)" />
-                    <span asp-validation-for="ProjectOwnerName" class="text-danger"></span>
-                    <small class="text-muted">حقل اختياري</small>
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label asp-for="SiteArea" class="form-label fw-bold">
-                        <i class="bi bi-geo-alt"></i> المنطقة
-                    </label>
-                    <input asp-for="SiteArea" class="form-control form-control-lg" placeholder="المنطقة (اختياري)" />
-                    <span asp-validation-for="SiteArea" class="text-danger"></span>
-                    <small class="text-muted">حقل اختياري</small>
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label asp-for="SiteDescription" class="form-label fw-bold">
-                        <i class="bi bi-file-text"></i> وصف الموقع
-                    </label>
-                    <input asp-for="SiteDescription" class="form-control form-control-lg" placeholder="وصف الموقع (اختياري)" />
-                    <span asp-validation-for="SiteDescription" class="text-danger"></span>
-                    <small class="text-muted">حقل اختياري</small>
-                </div>
-            </div>
-
-            <!-- ============================================================
-            4. NOTES - ملاحظات
-            ============================================================ -->
-            <div class="form-section-title mt-3">
-                <i class="bi bi-chat-left-text"></i>
-                <span>ملاحظات إضافية</span>
-            </div>
-
-            <div class="row">
-                <div class="col-12 mb-3">
-                    <label asp-for="Notes" class="form-label fw-bold">
-                        <i class="bi bi-pencil"></i> ملاحظات
-                    </label>
-                    <textarea asp-for="Notes" rows="4" class="form-control form-control-lg" placeholder="أي ملاحظات إضافية حول الطلب..."></textarea>
-                    <span asp-validation-for="Notes" class="text-danger"></span>
-                    <small class="text-muted">حقل اختياري</small>
-                </div>
-            </div>
-
-            <!-- ============================================================
-            5. SUBMIT - أزرار الإرسال
-            ============================================================ -->
-            <div class="d-flex flex-wrap gap-3 mt-4 pt-3 border-top">
-                <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn">
-                    <i class="bi bi-check-circle"></i> إنشاء الطلب
-                </button>
-                <div class="ms-auto d-flex align-items-center gap-3">
-                    <div>
-                        <label class="form-label text-muted mb-0">سعر المتر</label>
-                        <div id="selectedUnitPrice" class="fw-bold">-</div>
-                    </div>
-                    <div>
-                        <label class="form-label text-muted mb-0">الإجمالي المتوقع</label>
-                        <div id="calculatedTotal" class="fw-bold text-primary">-</div>
-                    </div>
-                </div>
-                <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-5">
-                    <i class="bi bi-x-circle"></i> إلغاء
-                </a>
-            </div>
-
-        </form>
-    </div>
-
-</div>
-
-<!-- ============================================================
-MODAL - إنشاء نوع خرسانة مخصص
-============================================================ -->
-<div class="modal fade" id="customConcreteModal" tabindex="-1" aria-labelledby="customConcreteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold" id="customConcreteModalLabel">
-                    <i class="bi bi-plus-circle"></i> إنشاء نوع خرسانة مخصص
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="customConcreteMessage" class="alert d-none"></div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">
-                        اسم النوع <span class="text-danger">*</span>
-                    </label>
-                    <input type="text" id="customConcreteName" class="form-control form-control-lg"
-                           placeholder="مثال: خرسانة مقاومة للأملاح" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">
-                        المقاومة (MPa) <span class="text-danger">*</span>
-                    </label>
-                    <input type="number" id="customConcreteStrength" class="form-control form-control-lg"
-                           placeholder="مثال: 35" min="1" max="100" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">ملاحظات</label>
-                    <textarea id="customConcreteDescription" class="form-control" rows="3"
-                              placeholder="أي ملاحظات إضافية عن النوع المطلوب..."></textarea>
-                </div>
-
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i>
-                    سيتم إرسال طلبك إلى المصنع لمراجعته. سيتم إشعارك عند اعتماد النوع.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle"></i> إلغاء
-                </button>
-                <button type="button" class="btn btn-primary btn-lg" id="saveCustomConcreteBtn">
-                    <i class="bi bi-save"></i> حفظ وإضافة
-                </button>
-            </div>
         </div>
-    </div>
+
+    </form>
+
 </div>
 
-<!-- تم نقل تنسيقات هذه الصفحة إلى wwwroot/css/orders.css (ملف مركزي موحّد) -->
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
     <script nonce="@ViewBag.CspNonce">
-        (function(){
+        (function () {
             const concreteSelect = document.getElementById('concreteTypeSelect');
-            const qtyInput = document.querySelector('input[name="Quantity"]');
+            const qtyInput = document.getElementById('quantityInput') || document.querySelector('input[name="Quantity"]');
             const unitPriceEl = document.getElementById('selectedUnitPrice');
             const totalEl = document.getElementById('calculatedTotal');
 
-            function formatNumber(n){
-                if (n == null) return '-';
-                return Number(n).toLocaleString(undefined, {maximumFractionDigits:2});
+            // عناصر اللوحة الثابتة لشاشات الكمبيوتر
+            const summaryClientName = document.getElementById('summaryClientName');
+            const summaryConcreteName = document.getElementById('summaryConcreteName');
+            const summaryUnitPrice = document.getElementById('summaryUnitPrice');
+            const summaryQuantity = document.getElementById('summaryQuantity');
+            const summaryTransport = document.getElementById('summaryTransport');
+            const summaryPump = document.getElementById('summaryPump');
+            const summaryTotalAmount = document.getElementById('summaryTotalAmount');
+
+            const clientNameInput = document.getElementById('clientFullNameInput') || document.querySelector('input[name="ClientFullName"]');
+            const clientPhoneInput = document.getElementById('clientPhoneInput') || document.querySelector('input[name="ClientPhone"]');
+            const transportRadios = document.querySelectorAll('input[name="TransportMethod"]');
+            const needPumpSwitch = document.getElementById('needPumpSwitch');
+            const floorNumberInput = document.querySelector('input[name="FloorNumber"]');
+            const floorNumberContainer = document.getElementById('floorNumberContainer');
+
+            // عناصر المواصفات الفنية
+            const slabTypeSelect = document.getElementById('slabTypeSelect');
+            const cementTypeSelect = document.getElementById('cementTypeSelect');
+            const aggregateSizeSelect = document.getElementById('aggregateSizeSelect');
+            const admixtureSelect = document.getElementById('admixtureSelect');
+
+            // عناصر بطاقة استعلام العميل
+            const clientLookupBadge = document.getElementById('clientLookupBadge');
+            const lookupBadgeClientName = document.getElementById('lookupBadgeClientName');
+            const lookupBadgeOrdersCount = document.getElementById('lookupBadgeOrdersCount');
+            const lookupBadgeLastSiteInfo = document.getElementById('lookupBadgeLastSiteInfo');
+            const btnAutoFillLastSite = document.getElementById('btnAutoFillLastSite');
+            const phoneSearchSpinner = document.getElementById('phoneSearchSpinner');
+
+            // عناصر المشروع والموقع
+            const projectNameInput = document.getElementById('projectNameInput');
+            const projectOwnerNameInput = document.getElementById('projectOwnerNameInput');
+            const supervisorNameInput = document.getElementById('supervisorNameInput');
+            const supervisorPhoneInput = document.getElementById('supervisorPhoneInput');
+            const siteAreaInput = document.getElementById('siteAreaInput');
+            const siteDescriptionInput = document.getElementById('siteDescriptionInput');
+            const landmarksInput = document.getElementById('landmarksInput');
+
+            // عناصر حاسبة الحجم
+            const toggleVolumeCalcBtn = document.getElementById('toggleVolumeCalcBtn');
+            const closeVolumeCalcBtn = document.getElementById('closeVolumeCalcBtn');
+            const volumeCalcPanel = document.getElementById('volumeCalcPanel');
+            const calcLength = document.getElementById('calcLength');
+            const calcWidth = document.getElementById('calcWidth');
+            const calcThickness = document.getElementById('calcThickness');
+            const calcIncludeWaste = document.getElementById('calcIncludeWaste');
+            const calcResultDisplay = document.getElementById('calcResultDisplay');
+            const applyVolumeBtn = document.getElementById('applyVolumeBtn');
+
+            let lastSiteData = null;
+            let phoneLookupTimeout = null;
+
+            function formatNumber(n) {
+                if (n == null || isNaN(n) || n === 0) return '0';
+                return Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
             }
 
-            function recalc(){
-                const sel = concreteSelect.options[concreteSelect.selectedIndex];
-                const unit = sel ? parseFloat(sel.dataset.unitPrice || '0') : 0;
+            function recalc() {
+                // 1. النوع والسعر والكمية
+                const sel = concreteSelect ? concreteSelect.options[concreteSelect.selectedIndex] : null;
+                const hasConcrete = sel && sel.value !== "";
+                const concreteName = hasConcrete ? sel.text : 'لم يُحدد';
+                const unit = hasConcrete ? parseFloat(sel.dataset.unitPrice || '0') : 0;
                 const qty = qtyInput ? parseFloat(qtyInput.value || '0') : 0;
-                unitPriceEl.textContent = unit > 0 ? formatNumber(unit) + ' ر.ي' : '-';
+
+                const formattedUnit = unit > 0 ? formatNumber(unit) + ' ر.ي' : '-';
                 const total = unit * qty;
-                totalEl.textContent = total > 0 ? formatNumber(total) + ' ر.ي' : '-';
+                const formattedTotal = total > 0 ? formatNumber(total) + ' ر.ي' : '-';
+
+                // الشريط السفلي للجوال
+                if (unitPriceEl) unitPriceEl.textContent = formattedUnit;
+                if (totalEl) totalEl.textContent = formattedTotal;
+
+                // اللوحة الثابتة الجانبية للديسكتوب
+                if (summaryConcreteName) summaryConcreteName.textContent = concreteName;
+                if (summaryUnitPrice) summaryUnitPrice.textContent = formattedUnit;
+                if (summaryQuantity) summaryQuantity.textContent = qty > 0 ? qty + ' م³' : '-';
+                if (summaryTotalAmount) {
+                    summaryTotalAmount.innerHTML = (total > 0 ? formatNumber(total) : '0') + ' <small style="font-size:0.9rem; font-weight:normal;">ر.ي</small>';
+                }
+
+                // 2. العميل
+                const cName = clientNameInput ? clientNameInput.value.trim() : '';
+                const cPhone = clientPhoneInput ? clientPhoneInput.value.trim() : '';
+                if (summaryClientName) {
+                    if (cName) {
+                        summaryClientName.textContent = cName;
+                    } else if (cPhone) {
+                        summaryClientName.textContent = cPhone;
+                    } else {
+                        summaryClientName.textContent = 'لم يُحدد بعد';
+                    }
+                }
+
+                // 3. النقل
+                let transportText = 'نقل المصنع';
+                transportRadios.forEach(r => {
+                    if (r.checked) {
+                        transportText = r.value === '1' ? 'نقل المصنع' : 'نقل ذاتي';
+                    }
+                });
+                if (summaryTransport) summaryTransport.textContent = transportText;
+
+                // 4. المضخة والطابق
+                const needPump = needPumpSwitch ? needPumpSwitch.checked : false;
+                if (floorNumberContainer) {
+                    floorNumberContainer.style.opacity = needPump ? '1' : '0.45';
+                    if (!needPump && floorNumberInput) {
+                        floorNumberInput.setAttribute('disabled', 'disabled');
+                    } else if (floorNumberInput) {
+                        floorNumberInput.removeAttribute('disabled');
+                    }
+                }
+                if (summaryPump) {
+                    if (needPump) {
+                        const floor = floorNumberInput && floorNumberInput.value ? ' (طابق ' + floorNumberInput.value + ')' : '';
+                        summaryPump.textContent = 'نعم' + floor;
+                    } else {
+                        summaryPump.textContent = 'لا';
+                    }
+                }
             }
 
+            // ============================================================
+            // 5. PHONE AUTO LOOKUP - استعلام ذكي فوري برقم الهاتف
+            // ============================================================
+            function performPhoneLookup() {
+                const phone = clientPhoneInput ? clientPhoneInput.value.trim() : '';
+                if (phone.length < 7) {
+                    if (clientLookupBadge) clientLookupBadge.classList.add('d-none');
+                    lastSiteData = null;
+                    return;
+                }
+
+                if (phoneSearchSpinner) {
+                    phoneSearchSpinner.innerHTML = '<span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+                }
+
+                fetch('/Orders/LookupClientByPhone?phone=' + encodeURIComponent(phone))
+                    .then(res => res.json())
+                    .then(data => {
+                        if (phoneSearchSpinner) {
+                            phoneSearchSpinner.innerHTML = '<i class="bi bi-phone"></i>';
+                        }
+                        if (data && data.found) {
+                            if (clientLookupBadge) clientLookupBadge.classList.remove('d-none');
+                            if (lookupBadgeClientName) lookupBadgeClientName.textContent = data.clientName || 'عميل مسجل';
+                            if (lookupBadgeOrdersCount) {
+                                const count = data.ordersCount || 0;
+                                lookupBadgeOrdersCount.textContent = count > 1 ? `${count} صبات سابقة` : 'صبة واحدة سابقة';
+                            }
+                            if (clientNameInput && (!clientNameInput.value || clientNameInput.value.trim() === '')) {
+                                if (data.clientName) clientNameInput.value = data.clientName;
+                            }
+
+                            if (data.lastOrder) {
+                                lastSiteData = data.lastOrder;
+                                if (lookupBadgeLastSiteInfo) {
+                                    const proj = data.lastOrder.projectName || 'مشروع سابق';
+                                    const area = data.lastOrder.siteArea ? ` - ${data.lastOrder.siteArea}` : '';
+                                    lookupBadgeLastSiteInfo.innerHTML = `آخر صبة مسجلة: <strong>${proj}${area}</strong>`;
+                                }
+                                if (btnAutoFillLastSite) btnAutoFillLastSite.classList.remove('d-none');
+                            } else {
+                                lastSiteData = null;
+                                if (lookupBadgeLastSiteInfo) {
+                                    lookupBadgeLastSiteInfo.textContent = 'عميل معتمد مسجل في النظام.';
+                                }
+                                if (btnAutoFillLastSite) btnAutoFillLastSite.classList.add('d-none');
+                            }
+                            recalc();
+                        } else {
+                            if (clientLookupBadge) clientLookupBadge.classList.add('d-none');
+                            lastSiteData = null;
+                        }
+                    })
+                    .catch(() => {
+                        if (phoneSearchSpinner) {
+                            phoneSearchSpinner.innerHTML = '<i class="bi bi-phone"></i>';
+                        }
+                    });
+            }
+
+            if (clientPhoneInput) {
+                clientPhoneInput.addEventListener('input', function () {
+                    clearTimeout(phoneLookupTimeout);
+                    const val = this.value.trim();
+                    if (val.length >= 9) {
+                        phoneLookupTimeout = setTimeout(performPhoneLookup, 300);
+                    } else if (val.length < 7) {
+                        if (clientLookupBadge) clientLookupBadge.classList.add('d-none');
+                    }
+                });
+                clientPhoneInput.addEventListener('blur', function () {
+                    if (this.value.trim().length >= 7) {
+                        performPhoneLookup();
+                    }
+                });
+            }
+
+            // ============================================================
+            // 6. AUTO FILL LAST SITE DATA - استيراد تفاصيل الموقع السابق
+            // ============================================================
+            if (btnAutoFillLastSite) {
+                btnAutoFillLastSite.addEventListener('click', function () {
+                    if (!lastSiteData) return;
+                    if (projectNameInput && lastSiteData.projectName) projectNameInput.value = lastSiteData.projectName;
+                    if (projectOwnerNameInput && lastSiteData.projectOwnerName) projectOwnerNameInput.value = lastSiteData.projectOwnerName;
+                    if (supervisorNameInput && lastSiteData.supervisorName) supervisorNameInput.value = lastSiteData.supervisorName;
+                    if (supervisorPhoneInput && lastSiteData.supervisorPhone) supervisorPhoneInput.value = lastSiteData.supervisorPhone;
+                    if (siteAreaInput && lastSiteData.siteArea) siteAreaInput.value = lastSiteData.siteArea;
+                    if (siteDescriptionInput && lastSiteData.siteDescription) siteDescriptionInput.value = lastSiteData.siteDescription;
+                    if (landmarksInput && lastSiteData.landmarks) landmarksInput.value = lastSiteData.landmarks;
+
+                    if (lastSiteData.concreteTypeId && concreteSelect) {
+                        concreteSelect.value = lastSiteData.concreteTypeId;
+                    }
+                    if (lastSiteData.slabType !== undefined && slabTypeSelect) {
+                        slabTypeSelect.value = lastSiteData.slabType;
+                    }
+                    if (lastSiteData.cementType !== undefined && cementTypeSelect) {
+                        cementTypeSelect.value = lastSiteData.cementType;
+                    }
+                    if (lastSiteData.aggregateSize !== undefined && aggregateSizeSelect) {
+                        aggregateSizeSelect.value = lastSiteData.aggregateSize;
+                    }
+                    if (lastSiteData.admixture !== undefined && admixtureSelect) {
+                        admixtureSelect.value = lastSiteData.admixture;
+                    }
+                    if (lastSiteData.needPump !== undefined && needPumpSwitch) {
+                        needPumpSwitch.checked = lastSiteData.needPump;
+                    }
+                    if (lastSiteData.floorNumber !== null && lastSiteData.floorNumber !== undefined && floorNumberInput) {
+                        floorNumberInput.value = lastSiteData.floorNumber + 1; // اقتراح الطابق التالي تلقائياً
+                    }
+
+                    recalc();
+
+                    btnAutoFillLastSite.innerHTML = '<i class="bi bi-check2 me-1"></i> تم الاستيراد بنجاح';
+                    btnAutoFillLastSite.classList.remove('btn-outline-primary');
+                    btnAutoFillLastSite.classList.add('btn-success', 'text-white');
+                    setTimeout(() => {
+                        btnAutoFillLastSite.innerHTML = '<i class="bi bi-magic me-1"></i> استيراد بيانات آخر موقع صب';
+                        btnAutoFillLastSite.classList.remove('btn-success', 'text-white');
+                        btnAutoFillLastSite.classList.add('btn-outline-primary');
+                    }, 2500);
+                });
+            }
+
+            // ============================================================
+            // 7. POUR PRESETS - النماذج الهندسية السريعة
+            // ============================================================
+            const presetButtons = document.querySelectorAll('.btn-pour-preset');
+            presetButtons.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const slab = this.dataset.slab;
+                    const pump = this.dataset.pump === 'true';
+                    const cement = this.dataset.cement;
+                    const agg = this.dataset.aggregate;
+                    const adm = this.dataset.admixture;
+
+                    if (slabTypeSelect && slab !== undefined) slabTypeSelect.value = slab;
+                    if (needPumpSwitch) needPumpSwitch.checked = pump;
+                    if (cementTypeSelect && cement !== undefined) cementTypeSelect.value = cement;
+                    if (aggregateSizeSelect && agg !== undefined) aggregateSizeSelect.value = agg;
+                    if (admixtureSelect && adm !== undefined) admixtureSelect.value = adm;
+
+                    presetButtons.forEach(b => b.classList.remove('active', 'fw-bold'));
+                    this.classList.add('active', 'fw-bold');
+
+                    recalc();
+                });
+            });
+
+            // ============================================================
+            // 8. SLAB VOLUME CALCULATOR - حاسبة أبعاد السقف والكمية
+            // ============================================================
+            function updateVolumeCalc() {
+                const len = parseFloat(calcLength?.value || '0');
+                const wid = parseFloat(calcWidth?.value || '0');
+                const thickCm = parseFloat(calcThickness?.value || '0');
+                const incWaste = calcIncludeWaste ? calcIncludeWaste.checked : true;
+
+                if (len > 0 && wid > 0 && thickCm > 0) {
+                    const baseVol = len * wid * (thickCm / 100);
+                    const finalVol = incWaste ? (baseVol * 1.05) : baseVol;
+                    if (calcResultDisplay) calcResultDisplay.textContent = finalVol.toFixed(2);
+                } else {
+                    if (calcResultDisplay) calcResultDisplay.textContent = '0';
+                }
+            }
+
+            toggleVolumeCalcBtn?.addEventListener('click', function () {
+                if (volumeCalcPanel) {
+                    volumeCalcPanel.classList.toggle('d-none');
+                    if (!volumeCalcPanel.classList.contains('d-none') && calcLength) {
+                        calcLength.focus();
+                    }
+                }
+            });
+
+            closeVolumeCalcBtn?.addEventListener('click', function () {
+                if (volumeCalcPanel) volumeCalcPanel.classList.add('d-none');
+            });
+
+            [calcLength, calcWidth, calcThickness, calcIncludeWaste].forEach(el => {
+                el?.addEventListener('input', updateVolumeCalc);
+                el?.addEventListener('change', updateVolumeCalc);
+            });
+
+            applyVolumeBtn?.addEventListener('click', function () {
+                const calculated = parseFloat(calcResultDisplay?.textContent || '0');
+                if (calculated > 0 && qtyInput) {
+                    qtyInput.value = calculated.toFixed(1);
+                    if (volumeCalcPanel) volumeCalcPanel.classList.add('d-none');
+                    recalc();
+                }
+            });
+
+            // ============================================================
+            // EVENT LISTENERS & FORM SUBMISSION
+            // ============================================================
             concreteSelect?.addEventListener('change', recalc);
             qtyInput?.addEventListener('input', recalc);
-            document.addEventListener('DOMContentLoaded', recalc);
+            clientNameInput?.addEventListener('input', recalc);
+            clientPhoneInput?.addEventListener('input', recalc);
+            needPumpSwitch?.addEventListener('change', recalc);
+            floorNumberInput?.addEventListener('input', recalc);
+            transportRadios.forEach(r => r.addEventListener('change', recalc));
+
+            document.addEventListener('DOMContentLoaded', function () {
+                recalc();
+                if (clientPhoneInput && clientPhoneInput.value.trim().length >= 7) {
+                    performPhoneLookup();
+                }
+            });
+            recalc();
+
+            const form = document.getElementById('createOrderForm');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    if (window.jQuery && $(form).valid && !$(form).valid()) return;
+                    const submitBtn = document.getElementById('submitBtn');
+                    const stickyBtn = document.getElementById('stickySubmitBtn');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> <span>جاري الحفظ...</span>';
+                    }
+                    if (stickyBtn) {
+                        stickyBtn.disabled = true;
+                        stickyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> <span>جاري الحفظ...</span>';
+                    }
+                });
+            }
         })();
     </script>
 }

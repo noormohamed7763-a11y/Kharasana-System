@@ -1,8 +1,9 @@
+using Microsoft.Extensions.Caching.Memory;
 using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Shared;
-using Kharasana.Application.DTOs.ConcreteType;
-using Kharasana.Application.DTOs.User;
+using Kharasana.Web.ViewModels.ConcreteTypes;
+using Kharasana.Web.ViewModels.Users;
 using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -12,46 +13,68 @@ namespace Kharasana.Web.Services.Api
     {
         private readonly ApiClient _apiClient;
         private readonly ILogger<LookupApiService> _logger;
+        private readonly IMemoryCache _cache;
 
-        public LookupApiService(ApiClient apiClient, ILogger<LookupApiService> logger)
+        public LookupApiService(ApiClient apiClient, ILogger<LookupApiService> logger, IMemoryCache cache)
         {
             _apiClient = apiClient;
             _logger = logger;
+            _cache = cache;
+        }
+
+        /// <summary>حجم الصفحة عند الجلب — يطابق سقف الـ API (PaginationParams يقصّ كل طلب إلى 100).</summary>
+        private const int LookupPageSize = 100;
+
+        /// <summary>سقف أمان لعدد الصفحات (2000 عنصر) حتى لا يتحول خلل في TotalCount إلى حلقة لا تنتهي.</summary>
+        private const int MaxLookupPages = 20;
+
+        /// <summary>
+        /// جلب **كل** عناصر قائمة مرقّمة عبر صفحاتها المتتابعة.
+        /// </summary>
+        private async Task<List<TItem>> FetchPagedAsync<TItem, TResult>(
+            string url,
+            Func<IEnumerable<TResult>, IEnumerable<TItem>> extractor)
+        {
+            var items = new List<TItem>();
+            var pageNumber = 1;
+            var totalCount = int.MaxValue;
+            var separator = url.Contains('?') ? '&' : '?';
+
+            while (items.Count < totalCount && pageNumber <= MaxLookupPages)
+            {
+                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<TResult>>>(
+                    $"{url}{separator}PageNumber={pageNumber}&PageSize={LookupPageSize}");
+
+                if (response == null || !response.Success || response.Data?.Items == null)
+                {
+                    _logger.LogWarning("لا بيانات في الصفحة {Page} من {Url}", pageNumber, url);
+                    break;
+                }
+
+                items.AddRange(extractor(response.Data.Items));
+                totalCount = response.Data.TotalCount;
+                pageNumber++;
+            }
+
+            return items;
         }
 
         /// <summary>
-        /// تنفيذ طلب API موحّد مع معالجة الأخطاء والتسجيل.
+        /// جلب قائمة اختيار (سائقون/عملاء) مع توحيد التسجيل.
         /// </summary>
-        private async Task<(bool Success, List<LookupDto> Items)> FetchLookupAsync(
+        private async Task<List<LookupDto>> FetchUserLookupAsync(
             string operation,
             string url,
-            Func<ApiResponse<PagedResult<UserDto>>, List<LookupDto>> mapper)
+            Func<UserDto, LookupDto> project)
         {
-            try
-            {
-                _logger.LogInformation("Fetching {Operation}...", operation);
+            _logger.LogInformation("جلب {Operation}...", operation);
 
-                var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(url);
+            var users = await FetchPagedAsync<UserDto, UserDto>(url, items => items);
+            var items = users.Select(project).ToList();
 
-                if (response != null && response.Success && response.Data?.Items != null)
-                {
-                    var items = mapper(response);
-                    _logger.LogInformation("Found {Count} {Operation}", items.Count, operation);
-                    return (true, items);
-                }
+            _logger.LogInformation("وُجد {Count} {Operation}", items.Count, operation);
 
-                _logger.LogWarning("No {Operation} found.", operation);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "API error in {Operation}", operation);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching {Operation}", operation);
-            }
-
-            return (false, new List<LookupDto>());
+            return items;
         }
 
         /// <summary>
@@ -59,80 +82,53 @@ namespace Kharasana.Web.Services.Api
         /// </summary>
         public async Task<List<LookupDto>> GetAvailableDriversAsync()
         {
-            var (Success, Items) = await FetchLookupAsync(
-                "available drivers",
-                $"Users?role={(int)UserRole.Driver}&driverStatus={(int)DriverStatus.Available}&PageSize=100",
-                response => response.Data!.Items
-                    .Where(u => u.IsActive)
-                    .Select(u => new LookupDto
-                    {
-                        Id = u.UserId,
-                        Name = u.FullName,
-                        FactoryId = u.FactoryId
-                    })
-                    .ToList()
-            );
-
-            return Success ? Items : new List<LookupDto>();
-        }
-
-        /// <summary>
-        /// جلب جميع العملاء
-        /// </summary>
-        public async Task<List<LookupDto>> GetClientsAsync()
-        {
-            var (Success, Items) = await FetchLookupAsync(
-                "clients",
-                $"Users?role={(int)UserRole.Client}&PageSize=100",
-                response => response.Data!.Items
-                    .Where(u => u.IsActive)
-                    .Select(u => new LookupDto
-                    {
-                        Id = u.UserId,
-                        Name = u.FullName,
-                        FactoryId = u.FactoryId
-                    })
-                    .ToList()
-            );
-
-            return Success ? Items : new List<LookupDto>();
-        }
-
-        /// <summary>
-        /// جلب أنواع الخرسانة
-        /// </summary>
-        public async Task<List<LookupDto>> GetConcreteTypesAsync()
-        {
-            try
-            {
-                _logger.LogInformation("Fetching concrete types...");
-
-                var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeDto>>>("ConcreteTypes");
-
-                if (response != null && response.Success && response.Data != null)
+            return await FetchUserLookupAsync(
+                "السائقون المتاحون",
+                $"Users?role={(int)UserRole.Driver}&driverStatus={(int)DriverStatus.Available}&isActive=true",
+                u => new LookupDto
                 {
-                    var types = response.Data
-                        .Where(x => x.IsActive)
-                        .Select(x => new LookupDto
-                        {
-                            Id = x.ConcreteTypeId,
-                            Name = x.Name,
-                            UnitPrice = x.UnitPrice
-                        })
-                        .ToList();
+                    Id = u.UserId,
+                    Name = u.FullName,
+                    FactoryId = u.FactoryId
+                });
+        }
 
-                    _logger.LogInformation("Found {Count} concrete types", types.Count);
-                    return types;
-                }
+        /// <summary>
+        /// جلب أنواع الخرسانة الخاصة بمصنع معين.
+        /// </summary>
+        public async Task<List<LookupDto>> GetConcreteTypesAsync(int factoryId)
+        {
+            string cacheKey = $"ConcreteTypes_Lookup_{factoryId}";
 
-                _logger.LogWarning("No concrete types found.");
-            }
-            catch (Exception ex)
+            return await _cache.GetOrCreateAsync(cacheKey, async entry =>
             {
-                _logger.LogError(ex, "Error fetching concrete types");
-            }
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
+                entry.SlidingExpiration = TimeSpan.FromMinutes(5);
 
-            return new List<LookupDto>();
+                try
+                {
+                    _logger.LogInformation("جلب أنواع الخرسانة للمصنع {FactoryId} من API...", factoryId);
+
+                    var items = await FetchPagedAsync<LookupDto, ConcreteTypeDto>(
+                        $"ConcreteTypes?factoryId={factoryId}",
+                        items => items
+                            .Where(x => x.IsActive)
+                            .Select(x => new LookupDto
+                            {
+                                Id = x.ConcreteTypeId,
+                                Name = x.Name,
+                                UnitPrice = x.UnitPrice
+                            }));
+
+                    _logger.LogInformation("وُجد {Count} نوع خرسانة للمصنع {FactoryId}", items.Count, factoryId);
+                    return items;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "خطأ في جلب أنواع الخرسانة للمصنع {FactoryId}", factoryId);
+                    throw;
+                }
+            }) ?? new List<LookupDto>();
         }
     }
 }

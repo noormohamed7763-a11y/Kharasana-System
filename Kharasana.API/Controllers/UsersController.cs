@@ -1,6 +1,7 @@
+using Asp.Versioning;
+using Kharasana.Application.Common;
 using Kharasana.API.Common;
 using Kharasana.API.Extensions;
-using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.User;
 using Kharasana.Application.Interfaces.Services;
@@ -14,7 +15,17 @@ namespace Kharasana.API.Controllers;
 /// إدارة مستخدمي النظام (عملاء، سائقون، موظفو مصانع) مع عزل بيانات المصانع
 /// — موظف المصنع لا يرى ولا يعدّل إلا سائقي مصنعه.
 /// </summary>
+/// <remarks>
+/// كل نقطة نهاية تستقبل جسماً هنا محميّة بـ <c>[ServiceFilter(typeof(ValidationFilter&lt;T&gt;))]</c>،
+/// فيعمل <c>CreateUserDtoValidator</c> ورفاقه فعلياً قبل دخول الدالة.
+/// <para>ملاحظة ترتيب مقصودة: الفلتر يعمل قبل جسم الدالة، فطلب دور <c>Admin</c> يُردّ
+/// 400 من قاعدة <c>NotEqual(UserRole.Admin)</c> بدل 403 من الخدمة، بينما أي دور آخر
+/// غير مسموح لموظف المصنع يبقى 403 من <c>Forbid()</c>. كلا الردّين رفض، والخدمة
+/// تُعيد فحص الدور بنفسها (دفاع في العمق).</para>
+/// </remarks>
 [ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Route("api/[controller]")]
 [Authorize] // حد أدنى: توكن صالح
 public class UsersController : ControllerBase
@@ -34,6 +45,7 @@ public class UsersController : ControllerBase
     /// <param name="role">الدور لتصفية القائمة.</param>
     /// <param name="factoryId">المصنع لتصفية القائمة (للمدير فقط).</param>
     /// <param name="driverStatus">حالة السائق لتصفية القائمة.</param>
+    /// <param name="isActive">تصفية الحسابات النشطة/الموقوفة — تُصفّى على الخادم.</param>
     /// <param name="pagination">خيارات الترقيم.</param>
     /// <response code="200">تم جلب المستخدمين بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
@@ -43,6 +55,7 @@ public class UsersController : ControllerBase
         [FromQuery] UserRole? role,
         [FromQuery] int? factoryId,
         [FromQuery] DriverStatus? driverStatus,
+        [FromQuery] bool? isActive,
         [FromQuery] PaginationParams pagination)
     {
         var caller = User.GetCallerContext();
@@ -55,7 +68,7 @@ public class UsersController : ControllerBase
             factoryId = caller.FactoryId;
         }
 
-        var result = await _userService.GetPagedAsync(role, factoryId, driverStatus, pagination);
+        var result = await _userService.GetPagedAsync(role, factoryId, driverStatus, pagination, isActive);
 
         return Ok(new ApiResponse<PagedResult<UserDto>>
         {
@@ -122,6 +135,7 @@ public class UsersController : ControllerBase
     /// <response code="403">موظف المصنع يحاول إنشاء دور غير السائق.</response>
     [HttpPost]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<CreateUserDto>))]
     public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
     {
         var caller = User.GetCallerContext();
@@ -178,6 +192,7 @@ public class UsersController : ControllerBase
     /// <response code="404">المستخدم غير موجود أو لا ينتمي لمصنع الموظف.</response>
     [HttpPut("{id:int}")]
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [ServiceFilter(typeof(ValidationFilter<UpdateUserDto>))]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDto dto)
     {
         var caller = User.GetCallerContext();
@@ -212,7 +227,29 @@ public class UsersController : ControllerBase
     }
 
     // ============================================================
-    // 5. UPDATE MY PROFILE - تعديل الملف الشخصي
+    // 5. GET MY PROFILE - جلب الملف الشخصي للمستخدم الحالي
+    // ============================================================
+    /// <summary>جلب بيانات الملف الشخصي للمستخدم الحالي.</summary>
+    /// <response code="200">تم جلب البيانات بنجاح.</response>
+    /// <response code="401">التوكن غير موجود أو غير صالح.</response>
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> GetMyProfile()
+    {
+        var caller = User.GetCallerContext();
+
+        var user = await _userService.GetByIdAsync(caller.UserId);
+
+        return Ok(new ApiResponse<UserDto>
+        {
+            Success = true,
+            Message = Messages.UserRetrievedSuccessfully,
+            Data = user
+        });
+    }
+
+    // ============================================================
+    // 5.b UPDATE MY PROFILE - تعديل الملف الشخصي
     // ============================================================
     /// <summary>تعديل الملف الشخصي للمستخدم الحالي.</summary>
     /// <param name="dto">البيانات الجديدة للملف الشخصي.</param>
@@ -221,6 +258,7 @@ public class UsersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     [HttpPut("me")]
     [Authorize]
+    [ServiceFilter(typeof(ValidationFilter<UpdateMyProfileDto>))]
     public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
     {
         var caller = User.GetCallerContext();
@@ -278,13 +316,15 @@ public class UsersController : ControllerBase
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="404">السائق غير موجود.</response>
     [HttpPut("{id:int}/driver-status")]
-    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrDriver)]
+    [ServiceFilter(typeof(ValidationFilter<UpdateDriverStatusDto>))]
     public async Task<IActionResult> UpdateDriverStatus(int id, [FromBody] UpdateDriverStatusDto dto)
     {
         var caller = User.GetCallerContext();
 
-        // ✅ الخدمة ستتحقق من الصلاحيات (عند FactoryEmployee تتحقق من FactoryId)
-        await _userService.UpdateDriverStatusAsync(id, dto, caller.Role, caller.FactoryId);
+        // ✅ الخدمة تتحقق من الصلاحيات: موظف المصنع يرى سائقي مصنعه فقط،
+        //    والسائق يحدّث حالته الشخصية فقط (وليس حالة سائق آخر)
+        await _userService.UpdateDriverStatusAsync(id, dto, caller.Role, caller.FactoryId, caller.UserId);
 
         return Ok(ApiResponse.Ok(Messages.DriverStatusUpdatedSuccessfully));
     }

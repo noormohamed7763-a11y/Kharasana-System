@@ -1,6 +1,6 @@
-using Kharasana.API.Common;
-using Kharasana.API.Extensions;
+using Asp.Versioning;
 using Kharasana.Application.Common;
+using Kharasana.API.Extensions;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Dashboard;
 using Kharasana.Application.Interfaces.Services;
@@ -14,6 +14,8 @@ namespace Kharasana.API.Controllers;
 /// لوحة معلومات النظام: إحصائيات عامة للمدير ولوحة خاصة بكل مصنع.
 /// </summary>
 [ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Route("api/[controller]")]
 [Authorize]
 public class DashboardController : ControllerBase

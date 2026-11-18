@@ -3,13 +3,13 @@
 @using Kharasana.Web.Models.Components.Search
 @using Kharasana.Domain.Enums
 @using Kharasana.Web.Helpers
+@using Kharasana.Web.ViewModels.Components
 
 @{
     ViewData["Title"] = "إدارة الطلبات";
     var totalOrders = Model.PagedOrders?.TotalCount ?? 0;
 
     var completedCount = Model.ClosedCount;
-    var cancelledCount = Model.CancelledCount + Model.RejectedCount;
 }
 
 <div class="dashboard-page">
@@ -28,7 +28,7 @@
         })
 
     <!-- SUMMARY CARDS (قابلة للنقر → قائمة الطلبات مفيتَرة بالحالة) -->
-    <div class="summary-cards-grid mb-3">
+    <div class="summary-cards-grid summary-cards-grid--four mb-3">
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
                         new SummaryCardViewModel
@@ -63,109 +63,79 @@
                         "~/Views/Shared/Components/_SummaryCard.cshtml",
                         new SummaryCardViewModel
                         {
-                            Title = "ملغاة/مرفوضة",
-                            Value = cancelledCount.ToString(),
+                            Title = "ملغاة",
+                            Value = Model.CancelledCount.ToString(),
                             Icon = "bi-x-circle",
                             IconClass = "kpi-icon-danger",
                             LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Cancelled })
                         })
     </div>
 
-    <!-- FILTERS & TOOLBAR -->
-    <div class="erp-toolbar d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3 p-3 bg-white rounded-3 shadow-sm border">
-        <div class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap">
-            <!-- فلتر الحالة -->
-            <div style="min-width: 160px;">
-                <select class="form-select form-select-sm" id="statusFilter">
-                    <option value="">جميع الحالات</option>
-                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
-                    {
-                        var statusText = status.GetArabicName();
-                        var statusValue = (int)status;
+    <!-- UNIFIED DESKTOP ERP TOOLBAR & FILTERS -->
+    @{
+        var showFactoryFilter = Model.ShowFactoryFilter;
 
-                        var isSelected = false;
-                        if (Model.StatusFilter != null)
-                        {
-                            try
-                            {
-                                var filterInt = Convert.ToInt32(Model.StatusFilter);
-                                isSelected = filterInt == statusValue;
-                            }
-                            catch
-                            {
-                                isSelected = false;
-                            }
-                        }
-
-                        if (isSelected)
-                        {
-                            <option value="@statusValue" selected="selected">@statusText</option>
-                        }
-                        else
-                        {
-                            <option value="@statusValue">@statusText</option>
-                        }
-                    }
-                </select>
-            </div>
-
-            <!-- فلتر المصنع (للمدير فقط) -->
-            @if (ViewBag.ShowFactoryFilter == true)
+        // فلتر الحالة: القائمة تحمل name="status" فتُرسل مع النموذج مباشرة.
+        // سابقاً كانت القائمة بلا name، ويُنسخ اختيارها إلى حقل مخفي بدالة JS
+        // (applyFilters) ثم يُرسل النموذج — أي مساران لقيمة واحدة يفترقان بأول تعديل.
+        var statusFilter = new ListToolbarFilterViewModel
+        {
+            Id = "statusFilter",
+            Name = "status",
+            AriaLabel = "تصفية حسب حالة الطلب",
+            EmptyOptionText = "جميع الحالات"
+        };
+        foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+        {
+            statusFilter.Options.Add(new ListToolbarOptionViewModel
             {
-                <div style="min-width: 160px;">
-                    <select class="form-select form-select-sm" id="factoryFilter">
-                        <option value="">جميع المصانع</option>
-                        @if (ViewBag.Factories != null)
-                        {
-                            foreach (var factory in ViewBag.Factories)
-                            {
-                                var isSelected = Model.FactoryIdFilter.HasValue && Model.FactoryIdFilter.Value.ToString() == factory.Value;
-                                if (isSelected)
-                                {
-                                    <option value="@factory.Value" selected="selected">@factory.Text</option>
-                                }
-                                else
-                                {
-                                    <option value="@factory.Value">@factory.Text</option>
-                                }
-                            }
-                        }
-                    </select>
-                </div>
-            }
-        </div>
-    </div>
+                Value = ((int)status).ToString(),
+                Text = status.GetArabicName(),
+                Selected = Model.StatusFilter.HasValue && Model.StatusFilter.Value == (int)status
+            });
+        }
 
-    <!-- SEARCH -->
-    <form method="get" asp-action="Index" class="mb-3" id="searchForm">
-        <div class="row align-items-center g-2">
-            <div class="col-lg-5">
-                @await Html.PartialAsync(
-                                "~/Views/Shared/Components/_SearchBox.cshtml",
-                                new SearchBoxViewModel
-                                {
-                                    InputId = "search",
-                                    Placeholder = "ابحث باسم العميل أو رقم الطلب أو رقم الهاتف",
-                                    Value = Model.Search ?? string.Empty
-                                })
-            </div>
-            <div class="col-lg-2">
-                <input type="hidden" name="pageSize" value="@Model.PageSize" />
-                <input type="hidden" name="status" id="statusInput" value="@((int?)Model.StatusFilter)" />
-                <input type="hidden" name="factoryId" id="factoryInput" value="@Model.FactoryIdFilter" />
-            </div>
-            <div class="col-lg-2">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-search"></i> بحث
-                </button>
-            </div>
-            <div class="col-lg-3">
-                <a asp-action="Index" class="btn btn-outline-secondary w-100">
-                    <i class="bi bi-arrow-counterclockwise"></i> إعادة تعيين
-                </a>
-            </div>
-        </div>
-    </form>
+        var toolbarFilters = new List<ListToolbarFilterViewModel> { statusFilter };
+
+        if (showFactoryFilter)
+        {
+            var factoryFilter = new ListToolbarFilterViewModel
+            {
+                Id = "factoryFilter",
+                Name = "factoryId",
+                AriaLabel = "تصفية حسب المصنع",
+                EmptyOptionText = "جميع المصانع"
+            };
+
+            var factories = Model.Factories ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+
+            foreach (var factory in factories)
+            {
+                factoryFilter.Options.Add(new ListToolbarOptionViewModel
+                {
+                    Value = factory.Value ?? string.Empty,
+                    Text = factory.Text ?? string.Empty,
+                    Selected = Model.FactoryIdFilter.HasValue && Model.FactoryIdFilter.Value.ToString() == factory.Value
+                });
+            }
+
+            toolbarFilters.Add(factoryFilter);
+        }
+
+        var toolbar = new ListToolbarViewModel
+        {
+            PageSize = Model.PageSize,
+            Filters = toolbarFilters,
+            Search = new SearchBoxViewModel
+            {
+                InputId = "search",
+                Placeholder = "ابحث بالاسم، رقم الطلب، أو رقم الهاتف...",
+                Value = Model.Search ?? string.Empty
+            }
+        };
+    }
+
+    @await Html.PartialAsync("~/Views/Shared/Components/_ListToolbar.cshtml", toolbar)
 
     <!-- ORDERS TABLE -->
     @if (Model.PagedOrders == null || !Model.PagedOrders.Items.Any())
@@ -185,47 +155,53 @@
     }
     else
     {
-        <div class="form-card">
+        <div class="erp-section-card p-0">
             <div class="table-responsive">
                 @Html.AntiForgeryToken()
-                <table class="erp-table erp-table--sticky-head" id="ordersTable">
+                <table class="table table-hover align-middle erp-table erp-table--sticky-head erp-table--sticky-cols" id="ordersTable">
+                    <caption class="visually-hidden">قائمة طلبات الخرسانة — رقم الطلب، العميل، النوع، الكمية، السعر، الحالة، السائق</caption>
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>رقم الطلب</th>
-                            <th>العميل</th>
-                            <th>نوع الخرسانة</th>
-                            <th>الكمية</th>
-                            <th>السعر</th>
-                            <th>الحالة</th>
-                            <th>السائق</th>
-                            <th>تاريخ الصب</th>
-                            <th class="text-center">الإجراءات</th>
+                            <th class="text-nowrap">رقم الطلب</th>
+                            <th class="text-nowrap">العميل</th>
+                            <th class="text-nowrap">نوع الخرسانة</th>
+                            <th class="text-nowrap">الكمية</th>
+                            <th class="text-nowrap">السعر</th>
+                            <th class="text-nowrap">الحالة</th>
+                            <th class="text-nowrap">السائق</th>
+                            <th class="text-nowrap">تاريخ الصب</th>
+                            <th class="text-center col-actions col-actions--xl text-nowrap">الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @{
-                            var index = 1;
-                        }
-
                         @foreach (var order in Model.PagedOrders.Items)
                         {
                             var statusClass = order.Status.GetCssClass();
                             var statusText = order.Status.GetArabicName();
 
                             <tr id="order-@order.OrderId">
-                                <td class="text-muted fw-bold">@(index++)</td>
                                 <td>
-                                    <a asp-action="Details" asp-route-id="@order.OrderId"
-                                       class="order-number-chip" title="@order.OrderNumber">
-                                        <span class="order-number-seq">#@order.OrderNumberSeq</span>
-                                        <span class="order-number-date">@order.OrderNumberDate</span>
-                                    </a>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <a asp-action="Details" asp-route-id="@order.OrderId"
+                                           class="order-number-chip" title="@order.OrderNumber">
+                                            <span class="order-number-seq">#@order.OrderNumberSeq</span>
+                                            <span class="order-number-date">@order.OrderNumberDate</span>
+                                        </a>
+                                        <button type="button" class="btn btn-link p-0 text-muted btn-copy" data-copy="@order.OrderNumber" title="نسخ رقم الطلب" aria-label="نسخ رقم الطلب @order.OrderNumber">
+                                            <i class="bi bi-clipboard small"></i>
+                                        </button>
+                                    </div>
                                 </td>
-                                <td>@order.ClientName</td>
+                                <td>
+                                    <div class="fw-bold text-dark">@order.ClientName</div>
+                                    @if (!string.IsNullOrEmpty(order.ClientPhone))
+                                    {
+                                        <small class="text-muted" dir="ltr">@order.ClientPhone</small>
+                                    }
+                                </td>
                                 <td>@order.ConcreteTypeName</td>
-                                <td>@order.Quantity م³</td>
-                                <td>@order.TotalPrice.FormatPrice()</td>
+                                <td><span class="fw-bold">@order.Quantity</span> <small class="text-muted">م³</small></td>
+                                <td><span class="text-primary fw-bold">@order.TotalPrice.FormatPrice()</span></td>
                                 <td>
                                     <span class="status-badge @statusClass">
                                         @statusText
@@ -249,6 +225,7 @@
                                     {
                                         <button type="button" class="btn btn-light border text-success"
                                                 data-action="approve" data-order-id="@order.OrderId"
+                                                data-confirm="هل أنت متأكد من موافقة العميل على هذا الطلب؟"
                                                 aria-label="اعتماد الطلب" data-bs-toggle="tooltip">
                                             <i class="bi bi-check-circle"></i>
                                         </button>
@@ -257,6 +234,7 @@
                                     {
                                         <button type="button" class="btn btn-light border text-warning"
                                                 data-action="cancel" data-order-id="@order.OrderId"
+                                                data-confirm="⚠️ هل أنت متأكد من إلغاء هذا الطلب؟"
                                                 aria-label="إلغاء الطلب" data-bs-toggle="tooltip">
                                             <i class="bi bi-x-circle"></i>
                                         </button>
@@ -281,104 +259,19 @@
     }
 
     <!-- PAGINATION -->
-    @if (Model.PagedOrders != null && Model.PagedOrders.TotalCount > 0)
+    @await Html.PartialAsync("~/Views/Shared/Components/_Pagination.cshtml", new PaginationViewModel
     {
-        var pageCount = (int)Math.Ceiling(Model.PagedOrders.TotalCount / (double)Model.PageSize);
-        var currentPage = Model.PageNumber;
-
-        <nav class="mt-4" aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-                @if (currentPage > 1)
-                {
-                    <li class="page-item">
-                        <a class="page-link" asp-action="Index"
-                           asp-route-pageNumber="@(currentPage - 1)"
-                           asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search"
-                           asp-route-status="@((int?)Model.StatusFilter)"
-                           asp-route-factoryId="@Model.FactoryIdFilter"
-                           aria-label="الصفحة السابقة">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </li>
-                }
-
-                @{
-                    int startPage = Math.Max(1, currentPage - 2);
-                    int endPage = Math.Min(pageCount, currentPage + 2);
-
-                    if (startPage > 1)
-                    {
-                        <li class="page-item">
-                            <a class="page-link" asp-action="Index"
-                               asp-route-pageNumber="1"
-                               asp-route-pageSize="@Model.PageSize"
-                               asp-route-search="@Model.Search"
-                               asp-route-status="@((int?)Model.StatusFilter)"
-                               asp-route-factoryId="@Model.FactoryIdFilter">1</a>
-                        </li>
-                        if (startPage > 2)
-                        {
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        }
-                    }
-
-                    for (int p = startPage; p <= endPage; p++)
-                    {
-                        <li class="page-item @(p == currentPage ? "active" : "")">
-                            <a class="page-link"
-                               asp-action="Index"
-                               asp-route-pageNumber="@p"
-                               asp-route-pageSize="@Model.PageSize"
-                               asp-route-search="@Model.Search"
-                               asp-route-status="@((int?)Model.StatusFilter)"
-                               asp-route-factoryId="@Model.FactoryIdFilter">@p</a>
-                        </li>
-                    }
-
-                    if (endPage < pageCount)
-                    {
-                        if (endPage < pageCount - 1)
-                        {
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        }
-                        <li class="page-item">
-                            <a class="page-link" asp-action="Index"
-                               asp-route-pageNumber="@pageCount"
-                               asp-route-pageSize="@Model.PageSize"
-                               asp-route-search="@Model.Search"
-                               asp-route-status="@((int?)Model.StatusFilter)"
-                               asp-route-factoryId="@Model.FactoryIdFilter">@pageCount</a>
-                        </li>
-                    }
-                }
-
-                @if (currentPage < pageCount)
-                {
-                    <li class="page-item">
-                        <a class="page-link" asp-action="Index"
-                           asp-route-pageNumber="@(currentPage + 1)"
-                           asp-route-pageSize="@Model.PageSize"
-                           asp-route-search="@Model.Search"
-                           asp-route-status="@((int?)Model.StatusFilter)"
-                           asp-route-factoryId="@Model.FactoryIdFilter"
-                           aria-label="الصفحة التالية">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    </li>
-                }
-            </ul>
-        </nav>
-
-        <div class="text-center text-muted mt-2 small">
-            عرض @(((currentPage - 1) * Model.PageSize) + 1) - @(Math.Min(currentPage * Model.PageSize, Model.PagedOrders.TotalCount))
-            من إجمالي @Model.PagedOrders.TotalCount طلب
-            @if (!string.IsNullOrWhiteSpace(Model.Search))
-            {
-                <span> - نتائج البحث: "@Model.Search"</span>
-            }
-        </div>
-    }
+        CurrentPage = Model.PageNumber,
+        TotalPages = Model.PagedOrders != null ? (int)Math.Ceiling(Model.PagedOrders.TotalCount / (double)Model.PageSize) : 0,
+        PageSize = Model.PageSize,
+        TotalCount = Model.PagedOrders?.TotalCount ?? 0,
+        RouteValues = new Dictionary<string, string>
+        {
+            { "search", Model.Search ?? string.Empty },
+            { "status", ((int?)Model.StatusFilter)?.ToString() ?? string.Empty },
+            { "factoryId", Model.FactoryIdFilter?.ToString() ?? string.Empty }
+        }
+    })
 
 </div>
 

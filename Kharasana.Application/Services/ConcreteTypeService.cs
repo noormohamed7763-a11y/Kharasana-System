@@ -1,9 +1,11 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.ConcreteType;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Application.Mapping;
 using Kharasana.Domain.Entities;
+using Kharasana.Domain.Enums;
 
 namespace Kharasana.Application.Services;
 
@@ -16,22 +18,37 @@ public class ConcreteTypeService : IConcreteTypeService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IEnumerable<ConcreteTypeDto>> GetAllAsync(int? factoryId = null)
+    public async Task<PagedResult<ConcreteTypeDto>> GetAllAsync(int pageNumber = 1, int pageSize = 20, string? search = null, int? factoryId = null, bool? onlyActive = null)
     {
-        IEnumerable<ConcreteType> concreteTypes;
+        PagedResult<ConcreteType> concreteTypes;
 
         if (factoryId.HasValue)
         {
             concreteTypes = await _unitOfWork.ConcreteTypes
-                .GetByFactoryWithFactoryAsync(factoryId.Value);
+                .GetPagedByFactoryAsync(factoryId.Value, pageNumber, pageSize, search, onlyActive);
         }
         else
         {
             concreteTypes = await _unitOfWork.ConcreteTypes
-                .GetAllWithFactoryAsync();
+                .GetPagedAsync(pageNumber, pageSize, search, onlyActive);
         }
 
-        return concreteTypes.Select(MapToDto);
+        return new PagedResult<ConcreteTypeDto>
+        {
+            Items = concreteTypes.Items.Select(MapToDto),
+            TotalCount = concreteTypes.TotalCount,
+            PageNumber = concreteTypes.PageNumber,
+            PageSize = concreteTypes.PageSize
+        };
+    }
+
+    public async Task<IEnumerable<ConcreteTypeDto>> GetArchivedAsync(int? factoryId = null)
+    {
+        // المستودع يتجاوز الفلتر العام (!IsDeleted) ليعيد المحذوف حذفًا ناعمًا وحده.
+        var archivedTypes = await _unitOfWork.ConcreteTypes
+            .GetArchivedWithFactoryAsync(factoryId);
+
+        return archivedTypes.Select(MapToDto);
     }
 
     public async Task<ConcreteTypeDto> GetByIdAsync(int id, int? currentFactoryId = null)
@@ -41,9 +58,10 @@ public class ConcreteTypeService : IConcreteTypeService
         if (concreteType == null)
             throw new NotFoundException(Messages.ConcreteTypeNotFound);
 
-        // ✅ defense-in-depth: التحقق من صلاحية المصنع
+        // ✅ defense-in-depth: التحقق من صلاحية المصنع — رسالة عامة لا تذكر «الإنشاء»
+        //    لأن هذا مسار قراءة (كانت رسالة الإنشاء تُعرض لمن يقرأ نوع مصنع آخر).
         if (currentFactoryId.HasValue && concreteType.FactoryId != currentFactoryId.Value)
-            throw new ForbiddenException(Messages.CannotCreateConcreteTypeForOtherFactory);
+            throw new ForbiddenException(Messages.FactoryEmployeeFactoryMismatch);
 
         return MapToDto(concreteType);
     }
@@ -73,6 +91,9 @@ public class ConcreteTypeService : IConcreteTypeService
         //    الأسماء المحرَّرة بحذف ناعم لا تُحتسب تعارضًا (خيار B).
         await EnsureNameIsFreeAsync(dto.FactoryId, dto.Name);
 
+        if (dto.UnitPrice <= 0)
+            throw new BusinessException(Messages.UnitPriceMustBePositive);
+
         var concreteType = new ConcreteType
         {
             FactoryId = dto.FactoryId,
@@ -97,9 +118,10 @@ public class ConcreteTypeService : IConcreteTypeService
         if (concreteType == null)
             throw new NotFoundException(Messages.ConcreteTypeNotFound);
 
-        // ✅ defense-in-depth: التحقق من صلاحية المصنع
+        // ✅ defense-in-depth: التحقق من صلاحية المصنع — رسالة عامة لا تذكر «الإنشاء»
+        //    لأن هذا مسار تعديل (كانت رسالة الإنشاء تُعرض لمن يعدّل نوع مصنع آخر).
         if (currentFactoryId.HasValue && concreteType.FactoryId != currentFactoryId.Value)
-            throw new ForbiddenException(Messages.CannotCreateConcreteTypeForOtherFactory);
+            throw new ForbiddenException(Messages.FactoryEmployeeFactoryMismatch);
 
         // ✅ المصنع موقوف أو مؤرشف — لا يُسمح بتعديل أنواع الخرسانة أيضاً
         var factory = await _unitOfWork.Factories.GetByIdIncludingDeletedAsync(concreteType.FactoryId);
@@ -111,6 +133,9 @@ public class ConcreteTypeService : IConcreteTypeService
 
         // ✅ منع تكرار الاسم داخل المصنع (باستثناء النوع نفسه)
         await EnsureNameIsFreeAsync(concreteType.FactoryId, dto.Name, concreteType.ConcreteTypeId);
+
+        if (dto.UnitPrice <= 0)
+            throw new BusinessException(Messages.UnitPriceMustBePositive);
 
         concreteType.Name = dto.Name;
         concreteType.Strength = dto.Strength;
@@ -135,6 +160,30 @@ public class ConcreteTypeService : IConcreteTypeService
         // ✅ defense-in-depth: التحقق من صلاحية المصنع
         if (currentFactoryId.HasValue && concreteType.FactoryId != currentFactoryId.Value)
             throw new ForbiddenException(Messages.FactoryEmployeeFactoryMismatch);
+
+        // ✅ المصنع موقوف أو مؤرشف — لا يُسمح بأرشفة أنواعه.
+        //    كانت هذه البوابة في CreateAsync و UpdateAsync فقط، فيبقى الحذف مفتوحًا
+        //    لمصنعٍ موقوف: موظفه يمنع من التعديل ثم يملك الحذف — نفس الأثر على الكتالوج.
+        //    الشرط هنا للجميع (بما فيهم المدير) مطابقةً لسلوك UpdateAsync.
+        var factory = await _unitOfWork.Factories.GetByIdIncludingDeletedAsync(concreteType.FactoryId);
+        if (factory != null && factory.IsDeleted)
+            throw new BusinessException(Messages.FactoryArchived);
+
+        if (factory is { IsActive: false })
+            throw new BusinessException(Messages.FactoryInactive);
+
+        // ✅ تحقق من الطلبات النشطة (غير مكتملة)
+        var activeOrdersCount = await _unitOfWork.Orders
+            .CountAsync(o => o.ConcreteTypeId == id
+                && !o.IsDeleted
+                && o.Status != OrderStatus.Delivered
+                && o.Status != OrderStatus.Closed
+                && o.Status != OrderStatus.Cancelled
+                && o.Status != OrderStatus.Rejected);
+
+        if (activeOrdersCount > 0)
+            throw new BusinessException(
+                string.Format(Messages.ConcreteTypeHasActiveOrders, activeOrdersCount));
 
         // ✅ حذف ناعم: لا يُحذف الصف فعليًا حتى تبقى الطلبات التاريخية التي تشير إليه سليمة،
         //    ويختفي من الاستعلامات العادية عبر فلتر الاستعلام العام (!IsDeleted)
@@ -193,19 +242,5 @@ public class ConcreteTypeService : IConcreteTypeService
             throw new ConflictException(Messages.ConcreteTypeAlreadyExists);
     }
 
-    private static ConcreteTypeDto MapToDto(ConcreteType concreteType)
-    {
-        return new ConcreteTypeDto
-        {
-            ConcreteTypeId = concreteType.ConcreteTypeId,
-            FactoryId = concreteType.FactoryId,
-            FactoryName = concreteType.Factory?.FactoryName ?? string.Empty,
-            Name = concreteType.Name,
-            Strength = concreteType.Strength,
-            UnitPrice = concreteType.UnitPrice,
-            ImageUrl = concreteType.ImageUrl,
-            Description = concreteType.Description,
-            IsActive = concreteType.IsActive
-        };
-    }
+    private static ConcreteTypeDto MapToDto(ConcreteType concreteType) => ConcreteTypeMapper.ToDto(concreteType);
 }

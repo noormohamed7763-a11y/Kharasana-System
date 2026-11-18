@@ -1,3 +1,5 @@
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Kharasana.API.Common;
 using Kharasana.API.Middlewares;
 using Kharasana.Application;
@@ -7,12 +9,17 @@ using Kharasana.Infrastructure;
 using Kharasana.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using Kharasana.Application.Services.Tracking;
+using Kharasana.Application.Interfaces.Services;
+using Kharasana.API.Hubs;
 using System.Threading.RateLimiting;
 
 namespace Kharasana.API;
@@ -22,8 +29,12 @@ public class Program
     // خيارات JSON مطابقة لافتراضيات Web API (camelCase) للردود الموحّدة في JwtBearerEvents
     private static readonly JsonSerializerOptions ApiJsonOptions = new(JsonSerializerDefaults.Web);
 
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
+        // ✅ أول سطر: تثبيت الثقافة قبل بناء أي خدمة — يمنع التقويم الهجري
+        //    وأرقام/فواصل ثقافة الجهاز من تسرّب إلى الردود (انظر AppCulture).
+        AppCulture.Configure();
+
         var builder = WebApplication.CreateBuilder(args);
 
         // تسجيل دائم في ملفات (Logs/) — يحافظ على أخطاء الإنتاج بعد وقوعها
@@ -69,9 +80,24 @@ public class Program
         // Register Layers
         builder.Services.AddApplication();
         builder.Services.AddInfrastructure(builder.Configuration);
+        builder.Services.AddSignalR();
+        builder.Services.AddSingleton<ITrackingService, TrackingService>();
+
+        // Add API Versioning
+        builder.Services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionReader = new Asp.Versioning.UrlSegmentApiVersionReader();
+        }).AddMvc().AddApiExplorer(options =>
+        {
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
 
         // ============================================================
-        // 2. JWT Authentication — مع فحص صارم على المفتاح المُ졌ّر
+        // 2. JWT Authentication — مع فحص صارم على المفتاح المُعرَّف
         // ============================================================
         var jwtKey = builder.Configuration["Jwt:Key"];
         if (string.IsNullOrWhiteSpace(jwtKey))
@@ -120,6 +146,24 @@ public class Program
 
                 options.Events = new JwtBearerEvents
                 {
+                    // SignalR يرسل Bearer token في query string عند تفاوض WebSocket؛
+                    // نقبله لمساري Hub فقط ولا نوسّع طريقة المصادقة لبقية الـ API.
+                    OnMessageReceived = context =>
+                    {
+                        var requestPath = context.HttpContext.Request.Path;
+                        if (requestPath.StartsWithSegments("/trackingHub") ||
+                            requestPath.StartsWithSegments("/tracking"))
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            if (!string.IsNullOrEmpty(accessToken))
+                            {
+                                context.Token = accessToken;
+                            }
+                        }
+
+                        return Task.CompletedTask;
+                    },
+
                     // رد موحّد عربي عند غياب/تلف/انتهاء التوكن (401)
                     OnChallenge = context =>
                     {
@@ -191,11 +235,20 @@ public class Program
             .AddDbContextCheck<KharasanaDbContext>();
 
         // Controllers
-        builder.Services.AddControllers();
+        builder.Services.AddControllers(options =>
+        {
+            options.Filters.Add<GlobalValidationActionFilter>();
+        });
 
-        // تسجيل الفلتر العام للتحقق كخدمة مفتوحة النوع —
-        // يُحقن IValidator<T> تلقائياً عند الاستخدام عبر [ServiceFilter(typeof(ValidationFilter<T>))]
+        // تسجيل الفلتر الخاص (لضمان توافق المتحكمات القديمة)
         builder.Services.AddScoped(typeof(ValidationFilter<>));
+
+        // توحيد شكل خطأ 400
+        builder.Services.Configure<ApiBehaviorOptions>(options =>
+        {
+            options.InvalidModelStateResponseFactory =
+                context => ApiErrorResponseFactory.FromModelState(context.ModelState);
+        });
 
         // Response Compression — تقليل حجم الاستجابات
         builder.Services.AddResponseCompression(options =>
@@ -262,23 +315,21 @@ public class Program
 
         var app = builder.Build();
 
+        // ⚡ تم نقل ترحيلات قاعدة البيانات إلى منفذ النشر (CI/CD) لضمان استقرار التطبيق أثناء أي تغييرات في schema.
         app.UseMiddleware<ExceptionMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
-        if (app.Environment.IsDevelopment())
+        // تفعيل Swagger في كل البيئات للتجربة
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
         {
-            app.UseSwagger();
-
-            app.UseSwaggerUI(options =>
-            {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Kharasana ERP API v1");
-                options.DocumentTitle = "Kharasana ERP API | واجهة برمجة التطبيقات";
-                options.EnableTryItOutByDefault();      // تفعيل زر "Try it out" تلقائياً
-                options.EnablePersistAuthorization();   // حفظ ما يُدخله المستخدم من توكن
-                options.DisplayRequestDuration();       // عرض مدّة كل طلب بالمللي ثانية
-                options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
-            });
-        }
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Kharasana ERP API v1");
+            options.DocumentTitle = "Kharasana ERP API | واجهة برمجة التطبيقات";
+            options.EnableTryItOutByDefault();
+            options.EnablePersistAuthorization();
+            options.DisplayRequestDuration();
+            options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
+        });
 
         // ============================================================
         // 5. تفعيل CORS (يجب أن يكون قبل UseAuthentication)
@@ -287,17 +338,14 @@ public class Program
 
         // ============================================================
         // 6. Forwarded Headers — لتشغيل Rate Limiter و HTTPS بشكل صحيح خلف وسيط (Proxy)
-        //    تحذير: في الإنتاج يجب ضبط KnownProxies / KnownNetworks لقبول
-        //    X-Forwarded-* من مصادر موثوقة فقط — وإلا أمكن تزوير عنوان IP.
         // ============================================================
-        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        var forwardedOptions = new ForwardedHeadersOptions
         {
-            ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                               ForwardedHeaders.XForwardedProto,
-            // تقييد قبول X-Forwarded-* من الـ Proxy المحلي فقط.
-            // في الإنتاج: استبدل IPAddress.Loopback بعنوان IP الفعلي للـ reverse proxy (nginx/Caddy/...).
-            KnownProxies = { System.Net.IPAddress.Loopback, System.Net.IPAddress.IPv6Loopback }
-        });
+            ForwardedHeaders = ForwardedHeaders.All
+        };
+        forwardedOptions.KnownIPNetworks.Clear();
+        forwardedOptions.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedOptions);
 
         app.UseRateLimiter();
 
@@ -310,7 +358,9 @@ public class Program
         app.UseAuthorization();
 
         app.MapControllers();
+        app.MapHub<TrackingHub>("/trackingHub");
         app.MapHealthChecks("/health");
+        app.MapHub<TrackingHub>("/tracking");
 
         app.Run();
     }

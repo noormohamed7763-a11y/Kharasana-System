@@ -1,4 +1,3 @@
-﻿using System.ComponentModel.DataAnnotations;
 using Kharasana.Domain.Enums;
 
 namespace Kharasana.Domain.Entities;
@@ -8,7 +7,6 @@ public class User
     // Primary Key
     public int UserId { get; set; }
 
-    [Timestamp]
     public byte[] RowVersion { get; set; } = [];
 
     // User Information
@@ -40,6 +38,10 @@ public class User
     // Brute-force protection
     public int FailedLoginAttempts { get; set; }
     public DateTime? LockoutEnd { get; set; }
+
+    // Refresh Token
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
 
     // Navigation Properties
     public Factory? Factory { get; set; }

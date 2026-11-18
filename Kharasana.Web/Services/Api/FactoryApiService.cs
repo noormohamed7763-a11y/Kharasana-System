@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Kharasana.Web.Common;
 using Kharasana.Web.Configuration;
 using Kharasana.Web.Localization;
@@ -14,44 +15,16 @@ namespace Kharasana.Web.Services.Api
     {
         private readonly ApiClient _apiClient;
         private readonly ApiSettings _apiSettings;
+        private readonly IMemoryCache _cache;
 
         public FactoryApiService(
             ApiClient apiClient,
-            IOptions<ApiSettings> apiSettings)
+            IOptions<ApiSettings> apiSettings,
+            IMemoryCache cache)
         {
             _apiClient = apiClient;
             _apiSettings = apiSettings.Value;
-        }
-
-        private string? BuildLogoUrl(string? logo)
-        {
-            if (string.IsNullOrWhiteSpace(logo))
-                return null;
-
-            // الـ DTO يعيد رابطاً مطلقاً الآن (مطلب الرابط المطلق)
-            if (logo.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            {
-                // إن كان الرابط من أصل الـ API نفسه، نعيد توجيهه عبر وسيط نفس الأصل
-                // (FilesController) ليبقى img-src 'self' في CSP سليماً.
-                if (Uri.TryCreate(logo, UriKind.Absolute, out var absolute)
-                    && Uri.TryCreate(_apiSettings.FilesOrigin, UriKind.Absolute, out var origin)
-                    && string.Equals(absolute.Authority, origin.Authority, StringComparison.OrdinalIgnoreCase))
-                {
-                    var path = absolute.AbsolutePath;
-                    return path.StartsWith("/", StringComparison.Ordinal) ? $"/Files/factories{path}" : null;
-                }
-
-                // رابط مطلق لأصل خارجي (نادر) — نمرّره كما هو
-                return logo;
-            }
-
-            // دفاع ضد قيم غير صالحة في DB (اسم ملف عارٍ بلا "/")
-            if (!logo.StartsWith("/", StringComparison.Ordinal))
-                return null;
-
-            // الآن نخدم الملفات عبر FilesController على نفس أصل الويب
-            // المسار المتوقع في العروض: /Files/factories/Images/Factories/...
-            return $"/Files/factories{logo}";
+            _cache = cache;
         }
 
         private static FactoryListItemViewModel MapListItem(FactoryDto dto, string? logoUrl) => new()
@@ -68,21 +41,32 @@ namespace Kharasana.Web.Services.Api
 
         public async Task<ServiceResult<List<FactoryListItemViewModel>>> GetAllAsync()
         {
-            try
+            return await _cache.GetOrCreateAsync("Factories_All", async entry =>
             {
-                var response = await _apiClient.GetAsync<ApiResponse<List<FactoryDto>>>("Factories");
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
 
-                if (response == null || !response.Success || response.Data == null)
-                    return ServiceResult<List<FactoryListItemViewModel>>.Fail(ResponseMessage(response, AppMessages.Common.OperationFailed));
+                try
+                {
+                    var response = await _apiClient.GetAsync<ApiResponse<List<FactoryDto>>>("Factories?SortBy=Id&Order=Desc");
 
-                return ServiceResult<List<FactoryListItemViewModel>>.Ok(
-                    response.Data.Select(d => MapListItem(d, BuildLogoUrl(d.Logo))).ToList());
-            }
-            catch (ApiServiceException) { throw; }
-            catch (Exception ex)
-            {
-                return ServiceResult<List<FactoryListItemViewModel>>.Fail(ex, AppMessages.Common.OperationFailed);
-            }
+                    if (response == null || !response.Success || response.Data == null)
+                        return ServiceResult<List<FactoryListItemViewModel>>.Fail(ResponseMessage(response, AppMessages.Common.OperationFailed));
+
+                    return ServiceResult<List<FactoryListItemViewModel>>.Ok(
+                        response.Data.Select(d => MapListItem(d, LogoFiles.BuildUrl(d.Logo, _apiSettings))).ToList());
+                }
+                catch (ApiServiceException) { throw; }
+                catch (Exception ex)
+                {
+                    return ServiceResult<List<FactoryListItemViewModel>>.Fail(ex, AppMessages.Common.OperationFailed);
+                }
+            }) ?? ServiceResult<List<FactoryListItemViewModel>>.Fail(AppMessages.Common.OperationFailed);
+        }
+
+        private void InvalidateCache()
+        {
+            _cache.Remove("Factories_All");
+            _cache.Remove("Factories_Archived");
         }
 
         public async Task<ServiceResult<List<FactoryListItemViewModel>>> GetArchivedAsync()
@@ -95,7 +79,7 @@ namespace Kharasana.Web.Services.Api
                     return ServiceResult<List<FactoryListItemViewModel>>.Fail(ResponseMessage(response, AppMessages.Common.OperationFailed));
 
                 return ServiceResult<List<FactoryListItemViewModel>>.Ok(
-                    response.Data.Select(d => MapListItem(d, BuildLogoUrl(d.Logo))).ToList());
+                    response.Data.Select(d => MapListItem(d, LogoFiles.BuildUrl(d.Logo, _apiSettings))).ToList());
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
@@ -127,7 +111,7 @@ namespace Kharasana.Web.Services.Api
                     Address = dto.Address,
                     Latitude = dto.Latitude,
                     Longitude = dto.Longitude,
-                    Logo = BuildLogoUrl(dto.Logo),
+                    Logo = LogoFiles.BuildUrl(dto.Logo, _apiSettings),
                     IsActive = dto.IsActive
                 };
 
@@ -149,6 +133,7 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                     return ServiceResult.Fail(ResponseMessage(response, AppMessages.Error.Created));
 
+                InvalidateCache();
                 return ServiceResult.Ok(AppMessages.Success.Created);
             }
             catch (ApiServiceException) { throw; }
@@ -181,6 +166,8 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                     return ServiceResult.Fail(ResponseMessage(response, AppMessages.Error.Updated));
 
+                InvalidateCache();
+                _cache.Remove($"Factory_{id}");
                 return ServiceResult.Ok(AppMessages.Success.Updated);
             }
             catch (ApiServiceException) { throw; }
@@ -199,6 +186,8 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                     return ServiceResult.Fail(ResponseMessage(response, AppMessages.Error.Archived));
 
+                InvalidateCache();
+                _cache.Remove($"Factory_{id}");
                 return ServiceResult.Ok(AppMessages.Success.Archived);
             }
             catch (ApiServiceException) { throw; }
@@ -217,6 +206,8 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                     return ServiceResult.Fail(ResponseMessage(response, AppMessages.Error.Restored));
 
+                InvalidateCache();
+                _cache.Remove($"Factory_{id}");
                 return ServiceResult.Ok(AppMessages.Success.Restored);
             }
             catch (ApiServiceException) { throw; }
@@ -231,13 +222,14 @@ namespace Kharasana.Web.Services.Api
             if (file == null || file.Length == 0)
                 return ServiceResult<string>.Fail(AppMessages.Error.InvalidLogo);
 
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            // القواعد من LogoFiles لا نسخة محلية: كانت هذه آخر نسخة حرفية متبقّية
+            // بعد توحيد FilesController و SettingsApiService في LogoFiles.
             var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant();
 
-            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+            if (string.IsNullOrEmpty(extension) || !LogoFiles.AllowedExtensions.Contains(extension))
                 return ServiceResult<string>.Fail(AppMessages.Error.InvalidLogo);
 
-            if (file.Length > 5 * 1024 * 1024)
+            if (file.Length > LogoFiles.MaxFileSizeInBytes)
                 return ServiceResult<string>.Fail(AppMessages.Error.LogoUpload);
 
             try
@@ -254,8 +246,11 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success || response.Data == null)
                     return ServiceResult<string>.Fail(ResponseMessage(response, AppMessages.Error.LogoUpload));
 
+                InvalidateCache();
+                _cache.Remove($"Factory_{id}");
+
                 var logo = ExtractLogoPath(response.Data);
-                return ServiceResult<string>.Ok(BuildLogoUrl(logo) ?? string.Empty, AppMessages.Success.LogoUpdated);
+                return ServiceResult<string>.Ok(LogoFiles.BuildUrl(logo, _apiSettings) ?? string.Empty, AppMessages.Success.LogoUpdated);
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
@@ -273,6 +268,8 @@ namespace Kharasana.Web.Services.Api
                 if (response == null || !response.Success)
                     return ServiceResult.Fail(ResponseMessage(response, AppMessages.Error.LogoDelete));
 
+                InvalidateCache();
+                _cache.Remove($"Factory_{id}");
                 return ServiceResult.Ok(AppMessages.Success.LogoDeleted);
             }
             catch (ApiServiceException) { throw; }

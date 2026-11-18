@@ -1,4 +1,3 @@
-using System;
 using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Auth;
@@ -21,7 +20,7 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                _logger.LogDebug("Attempting login for {EmailOrPhone}", model.EmailOrPhone);
+                _logger.LogDebug("محاولة تسجيل دخول للمُعرّف {EmailOrPhone}", model.EmailOrPhone);
 
                 var response = await _apiClient.PostAsync<ApiResponse<LoginResponseViewModel>>(
                     "Auth/login",
@@ -33,38 +32,55 @@ namespace Kharasana.Web.Services.Api
 
                 if (response == null)
                 {
-                    _logger.LogWarning("Login API returned null for {EmailOrPhone}", model.EmailOrPhone);
-                    return null;
+                    _logger.LogWarning("أعادت واجهة الدخول ردًّا فارغًا للمُعرّف {EmailOrPhone}", model.EmailOrPhone);
+                    throw new ApiServiceException(System.Net.HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
                 }
 
                 if (!response.Success)
                 {
-                    _logger.LogWarning("Login failed for {EmailOrPhone}. Message: {Message}", model.EmailOrPhone, response.Message);
-                    return null;
+                    _logger.LogWarning("فشل تسجيل الدخول للمُعرّف {EmailOrPhone}. الرسالة: {Message}", model.EmailOrPhone, response.Message);
+                    throw new ApiServiceException(System.Net.HttpStatusCode.Unauthorized, ApiErrorCatalog.InvalidLogin);
                 }
 
                 if (response.Data == null)
                 {
-                    _logger.LogWarning("Login succeeded but response.Data is null for {EmailOrPhone}", model.EmailOrPhone);
-                    return null;
+                    _logger.LogWarning("نجح تسجيل الدخول لكن بيانات الردّ فارغة للمُعرّف {EmailOrPhone}", model.EmailOrPhone);
+                    throw new ApiServiceException(System.Net.HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
                 }
 
-                _logger.LogInformation("Login successful for user {FullName} (id: {UserId})", response.Data.FullName, response.Data.UserId);
+                _logger.LogInformation("نجح تسجيل الدخول للمستخدم {FullName} (المعرّف: {UserId})", response.Data.FullName, response.Data.UserId);
                 return response.Data;
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception during LoginAsync for {EmailOrPhone}", model.EmailOrPhone);
-                return null;
+                _logger.LogError(ex, "استثناء في LoginAsync للمُعرّف {EmailOrPhone}", model.EmailOrPhone);
+                throw new ApiServiceException(System.Net.HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
             }
         }
 
         public Task LogoutAsync()
         {
             // هنا يمكن إضافة منطق logout إن لزم (نداء API لإبطال التوكن، تسجيل خروج مركزي، الخ)
-            _logger.LogDebug("LogoutAsync called");
+            _logger.LogDebug("استُدعيت LogoutAsync");
             return Task.CompletedTask;
+        }
+
+        public async Task<bool> ActivateAccountAsync(string tokenHash, string newPassword)
+        {
+            try
+            {
+                var response = await _apiClient.PostAsync<ApiResponse<object>>(
+                    "Auth/activate",
+                    new { TokenHash = tokenHash, NewPassword = newPassword });
+
+                return response?.Success ?? false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "استثناء في ActivateAccountAsync");
+                return false;
+            }
         }
     }
 }

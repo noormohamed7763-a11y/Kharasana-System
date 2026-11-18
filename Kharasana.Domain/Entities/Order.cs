@@ -1,4 +1,3 @@
-﻿using System.ComponentModel.DataAnnotations;
 using Kharasana.Domain.Enums;
 
 namespace Kharasana.Domain.Entities;
@@ -7,7 +6,6 @@ public class Order
 {
     public int OrderId { get; set; }
 
-    [Timestamp]
     public byte[] RowVersion { get; set; } = [];
 
     public string OrderNumber { get; set; } = string.Empty;
@@ -26,6 +24,28 @@ public class Order
 
     public string? SiteDescription { get; set; }
 
+    public string? Landmarks { get; set; }
+
+    /// <summary>
+    /// إحداثيات موقع صبّ الخرسانة كما التقطها جهاز العميل عند إنشاء الطلب.
+    ///
+    /// <para>قابلان للفراغ: الطلبات المنشأة قبل إضافة GPS، وطلبات السائقين
+    /// والموظفين التي لا تمرّ بتطبيق العميل، تبقى صالحة بلا موقع.</para>
+    /// </summary>
+    public decimal? Latitude { get; set; }
+
+    public decimal? Longitude { get; set; }
+
+    public string? SupervisorName { get; set; }
+
+    public string? SupervisorPhone { get; set; }
+
+    public CementType CementType { get; set; } = CementType.Ordinary;
+
+    public AggregateSize AggregateSize { get; set; } = AggregateSize.Size20mm;
+
+    public Admixture Admixture { get; set; } = Admixture.Plasticizer;
+
     public SlabType SlabType { get; set; }
 
     public decimal Quantity { get; set; }
@@ -36,7 +56,22 @@ public class Order
 
     public decimal UnitPrice { get; set; }
 
+    public bool IsManuallyPriced { get; set; } = false;
+
     public decimal TotalPrice { get; set; }
+
+    public decimal TotalDiscountAmount { get; set; }
+
+    public decimal NetAmount { get; set; }
+
+    // ✅ لقطتان تاريخيتان لنوع الخرسانة وقت إنشاء الطلب — على نمط UnitPrice أعلاه.
+    //    بدونهما كان تغيير اسم النوع أو مقاومته في الكتالوج يُعيد كتابة عرض الطلبات
+    //    القديمة: طلب سُعِّر وبِيع باسم «C30» يظهر لاحقًا باسم النوع الجديد.
+    //    قابلتان للفراغ كي تبقى صفوف ما قبل الترحيل صالحة، ويسقط العرض عند غيابهما
+    //    إلى النوع الحالي (انظر MapToOrderDto/MapToDetailsDto).
+    public string? ConcreteTypeNameSnapshot { get; set; }
+
+    public int? ConcreteTypeStrengthSnapshot { get; set; }
 
     public DateTime? PouringDate { get; set; }
     public TransportMethod TransportMethod { get; set; }
@@ -58,7 +93,25 @@ public class Order
     public DateTime? UpdatedAt { get; set; }
 
     public bool IsDeleted { get; set; } = false;
-    // Navigation Properties
+    
+    public virtual ICollection<OrderPayment> Payments { get; set; } = new List<OrderPayment>();
+    public virtual ICollection<Trip> Trips { get; set; } = new List<Trip>();
+
+    /// <summary>
+    /// يعيد حساب صافي المبلغ المستحق = الإجمالي − الخصم.
+    ///
+    /// <para><b>لماذا دالة على الكيان:</b> <c>NetAmount</c> مشتقّ من <c>TotalPrice</c>
+    /// و<code>TotalDiscountAmount</code>، وأي مسار يغيّر أحدهما <b>يجب</b> أن يعيد حساب
+    /// الآخر. لو ترك كل مسار يعيّن <c>TotalPrice</c> وحده، بقي <c>NetAmount</c> صفراً
+    /// (قيمته الافتراضية في قاعدة البيانات) بينما <c>RemainingAmount = NetAmount − PaidAmount</c>
+    /// فيعرض رصيداً سالباً كاذباً على العميل.</para>
+    ///
+    /// <para>استُدعيت في كل موضع يعيّن <c>TotalPrice</c>: الإنشاء، والتعديل، والتسعير.</para>
+    /// </summary>
+    public void RecalculateNetAmount()
+    {
+        NetAmount = TotalPrice - TotalDiscountAmount;
+    }
 
     public User Client { get; set; } = null!;
 

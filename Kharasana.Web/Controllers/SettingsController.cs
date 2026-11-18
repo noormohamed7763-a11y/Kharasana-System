@@ -1,5 +1,6 @@
 ﻿using Kharasana.Application.Common;
 using Kharasana.Web.Filters;
+using Kharasana.Web.Localization;
 using Kharasana.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,7 +23,7 @@ namespace Kharasana.Web.Controllers
 
             if (model == null)
             {
-                TempData[TempDataError] = "تعذر تحميل بيانات المصنع.";
+                TempData[TempDataError] = AppMessages.Error.FactorySettingsLoad;
             }
 
             return View(model);
@@ -34,20 +35,21 @@ namespace Kharasana.Web.Controllers
         {
             if (logoFile == null || logoFile.Length == 0)
             {
-                TempData[TempDataError] = "يرجى اختيار صورة صالحة.";
+                TempData[TempDataError] = AppMessages.Error.InvalidLogo;
                 return RedirectToAction(nameof(Index));
             }
 
             var logoPath = await _settingsApiService.UploadLogoAsync(logoFile);
+            var uploaded = !string.IsNullOrEmpty(logoPath);
 
             // تحديث الجلسة فوراً ليظهر الشعار الجديد في الـ Navbar
-            if (!string.IsNullOrEmpty(logoPath))
+            if (uploaded)
             {
-                HttpContext.Session.SetString("FactoryLogo", logoPath);
+                HttpContext.Session.SetString("FactoryLogo", logoPath!);
             }
 
-            TempData[string.IsNullOrEmpty(logoPath) ? TempDataError : TempDataSuccess] =
-                string.IsNullOrEmpty(logoPath) ? "تعذر رفع الشعار." : "تم تحديث شعار المصنع بنجاح.";
+            TempData[uploaded ? TempDataSuccess : TempDataError] =
+                uploaded ? AppMessages.Success.FactoryLogoUpdated : AppMessages.Error.LogoUploadShort;
 
             return RedirectToAction(nameof(Index));
         }
@@ -65,7 +67,26 @@ namespace Kharasana.Web.Controllers
             }
 
             TempData[success ? TempDataSuccess : TempDataError] =
-                success ? "تم حذف الشعار بنجاح." : "تعذر حذف الشعار.";
+                success ? AppMessages.Success.LogoDeleted : AppMessages.Error.LogoDelete;
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        /// <summary>
+        /// تشغيل يدوي لتنظيف ملفات الصور اليتيمة — تحذف ملفات الصور
+        /// غير المرتبطة بأي مصنع أو مستخدم من مجلد التخزين.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CleanupImages()
+        {
+            var deletedCount = await _settingsApiService.CleanupImagesAsync();
+
+            if (deletedCount >= 0)
+                TempData[TempDataSuccess] = string.Format(
+                    AppMessages.Success.ImagesCleaned, deletedCount);
+            else
+                TempData[TempDataError] = AppMessages.Error.ImagesCleanup;
 
             return RedirectToAction(nameof(Index));
         }

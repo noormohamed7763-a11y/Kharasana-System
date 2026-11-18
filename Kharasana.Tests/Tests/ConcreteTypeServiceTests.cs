@@ -99,6 +99,52 @@ public class ConcreteTypeServiceTests : IDisposable
             .WithMessage(Messages.FactoryInactive);
     }
 
+    // ─────────────────────────────────────────────
+    // ①″  بوابة المصنع على الأرشفة — كانت مفتوحة قبل هذا الحارس:
+    //     موظف المصنع الموقوف يُمنع من التعديل ثم يملك الحذف، ونفس الأثر على الكتالوج.
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Delete_InactiveFactory_ThrowsFactoryInactive()
+    {
+        // Arrange — مصنع موقوف فيه نوع نشط
+        _context.Factories.Add(TestDataSeeder.CreateFactory(107, "موقوفة_للحذف", isActive: false));
+        _context.ConcreteTypes.Add(TestDataSeeder.CreateConcreteType(204, 107, "C25"));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _service.DeleteAsync(204, currentFactoryId: 107);
+
+        // Assert — رُفض الحذف، ولم يُؤرشف النوع فعلًا
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.FactoryInactive);
+
+        var stored = await _context.ConcreteTypes
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstAsync(x => x.ConcreteTypeId == 204);
+
+        stored.IsDeleted.Should().BeFalse();
+        stored.IsActive.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Delete_ArchivedFactory_ThrowsFactoryArchived()
+    {
+        // Arrange — مصنع مؤرشف يحمل نوعًا سليمًا
+        _context.Factories.Add(
+            TestDataSeeder.CreateFactory(108, "مؤرشفة_للحذف", isActive: false, isDeleted: true));
+        _context.ConcreteTypes.Add(TestDataSeeder.CreateConcreteType(205, 108, "C30"));
+        await _context.SaveChangesAsync();
+
+        // Act — المدير يحذف النوع (لا يُمرَّر مصنع، فالحارس على حالة المصنع لا على العزل)
+        var act = () => _service.DeleteAsync(205);
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.FactoryArchived);
+    }
+
     [Fact]
     public async Task GetAll_FiltersByFactory()
     {
@@ -113,11 +159,95 @@ public class ConcreteTypeServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = (await _service.GetAllAsync(103)).ToList();
+        var result = (await _service.GetAllAsync(factoryId: 103)).Items.ToList();
 
         // Assert — فقط أنواع المصنع 103
         result.Should().HaveCount(2);
         result.Should().OnlyContain(x => x.FactoryId == 103);
+    }
+
+    // ─────────────────────────────────────────────
+    // ①′  قائمة المؤرشفة — GetArchived (الوجه الآخر للحذف الناعم)
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetArchived_WithFactoryFilter_ReturnsOnlyDeletedTypesOfThatFactory()
+    {
+        // Arrange — مصنعان، في كلٍّ منهما نوع محذوف ونوع نشط
+        _context.Factories.AddRange(
+            TestDataSeeder.CreateFactory(105, "مصنع_أرشيف_أ"),
+            TestDataSeeder.CreateFactory(106, "مصنع_أرشيف_ب"));
+        _context.ConcreteTypes.AddRange(
+            TestDataSeeder.CreateConcreteType(210, 105, "محذوف_أ", isDeleted: true, isActive: false),
+            TestDataSeeder.CreateConcreteType(211, 105, "نشط_أ"),
+            TestDataSeeder.CreateConcreteType(212, 106, "محذوف_ب", isDeleted: true, isActive: false));
+        await _context.SaveChangesAsync();
+
+        // Act — موظف المصنع 105
+        var result = (await _service.GetArchivedAsync(105)).ToList();
+
+        // Assert — المحذوف من مصنعه وحده، والنشط مُستبعَد
+        result.Should().HaveCount(1);
+        result[0].ConcreteTypeId.Should().Be(210);
+        result[0].FactoryId.Should().Be(105);
+        result.Should().OnlyContain(x => x.FactoryId == 105);
+    }
+
+    [Fact]
+    public async Task GetArchived_WithoutFactoryFilter_ReturnsDeletedTypesOfEveryFactory()
+    {
+        // Arrange — نفس الترتيب، لكن بلا عزل (المدير)
+        _context.Factories.AddRange(
+            TestDataSeeder.CreateFactory(107, "مصنع_أرشيف_ج"),
+            TestDataSeeder.CreateFactory(108, "مصنع_أرشيف_د"));
+        _context.ConcreteTypes.AddRange(
+            TestDataSeeder.CreateConcreteType(220, 107, "محذوف_ج", isDeleted: true, isActive: false),
+            TestDataSeeder.CreateConcreteType(221, 108, "محذوف_د", isDeleted: true, isActive: false),
+            TestDataSeeder.CreateConcreteType(222, 108, "نشط_د"));
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = (await _service.GetArchivedAsync()).ToList();
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Select(x => x.ConcreteTypeId).Should().BeEquivalentTo(new[] { 220, 221 });
+    }
+
+    [Fact]
+    public async Task GetArchived_AfterDelete_CarriesArchiveTimestamp()
+    {
+        // Arrange
+        _context.Factories.Add(TestDataSeeder.CreateFactory(109, "مصنع_ختم"));
+        _context.ConcreteTypes.Add(TestDataSeeder.CreateConcreteType(230, 109, "C25"));
+        await _context.SaveChangesAsync();
+
+        // Act
+        await _service.DeleteAsync(230, currentFactoryId: 109);
+        var archived = (await _service.GetArchivedAsync(109)).ToList();
+
+        // Assert — تاريخ الأرشفة الذي تعرضه الصفحة يأتي من UpdatedAt التي تكتبها DeleteAsync
+        archived.Should().HaveCount(1);
+        archived[0].UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetArchived_AfterRestore_NoLongerListsTheType()
+    {
+        // Arrange
+        _context.Factories.Add(TestDataSeeder.CreateFactory(111, "مصنع_استعادة"));
+        _context.ConcreteTypes.Add(TestDataSeeder.CreateConcreteType(240, 111, "C30"));
+        await _context.SaveChangesAsync();
+        await _service.DeleteAsync(240, currentFactoryId: 111);
+
+        // Act — استعادة ثم قراءة الأرشيف
+        await _service.RestoreAsync(240, currentFactoryId: 111);
+        var archived = (await _service.GetArchivedAsync(111)).ToList();
+
+        // Assert — عاد إلى القائمة العادية وخرج من الأرشيف
+        archived.Should().BeEmpty();
+        var active = (await _service.GetAllAsync(factoryId: 111)).Items.ToList();
+        active.Should().ContainSingle(x => x.ConcreteTypeId == 240);
     }
 
     // ─────────────────────────────────────────────
@@ -146,7 +276,7 @@ public class ConcreteTypeServiceTests : IDisposable
         stored.IsActive.Should().BeFalse();
 
         // ويختفي من الاستعلامات العادية بفضل فلتر الاستعلام العام
-        var all = (await _service.GetAllAsync(110)).ToList();
+        var all = (await _service.GetAllAsync(factoryId: 110)).Items.ToList();
         all.Should().NotContain(x => x.ConcreteTypeId == 300);
 
         var act = () => _service.GetByIdAsync(300);
@@ -162,7 +292,7 @@ public class ConcreteTypeServiceTests : IDisposable
         _context.ConcreteTypes.Add(TestDataSeeder.CreateConcreteType(301, 111, "C30"));
         await _context.SaveChangesAsync();
 
-        var order = TestDataSeeder.CreateOrder(0, clientId: 300, factoryId: 111, concreteTypeId: 301);
+        var order = TestDataSeeder.CreateOrder(0, clientId: 300, factoryId: 111, concreteTypeId: 301, status: OrderStatus.Delivered);
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
 
@@ -247,7 +377,7 @@ public class ConcreteTypeServiceTests : IDisposable
         stored.IsDeleted.Should().BeFalse();
         stored.IsActive.Should().BeTrue();
 
-        var all = (await _service.GetAllAsync(114)).ToList();
+        var all = (await _service.GetAllAsync(factoryId: 114)).Items.ToList();
         all.Should().Contain(x => x.ConcreteTypeId == 310);
     }
 
@@ -378,7 +508,7 @@ public class ConcreteTypeServiceTests : IDisposable
         var act = () => _service.CreateAsync(new CreateConcreteTypeDto
         {
             FactoryId = 121,
-            Name = "c25",
+            Name = "C25",
             Strength = 25,
             UnitPrice = 150m
         });
@@ -481,7 +611,7 @@ public class ConcreteTypeServiceTests : IDisposable
         _context.Factories.Add(TestDataSeeder.CreateFactory(129, "مصنع_تعارض_حالة"));
         _context.ConcreteTypes.AddRange(
             TestDataSeeder.CreateConcreteType(346, 129, "C25", isActive: false, isDeleted: true),
-            TestDataSeeder.CreateConcreteType(347, 129, "c25"));
+            TestDataSeeder.CreateConcreteType(347, 129, "C25"));
         await _context.SaveChangesAsync();
 
         // Act
@@ -672,7 +802,7 @@ public class ConcreteTypeServiceTests : IDisposable
             .Select(i => $"{i.DeclaringEntityType.ClrType.Name}.{string.Join("_", i.Properties.Select(p => p.Name))}")
             .ToList();
 
-        filtered.Should().Equal("ConcreteType.FactoryId_Name");
+        filtered.Should().Equal("ConcreteType.FactoryId_Name", "Order.FactoryId_Status", "ProductionBatch.FactoryId_Status", "User.Role_FactoryId");
     }
 
     public void Dispose() => _context.Dispose();

@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Order;
 
 namespace Kharasana.Application.Validators.Order;
@@ -7,6 +8,6 @@ public class UpdateOrderStatusDtoValidator : AbstractValidator<UpdateOrderStatus
 {
     public UpdateOrderStatusDtoValidator()
     {
-        RuleFor(x => x.Status).IsInEnum().WithMessage("حالة الطلب غير صالحة.");
+        RuleFor(x => x.Status).IsInEnum().WithMessage(Messages.InvalidOrderStatus);
     }
 }

@@ -11,6 +11,8 @@ public class KharasanaDbContext : DbContext
     }
 
     // DbSets
+    public DbSet<IdempotencyRecord> IdempotencyRecords { get; set; }
+
     public DbSet<Factory> Factories { get; set; }
 
     public DbSet<User> Users { get; set; }
@@ -18,6 +20,20 @@ public class KharasanaDbContext : DbContext
     public DbSet<ConcreteType> ConcreteTypes { get; set; }
 
     public DbSet<Order> Orders { get; set; }
+
+    public DbSet<OrderPayment> OrderPayments { get; set; }
+
+    public DbSet<Trip> Trips { get; set; }
+
+    public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
+
+    public DbSet<RawMaterial> RawMaterials { get; set; }
+
+    public DbSet<ProductionBatch> ProductionBatches { get; set; }
+
+    public DbSet<FactoryRegistrationRequest> FactoryRegistrationRequests { get; set; }
+
+    public DbSet<ActivationToken> ActivationTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +53,15 @@ public class KharasanaDbContext : DbContext
 
         modelBuilder.Entity<ConcreteType>()
             .HasQueryFilter(c => !c.IsDeleted);
+
+        modelBuilder.Entity<RawMaterial>()
+            .HasQueryFilter(r => !r.IsDeleted);
+
+        modelBuilder.Entity<ProductionBatch>()
+            .HasQueryFilter(p => !p.IsDeleted);
+
+        modelBuilder.Entity<Trip>()
+            .HasQueryFilter(t => !t.IsDeleted);
 
         base.OnModelCreating(modelBuilder);
     }

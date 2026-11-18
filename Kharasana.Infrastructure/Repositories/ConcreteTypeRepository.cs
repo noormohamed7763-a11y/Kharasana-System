@@ -1,5 +1,6 @@
 ﻿using Kharasana.Application.Interfaces.Repositories;
 using Kharasana.Domain.Entities;
+using Kharasana.Application.Common;
 using Kharasana.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,12 +9,9 @@ namespace Kharasana.Infrastructure.Repositories;
 public class ConcreteTypeRepository
     : GenericRepository<ConcreteType>, IConcreteTypeRepository
 {
-    // ❌ تم إزالة _context المكرر واستخدام base._context
-
     public ConcreteTypeRepository(KharasanaDbContext context)
         : base(context)
     {
-        // ✅ لا حاجة لإعادة تعريف _context
     }
 
     public async Task<IEnumerable<ConcreteType>> GetAllWithFactoryAsync()
@@ -42,21 +40,71 @@ public class ConcreteTypeRepository
             .FirstOrDefaultAsync(x => x.ConcreteTypeId == id);
     }
 
+    public async Task<IEnumerable<ConcreteType>> GetArchivedWithFactoryAsync(int? factoryId)
+    {
+        // IgnoreQueryFilters: تجاوز الفلتر العام (!IsDeleted) حتى لا تُستبعد المؤرشفة
+        // قبل القراءة — نفس نمط FactoryRepository.GetArchivedAsync.
+        var query = _context.ConcreteTypes
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(x => x.Factory)
+            .Where(x => x.IsDeleted);
+
+        if (factoryId.HasValue)
+        {
+            query = query.Where(x => x.FactoryId == factoryId.Value);
+        }
+
+        return await query.ToListAsync();
+    }
+
     public async Task<ConcreteType?> FindActiveByNameInFactoryAsync(
         int factoryId, string name, int? excludeConcreteTypeId = null)
     {
-        // فلتر الحذف الناعم العام (!IsDeleted) مطبَّق هنا عمدًا:
-        // الأسماء المحرَّرة بحذف ناعم متاحة لإعادة الاستخدام (خيار B)،
-        // فلا يعارض الإنشاء/التعديل إلا نوع غير محذوف بالاسم نفسه.
-        // المقارنة غير حساسة لحالة الأحرف لتطابق ترتيب SQL Server الافتراضي
-        // وتطابق إنفاذ الفهرس المُرشَّح (WHERE IsDeleted = 0) وهو الحماية النهائية ضد السباق.
-        var normalized = name.ToLower();
-
+        // ✅ فحص تفرّد الاسم بطريقة SARGable:
+        // نعتمد على Collation قاعدة البيانات (غالباً CI - Case Insensitive) للمقارنة المباشرة،
+        // أو نفرض Collation حساس للحالة باستخدام EF.Functions.Collate لضمان الأداء وعدم الحاجة لـ ToLower().
         return await _context.ConcreteTypes
             .AsNoTracking()
             .FirstOrDefaultAsync(x =>
                 x.FactoryId == factoryId
-                && x.Name.ToLower() == normalized
+                && x.Name == name
                 && (excludeConcreteTypeId == null || x.ConcreteTypeId != excludeConcreteTypeId));
+    }
+
+    public async Task<PagedResult<ConcreteType>> GetPagedAsync(int pageNumber, int pageSize, string? search, bool? onlyActive = null)
+    {
+        IQueryable<ConcreteType> query = _context.ConcreteTypes.AsNoTracking().Include(x => x.Factory);
+        if (onlyActive.HasValue && onlyActive.Value)
+        {
+            query = query.Where(x => x.IsActive);
+        }
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(x => x.Name.Contains(search));
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PagedResult<ConcreteType> { Items = items, TotalCount = totalCount, PageNumber = pageNumber, PageSize = pageSize };
+    }
+
+    public async Task<PagedResult<ConcreteType>> GetPagedByFactoryAsync(int factoryId, int pageNumber, int pageSize, string? search, bool? onlyActive = null)
+    {
+        IQueryable<ConcreteType> query = _context.ConcreteTypes.AsNoTracking().Include(x => x.Factory).Where(x => x.FactoryId == factoryId);
+        if (onlyActive.HasValue && onlyActive.Value)
+        {
+            query = query.Where(x => x.IsActive);
+        }
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(x => x.Name.Contains(search));
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PagedResult<ConcreteType> { Items = items, TotalCount = totalCount, PageNumber = pageNumber, PageSize = pageSize };
     }
 }

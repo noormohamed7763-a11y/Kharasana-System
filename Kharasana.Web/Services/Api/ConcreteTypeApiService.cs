@@ -2,6 +2,7 @@ using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.ConcreteTypes;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace Kharasana.Web.Services.Api;
 
@@ -16,78 +17,73 @@ public class ConcreteTypeApiService : IConcreteTypeApiService
         _logger = logger;
     }
 
-    public async Task<List<ConcreteTypeListItemViewModel>> GetAllAsync()
+    public async Task<PagedResult<ConcreteTypeListItemViewModel>> GetAllAsync(int pageNumber = 1, int pageSize = 20, string? search = null)
     {
-        try
+        var query = $"ConcreteTypes?pageNumber={pageNumber}&pageSize={pageSize}";
+        if (!string.IsNullOrWhiteSpace(search))
+            query += $"&search={Uri.EscapeDataString(search)}";
+
+        var response = await _apiClient.GetAsync<ApiResponse<PagedResult<ConcreteTypeListItemViewModel>>>(query);
+        if (response == null || !response.Success)
         {
-            var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeListItemViewModel>>>("ConcreteTypes");
-            return response?.Data ?? new List<ConcreteTypeListItemViewModel>();
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
         }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
+        return response.Data ?? new PagedResult<ConcreteTypeListItemViewModel>();
+    }
+
+    public async Task<List<ConcreteTypeListItemViewModel>> GetArchivedAsync()
+    {
+        var response = await _apiClient.GetAsync<ApiResponse<List<ConcreteTypeListItemViewModel>>>("ConcreteTypes/archived");
+        if (response == null || !response.Success)
         {
-            _logger.LogError(ex, "Exception while fetching concrete types.");
-            return new List<ConcreteTypeListItemViewModel>();
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
+        }
+        return response.Data ?? new List<ConcreteTypeListItemViewModel>();
+    }
+
+    public async Task<ConcreteTypeViewModel> GetByIdAsync(int id)
+    {
+        var response = await _apiClient.GetAsync<ApiResponse<ConcreteTypeViewModel>>($"ConcreteTypes/{id}");
+        if (response == null || !response.Success || response.Data == null)
+        {
+            throw new ApiServiceException(HttpStatusCode.NotFound, ApiErrorCatalog.ConcreteTypeNotFound, new object[] { id });
+        }
+        return response.Data;
+    }
+
+    public async Task CreateAsync(CreateConcreteTypeViewModel model)
+    {
+        var response = await _apiClient.PostAsync<ApiResponse<object>>("ConcreteTypes", model);
+        if (response == null || !response.Success)
+        {
+            throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.ConcreteTypeCreateFailed, new object[] { response?.Message ?? "سبب غير معروف" });
         }
     }
 
-    public async Task<ConcreteTypeViewModel?> GetByIdAsync(int id)
+    public async Task UpdateAsync(int id, UpdateConcreteTypeViewModel model)
     {
-        try
+        var response = await _apiClient.PutAsync<ApiResponse<object>>($"ConcreteTypes/{id}", model);
+        if (response == null || !response.Success)
         {
-            var response = await _apiClient.GetAsync<ApiResponse<ConcreteTypeViewModel>>($"ConcreteTypes/{id}");
-            return response?.Data;
-        }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while fetching concrete type {ConcreteTypeId}.", id);
-            return null;
+            throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.ConcreteTypeUpdateFailed, new object[] { id, response?.Message ?? "سبب غير معروف" });
         }
     }
 
-    public async Task<bool> CreateAsync(CreateConcreteTypeViewModel model)
+    public async Task DeleteAsync(int id)
     {
-        try
+        var response = await _apiClient.DeleteAsync<ApiResponse<object>>($"ConcreteTypes/{id}");
+        if (response == null || !response.Success)
         {
-            var response = await _apiClient.PostAsync<ApiResponse<object>>("ConcreteTypes", model);
-            return response != null && response.Success;
-        }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while creating concrete type.");
-            return false;
+            throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.ConcreteTypeDeleteFailed, new object[] { id, response?.Message ?? "سبب غير معروف" });
         }
     }
 
-    public async Task<bool> UpdateAsync(int id, UpdateConcreteTypeViewModel model)
+    public async Task RestoreAsync(int id)
     {
-        try
+        var response = await _apiClient.PostAsync<ApiResponse<object>>($"ConcreteTypes/restore/{id}", new { });
+        if (response == null || !response.Success)
         {
-            var response = await _apiClient.PutAsync<ApiResponse<object>>($"ConcreteTypes/{id}", model);
-            return response != null && response.Success;
-        }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while updating concrete type {ConcreteTypeId}.", id);
-            return false;
-        }
-    }
-
-    public async Task<bool> DeleteAsync(int id)
-    {
-        try
-        {
-            var response = await _apiClient.DeleteAsync<ApiResponse<object>>($"ConcreteTypes/{id}");
-            return response != null && response.Success;
-        }
-        catch (ApiServiceException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while deleting concrete type {ConcreteTypeId}.", id);
-            return false;
+            throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.ServerError);
         }
     }
 }

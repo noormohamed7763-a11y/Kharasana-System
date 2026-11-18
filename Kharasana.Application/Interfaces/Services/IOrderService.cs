@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Domain.Enums;
 using Kharasana.Application.DTOs.Customer;
@@ -14,45 +14,65 @@ public interface IOrderService
     // 1. READ
     // ============================================================
     Task<PagedResult<OrderDto>> GetPagedAsync(
-        int? factoryId, int? clientId, int? driverId, UserRole callerRole, PaginationParams pagination);
+        int? factoryId, int? clientId, int? driverId, CallerContext caller, PaginationParams pagination);
 
-    /// <summary>جلب جميع طلبات سائق محدد (للتقارير) — بدون ترقيم، مرتبة تنازلياً بالتاريخ.</summary>
-    Task<IEnumerable<OrderDto>> GetOrdersByDriverIdAsync(int driverId, int? callerFactoryId, UserRole callerRole);
+    /// <summary>جلب جميع طلبات سائق محدد (للتقارير) — مع ترقيم.</summary>
+    Task<PagedResult<OrderDto>> GetOrdersByDriverIdAsync(int driverId, CallerContext caller, int pageNumber = 1, int pageSize = 200);
 
     Task<OrderDetailsDto> GetByIdAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
     Task<PagedResult<CustomerSummaryDto>> GetCustomersAsync(int? factoryId, PaginationParams pagination);
 
+    /// <summary>ملخص عميل واحد — <c>null</c> إن لم تكن له طلبات في النطاق.</summary>
+    Task<CustomerSummaryDto?> GetCustomerSummaryAsync(int customerId, int? factoryId);
+
     // ============================================================
     // 2. CREATE
     // ============================================================
     Task<OrderDetailsDto> CreateAsync(
-        CreateOrderDto dto, int currentUserId, UserRole currentRole, int? currentUserFactoryId = null);
+        CreateOrderDto dto, int currentUserId, UserRole currentRole, string? idempotencyKey = null, int? currentUserFactoryId = null);
 
-    Task<OrderDetailsDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId);
+    Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId, string? idempotencyKey = null, int currentUserId = 0);
 
     Task<OrderDto> UpdateOrderAsync(int id, UpdateOrderDto dto, int userId, UserRole role, int? factoryId);
 
     // ============================================================
     // 3. PRICING & WORKFLOW
     // ============================================================
-    Task<bool> SetPriceAsync(int id, decimal unitPrice, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> SetPriceAsync(int id, decimal unitPrice, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> ApproveOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> ApproveOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> RejectOrderAsync(int id, string? reason, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> RejectOrderAsync(int id, string? reason, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> CancelOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> CancelOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> AssignDriverAsync(int id, AssignDriverDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> AssignDriverAsync(int id, AssignDriverDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> StartDeliveryAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> StartDeliveryAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> DeliverOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> DeliverOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> CloseOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> CloseOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
 
-    Task<bool> UpdateStatusAsync(int id, UpdateOrderStatusDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
+    Task<ServiceResult> UpdateStatusAsync(int id, UpdateOrderStatusDto dto, int callerId, UserRole callerRole, int? callerFactoryId);
 
     Task<bool> DeleteOrderAsync(int id, int callerId, UserRole callerRole, int? callerFactoryId);
+
+    // ============================================================
+    // 4. PAYMENTS — سجل الدفعات
+    // ============================================================
+
+    /// <summary>تسجيل دفعة جديدة على طلب — للمدير وموظف المصنع فقط.</summary>
+    Task AddPaymentAsync(int orderId, AddPaymentDto dto, int callerId, UserRole callerRole, string? idempotencyKey = null, int? callerFactoryId = null);
+
+    // ============================================================
+    // 5. PAYMENT VERIFICATION (Hawala Ledger)
+    // ============================================================
+
+    /// <summary>قبول الحوالة من قبل المحاسب.</summary>
+    Task<bool> ApprovePaymentAsync(int paymentId, string verificationNotes, int approverId);
+
+    /// <summary>رفض الحوالة من قبل المحاسب.</summary>
+    Task<bool> RejectPaymentAsync(int paymentId, string rejectionReason, int approverId);
 }

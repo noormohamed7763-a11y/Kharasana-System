@@ -1,6 +1,6 @@
-﻿using System;
 using System.Text.Json.Serialization;
 using Kharasana.Domain.Enums;
+using Kharasana.Web.Helpers;
 
 namespace Kharasana.Web.ViewModels.Orders;
 
@@ -9,9 +9,6 @@ public class OrderDto
     // ============================================================
     // BASIC INFO
     // ============================================================
-    [JsonPropertyName("id")]
-    public int Id { get; set; }
-
     [JsonPropertyName("orderId")]
     public int OrderId { get; set; }
 
@@ -76,6 +73,21 @@ public class OrderDto
     [JsonPropertyName("totalPrice")]
     public decimal? TotalPrice { get; set; }
 
+    [JsonPropertyName("totalDiscountAmount")]
+    public decimal TotalDiscountAmount { get; set; }
+
+    [JsonPropertyName("netAmount")]
+    public decimal NetAmount { get; set; }
+
+    [JsonPropertyName("totalPaid")]
+    public decimal TotalPaid { get; set; }
+
+    [JsonPropertyName("remainingAmount")]
+    public decimal RemainingAmount { get; set; }
+
+    [JsonPropertyName("payments")]
+    public List<OrderPaymentViewModel> Payments { get; set; } = new();
+
 
     // ============================================================
     // PROJECT INFO
@@ -92,11 +104,32 @@ public class OrderDto
     [JsonPropertyName("siteDescription")]
     public string? SiteDescription { get; set; }
 
+    [JsonPropertyName("landmarks")]
+    public string? Landmarks { get; set; }
+
+    [JsonPropertyName("supervisorName")]
+    public string? SupervisorName { get; set; }
+
+    [JsonPropertyName("supervisorPhone")]
+    public string? SupervisorPhone { get; set; }
+
+    [JsonPropertyName("cementType")]
+    public CementType CementType { get; set; } = CementType.Ordinary;
+
+    [JsonPropertyName("aggregateSize")]
+    public AggregateSize AggregateSize { get; set; } = AggregateSize.Size20mm;
+
+    [JsonPropertyName("admixture")]
+    public Admixture Admixture { get; set; } = Admixture.Plasticizer;
+
+    [JsonPropertyName("latitude")]
+    public decimal? Latitude { get; set; }
+
+    [JsonPropertyName("longitude")]
+    public decimal? Longitude { get; set; }
+
     [JsonPropertyName("slabType")]
     public SlabType SlabType { get; set; }
-
-    [JsonPropertyName("slabTypeDisplay")]
-    public string? SlabTypeDisplay { get; set; }
 
 
     // ============================================================
@@ -104,9 +137,6 @@ public class OrderDto
     // ============================================================
     [JsonPropertyName("transportMethod")]
     public TransportMethod TransportMethod { get; set; }
-
-    [JsonPropertyName("transportMethodDisplay")]
-    public string? TransportMethodDisplay { get; set; }
 
     [JsonPropertyName("needPump")]
     public bool NeedPump { get; set; }
@@ -159,20 +189,10 @@ public class OrderDto
     // HELPER PROPERTIES
     // ============================================================
 
-    public string StatusArabic => Status switch
-    {
-        OrderStatus.New => "جديد",
-        OrderStatus.Pending => "⏳ قيد الانتظار",
-        OrderStatus.Approved => "✅ معتمد",
-        OrderStatus.Rejected => "❌ مرفوض",
-        OrderStatus.Cancelled => "🚫 ملغي",
-        OrderStatus.OnTheWay => "🚚 في الطريق",
-        OrderStatus.Delivered => "📦 تم التسليم",
-        OrderStatus.Closed => "🔒 مغلق",
-        _ => "غير معروف"
-    };
-
-    public int StatusInt => (int)Status;
+    /// <summary>
+    /// الاسم العربي للحالة جاهزاً للعرض (مع إيموجي).
+    /// </summary>
+    public string StatusArabic => Status.GetArabicName();
 
     /// <summary>
     /// تاريخ الصب بصيغة dd/MM/yyyy جاهزة للعرض

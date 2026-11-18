@@ -1,4 +1,5 @@
 ﻿using Kharasana.Domain.Entities;
+using Kharasana.Application.Common;
 
 namespace Kharasana.Application.Interfaces.Repositories;
 
@@ -8,7 +9,19 @@ public interface IConcreteTypeRepository : IGenericRepository<ConcreteType>
 
     Task<IEnumerable<ConcreteType>> GetByFactoryWithFactoryAsync(int factoryId);
 
+    /// <summary>
+    /// الأنواع <b>المحذوفة حذفًا ناعمًا</b> (المؤرشفة) مع مصانعها — لتجاوز فلتر الحذف العام.
+    /// </summary>
+    /// <param name="factoryId">
+    /// مصنع بعينه (موظف المصنع)، أو <c>null</c> لكل المصانع (المدير).
+    /// </param>
+    Task<IEnumerable<ConcreteType>> GetArchivedWithFactoryAsync(int? factoryId);
+
     Task<ConcreteType?> GetByIdWithFactoryAsync(int id);
+
+    Task<PagedResult<ConcreteType>> GetPagedAsync(int pageNumber, int pageSize, string? search, bool? onlyActive = null);
+
+    Task<PagedResult<ConcreteType>> GetPagedByFactoryAsync(int factoryId, int pageNumber, int pageSize, string? search, bool? onlyActive = null);
 
     /// <summary>
     /// البحث عن نوع خرسانة <b>غير محذوف</b> بالاسم داخل المصنع — محترمًا فلتر الحذف الناعم العام.

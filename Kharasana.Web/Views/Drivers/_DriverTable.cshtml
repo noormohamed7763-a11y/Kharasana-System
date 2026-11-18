@@ -3,18 +3,18 @@
 @using Kharasana.Domain.Enums
 @model IEnumerable<DriverListItemViewModel>
 
-<div class="form-card">
+<div class="form-card shadow-sm">
     <div class="table-responsive">
-        <table class="erp-table erp-table--sticky-cols">
+        <table class="table table-hover align-middle erp-table erp-table--sticky-cols">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>الاسم</th>
-                    <th>الهاتف</th>
-                    <th>رقم الرخصة</th>
-                    <th>الحالة</th>
-                    <th>الحساب</th>
-                    <th class="text-center">الإجراءات</th>
+                    <th class="col-index text-nowrap">#</th>
+                    <th class="text-nowrap">السائق</th>
+                    <th class="text-nowrap">الهاتف</th>
+                    <th class="text-nowrap">رقم الرخصة</th>
+                    <th class="text-nowrap">الحالة</th>
+                    <th class="text-nowrap">الحساب</th>
+                    <th class="text-center col-actions col-actions--md text-nowrap">الإجراءات</th>
                 </tr>
             </thead>
                     <tbody id="driverTableBody">
@@ -38,11 +38,27 @@
                         DriverStatus.Offline => "status-secondary",
                         _ => "status-secondary"
                     };
-
                     <tr data-status="@driver.DriverStatus">
                         <td class="text-muted fw-bold">@(index++)</td>
-                        <td><strong class="text-primary">@driver.FullName</strong></td>
-                        <td>@(driver.Phone ?? "-")</td>
+                        <td>
+                            @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_UserCell.cshtml",
+                                new UserCellViewModel
+                                {
+                                    FullName = driver.FullName,
+                                    AvatarCssClass = "avatar-driver"
+                                })
+                        </td>
+                        <td dir="ltr">
+                            @await Html.PartialAsync(
+                                "~/Views/Shared/Components/_PhoneActions.cshtml",
+                                new PhoneActionsViewModel
+                                {
+                                    Phone = driver.Phone ?? string.Empty,
+                                    ContactName = driver.FullName,
+                                    ContactLabel = "السائق"
+                                })
+                        </td>
                         <td>
                             @if (string.IsNullOrWhiteSpace(driver.LicenseNumber))
                             {
@@ -62,7 +78,11 @@
                                     type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             </button>
                             <ul class="dropdown-menu">
-                                @foreach (var status in Enum.GetValues<DriverStatus>())
+                                @* الحالات الثلاث الفعلية فقط: `DriverStatus.Unset = 0` قيمة حارسة تعني
+                                   «لم تُمرَّر الحالة» في الـ DTO (UserService يسقطها إلى Offline)، وليست
+                                   حالة سائق. عرضها هنا كان يتيح اختيارها فيصير السائق بحالة لا يعرضها
+                                   الجدول (statusText = "-") ولا تحسبها اللوحة، وبنصّها الإنجليزي. *@
+                                @foreach (var status in new[] { DriverStatus.Available, DriverStatus.Busy, DriverStatus.Offline })
                                     {
                                         <li>
                                             <form asp-action="UpdateStatus" method="post" class="d-inline">

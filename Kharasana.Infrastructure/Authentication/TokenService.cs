@@ -1,4 +1,3 @@
-
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -52,5 +51,13 @@ public class TokenService : ITokenService
             Token = new JwtSecurityTokenHandler().WriteToken(token),
             Expiration = expires
         };
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[64];
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
     }
 }

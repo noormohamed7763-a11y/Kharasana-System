@@ -1,4 +1,4 @@
-﻿using Kharasana.Domain.Enums;
+using Kharasana.Domain.Enums;
 
 namespace Kharasana.Application.DTOs.Order;
 
@@ -27,6 +27,12 @@ public class OrderDetailsDto
     public string? ProjectOwnerName { get; set; }
     public string? SiteArea { get; set; }
     public string? SiteDescription { get; set; }
+    public string? Landmarks { get; set; }
+    public string? SupervisorName { get; set; }
+    public string? SupervisorPhone { get; set; }
+    public CementType CementType { get; set; } = CementType.Ordinary;
+    public AggregateSize AggregateSize { get; set; } = AggregateSize.Size20mm;
+    public Admixture Admixture { get; set; } = Admixture.Plasticizer;
     public SlabType SlabType { get; set; }
 
     // ✅ معلومات الكمية والسعر
@@ -34,8 +40,28 @@ public class OrderDetailsDto
     public bool NeedPump { get; set; }
     public int? FloorNumber { get; set; }
     public decimal? UnitPrice { get; set; }
+
+    /// <summary>
+    /// هل سُعِّر الطلب يدوياً؟ يقرؤه تطبيق Flutter من تفاصيل الطلب
+    /// (isManuallyPriced في order_details_dto.dart) لتمييز السعر المُعتمد
+    /// من موظف المصنع عن سعر الكتالوج.
+    /// </summary>
+    public bool IsManuallyPriced { get; set; }
+
     public decimal? TotalPrice { get; set; }
+    public decimal? TotalDiscountAmount { get; set; }
+    public decimal? NetAmount { get; set; }
+    public ICollection<OrderPaymentDto> Payments { get; set; } = new List<OrderPaymentDto>();
+    public decimal PaidAmount => Payments?.Sum(p => p.Amount) ?? 0;
+    public decimal RemainingAmount => (NetAmount ?? 0) - PaidAmount;
     public DateTime? PouringDate { get; set; }
+
+    /// <summary>
+    /// إحداثيات موقع صبّ الخرسانة كما التقطها جهاز العميل عند إنشاء الطلب.
+    /// قابلة للفراغ للطلبات المنشأة قبل إضافة GPS أو التي لا تمرّ بتطبيق العميل.
+    /// </summary>
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
 
     // ✅ معلومات النقل
     public TransportMethod TransportMethod { get; set; }

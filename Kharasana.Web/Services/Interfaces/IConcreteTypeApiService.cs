@@ -1,16 +1,26 @@
-﻿using Kharasana.Web.ViewModels.ConcreteTypes;
+using Kharasana.Application.Common;
+using Kharasana.Web.ViewModels.ConcreteTypes;
 
 namespace Kharasana.Web.Services.Interfaces;
 
 public interface IConcreteTypeApiService
 {
-    Task<List<ConcreteTypeListItemViewModel>> GetAllAsync();
+    Task<PagedResult<ConcreteTypeListItemViewModel>> GetAllAsync(int pageNumber = 1, int pageSize = 20, string? search = null);
 
-    Task<ConcreteTypeViewModel?> GetByIdAsync(int id);
+    /// <summary>الأنواع المؤرشفة (المحذوفة حذفًا ناعمًا) — يعزلها الـ API على مصنع موظف المصنع.</summary>
+    Task<List<ConcreteTypeListItemViewModel>> GetArchivedAsync();
 
-    Task<bool> CreateAsync(CreateConcreteTypeViewModel model);
+    Task<ConcreteTypeViewModel> GetByIdAsync(int id);
 
-    Task<bool> UpdateAsync(int id, UpdateConcreteTypeViewModel model);
+    Task CreateAsync(CreateConcreteTypeViewModel model);
 
-    Task<bool> DeleteAsync(int id);
+    Task UpdateAsync(int id, UpdateConcreteTypeViewModel model);
+
+    Task DeleteAsync(int id);
+
+    /// <summary>
+    /// استعادة نوع خرسانة مؤرشف. تفشل بـ 409 إن كان الاسم مستخدمًا بنوع غير محذوف
+    /// في المصنع نفسه، فتصل الرسالة العربية من الـ API عبر <c>ApiServiceException</c>.
+    /// </summary>
+    Task RestoreAsync(int id);
 }

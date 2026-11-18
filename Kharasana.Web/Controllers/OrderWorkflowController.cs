@@ -1,5 +1,4 @@
-using Kharasana.Application.Common;
-using Kharasana.Application.DTOs.Order;
+using Kharasana.Web.DTOs.Order;
 using Kharasana.Domain.Enums;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
@@ -15,6 +14,8 @@ namespace Kharasana.Web.Controllers
     /// تُفصّل عن OrdersController (الذي يتعامل مع العرض CRUD) لتقليل حجم الكود وتبسيط الصيانة.
     /// </summary>
     [SessionAuthorize]
+    [Route("OrderWorkflow")]
+    [ServiceFilter(typeof(ApiExceptionHandlerFilter))]
     public class OrderWorkflowController : BaseController
     {
         private readonly IOrdersApiService _ordersApiService;
@@ -44,28 +45,42 @@ namespace Kharasana.Web.Controllers
             if (dto == null)
                 return AjaxFail(AppMessages.Validation.RequiredField);
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.SavePriceAsync(id, dto.UnitPrice);
+            var result = await _ordersApiService.SavePriceAsync(id, dto.UnitPrice);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.PriceSaved);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.PriceSave);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في حفظ سعر الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في حفظ سعر الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
+        }
+
+        // ============================================================
+        // QUICK QUOTE AND APPROVE - تسعير واعتماد فوري بنقرة واحدة (AJAX)
+        // ============================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> QuickQuoteAndApprove(int id, [FromBody] SavePriceDto dto)
+        {
+            if (!EnsureValidId(id))
+                return AjaxInvalidId();
+
+            if (dto == null || dto.UnitPrice <= 0)
+                return AjaxFail("يرجى إدخال سعر صحيح للمتر.");
+
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
+
+            var priceResult = await _ordersApiService.SavePriceAsync(id, dto.UnitPrice);
+            if (!priceResult.Succeeded)
+                return AjaxFail(priceResult.Message);
+
+            var approveResult = await _ordersApiService.ApproveOrderAsync(id);
+            if (approveResult.Succeeded)
+                return AjaxSuccess("تم تحديد السعر واعتماد الطلب بنجاح. يمكنك الآن الانتقال لجدولة الخلاطات.");
+
+            return AjaxFail(approveResult.Message);
         }
 
         // ============================================================
@@ -78,28 +93,15 @@ namespace Kharasana.Web.Controllers
             if (!EnsureValidId(id))
                 return AjaxInvalidId();
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.ApproveOrderAsync(id);
+            var result = await _ordersApiService.ApproveOrderAsync(id);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.Approved);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.Approved);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في الموافقة على الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في الموافقة على الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -115,28 +117,15 @@ namespace Kharasana.Web.Controllers
             if (dto == null)
                 return AjaxFail(AppMessages.Validation.RequiredField);
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.RejectOrderAsync(id, dto.Reason ?? string.Empty);
+            var result = await _ordersApiService.RejectOrderAsync(id, dto.Reason ?? string.Empty);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.Rejected);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.Rejected);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في رفض الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في رفض الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -149,28 +138,15 @@ namespace Kharasana.Web.Controllers
             if (!EnsureValidId(id))
                 return AjaxInvalidId();
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.CancelOrderAsync(id);
+            var result = await _ordersApiService.CancelOrderAsync(id);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.Cancelled);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.Cancelled);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في إلغاء الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في إلغاء الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -183,28 +159,15 @@ namespace Kharasana.Web.Controllers
             if (!EnsureValidId(id))
                 return AjaxInvalidId();
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.StartDeliveryAsync(id);
+            var result = await _ordersApiService.StartDeliveryAsync(id);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.DeliveryStarted);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.DeliveryStarted);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في بدء توصيل الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في بدء توصيل الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -217,28 +180,15 @@ namespace Kharasana.Web.Controllers
             if (!EnsureValidId(id))
                 return AjaxInvalidId();
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.DeliverOrderAsync(id);
+            var result = await _ordersApiService.DeliverOrderAsync(id);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.Delivered);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.Delivered);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في تسليم الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في تسليم الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(result.Message);
         }
 
         // ============================================================
@@ -251,28 +201,81 @@ namespace Kharasana.Web.Controllers
             if (!EnsureValidId(id))
                 return AjaxInvalidId();
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var result = await _ordersApiService.CloseOrderAsync(id);
+            var result = await _ordersApiService.CloseOrderAsync(id);
 
-                if (result)
-                    return AjaxSuccess(AppMessages.Success.Closed);
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
 
-                return AjaxFail(AppMessages.Error.Closed);
-            }
-            catch (ApiServiceException ex)
+            return AjaxFail(result.Message);
+        }
+
+        // ============================================================
+        // ADD PAYMENT - تسجيل دفعة (AJAX)
+        // ============================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddPayment(int id, [FromBody] AddPaymentViewModel model)
+        {
+            if (!EnsureValidId(id))
+                return AjaxInvalidId();
+
+            if (model == null)
+                return AjaxFail(AppMessages.Validation.RequiredField);
+
+            if (!ModelState.IsValid)
+                return AjaxFail(AppMessages.Common.InvalidData);
+
+            // Ensure factory employee can modify this order (admin can always modify)
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
+
+            var result = await _ordersApiService.AddPaymentAsync(id, model);
+
+            if (result.Succeeded)
+                return AjaxSuccess(result.Message);
+
+            return AjaxFail(result.Message);
+        }
+
+        // ============================================================
+        // PRINT PAYMENT RECEIPT
+        // ============================================================
+        [HttpGet]
+        public async Task<IActionResult> PrintPaymentReceipt(int orderId, int paymentId)
+        {
+            if (orderId <= 0 || paymentId <= 0)
+                return BadRequest(new { success = false, message = AppMessages.Error.InvalidId });
+
+            var order = await _ordersApiService.GetOrderByIdAsync(orderId);
+            if (order == null)
+                return BadRequest(new { success = false, message = AppMessages.Common.NotFound });
+
+            if (RoleValue == UserRole.FactoryEmployee && IsFactoryIsolated(order.FactoryId))
+                return BadRequest(new { success = false, message = AppMessages.Common.OrderCannotModify });
+
+            var payment = order.Payments.FirstOrDefault(p => p.Id == paymentId);
+            if (payment == null)
+                return NotFound();
+
+            var viewModel = new PaymentReceiptViewModel
             {
-                _logger.LogError(ex, "خطأ في إغلاق الطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في إغلاق الطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+                PaymentId = payment.Id,
+                OrderId = order.OrderId,
+                OrderNumber = order.OrderNumber,
+                Amount = payment.Amount,
+                PaymentMethod = payment.PaymentMethod,
+                ReferenceNo = payment.ReferenceNo,
+                Notes = payment.Notes,
+                PaymentDate = payment.PaymentDate,
+                ClientName = order.ClientName,
+                ClientPhone = order.ClientPhone ?? string.Empty,
+                FactoryName = order.FactoryName
+            };
+
+            return View("~/Views/Orders/PaymentReceipt.cshtml", viewModel);
         }
 
         // ============================================================
@@ -291,58 +294,44 @@ namespace Kharasana.Web.Controllers
             if (!ModelState.IsValid)
                 return AjaxFail(AppMessages.Common.InvalidData);
 
-            try
-            {
-                var authResult = await EnsureCanModifyOrderAsync(id);
-                if (authResult != null) return authResult;
+            var authResult = await EnsureCanModifyOrderAsync(id);
+            if (authResult != null) return authResult;
 
-                var allDrivers = await _lookupApiService.GetAvailableDriversAsync();
+            var allDrivers = await _lookupApiService.GetAvailableDriversAsync();
 
-                // ✅ موظف المصنع يُقيَّد بسائقي مصنعه، والمدير (بلا مصنع) يرى القائمة كاملة
-                //    مطابقةً لقائمة النافذة في Orders/Details؛ التحقق النهائي من تطابق
-                //    مصنع السائق مع مصنع الطلب مسؤولية OrderService.AssignDriverAsync.
-                var factoryDrivers = FactoryId.HasValue
-                    ? allDrivers.Where(d => d.FactoryId == FactoryId.Value).ToList()
-                    : allDrivers;
+            // ✅ موظف المصنع يُقيَّد بسائقي مصنعه، والمدير (بلا مصنع) يرى القائمة كاملة
+            //    مطابقةً لقائمة النافذة في Orders/Details؛ التحقق النهائي من تطابق
+            //    مصنع السائق مع مصنع الطلب مسؤولية OrderService.AssignDriverAsync.
+            var factoryDrivers = FactoryId.HasValue
+                ? allDrivers.Where(d => d.FactoryId == FactoryId.Value).ToList()
+                : allDrivers;
 
-                var driverExists = factoryDrivers.Any(d => d.Id == model.DriverId);
+            var driverExists = factoryDrivers.Any(d => d.Id == model.DriverId);
 
-                if (!driverExists)
-                    return AjaxFail(AppMessages.Common.DriverNotInFactory);
+            if (!driverExists)
+                return AjaxFail(AppMessages.Common.DriverNotInFactory);
 
-                var ok = await _ordersApiService.AssignDriverAsync(id, model);
+            var ok = await _ordersApiService.AssignDriverAsync(id, model);
 
-                if (!ok)
-                    return AjaxFail(AppMessages.Error.DriverAssign);
+            if (ok.Succeeded)
+                return AjaxSuccess(ok.Message);
 
-                return AjaxSuccess(AppMessages.Success.DriverAssigned);
-            }
-            catch (ApiServiceException ex)
-            {
-                _logger.LogError(ex, "خطأ في تعيين سائق للطلب {OrderId} StatusCode={StatusCode}", id, (int)ex.StatusCode);
-                return AjaxFail(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطأ غير متوقع في تعيين سائق للطلب {OrderId}", id);
-                return AjaxFail(ex);
-            }
+            return AjaxFail(ok.Message);
         }
 
         // ============================================================
         // Helpers — تقليل التكرار عبر الأفعال
         // ============================================================
 
-        /// <summary>تحقق من صحة المعرّف؛ يُعيد BadRequest إذا غير صالح.</summary>
-        private bool EnsureValidId(int id)
-        {
-            if (id <= 0)
-            {
-                TempData[TempDataError] = AppMessages.Error.InvalidId;
-                return false;
-            }
-            return true;
-        }
+        /// <summary>
+        /// تحقق من صحة المعرّف؛ يُعيد BadRequest بصيغة JSON إذا كان غير صالح.
+        ///
+        /// <para>⚠️ لا يكتب TempData: مستدعياته الثمانية كلها أفعال AJAX تُعيد
+        /// <see cref="AjaxInvalidId"/>، والـ JS يقرأ الرسالة من الـ JSON. والكتابة في
+        /// TempData هنا كانت تُبقي الرسالة حتى أول صفحة كاملة تالية فتظهر في غير
+        /// موضعها عبر <c>_Alerts</c> (وهي تُقرأ وتُفرَّغ عند كل عرض كامل).</para>
+        /// </summary>
+        private bool EnsureValidId(int id) => id > 0;
 
         /// <summary>تحقق أن FactoryEmployee يملك صلاحية تعديل الطلب؛ يُعيد BadRequest إذا لا.</summary>
         private async Task<IActionResult?> EnsureCanModifyOrderAsync(int id)
@@ -363,6 +352,11 @@ namespace Kharasana.Web.Controllers
         private IActionResult AjaxFail(string message) =>
             BadRequest(new { success = false, message });
 
+        /// <summary>
+        /// فشل عام في فعل AJAX: الرسالة العامة عمدًا ولا يُمرَّر نصّ الاستثناء إلى العميل
+        /// (التفاصيل تُسجَّل في الـ logger عند موضع النداء). <paramref name="ex"/> غير
+        /// مستعمل عن قصد — لا تُحوِّل هذا إلى <c>ex.Message</c>.
+        /// </summary>
         private IActionResult AjaxFail(Exception ex) =>
             BadRequest(new { success = false, message = AppMessages.Common.OperationFailed });
 
@@ -372,9 +366,5 @@ namespace Kharasana.Web.Controllers
         // ============================================================
         // DTOs
         // ============================================================
-        public class SavePriceDto
-        {
-            public decimal UnitPrice { get; set; }
-        }
     }
 }

@@ -3,21 +3,20 @@
 @using Kharasana.Domain.Enums
 
 @{
-    // ===== بيانات رسم "حالة الطلبات النشطة" — قيم حقيقية من الـ ViewModel (بدون أي Backend) =====
-    // تغطي الحالات الأربع النشطة التي يحسبها الـ API فعلياً: جديدة / قيد التنفيذ / جاهزة للتسليم / قيد النقل
+    // ===== رسم "توزيع الطلبات النشطة" =====
+    // الحالات الثلاث التي يبقى فيها الطلب منتظراً إجراءً، ويُحصيها الـ API كعدّادات
+    // تراكمية. لا شريحة رابعة باسم "جديدة": كل مسارات الإنشاء تُنشئ بحالة Pending
+    // و OrderStatus.New لا يُسنَد أبداً — وكانت تُستعار لها قيمة «طلبات اليوم»
+    // (كل الحالات) فيظهر في الرسم ما لا وجود له في البيانات.
     var factoryOrdersJson = System.Text.Json.JsonSerializer.Serialize(new[]
     {
-        new { label = "جديدة", count = Model.TodayOrdersCount },
         new { label = "قيد التنفيذ", count = Model.InProgressOrdersCount },
         new { label = "جاهزة للتسليم", count = Model.ReadyOrdersCount },
         new { label = "قيد النقل", count = Model.OnTheWayOrders }
     });
 
-    // ===== حسابات بطاقة "تقدم تشغيل اليوم" — كلها من حقول حقيقية =====
-    // حجم العمل النشط (طلبات لم تُسلم بعد) + المنجز اليوم = إجمالي عبء عمل اليوم
-    var activeOrdersCount = Model.TodayOrdersCount + Model.InProgressOrdersCount + Model.ReadyOrdersCount + Model.OnTheWayOrders;
-    var totalLoadToday = activeOrdersCount + Model.DeliveredToday;
-    var progressPercent = totalLoadToday > 0 ? (int)Math.Round((double)Model.DeliveredToday / totalLoadToday * 100) : 0;
+    // الحالات الثلاث تمثل الطلبات المفتوحة حالياً، بلا حدّ زمني.
+    var activeOrdersCount = Model.InProgressOrdersCount + Model.ReadyOrdersCount + Model.OnTheWayOrders;
 }
 
 <div class="dashboard-page">
@@ -26,14 +25,14 @@
     <partial name="Components/_PageHeader" model='new PageHeaderViewModel { Title = "لوحة تشغيل المصنع", Description = $"{Kharasana.Web.Helpers.GreetingHelper.Greeting()}، {ViewBag.UserName} — متابعة العمليات وإدارة الطلبات اليومية" }' />
 
     <!-- T2. Operational Summary Cards Component (قابلة للنقر → قوائم العمل) -->
-    <div class="summary-cards-grid mb-4">
+    <div class="summary-cards-grid summary-cards-grid--four mb-4">
         <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "طلبات اليوم", Value = Model.TodayOrdersCount.ToString(), Icon = "bi-calendar-check", IconClass = "kpi-icon-primary", LinkUrl = Url.Action("Index", "Orders") }' />
         <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "قيد التنفيذ", Value = Model.InProgressOrdersCount.ToString(), Icon = "bi-hourglass-split", IconClass = "kpi-icon-warning", LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Pending }) }' />
         <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "جاهزة للتسليم", Value = Model.ReadyOrdersCount.ToString(), Icon = "bi-check2-all", IconClass = "kpi-icon-success", LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Approved }) }' />
         <partial name="Components/_SummaryCard" model='new SummaryCardViewModel { Title = "السائقون المتاحون", Value = Model.AvailableDrivers.ToString(), Icon = "bi-truck", IconClass = "kpi-icon-info", LinkUrl = Url.Action("Index", "Drivers") }' />
     </div>
 
-    <!-- T2.5. Order Status Chart + Operational Progress -->
+    <!-- T2.5. Order Status Chart + Operational Summary -->
     <div class="row g-4 mb-4">
         <!-- حالة الطلبات النشطة (Doughnut) -->
         <div class="col-xl-7 col-lg-12">
@@ -41,10 +40,10 @@
                 <div class="mb-3">
                     <h5 class="erp-section-title"><i class="bi bi-pie-chart-fill"></i>توزيع الطلبات النشطة</h5>
                 </div>
-                <div class="chart-container d-flex align-items-center justify-content-center">
+                <div class="chart-container d-flex align-items-center justify-content-center" style="height: var(--chart-height-doughnut);">
                     <canvas id="factoryOrdersChart"
                             role="img"
-                            aria-label="رسم بياني دائري لتوزيع الطلبات النشطة: جديدة وقيد التنفيذ وجاهزة للتسليم وقيد النقل"
+                            aria-label="رسم بياني دائري لتوزيع الطلبات النشطة: قيد التنفيذ وجاهزة للتسليم وقيد النقل"
                             aria-describedby="factoryOrdersDataTable"
                             data-chart-values='@Html.Raw(factoryOrdersJson)'></canvas>
                     @* جدول بديل لقارئات الشاشة *@
@@ -54,7 +53,6 @@
                             <tr><th scope="col">الحالة</th><th scope="col">العدد</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td>جديدة</td><td>@Model.TodayOrdersCount</td></tr>
                             <tr><td>قيد التنفيذ</td><td>@Model.InProgressOrdersCount</td></tr>
                             <tr><td>جاهزة للتسليم</td><td>@Model.ReadyOrdersCount</td></tr>
                             <tr><td>قيد النقل</td><td>@Model.OnTheWayOrders</td></tr>
@@ -64,15 +62,15 @@
             </div>
         </div>
 
-        <!-- تقدم تشغيل اليوم -->
+        <!-- ملخص التشغيل -->
         <div class="col-xl-5 col-lg-12">
             <div class="erp-section-card">
                 <div class="mb-3">
-                    <h5 class="erp-section-title"><i class="bi bi-graph-up-arrow"></i>تقدم تشغيل اليوم</h5>
+                    <h5 class="erp-section-title"><i class="bi bi-clipboard-data"></i>ملخص التشغيل</h5>
                 </div>
-                <div class="progress-overview">
+                <div class="progress-overview" style="height: var(--chart-height-doughnut);">
                     <div class="progress-metric">
-                        <span class="progress-metric-label">طلبات قيد المعالجة</span>
+                        <span class="progress-metric-label">طلبات مفتوحة الآن</span>
                         <strong class="progress-metric-value">@activeOrdersCount</strong>
                     </div>
                     <div class="progress-metric">
@@ -82,15 +80,6 @@
                     <div class="progress-metric">
                         <span class="progress-metric-label">السائقون المتاحون</span>
                         <strong class="progress-metric-value progress-metric-info">@Model.AvailableDrivers</strong>
-                    </div>
-                    <div class="progress-track">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="progress-percent">@progressPercent%</span>
-                            <span class="progress-caption">@Model.DeliveredToday من @totalLoadToday</span>
-                        </div>
-                        <div class="progress" role="progressbar" aria-valuenow="@progressPercent" aria-valuemin="0" aria-valuemax="100">
-                            <div class="progress-bar" style="width: @progressPercent%;"></div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -111,19 +100,8 @@
             <partial name="Components/_QuickActionButton"
                      model='new QuickActionButtonViewModel
                      {
-                         Text = "إنشاء طلب جديد",
-                         Description = "إضافة طلب خرسانة جديد",
-                         Icon = "bi-plus-circle",
-                         CssClass = "quick-action-primary",
-                         Controller = "Orders",
-                         Action = "Create"
-                     }' />
-
-            <partial name="Components/_QuickActionButton"
-                     model='new QuickActionButtonViewModel
-                     {
-                         Text = "إنشاء طلب هاتفي",
-                         Description = "استقبال طلب عبر الاتصال",
+                         Text = "تسجيل طلب العميل",
+                         Description = "إدخال طلب مستلم عبر الهاتف أو حضورياً",
                          Icon = "bi-telephone-plus",
                          CssClass = "quick-action-success",
                          Controller = "Orders",
@@ -133,21 +111,10 @@
             <partial name="Components/_QuickActionButton"
                      model='new QuickActionButtonViewModel
                      {
-                         Text = "تعيين سائق",
-                         Description = "ربط الشاحنات بالطلبات",
+                         Text = "إدارة الطلبات",
+                         Description = "فتح الطلب لتعيين السائق أو تحديث حالته",
                          Icon = "bi-truck",
                          CssClass = "quick-action-warning",
-                         Controller = "Orders",
-                         Action = "Index"
-                     }' />
-
-            <partial name="Components/_QuickActionButton"
-                     model='new QuickActionButtonViewModel
-                     {
-                         Text = "تحديث الحالة",
-                         Description = "متابعة مسار وتطور الطلب",
-                         Icon = "bi-arrow-repeat",
-                         CssClass = "quick-action-neutral",
                          Controller = "Orders",
                          Action = "Index"
                      }' />
@@ -171,8 +138,8 @@
         </div>
 
         @{
+            // الشرائح هي الحالات الثلاث نفسها، فمجموعها 100% من الشريط بلا شريحة زائدة.
             var totalOps = activeOrdersCount;
-            var pNew = totalOps > 0 ? (double)Model.TodayOrdersCount / totalOps * 100 : 0;
             var pPending = totalOps > 0 ? (double)Model.InProgressOrdersCount / totalOps * 100 : 0;
             var pApproved = totalOps > 0 ? (double)Model.ReadyOrdersCount / totalOps * 100 : 0;
             var pOnWay = totalOps > 0 ? (double)Model.OnTheWayOrders / totalOps * 100 : 0;
@@ -180,10 +147,10 @@
 
         <!-- حالة الطلبات — شريط بصري -->
         <div class="order-status-bar mb-3" title="توزيع الطلبات حسب الحالة">
-            <div class="order-status-segment" style="width: @pNew.ToString("0")%; background: var(--primary);"></div>
-            <div class="order-status-segment" style="width: @pPending.ToString("0")%; background: var(--warning);"></div>
-            <div class="order-status-segment" style="width: @pApproved.ToString("0")%; background: var(--success);"></div>
-            <div class="order-status-segment" style="width: @pOnWay.ToString("0")%; background: var(--info);"></div>
+            @* العرض وحده مضمّن لأنه بيانات؛ الألوان في dashboard.css *@
+            <div class="order-status-segment order-status-segment--pending"  style="width: @pPending.ToString("0")%;"></div>
+            <div class="order-status-segment order-status-segment--approved" style="width: @pApproved.ToString("0")%;"></div>
+            <div class="order-status-segment order-status-segment--ontheway" style="width: @pOnWay.ToString("0")%;"></div>
         </div>
 
         <!-- فلاتر سريعة للحالة -->
@@ -193,10 +160,15 @@
             <button type="button" class="btn btn-sm btn-outline-warning order-filter-btn" data-filter="Pending">قيد التنفيذ</button>
             <button type="button" class="btn btn-sm btn-outline-success order-filter-btn" data-filter="Approved">جاهزة للتسليم</button>
             <button type="button" class="btn btn-sm btn-outline-info order-filter-btn" data-filter="OnTheWay">قيد النقل</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary order-filter-btn" data-filter="Delivered">تم التسليم</button>
+            <button type="button" class="btn btn-sm btn-outline-danger order-filter-btn" data-filter="Rejected">مرفوضة</button>
+            <button type="button" class="btn btn-sm btn-outline-dark order-filter-btn" data-filter="Cancelled">ملغاة</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary order-filter-btn" data-filter="Closed">مغلقة</button>
         </div>
 
+        @* بلا كلاس `table` من Bootstrap — انظر التعليق في _AdminDashboard.cshtml *@
         <div class="table-responsive">
-            <table class="table erp-table align-middle mb-0">
+            <table class="erp-table align-middle mb-0">
                 <thead>
                     <tr>
                         <th>رقم الطلب</th>
@@ -272,6 +244,16 @@
                             </td>
                         </tr>
                     }
+
+                    @* حالة فارغة ثانية ومختلفة: القائمة أعلاه غير فارغة، لكن لا صف يطابق
+                       الفلتر المختار. الفرع السابق لا يعمل هنا (RecentOrders.Any() صحيحة)،
+                       فكانت الأزرار تُفرّغ الجدول بلا أي رسالة — يظهرها site.js عند الحاجة. *@
+                    <tr id="factoryOrdersFilterEmpty" class="d-none">
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-funnel display-6 d-block mb-2"></i>
+                            لا توجد طلبات بهذه الحالة
+                        </td>
+                    </tr>
 
                 </tbody>
 

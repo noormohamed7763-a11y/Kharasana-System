@@ -5,7 +5,7 @@
     ViewData["Title"] = "تفاصيل المصنع";
 }
 
-<div class="dashboard-page">
+<div class="dashboard-page dashboard-page--narrow">
 
     <!-- 1. الترويسة -->
     <partial name="Components/_PageHeader"
@@ -26,13 +26,12 @@
                     <img src="@Model.Logo"
                          alt="@Model.FactoryName"
                          data-name="@Model.FactoryName"
-                         style="width:65px; height:65px; object-fit:cover; border-radius:50%; border:2px solid #dee2e6; background:#f8f9fa;"
+                         class="logo-preview logo-size--sm"
                                           data-img-error="logo" />
                 }
                 else
                 {
-                    <div class="factory-avatar bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4 shadow-sm"
-                         style="width: 65px; height: 65px;">
+                    <div class="factory-avatar bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4 shadow-sm logo-size--sm">
                         @(string.IsNullOrWhiteSpace(Model.FactoryName) ? "--" : Model.FactoryName[..Math.Min(2, Model.FactoryName.Length)])
                     </div>
                 }
@@ -55,14 +54,14 @@
         <div class="row g-3">
             <div class="col-md-4">
                 <div class="p-3 bg-light rounded-3 border">
-                    <span class="text-muted d-block small mb-1">اسم المالك</span>
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-person me-2"></i>اسم المالك</span>
                     <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrEmpty(Model.OwnerName) ? "-" : Model.OwnerName)</h6>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="p-3 bg-light rounded-3 border">
-                    <span class="text-muted d-block small mb-1">رقم الهاتف</span>
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-telephone me-2"></i>رقم الهاتف</span>
                     <h6 class="fw-bold mb-0 text-dark" dir="ltr">@(string.IsNullOrEmpty(Model.Phone) ? "-" : Model.Phone)</h6>
                 </div>
             </div>

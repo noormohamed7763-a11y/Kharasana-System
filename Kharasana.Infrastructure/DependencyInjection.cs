@@ -5,9 +5,13 @@ using Kharasana.Infrastructure.Authentication;
 using Kharasana.Infrastructure.Persistence;
 using Kharasana.Infrastructure.Repositories;
 using Kharasana.Infrastructure.Services;
-using Microsoft.EntityFrameworkCore;
+using Kharasana.Infrastructure.Workers;
+using Kharasana.Application.Services;
+using Kharasana.Domain.Entities;
+using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kharasana.Infrastructure;
 
@@ -34,10 +38,22 @@ public static class DependencyInjection
         // Unit Of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        // Repositories — مطلوبة من قبل ClientStatementService
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IIdempotencyRecordRepository, IdempotencyRecordRepository>();
+
         // Authentication Services
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IImageStorageService, ImageStorageService>();
+        services.AddScoped<IImageCleanupService, ImageCleanupService>();
+
+        services.AddHttpClient<IWhatsAppService, WhatsAppService>();
+        services.AddScoped<IRawMaterialService, RawMaterialService>();
+        services.AddScoped<IProductionBatchService, ProductionBatchService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddHostedService<ProactiveAlertsWorker>();
 
         return services;
     }

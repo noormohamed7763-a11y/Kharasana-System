@@ -1,6 +1,6 @@
-﻿using Kharasana.API.Common;
-using Kharasana.API.Extensions;
+﻿using Asp.Versioning;
 using Kharasana.Application.Common;
+using Kharasana.API.Extensions;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Factory;
 using Kharasana.Application.Interfaces.Services;
@@ -14,15 +14,21 @@ namespace Kharasana.API.Controllers;
 /// لا يوجد أي إمكانية لتعديل بيانات المصنع الأساسية هنا؛ هذا من صلاحيات Admin فقط عبر FactoriesController.
 /// </summary>
 [ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Route("api/[controller]")]
 [Authorize(Roles = Roles.FactoryEmployee)]
 public class SettingsController : ControllerBase
 {
     private readonly IFactoryService _factoryService;
+    private readonly IImageCleanupService _imageCleanupService;
 
-    public SettingsController(IFactoryService factoryService)
+    public SettingsController(
+        IFactoryService factoryService,
+        IImageCleanupService imageCleanupService)
     {
         _factoryService = factoryService;
+        _imageCleanupService = imageCleanupService;
     }
 
     /// <summary>
@@ -89,5 +95,30 @@ public class SettingsController : ControllerBase
         await _factoryService.DeleteLogoAsync(caller.FactoryId.Value);
 
         return Ok(ApiResponse.Ok(Messages.FactoryLogoDeletedSuccessfully));
+    }
+
+    /// <summary>
+    /// فحص مجلد الصور وحذف الملفات اليتيمة (غير المرتبطة بأي مصنع أو مستخدم).
+    /// </summary>
+    /// <remarks>
+    /// تشغيل يدوي من صفحة الإعدادات. تُجرى العملية في الخادم المضيف للـ API
+    /// حيث يقع مجلد wwwroot/Images فعليًا.
+    /// </remarks>
+    /// <response code="200">تم الفحص والحذف — يرجع عدد الملفات المحذوفة.</response>
+    /// <response code="401">لا يوجد مصنع مرتبط بالحساب.</response>
+    [HttpPost("cleanup-images")]
+    public async Task<IActionResult> CleanupImages()
+    {
+        var caller = User.GetCallerContext();
+        if (caller.FactoryId is null)
+            throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+
+        var deletedCount = await _imageCleanupService.CleanupOrphanedImagesAsync();
+
+        return Ok(ApiResponse.Ok(
+            new { deletedCount },
+            deletedCount == 0
+                ? "لم يُعثر على ملفات صور يتيمة."
+                : $"تم حذف {deletedCount} ملف صورة يتيم."));
     }
 }

@@ -1,7 +1,11 @@
 using System.Net;
+using System.Text.Json;
 using FluentValidation;
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
+using Kharasana.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kharasana.API.Middlewares;
 
@@ -22,38 +26,44 @@ public class ExceptionMiddleware
         {
             await _next(context);
         }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation(
+                "أُلغي الطلب من قِبل العميل. التتبّع={TraceId} المسار={Path}",
+                context.TraceIdentifier, context.Request.Path);
+        }
         catch (NotFoundException ex)
         {
             _logger.LogWarning(ex,
-                "NotFound: {Message} TraceId={TraceId} Path={Path}",
+                "غير موجود: {Message} التتبّع={TraceId} المسار={Path}",
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.NotFound);
         }
         catch (ForbiddenException ex)
         {
             _logger.LogWarning(ex,
-                "Forbidden: {Message} TraceId={TraceId} Path={Path}",
+                "ممنوع: {Message} التتبّع={TraceId} المسار={Path}",
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.Forbidden);
         }
         catch (ConflictException ex)
         {
             _logger.LogWarning(ex,
-                "Conflict: {Message} TraceId={TraceId} Path={Path}",
+                "تعارض: {Message} التتبّع={TraceId} المسار={Path}",
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.Conflict);
         }
         catch (BusinessException ex)
         {
             _logger.LogWarning(ex,
-                "Business rule: {Message} TraceId={TraceId} Path={Path}",
+                "قاعدة عمل: {Message} التتبّع={TraceId} المسار={Path}",
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.BadRequest);
         }
         catch (UnauthorizedException ex)
         {
             _logger.LogWarning(ex,
-                "Unauthorized: {Message} TraceId={TraceId} Path={Path}",
+                "غير مُصرَّح: {Message} التتبّع={TraceId} المسار={Path}",
                 ex.Message, context.TraceIdentifier, context.Request.Path);
             await HandleExceptionAsync(context, ex, HttpStatusCode.Unauthorized);
         }
@@ -64,18 +74,51 @@ public class ExceptionMiddleware
             var firstError = ex.Errors.FirstOrDefault()?.ErrorMessage ?? ex.Message;
 
             _logger.LogWarning(ex,
-                "Validation failed: {Message} TraceId={TraceId} Path={Path}",
+                "فشل التحقق: {Message} التتبّع={TraceId} المسار={Path}",
                 firstError, context.TraceIdentifier, context.Request.Path);
 
             await HandleMessageAsync(context, firstError, HttpStatusCode.BadRequest);
         }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex,
+                "فشل تحليل JSON: التتبّع={TraceId} المسار={Path}",
+                context.TraceIdentifier, context.Request.Path);
+            await HandleMessageAsync(context, Messages.MalformedJsonOrPayload, HttpStatusCode.BadRequest);
+        }
+        catch (BadHttpRequestException ex)
+        {
+            _logger.LogWarning(ex,
+                "طلب HTTP غير صالح: {Message} التتبّع={TraceId} المسار={Path}",
+                ex.Message, context.TraceIdentifier, context.Request.Path);
+
+            var message = ex.StatusCode == StatusCodes.Status413PayloadTooLarge
+                ? Messages.PayloadTooLarge
+                : Messages.MalformedJsonOrPayload;
+
+            await HandleMessageAsync(context, message, (HttpStatusCode)ex.StatusCode);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex,
+                "تعارض التزامن التفاؤلي (RowVersion): التتبّع={TraceId} المسار={Path}",
+                context.TraceIdentifier, context.Request.Path);
+            await HandleMessageAsync(context, Messages.ConcurrencyConflict, HttpStatusCode.Conflict);
+        }
+        catch (DbUpdateException ex) when (UniqueConstraintDetector.IsUniqueViolation(ex))
+        {
+            _logger.LogWarning(ex,
+                "انتهاك قيد تفرّد قاعدة البيانات: التتبّع={TraceId} المسار={Path}",
+                context.TraceIdentifier, context.Request.Path);
+            await HandleMessageAsync(context, Messages.DuplicateValueConflict, HttpStatusCode.Conflict);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "Unhandled exception. TraceId={TraceId} Path={Path} User={User}",
+                "استثناء غير معالَج. التتبّع={TraceId} المسار={Path} المستخدم={User}. السياق غير متاح (Non-Request Context)",
                 context.TraceIdentifier,
                 context.Request.Path,
-                context.User.Identity?.Name ?? "anonymous");
+                context.User.Identity?.Name ?? "مجهول");
             await HandleExceptionAsync(context, ex, HttpStatusCode.InternalServerError);
         }
     }
@@ -94,7 +137,7 @@ public class ExceptionMiddleware
         if (context.Response.HasStarted)
         {
             _logger.LogWarning(
-                "Response already started. Cannot write error response. StatusCode={StatusCode} TraceId={TraceId}",
+                "بدأ إرسال الردّ بالفعل. تعذّر كتابة ردّ الخطأ. الحالة={StatusCode} التتبّع={TraceId}",
                 (int)statusCode, context.TraceIdentifier);
             return;
         }

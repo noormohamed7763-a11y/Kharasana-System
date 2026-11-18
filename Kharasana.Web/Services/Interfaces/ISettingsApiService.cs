@@ -8,5 +8,6 @@ namespace Kharasana.Web.Services.Interfaces
         Task<FactorySettingsViewModel?> GetMySettingsAsync();
         Task<string?> UploadLogoAsync(IFormFile file);
         Task<bool> DeleteLogoAsync();
+        Task<int> CleanupImagesAsync();
     }
 }

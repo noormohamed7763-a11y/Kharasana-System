@@ -1,10 +1,11 @@
-﻿using Kharasana.Web.Configuration;
+using Kharasana.Web.Configuration;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Middlewares;
 using Kharasana.Web.Services;
 using Kharasana.Web.Services.Api;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Application.Common.Logging;
+using Kharasana.Application.Common;
 using Kharasana.Web.Localization;
 using Kharasana.Web.Controllers;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -17,14 +18,21 @@ namespace Kharasana.Web
     {
         public static void Main(string[] args)
         {
+            // ✅ أول سطر: تثبيت الثقافة قبل بناء أي خدمة — يمنع التقويم الهجري من
+            //    إفشال ربط <input type="date"> (انظر AppCulture).
+            AppCulture.Configure();
+
             var builder = WebApplication.CreateBuilder(args);
 
             // تسجيل دائم في ملفات (Logs/) — يحافظ على أخطاء الإنتاج بعد وقوعها
             builder.Logging.AddFileLogging();
 
             // Add services to the container.
+            builder.Services.AddMemoryCache();
             builder.Services.AddControllersWithViews(options =>
                 options.Filters.Add<UnhandledExceptionFilter>());
+            builder.Services.AddAntiforgery(options =>
+                options.HeaderName = "RequestVerificationToken");
 
             // المصادقة في هذا المشروع تعمل عبر Session + SessionAuthorizeAttribute
             builder.Services.AddDistributedMemoryCache();
@@ -34,9 +42,28 @@ namespace Kharasana.Web
                 options.IdleTimeout = TimeSpan.FromHours(2);
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+
+                // ✅ Always خارج بيئة التطوير: SameAsRequest تُسقط علم Secure متى وصل الطلب
+                //    عبر HTTP (خلف وكيل لا يمرّر X-Forwarded-Proto مثلًا)، فتخرج كوكي الجلسة
+                //    بلا علم Secure وتُرسَل على أي طلب HTTP لاحق. الإنتاج خلف HTTPS دائمًا
+                //    (UseHttpsRedirection + HSTS)، والتطوير المحلي يحتاج SameAsRequest
+                //    ليعمل على http://localhost.
+                options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+                    ? CookieSecurePolicy.SameAsRequest
+                    : CookieSecurePolicy.Always;
+
                 options.Cookie.SameSite = SameSiteMode.Lax;
             });
+
+            // Authentication & Authorization
+            builder.Services.AddAuthentication("WebCookie")
+                .AddCookie("WebCookie", options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                });
+
+            builder.Services.AddAuthorization();
 
             // HttpContext Accessor
             builder.Services.AddHttpContextAccessor();
@@ -89,13 +116,19 @@ namespace Kharasana.Web
             builder.Services.Configure<ApiSettings>(
                 builder.Configuration.GetSection("ApiSettings"));
 
-            // Http Client — مهلة معقولة بدل الافتراضية الطويلة حتى لا تعلق الواجهة
+            // Http Client — مرونة متقدمة وإعادة محاولة تلقائية وقاطع الدائرة لحماية الواجهة من تقلبات الشبكة
             builder.Services.AddHttpClient<ApiClient>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(30);
+            }).AddStandardResilienceHandler(options =>
+            {
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
             });
 
             // Services Registration
+            builder.Services.AddScoped<ApiExceptionHandlerFilter>();
             builder.Services.AddScoped<IAuthApiService, AuthApiService>();
             builder.Services.AddScoped<IDashboardApiService, DashboardApiService>();
             builder.Services.AddScoped<IOrdersApiService, OrdersApiService>();
@@ -104,10 +137,15 @@ namespace Kharasana.Web
             builder.Services.AddScoped<IUserApiService, UserApiService>();
             builder.Services.AddScoped<IConcreteTypeApiService, ConcreteTypeApiService>();
             builder.Services.AddScoped<IConcreteCatalogService, ConcreteCatalogService>();
+            builder.Services.AddScoped<IRawMaterialService, RawMaterialApiService>();
+            builder.Services.AddScoped<IProductionBatchService, ProductionBatchApiService>();
             builder.Services.AddScoped<IClientApiService, ClientApiService>();
             builder.Services.AddScoped<IDriverApiService, DriverApiService>();
             builder.Services.AddScoped<ISettingsApiService, SettingsApiService>();
             builder.Services.AddScoped<IReportsApiService, ReportsApiService>();
+            builder.Services.AddScoped<IFactoryRegistrationRequestApiService, FactoryRegistrationRequestApiService>();
+            builder.Services.AddScoped<ITripApiService, TripApiService>();
+            builder.Services.AddScoped<IFinanceApiService, FinanceApiService>();
 
             var app = builder.Build();
 

@@ -1,11 +1,13 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.User;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Application.Mapping;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
+using Kharasana.Domain.Validation;
 
 namespace Kharasana.Application.Services;
 
@@ -27,10 +29,11 @@ public class UserService : IUserService
     }
 
     public async Task<PagedResult<UserDto>> GetPagedAsync(
-        UserRole? role, int? factoryId, DriverStatus? driverStatus, PaginationParams pagination)
+        UserRole? role, int? factoryId, DriverStatus? driverStatus, PaginationParams pagination,
+        bool? isActive = null)
     {
         var result = await _unitOfWork.Users.GetPagedAsync(
-            role, factoryId, driverStatus, pagination.Search, pagination.PageNumber, pagination.PageSize);
+            role, factoryId, driverStatus, pagination.Search, pagination.PageNumber, pagination.PageSize, isActive);
 
         return new PagedResult<UserDto>
         {
@@ -43,7 +46,9 @@ public class UserService : IUserService
 
     public async Task<UserDto> GetByIdAsync(int id)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(id);
+        // ✅ مع المصنع: صفحة تفاصيل المستخدم تعرض اسم المصنع لا معرّفه، والقراءة العادية
+        //    لا تُحمّله فتصل FactoryName فارغة ويسقط العرض على الرقم.
+        var user = await _unitOfWork.Users.GetByIdWithFactoryAsync(id);
         if (user == null)
             throw new NotFoundException(Messages.UserNotFound);
 
@@ -55,15 +60,18 @@ public class UserService : IUserService
         if (dto.Role == UserRole.Admin)
             throw new ForbiddenException(Messages.CannotCreateAdmin);
 
+        // ✅ دفاع في العمق: الخدمة هي الحارس الفعلي لكل مسارات إنشاء المستخدمين
+        //    (لوحة الويب، الـ API، أي استدعاء داخلي). كانت تُخزَّن كلمة مرور من محرف
+        //    واحد بلا اعتراض لأن CreateUserDto بلا DataAnnotations وكان
+        //    CreateUserDtoValidator غير مُشغَّل. الرقم من المصدر الوحيد PasswordPolicy.
+        if (dto.Role != UserRole.FactoryAdmin && (string.IsNullOrEmpty(dto.Password) || dto.Password.Length < PasswordPolicy.MinimumLength))
+            throw new BusinessException(Messages.PasswordMinLength);
+
         if (string.IsNullOrWhiteSpace(dto.Email) && string.IsNullOrWhiteSpace(dto.Phone))
             throw new BusinessException(Messages.EmailOrPhoneRequired);
 
-        if (!string.IsNullOrWhiteSpace(dto.Email))
-        {
-            var emailExists = await _unitOfWork.Users.EmailExistsAsync(dto.Email);
-            if (emailExists)
-                throw new ConflictException(Messages.EmailAlreadyExists);
-        }
+        // ✅ تطبيع البريد وفحص تفرّده في خطوة واحدة (انظر EmailValidationHelper)
+        var normalizedEmail = await EmailValidationHelper.EnsureUniqueAsync(_unitOfWork, dto.Email);
 
         var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
             _unitOfWork, dto.Phone);
@@ -78,8 +86,10 @@ public class UserService : IUserService
         var user = new User
         {
             FullName = dto.FullName,
-            Email = dto.Email,
-            PasswordHash = _passwordHasher.Hash(dto.Password),
+            Email = normalizedEmail,
+            PasswordHash = (dto.Role == UserRole.FactoryAdmin && string.IsNullOrEmpty(dto.Password))
+                ? string.Empty
+                : _passwordHasher.Hash(dto.Password),
             Phone = normalizedPhone,
             WhatsApp = normalizedWhatsApp,
             Role = dto.Role,
@@ -142,11 +152,20 @@ public class UserService : IUserService
             dto.LicenseNumber,
             id);
 
+        // ✅ البريد: غيابه (null/فراغ) يعني «أبقِ الحالي». كان UpdateUserDto بلا حقل
+        //    Email أصلاً فيُهمَل ما يرسله الويب صامتاً مع رسالة نجاح. والفحص يستثني
+        //    المستخدم نفسه، وإلا اصطدم ببريده الحالي وفشل أي تعديل آخر.
+        //    والتطبيع (قصّ المسافات) قبل الحفظ يجعل البريد المخزَّن مطابقاً لما يقصّه الدخول.
+        var normalizedEmail = await EmailValidationHelper.EnsureUniqueAsync(
+            _unitOfWork, dto.Email, excludeUserId: id);
+
         var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
             _unitOfWork, dto.Phone, currentPhone: user.Phone);
         var normalizedWhatsApp = PhoneValidationHelper.NormalizeOrThrow(dto.WhatsApp) ?? user.WhatsApp;
 
         user.FullName = dto.FullName;
+        if (normalizedEmail != null)
+            user.Email = normalizedEmail;
         user.Phone = normalizedPhone;
         user.WhatsApp = normalizedWhatsApp;
         user.ProfileImage = dto.ProfileImage;
@@ -187,7 +206,7 @@ public class UserService : IUserService
     }
 
     public async Task<bool> UpdateDriverStatusAsync(
-        int driverId, UpdateDriverStatusDto dto, UserRole callerRole, int? callerFactoryId)
+        int driverId, UpdateDriverStatusDto dto, UserRole callerRole, int? callerFactoryId, int callerUserId)
     {
         var driver = await _unitOfWork.Users.GetByIdAsync(driverId);
         if (driver == null)
@@ -201,6 +220,12 @@ public class UserService : IUserService
         {
             if (!callerFactoryId.HasValue || driver.FactoryId != callerFactoryId.Value)
                 throw new ForbiddenException(Messages.FactoryEmployeeFactoryMismatch);
+        }
+
+        // ✅ التحقق من صلاحية السائق: السائق يحدّث حالته الشخصية فقط
+        if (callerRole == UserRole.Driver && driverId != callerUserId)
+        {
+            throw new ForbiddenException(Messages.NotAuthorizedToUpdateAnotherDriver);
         }
 
         driver.DriverStatus = dto.DriverStatus;
@@ -274,21 +299,5 @@ public class UserService : IUserService
         }
     }
 
-    private static UserDto MapToDto(User user)
-    {
-        return new UserDto
-        {
-            UserId = user.UserId,
-            FullName = user.FullName,
-            Email = user.Email,
-            Phone = user.Phone,
-            WhatsApp = user.WhatsApp,
-            ProfileImage = user.ProfileImage,
-            Role = user.Role.ToString(),
-            LicenseNumber = user.LicenseNumber,
-            DriverStatus = user.DriverStatus,
-            FactoryId = user.FactoryId,
-            IsActive = user.IsActive
-        };
-    }
+    private static UserDto MapToDto(User user) => UserMapper.ToDto(user);
 }

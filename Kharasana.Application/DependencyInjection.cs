@@ -10,14 +10,31 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // Services
-        services.AddScoped<IFactoryService, FactoryService>();
-        services.AddScoped<IDashboardService, DashboardService>();
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IConcreteTypeService, ConcreteTypeService>();
+        // 1. Order Services
         services.AddScoped<IOrderService, OrderService>();
-        services.AddScoped<IUserService, UserService>(); // ✅ تمت إضافة هذا السطر
+        services.AddScoped<IOrderQueryService, OrderQueryService>();
+        services.AddScoped<IOrderCommandService, OrderCommandService>();
+        services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
+        services.AddScoped<IOrderHelperService, OrderHelperService>();
+        services.AddScoped<IClientStatementService, ClientStatementService>();
+
+        // 2. Factory & Registration Services
+        services.AddScoped<IFactoryService, FactoryService>();
+        services.AddScoped<IFactoryRegistrationRequestService, FactoryRegistrationRequestService>();
+        services.AddScoped<IConcreteTypeService, ConcreteTypeService>();
+
+        // 3. User & Auth Services
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserService, UserService>();
+
+        // 4. Other Services
+        services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IFinanceService, FinanceService>();
+        services.AddScoped<ITripService, TripService>();
+
+        // 5. Idempotency Service
+        services.AddScoped<IIdempotencyService, IdempotencyService>();
 
         // FluentValidation
         services.AddValidatorsFromAssemblyContaining<RegisterClientValidator>();

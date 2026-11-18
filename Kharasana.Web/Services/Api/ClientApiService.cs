@@ -1,9 +1,12 @@
 using Kharasana.Application.Common;
+using Kharasana.Application.DTOs.Client;
 using Kharasana.Web.Services.Interfaces;
 using Kharasana.Web.ViewModels.Clients;
-using Kharasana.Application.DTOs.Customer;
+using Kharasana.Web.ViewModels.Users;
 using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
+using Kharasana.Web.ViewModels.Orders;
+using System.Net;
 
 namespace Kharasana.Web.Services.Api;
 
@@ -32,7 +35,7 @@ public class ClientApiService : IClientApiService
         try
         {
             var query =
-                $"Orders/customers?PageNumber={pageNumber}&PageSize={pageSize}";
+                $"Orders/customers?PageNumber={pageNumber}&PageSize={pageSize}&SortBy=Id&Order=Desc";
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -55,7 +58,7 @@ public class ClientApiService : IClientApiService
                 response.Data == null)
             {
                 _logger.LogWarning(
-                    "GetClientsAsync failed. Query: {Query}",
+                    "فشل GetClientsAsync. الاستعلام: {Query}",
                     query);
 
                 return null;
@@ -85,12 +88,110 @@ public class ClientApiService : IClientApiService
         {
             _logger.LogError(
                 ex,
-                "Exception in GetClientsAsync");
+                "استثناء في GetClientsAsync");
 
             return null;
         }
     }
 
+
+    // ============================================================
+    // GET CLIENT STATS
+    // ============================================================
+    public async Task<ClientStatsViewModel?> GetClientStatsAsync(
+        int? factoryId = null)
+    {
+        try
+        {
+            var query = "Orders/customers/stats";
+
+            if (factoryId.HasValue)
+            {
+                query += $"?FactoryId={factoryId.Value}";
+            }
+
+            var response =
+                await _apiClient.GetAsync<ApiResponse<ClientStatsViewModel>>(query);
+
+            if (response == null || !response.Success || response.Data == null)
+            {
+                _logger.LogWarning("فشل GetClientStatsAsync.");
+                return null;
+            }
+
+            return response.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "استثناء في GetClientStatsAsync");
+            return null;
+        }
+    }
+
+    // ============================================================
+    // STATEMENT
+    // ============================================================
+    public async Task<ClientStatementViewModel?> GetClientStatementAsync(int clientId)
+    {
+        try
+        {
+            var response = await _apiClient.GetAsync<ApiResponse<ClientStatementDto>>(
+                $"Orders/customers/{clientId}/statement");
+
+            if (response == null || !response.Success || response.Data == null)
+            {
+                _logger.LogWarning("GetClientStatementAsync: تعذّر جلب كشف حساب العميل {ClientId}.", clientId);
+                return null;
+            }
+
+            var statement = response.Data;
+            return new ClientStatementViewModel
+            {
+                ClientId = statement.ClientId,
+                ClientName = statement.ClientName,
+                Phone = statement.Phone,
+                StatementDate = statement.StatementDate,
+                TotalOrders = statement.TotalOrders,
+                TotalQuantity = statement.TotalQuantity,
+                TotalAmount = statement.TotalAmount,
+                TotalPaid = statement.TotalPaid,
+                Balance = statement.Balance,
+                LedgerItems = statement.LedgerItems.Select(item => new ClientStatementItemViewModel
+                {
+                    Date = item.Date,
+                    Description = item.Description,
+                    Reference = item.Reference,
+                    Debit = item.Debit,
+                    Credit = item.Credit,
+                    RunningBalance = item.RunningBalance,
+                    OrderNumber = item.OrderNumber,
+                    OrderId = item.OrderId
+                }).ToList(),
+                Orders = statement.Orders.Select(order => new Kharasana.Web.ViewModels.Orders.OrderDto
+                {
+                    OrderNumber = order.OrderNumber,
+                    Quantity = order.Quantity,
+                    TotalPrice = order.TotalPrice,
+                    PouringDate = order.PouringDate,
+                    CreatedAt = order.CreatedAt
+                }).ToList()
+            };
+        }
+        catch (ApiServiceException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("GetClientStatementAsync: العميل {ClientId} غير موجود.", clientId);
+            return null;
+        }
+        catch (ApiServiceException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "استثناء في GetClientStatementAsync للعميل {ClientId}", clientId);
+            throw new ApiServiceException(
+                HttpStatusCode.InternalServerError,
+                ApiErrorCatalog.ServerError,
+                innerException: ex);
+        }
+    }
 
     // ============================================================
     // GET DETAILS
@@ -100,40 +201,32 @@ public class ClientApiService : IClientApiService
     {
         try
         {
-            // نستخدم نفس مصدر قائمة العملاء.
-            // لا نستخدم Users/{id} لأن العميل هنا
-            // مستخرج من تعاملاته مع المصنع.
+            // ✅ نقطة عميل واحد على الخادم.
+            //    كان يجلب أول 100 عميل (PageSize=100) ثم يبحث فيهم محلياً، فيُبلَّغ عن
+            //    كل عميل يقع بعد العنصر المئة أنه «غير موجود» وهو موجود فعلاً.
+            //    ونفس النداء يعيد Email/WhatsApp/IsActive فتُعرض بدل «-» و«موقوف».
             var response =
                 await _apiClient.GetAsync<
-                    ApiResponse<PagedResult<CustomerSummaryDto>>
+                    ApiResponse<CustomerSummaryDto>
                 >(
-                    "Orders/customers?PageNumber=1&PageSize=100"
+                    $"Orders/customers/{clientId}"
                 );
 
             if (response == null ||
                 !response.Success ||
-                response.Data == null ||
-                response.Data.Items == null)
+                response.Data == null)
             {
                 _logger.LogWarning(
-                    "GetDetailsAsync: Could not load customers.");
-
-                return null;
-            }
-
-            // البحث عن العميل المطلوب
-            var customer =
-                response.Data.Items
-                    .FirstOrDefault(c => c.UserId == clientId);
-
-            if (customer == null)
-            {
-                _logger.LogWarning(
-                    "GetDetailsAsync: Customer {ClientId} not found.",
+                    "GetDetailsAsync: تعذّر جلب العميل {ClientId}.",
                     clientId);
 
-                return null;
+                throw new ApiServiceException(
+                    HttpStatusCode.NotFound,
+                    ApiErrorCatalog.ClientNotFound,
+                    new object[] { clientId });
             }
+
+            var customer = response.Data;
 
             // بناء بيانات صفحة التفاصيل
             return new ClientDetailsViewModel
@@ -141,21 +234,31 @@ public class ClientApiService : IClientApiService
                 UserId = customer.UserId,
                 FullName = customer.FullName,
                 Phone = customer.Phone,
+                Email = customer.Email,
+                WhatsApp = customer.WhatsApp,
+                IsActive = customer.IsActive,
 
                 OrdersCount = customer.OrdersCount,
                 TotalQuantity = customer.TotalQuantity,
                 LastOrderDate = customer.LastOrderDate
             };
         }
+        catch (ApiServiceException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning(
+                "GetDetailsAsync: العميل {ClientId} غير موجود.",
+                clientId);
+
+            throw new ApiServiceException(
+                HttpStatusCode.NotFound,
+                ApiErrorCatalog.ClientNotFound,
+                new object[] { clientId });
+        }
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Exception in GetDetailsAsync for clientId={ClientId}",
-                clientId);
-
-            return null;
+            _logger.LogError(ex, "استثناء في GetDetailsAsync للعميل {ClientId}", clientId);
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
         }
     }
 
@@ -185,14 +288,13 @@ public class ClientApiService : IClientApiService
                     "Users",
                     payload);
 
-            if (response == null ||
-                !response.Success)
+            if (response == null || !response.Success)
             {
-                _logger.LogWarning(
-                    "CreateAsync failed. Message: {Message}",
-                    response?.Message);
-
-                return false;
+                _logger.LogWarning("فشل CreateAsync. الرسالة: {Message}", response?.Message);
+                throw new ApiServiceException(
+                    HttpStatusCode.BadRequest,
+                    ApiErrorCatalog.ClientCreateFailed,
+                    new object[] { response?.Message ?? "سبب غير معروف" });
             }
 
             return true;
@@ -200,11 +302,8 @@ public class ClientApiService : IClientApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Exception in CreateAsync");
-
-            return false;
+            _logger.LogError(ex, "استثناء في CreateAsync");
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
         }
     }
 
@@ -219,18 +318,16 @@ public class ClientApiService : IClientApiService
         {
             var response =
                 await _apiClient.GetAsync<
-                    ApiResponse<ClientAccountDto>
+                    ApiResponse<UserDto>
                 >($"Users/{clientId}");
 
-            if (response == null ||
-                !response.Success ||
-                response.Data == null)
+            if (response == null || !response.Success || response.Data == null)
             {
-                _logger.LogWarning(
-                    "GetForEditAsync: Client {ClientId} not found.",
-                    clientId);
-
-                return null;
+                _logger.LogWarning("GetForEditAsync: العميل {ClientId} غير موجود.", clientId);
+                throw new ApiServiceException(
+                    HttpStatusCode.NotFound,
+                    ApiErrorCatalog.ClientNotFound,
+                    new object[] { clientId });
             }
 
             var account = response.Data;
@@ -249,12 +346,8 @@ public class ClientApiService : IClientApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Exception in GetForEditAsync for clientId={ClientId}",
-                clientId);
-
-            return null;
+            _logger.LogError(ex, "استثناء في GetForEditAsync للعميل {ClientId}", clientId);
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
         }
     }
 
@@ -292,15 +385,13 @@ public class ClientApiService : IClientApiService
                     $"Users/{id}",
                     payload);
 
-            if (response == null ||
-                !response.Success)
+            if (response == null || !response.Success)
             {
-                _logger.LogWarning(
-                    "UpdateAsync failed for client {Id}. Message: {Message}",
-                    id,
-                    response?.Message);
-
-                return false;
+                _logger.LogWarning("فشل UpdateAsync للعميل {Id}. الرسالة: {Message}", id, response?.Message);
+                throw new ApiServiceException(
+                    HttpStatusCode.BadRequest,
+                    ApiErrorCatalog.ClientUpdateFailed,
+                    new object[] { id, response?.Message ?? "سبب غير معروف" });
             }
 
             return true;
@@ -308,34 +399,8 @@ public class ClientApiService : IClientApiService
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Exception in UpdateAsync for client {Id}",
-                id);
-
-            return false;
+            _logger.LogError(ex, "استثناء في UpdateAsync للعميل {Id}", id);
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
         }
     }
-}
-
-
-// ============================================================
-// INTERNAL DTO
-// GET /api/Users/{id}
-// ============================================================
-internal class ClientAccountDto
-{
-    public int UserId { get; set; }
-
-    public string FullName { get; set; } = string.Empty;
-
-    public string? Email { get; set; }
-
-    public string? Phone { get; set; }
-
-    public string? WhatsApp { get; set; }
-
-    public string? ProfileImage { get; set; }
-
-    public bool IsActive { get; set; }
 }

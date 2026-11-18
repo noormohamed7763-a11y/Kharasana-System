@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
-using Kharasana.Application.Common;
 using Kharasana.Application.DTOs.Order;
+using Kharasana.Application.Validators.Common;
 
 namespace Kharasana.Application.Validators.Order;
 
@@ -8,23 +8,22 @@ public class CreateOrderDtoValidator : AbstractValidator<CreateOrderDto>
 {
     public CreateOrderDtoValidator()
     {
-        RuleFor(x => x.FactoryId).GreaterThan(0).WithMessage(Messages.FactoryRequired);
-        RuleFor(x => x.ConcreteTypeId).GreaterThan(0).WithMessage(Messages.ConcreteTypeRequired);
-        RuleFor(x => x.Quantity).GreaterThan(0).WithMessage(Messages.QuantityMustBePositive);
-        RuleFor(x => x.Quantity).LessThanOrEqualTo(1000).WithMessage(Messages.QuantityTooLarge);
-        RuleFor(x => x.TransportMethod).IsInEnum().WithMessage(Messages.TransportMethodInvalid);
-        RuleFor(x => x.SlabType).IsInEnum().WithMessage(Messages.SlabTypeInvalid);
+        RuleFor(x => x.FactoryId).FactoryId();
+        RuleFor(x => x.ConcreteTypeId).ConcreteTypeId();
+        RuleFor(x => x.Quantity).Quantity();
+        RuleFor(x => x.TransportMethod).TransportMethod();
+        RuleFor(x => x.SlabType).SlabType();
 
-        RuleFor(x => x.PouringDate)
-            .Must(date => date is null || date.Value.Date >= DateTime.UtcNow.Date)
-            .WithMessage(Messages.PouringDateCannotBeInPast);
+        // ✅ سقوف النصوص الحرة = HasMaxLength للأعمدة في OrderConfiguration
+        //    (200/200/100/500/1000) — تمنع الخطأ 8152 وتحوّل الرد إلى 400.
+        RuleFor(x => x.ProjectName).ProjectName();
+        RuleFor(x => x.ProjectOwnerName).ProjectOwnerName();
+        RuleFor(x => x.SiteArea).SiteArea();
+        RuleFor(x => x.SiteDescription).SiteDescription();
+        RuleFor(x => x.Notes).Notes();
 
-        RuleFor(x => x.FloorNumber)
-            .NotNull().When(x => x.NeedPump)
-            .WithMessage(Messages.PumpRequiresFloorNumber);
+        RuleFor(x => x.PouringDate).PouringDate();
 
-        RuleFor(x => x.FloorNumber)
-            .GreaterThanOrEqualTo(0).When(x => x.NeedPump && x.FloorNumber.HasValue)
-            .WithMessage(Messages.FloorNumberMustBeNonNegative);
+        RuleFor(x => x.FloorNumber).PumpFloorNumber(x => x.NeedPump);
     }
 }

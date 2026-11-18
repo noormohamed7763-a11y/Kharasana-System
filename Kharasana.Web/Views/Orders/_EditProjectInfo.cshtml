@@ -1,0 +1,59 @@
+@model Kharasana.Web.ViewModels.Orders.EditOrderViewModel
+@using Kharasana.Web.Helpers
+
+<!-- ============================================================
+4. PROJECT INFO - معلومات المشروع
+============================================================ -->
+<div class="form-section-title mt-3">
+    <i class="bi bi-building"></i>
+    <span>معلومات المشروع</span>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="ProjectName" class="form-label fw-bold">
+            <i class="bi bi-tag"></i> اسم المشروع
+        </label>
+        <input asp-for="ProjectName" class="form-control" placeholder="اسم المشروع (اختياري)" />
+        <span asp-validation-for="ProjectName" class="text-danger"></span>
+        <small class="text-muted">حقل اختياري</small>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label asp-for="ProjectOwnerName" class="form-label fw-bold">
+            <i class="bi bi-person-badge"></i> اسم مالك المشروع
+        </label>
+        <input asp-for="ProjectOwnerName" class="form-control" placeholder="اسم المالك (اختياري)" />
+        <span asp-validation-for="ProjectOwnerName" class="text-danger"></span>
+        <small class="text-muted">حقل اختياري</small>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label asp-for="SiteArea" class="form-label fw-bold">
+            <i class="bi bi-geo-alt"></i> المنطقة
+        </label>
+        <input asp-for="SiteArea" class="form-control" placeholder="المنطقة (اختياري)" />
+        <span asp-validation-for="SiteArea" class="text-danger"></span>
+        <small class="text-muted">حقل اختياري</small>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label asp-for="SiteDescription" class="form-label fw-bold">
+            <i class="bi bi-file-text"></i> وصف الموقع
+        </label>
+        <input asp-for="SiteDescription" class="form-control" placeholder="وصف الموقع (اختياري)" />
+        <span asp-validation-for="SiteDescription" class="text-danger"></span>
+        <small class="text-muted">حقل اختياري</small>
+    </div>
+
+    <!-- نوع البلاطة -->
+    <div class="col-md-12 mb-3">
+        <label asp-for="SlabType" class="form-label fw-bold">
+            <i class="bi bi-grid"></i> نوع البلاطة
+            <span class="text-danger">*</span>
+        </label>
+        <select asp-for="SlabType" class="form-select form-select-lg" asp-items="EnumHelper.GetSlabTypeSelectList()">
+        </select>
+        <span asp-validation-for="SlabType" class="text-danger"></span>
+    </div>
+</div>

@@ -25,7 +25,7 @@ namespace Kharasana.Web.Controllers
             {
                 vm = await _dashboardApiService.GetAdminDashboardAsync();
             }
-            else if (RoleValue == UserRole.FactoryEmployee)
+            else if (IsFactoryUser)
             {
                 if (!FactoryId.HasValue)
                 {
@@ -39,7 +39,9 @@ namespace Kharasana.Web.Controllers
             return View(vm);
         }
 
-        public async Task<IActionResult> Factory()
+        // بلا async: لا await في الجسم — كان المعدِّل مضلِّلًا، وCS1998 لم يعد يُنبِّه عليه
+        // (أُزيل من Roslyn، واستُبدل بالمحلّل الاختياري IDE0390) فبقي صامتًا.
+        public IActionResult Factory()
         {
             return RedirectToAction(nameof(Index));
         }

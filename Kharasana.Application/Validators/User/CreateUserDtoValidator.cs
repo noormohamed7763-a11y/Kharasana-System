@@ -12,8 +12,10 @@ public class CreateUserDtoValidator : AbstractValidator<CreateUserDto>
     {
         RuleFor(x => x.FullName).FullName();
 
+        // ✅ سقف 256 للبريد كان غائباً هنا (كما في التسجيل الذاتي): نصّ أطول من العمود
+        //    يرمي الخطأ 8152 فيصير الرد 500 بدل 400. القاعدة الآن من ValidationRules.Email.
         RuleFor(x => x.Email)
-            .EmailAddress().WithMessage("البريد الإلكتروني غير صالح.")
+            .Email()
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x.Phone).YemeniPhone();
@@ -23,7 +25,7 @@ public class CreateUserDtoValidator : AbstractValidator<CreateUserDto>
         RuleFor(x => x.Password).Password();
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage("الدور غير صالح.")
+            .Role()
             .NotEqual(UserRole.Admin).WithMessage(Messages.CannotCreateAdmin);
     }
 }

@@ -6,6 +6,7 @@ public static class Messages
 
     public const string RegisterSuccess = "تم إنشاء الحساب بنجاح.";
     public const string LoginSuccess = "تم تسجيل الدخول بنجاح.";
+    public const string TokenRefreshedSuccessfully = "تم تجديد الجلسة بنجاح.";
     public const string CreatedSuccessfully = "تم إنشاء البيانات بنجاح.";
     public const string UpdatedSuccessfully = "تم تحديث البيانات بنجاح.";
     public const string DeletedSuccessfully = "تم حذف البيانات بنجاح.";
@@ -24,11 +25,18 @@ public static class Messages
     public const string ArchivedFactoriesRetrievedSuccessfully = "تم جلب المصانع المؤرشفة بنجاح.";
     public const string FactoryRestoredSuccessfully = "تم استعادة المصنع بنجاح.";
     public const string ConcreteTypeRestoredSuccessfully = "تم استعادة نوع الخرسانة بنجاح.";
+    public const string ArchivedConcreteTypesRetrievedSuccessfully = "تم جلب أنواع الخرسانة المؤرشفة بنجاح.";
     public const string FactoryLogoUploadedSuccessfully = "تم رفع شعار المصنع بنجاح.";
     public const string FactoryLogoDeletedSuccessfully = "تم حذف شعار المصنع بنجاح.";
     public const string FactorySettingsRetrievedSuccessfully = "تم جلب بيانات المصنع بنجاح.";
     public const string DriverActivatedSuccessfully = "تم تفعيل حساب السائق بنجاح.";
     public const string DriverDeactivatedSuccessfully = "تم إيقاف حساب السائق بنجاح.";
+
+    public const string ConcreteTypesRetrievedSuccessfully = "تم جلب أنواع الخرسانة بنجاح.";
+    public const string ConcreteTypeRetrievedSuccessfully = "تم جلب نوع الخرسانة بنجاح.";
+
+    public const string DashboardRetrievedSuccessfully = "تم جلب بيانات لوحة التحكم بنجاح.";
+    public const string ReportsRetrievedSuccessfully = "تم جلب التقارير بنجاح.";
 
     public const string OrderUpdatedSuccessfully = "تم تحديث الطلب بنجاح.";
     public const string PriceSavedSuccessfully = "تم حفظ السعر بنجاح.";
@@ -38,6 +46,21 @@ public static class Messages
     public const string OrderClosedSuccessfully = "تم إغلاق الطلب بنجاح.";
     public const string OrderRejectedSuccessfully = "تم رفض الطلب بنجاح.";
     public const string OrderCancelledSuccessfully = "تم إلغاء الطلب بنجاح.";
+    public const string OrderArchivedSuccessfully = "تم أرشفة الطلب بنجاح.";
+    public const string OrderDeletedSuccessfully = "تم حذف الطلب بنجاح.";
+    public const string PaymentAddedSuccessfully = "تم تسجيل الدفعة بنجاح.";
+
+    public const string ProductionBatchesRetrievedSuccessfully = "تم جلب دفعات الإنتاج بنجاح.";
+    public const string ProductionBatchesByOrderRetrievedSuccessfully = "تم جلب دفعات الإنتاج للطلب بنجاح.";
+    public const string ProductionBatchCreatedSuccessfully = "تم إنشاء دفعة الإنتاج بنجاح.";
+    public const string ProductionBatchStatusUpdatedSuccessfully = "تم تحديث حالة دفعة الإنتاج بنجاح.";
+    public const string ProductionBatchDeletedSuccessfully = "تم حذف دفعة الإنتاج بنجاح.";
+
+    public const string RawMaterialsRetrievedSuccessfully = "تم جلب المواد الخام بنجاح.";
+    public const string RawMaterialRetrievedSuccessfully = "تم جلب المادة الخام بنجاح.";
+    public const string RawMaterialCreatedSuccessfully = "تم إنشاء المادة الخام بنجاح.";
+    public const string RawMaterialStockUpdatedSuccessfully = "تم تحديث الرصيد بنجاح.";
+    public const string RawMaterialDeletedSuccessfully = "تم حذف المادة الخام بنجاح.";
 
     #endregion
 
@@ -54,11 +77,14 @@ public static class Messages
     #region Validation Messages
 
     public const string EmailAlreadyExists = "البريد الإلكتروني مستخدم مسبقًا.";
+    public const string InvalidEmail = "البريد الإلكتروني غير صالح.";
+    public const string EmailMaxLength = "البريد الإلكتروني يجب ألا يزيد عن 256 حرفاً.";
     public const string PhoneAlreadyExists = "رقم الهاتف مستخدم مسبقًا.";
     public const string EmailOrPhoneRequired = "يجب إدخال بريد إلكتروني أو رقم هاتف على الأقل.";
     public const string FactoryAlreadyExists = "اسم المصنع مستخدم مسبقًا.";
     public const string FactoryAlreadyHasAccount = "هذا المصنع يمتلك حساباً مسجلاً بالفعل ولا يمكن إنشاء حساب آخر له.";
     public const string ConcreteTypeAlreadyExists = "نوع الخرسانة موجود مسبقًا لهذا المصنع.";
+    public const string ConcreteTypeHasActiveOrders = "لا يمكن أرشفة نوع الخرسانة: هناك {0} طلب(ات) نشط(ة) تعتمد عليه.";
 
     /// <summary>فشل استعادة نوع خرسانة لأن الاسم نفسه ما زال مستخدمًا بنوع نشط في المصنع.</summary>
     public const string ConcreteTypeRestoreNameConflict = "لا يمكن استعادة نوع الخرسانة: الاسم \"{0}\" مستخدم بالفعل في هذا المصنع. يجب إعادة تسمية النوع الحالي أو حذفه قبل الاستعادة.";
@@ -66,8 +92,13 @@ public static class Messages
     public const string PasswordsNotMatch = "كلمة المرور وتأكيد كلمة المرور غير متطابقتين.";
     public const string InvalidCredentials = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
     public const string AccountLocked = "تم قفل الحساب بسبب محاولات دخول فاشلة متكررة. حاول مرة أخرى بعد 15 دقيقة.";
+    public const string ActivationTokenExpired = "رابط التفعيل انتهت صلاحيته.";
+    public const string ActivationTokenInvalid = "رابط التفعيل غير صالح.";
+    public const string ActivationTokenAlreadyUsed = "تم استخدام رابط التفعيل هذا مسبقاً.";
     public const string Unauthorized = "ليس لديك صلاحية لتنفيذ هذه العملية.";
     public const string InvalidOrExpiredToken = "التوكن غير موجود أو غير صالح أو منتهي الصلاحية.";
+    public const string InvalidOrExpiredRefreshToken = "رمز التحديث غير صالح أو منتهي الصلاحية.";
+    public const string TokenRevokedSuccessfully = "تم إبطال الجلسة بنجاح.";
     public const string InvalidDriver = "المستخدم المحدد ليس سائقًا.";
     public const string InvalidClient = "المستخدم المحدد ليس عميلاً.";
     public const string InvalidFactory = "المصنع المحدد غير صالح.";
@@ -85,6 +116,13 @@ public static class Messages
 
     public const string InvalidLogoFile = "يرجى اختيار ملف صورة صالح.";
     public const string FactoryHasNoLogoToDelete = "لا يوجد شعار لهذا المصنع لحذفه.";
+
+    // تخزين الملفات (ImageStorageService) — رسائل تصل للمستخدم عبر ردّ الـ API
+    public const string InvalidUploadedFile = "الملف المرفوع غير صالح.";
+    public const string UnsupportedFileExtension = "امتداد الملف غير مدعوم. الامتدادات المسموحة: jpg, jpeg, png, webp.";
+    public const string FileTooLarge = "حجم الملف يتجاوز الحد المسموح به (5 ميجابايت).";
+    public const string InvalidFileContentType = "نوع محتوى الملف غير صالح أو لا يتطابق مع الامتداد.";
+    public const string InvalidStorageFolder = "مجلد تخزين الصور غير صالح.";
     public const string FactoryNotFoundOrInactive = "المصنع غير موجود أو غير نشط.";
     public const string ConcreteTypeNotFoundShort = "نوع الخرسانة غير موجود.";
     public const string ConcreteTypeNotActiveForClient = "نوع الخرسانة غير نشط.";
@@ -117,6 +155,41 @@ public static class Messages
     public const string NameMaxLength = "الاسم الكامل يجب ألا يزيد عن 200 حرف.";
     public const string FullNameRequired = "الاسم الكامل مطلوب.";
     public const string PasswordRequired = "كلمة المرور مطلوبة.";
+    public const string ConfirmPasswordRequired = "تأكيد كلمة المرور مطلوب.";
+
+    #endregion
+
+    #region Factory / ConcreteType / User Validation Messages
+
+    // المصنع
+    public const string FactoryNameRequired = "اسم المصنع مطلوب.";
+    public const string FactoryNameMaxLength = "اسم المصنع يجب ألا يزيد عن 200 حرف.";
+    public const string FactoryAreaRequired = "المنطقة مطلوبة.";
+
+    /// <summary>
+    /// نفس نصّ <see cref="SiteAreaMaxLength"/> عمداً، لكنه منفصلٌ عنه: صياغة منطقة
+    /// الموقع ورسالة منطقة المصنع حقلان مستقلان، فلا يجوز أن يغيّر أحدهما الآخر.
+    /// </summary>
+    public const string FactoryAreaMaxLength = "المنطقة يجب ألا تزيد عن 100 حرف.";
+    public const string FactoryAddressRequired = "العنوان مطلوب.";
+    public const string FactoryAddressMaxLength = "العنوان يجب ألا يزيد عن 300 حرف.";
+    public const string FactoryOwnerNameMaxLength = "اسم المالك يجب ألا يزيد عن 200 حرف.";
+
+    // نوع الخرسانة
+    public const string ConcreteTypeNameRequired = "اسم نوع الخرسانة مطلوب.";
+    public const string ConcreteTypeNameMaxLength = "اسم نوع الخرسانة يجب ألا يزيد عن 100 حرف.";
+    public const string ConcreteTypeStrengthInvalid = "قيمة المقاومة غير صالحة.";
+    public const string ConcreteTypePriceMustBePositive = "السعر يجب أن يكون أكبر من صفر.";
+
+    // المستخدم والسائق
+    public const string InvalidRole = "الدور غير صالح.";
+    public const string InvalidOrderStatus = "حالة الطلب غير صالحة.";
+    public const string InvalidDriverStatus = "حالة السائق غير صالحة.";
+    public const string LoginIdentifierRequired = "يجب إدخال البريد الإلكتروني أو رقم الهاتف.";
+    public const string DriverRequired = "يجب تحديد السائق.";
+    public const string ClientPhoneRequired = "رقم هاتف العميل مطلوب.";
+    public const string TruckPlateRequired = "رقم لوحة الشاحنة مطلوب.";
+    public const string TruckPlateMaxLength = "رقم لوحة الشاحنة يجب ألا يزيد عن 30 حرفًا.";
 
     #endregion
 
@@ -124,6 +197,13 @@ public static class Messages
 
     public const string DriverNotAvailable = "السائق المحدد غير متاح حاليًا (مشغول أو غير متصل).";
     public const string DriverStatusUpdatedSuccessfully = "تم تحديث حالة السائق بنجاح.";
+    public const string NotAuthorizedToUpdateAnotherDriver = "غير مخول بتحديث حالة سائق آخر. يمكنك تحديث حالتك الخاصة فقط.";
+
+    public const string TripsRetrievedSuccessfully = "تم جلب الرحلات بنجاح.";
+    public const string TripCreatedSuccessfully = "تم إنشاء الرحلة بنجاح.";
+    public const string TripsCreatedSuccessfully = "تم إنشاء الرحلات بنجاح.";
+    public const string TripStatusUpdatedSuccessfully = "تم تحديث حالة الرحلة بنجاح.";
+    public const string TripDeletedSuccessfully = "تم حذف الرحلة بنجاح.";
 
     #endregion
 
@@ -142,10 +222,20 @@ public static class Messages
     public const string SlabTypeInvalid = "نوع الصبة غير صالح.";
     public const string QuantityMustBePositive = "الكمية يجب أن تكون أكبر من صفر.";
     public const string QuantityTooLarge = "الكمية كبيرة جداً (أقصى حد هو 1000 متر مكعب). يرجى التواصل مع الدعم إذا كانت الكمية أكبر.";
+
+    // ✅ سقوف النصوص الحرة — كل واحد يطابق HasMaxLength للعمود في قاعدة البيانات.
+    //    بدونها يمرّ النص الأطول إلى SQL Server فيرمي الخطأ 8152 (اقتطاع) فيصير
+    //    الرد 500 ويُفقد الطلب كاملاً بسبب حرف زائد في الملاحظات.
+    public const string ProjectNameMaxLength = "اسم المشروع يجب ألا يزيد عن 200 حرف.";
+    public const string ProjectOwnerNameMaxLength = "اسم صاحب المشروع يجب ألا يزيد عن 200 حرف.";
+    public const string SiteAreaMaxLength = "المنطقة يجب ألا تزيد عن 100 حرف.";
+    public const string SiteDescriptionMaxLength = "وصف الموقع يجب ألا يزيد عن 500 حرف.";
+    public const string NotesMaxLength = "الملاحظات يجب ألا تزيد عن 1000 حرف.";
     public const string PouringDateCannotBeInPast = "تاريخ الصب لا يمكن أن يكون في الماضي. يرجى اختيار تاريخ اليوم أو تاريخ مستقبلي.";
     public const string PumpRequiresFloorNumber = "عند اختيار مضخة، يجب تحديد رقم الطابق.";
     public const string FloorNumberMustBeNonNegative = "رقم الطابق يجب أن يكون صفر أو أكبر (الأرضي = 0).";
     public const string RejectionReasonPrefix = "سبب الرفض: {0}";
+    public const string RejectionReasonMaxLength = "سبب الرفض لا يجب أن يتجاوز 500 حرف.";
     public const string UnitPriceMustBePositive = "سعر المتر يجب أن يكون أكبر من صفر.";
     public const string CannotUpdatePriceAtThisStage = "لا يمكن تعديل السعر في هذه المرحلة من الطلب.";
     public const string NotAuthorizedToApproveOrder = "غير مخول لاعتماد الطلب.";
@@ -163,12 +253,36 @@ public static class Messages
     public const string OrderAlreadyRejectedOrCancelled = "الطلب مرفوض أو ملغي بالفعل.";
     public const string CannotChangeDriverRole = "لا يمكن تغيير دور السائق.";
     public const string PhoneLinkedToNonClientAccount = "رقم الهاتف مرتبط بحساب موظف/سائق موجود في النظام. لا يمكن إنشاء عميل جديد بنفس الرقم. يرجى التحقق من الرقم أو التواصل مع مدير النظام.";
+    public const string PaymentAmountMustBePositive = "مبلغ الدفعة يجب أن يكون أكبر من صفر.";
+    public const string PaymentExceedsRemainingAmount = "مبلغ الدفعة يتجاوز المبلغ المتبقي على الطلب.";
+    public const string NotAuthorizedToRecordPayment = "غير مخول لتسجيل دفعات على الطلب.";
+    public const string CannotRecordPaymentForCancelledOrder = "لا يمكن تسجيل دفعة على طلب ملغى.";
+    public const string PaymentReferenceMaxLength = "رقم مرجع الحوالة يجب ألا يتجاوز 256 حرف.";
+    public const string PaymentNotesMaxLength = "ملاحظات الدفعة يجب ألا تتجاوز 1000 حرف.";
+
+    // ============================================================
+    // Hawala Ledger Payment Verification Messages
+    // ============================================================
+
+    public const string PaymentApprovedSuccess = "تم اعتماد الدفعة بنجاح.";
+    public const string PaymentRejectedSuccess = "تم رفض الدفعة بنجاح.";
+    public const string PaymentCannotBeApprovedCash = "لا يمكن اعتماد هذه الدفعة (الدفعات النقدية).";
+    public const string PaymentNotFound = "الدفعة المالية غير موجودة.";
 
     #endregion
 
     #region General Messages
 
     public const string UnexpectedError = "حدث خطأ غير متوقع.";
+
+    /// <summary>
+    /// احتياط أخير لفشل ModelState لا يحمل رسالة عربية مكتوبة (جسم JSON مشوّه،
+    /// أو قيمة لا تُحوَّل إلى نوع الحقل). تُستخدم بدل تسريب رسالة المحلّل الإنجليزية
+    /// («The JSON value could not be converted to…») إلى المستخدم.
+    /// </summary>
+    public const string InvalidRequest = "البيانات المُرسَلة غير صالحة. تحقق من الحقول ثم أعد المحاولة.";
+    public const string MalformedJsonOrPayload = "البيانات المُرسَلة تحتوي على صيغة غير صالحة. يرجى التحقق من صحة الحقول والأرقام والتواريخ.";
+    public const string PayloadTooLarge = "حجم البيانات أو الملفات المُرسَلة يتجاوز الحد المسموح به.";
 
     /// <summary>
     /// احتياط أخير لانتهاك قيد التفرّد على مستوى قاعدة البيانات (حالة سباق فاتت الفحص المسبق).
@@ -178,21 +292,26 @@ public static class Messages
 
     public const string CustomersRetrievedSuccessfully = "تم جلب العملاء بنجاح.";
 
-    #endregion
+    /// <summary>لا توجد طلبات لهذا العميل في النطاق المطلوب (ومنها تُبنى إحصاءاته كلها).</summary>
+    public const string CustomerNotFound = "لا توجد طلبات لهذا العميل.";
 
-    public const string ConcreteTypesRetrievedSuccessfully = "تم جلب أنواع الخرسانة بنجاح.";
-    public const string ConcreteTypeRetrievedSuccessfully = "تم جلب نوع الخرسانة بنجاح.";
+    /// <summary>حصر نطاق أنواع الخرسانة على مصنع المستخدم — مسار الإنشاء وحده؛
+    /// القراءة والتعديل والحذف والاستعادة تستعمل <see cref="FactoryEmployeeFactoryMismatch"/> العامة.</summary>
     public const string CannotCreateConcreteTypeForOtherFactory = "لا يمكنك إنشاء نوع خرسانة لمصنع آخر.";
 
-    public const string DashboardRetrievedSuccessfully = "تم جلب بيانات لوحة التحكم بنجاح.";
-
-    public const string ReportsRetrievedSuccessfully = "تم جلب التقارير بنجاح.";
+    #endregion
 
     #region Fallback Display Strings
 
     public const string ClientFallback = "العميل #{0}";
     public const string FactoryFallback = "المصنع #{0}";
     public const string ConcreteTypeFallback = "نوع الخرسانة #{0}";
+
+    public const string OrderNumberStatement = "طلب خرسانة رقم {0}";
+    public const string PaymentStatement = "دفعة نقود - {0}";
+    public const string ClientNotFound = "العميل غير موجود.";
+    public const string ClientNotInCallerFactory = "العميل لا ينتمي للمصنع الخاص بك.";
+    public const string CallerFactoryIdNotFound = "معرّف المصنع الخاص بك غير موجود.";
 
     #endregion
 }

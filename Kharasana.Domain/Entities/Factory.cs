@@ -1,12 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
-
 namespace Kharasana.Domain.Entities;
 
 public class Factory
 {
     public int FactoryId { get; set; }
 
-    [Timestamp]
     public byte[] RowVersion { get; set; } = [];
 
     public string FactoryName { get; set; } = string.Empty;

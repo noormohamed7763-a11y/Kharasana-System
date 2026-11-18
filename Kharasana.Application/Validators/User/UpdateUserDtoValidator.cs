@@ -12,12 +12,18 @@ public class UpdateUserDtoValidator : AbstractValidator<UpdateUserDto>
     {
         RuleFor(x => x.FullName).FullName();
 
+        // ✅ البريد اختياري، وغيابه يعني «أبقِ الحالي» لا «امسحه» (انظر UpdateUserDto.Email).
+        //    الصيغة والسقف 256 (وسبب السقف: الخطأ 8152) في ValidationRules.Email.
+        RuleFor(x => x.Email)
+            .Email()
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
+
         RuleFor(x => x.Phone).YemeniPhone();
 
         RuleFor(x => x.WhatsApp).YemeniWhatsApp();
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage("الدور غير صالح.")
+            .Role()
             .NotEqual(UserRole.Admin).WithMessage(Messages.CannotChangeToAdmin);
     }
 }

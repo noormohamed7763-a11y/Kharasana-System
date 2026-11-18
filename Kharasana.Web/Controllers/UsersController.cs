@@ -1,4 +1,3 @@
-﻿using System.Threading.Tasks;
 using Kharasana.Application.Common;
 using Kharasana.Web.Filters;
 using Kharasana.Web.Localization;
@@ -29,6 +28,11 @@ public class UsersController : BaseController
     }
 
     // GET: Users/Index
+    // ✅ حصر الدور هنا مطابقةً لبَوّابة الـ API (AdminOrFactoryEmployee): بدونها يصل
+    //    السائق/العميل إلى النداء فيردّ الـ API بـ403؛ يلتقطه UnhandledExceptionFilter
+    //    فلا تُعرض صفحة خطأ 500، لكن الحصر هنا يجعل الرفض نظيفاً وبلا رحلة ذهاب وعودة.
+    [HttpGet]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Index(
         int pageNumber = 1,
         int pageSize = 20,
@@ -51,16 +55,13 @@ public class UsersController : BaseController
 
         // أعداد الأدوار عبر كل الصفحات — فشلها لا ينبغي أن يُسقط الصفحة بعد أن حمّلنا القائمة
         var counts = (Admins: 0, FactoryEmployees: 0, Drivers: 0);
-        if (users != null)
+        try
         {
-            try
-            {
-                counts = await _userApiService.GetRoleCountsAsync(search, factoryId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "تعذر جلب إحصاءات أدوار المستخدمين — ستُعرض البطاقات بقيمة صفر.");
-            }
+            counts = await _userApiService.GetRoleCountsAsync(search, factoryId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "تعذر جلب إحصاءات أدوار المستخدمين — ستُعرض البطاقات بقيمة صفر.");
         }
 
         var model = new UsersIndexViewModel
@@ -70,7 +71,7 @@ public class UsersController : BaseController
             Role = role,
             PageNumber = pageNumber,
             PageSize = pageSize,
-            TotalUsers = users?.TotalCount ?? 0,
+            TotalUsers = users.TotalCount,
             AdminsCount = counts.Admins,
             FactoryEmployeesCount = counts.FactoryEmployees,
             DriversCount = counts.Drivers
@@ -97,7 +98,7 @@ public class UsersController : BaseController
         if ((model.Role == UserRole.Driver || model.Role == UserRole.FactoryEmployee)
             && !model.FactoryId.HasValue)
         {
-            ModelState.AddModelError(nameof(model.FactoryId), "المصنع مطلوب للسائق وموظف المصنع.");
+            ModelState.AddModelError(nameof(model.FactoryId), AppMessages.Common.FactoryRequiredForDriverAndEmployee);
         }
 
         if (!ModelState.IsValid)
@@ -105,43 +106,21 @@ public class UsersController : BaseController
             return View(model);
         }
 
-        try
-        {
-            var result = await _userApiService.CreateAsync(model);
+        await _userApiService.CreateAsync(model);
 
-            if (result.Success)
-            {
-                TempData[TempDataSuccess] = "✅ تم إنشاء المستخدم بنجاح.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            ModelState.AddModelError(string.Empty, result.Message ?? "حدث خطأ أثناء إنشاء المستخدم.");
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في إنشاء مستخدم جديد StatusCode={StatusCode}", (int)ex.StatusCode);
-            ModelState.AddModelError(string.Empty, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في إنشاء مستخدم جديد");
-            ModelState.AddModelError(string.Empty, AppMessages.Common.OperationFailed);
-        }
-
-        return View(model);
+        TempData[TempDataSuccess] = AppMessages.Success.UserCreated;
+        return RedirectToAction(nameof(Index));
     }
 
     // GET: Users/Details/{id}
+    // ✅ حصر الدور مطابقةً لبَوّابة الـ API. عزل المصنع نفسه يفرضه الـ API من التوكن:
+    //    موظف المصنع لا يستقبل من GetById إلا سائقًا يتبع مصنعه، وأي معرّف آخر يعود
+    //    404 — فالفحص هنا ليس ضروريًا، وتكراره في Web يخالف قاعدة «الـ API هو المرجع».
     [HttpGet]
+    [SessionAuthorize(Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> Details(int id)
     {
         var user = await _userApiService.GetUserByIdAsync(id);
-
-        if (user == null)
-        {
-            TempData[TempDataError] = AppMessages.Common.NotFound;
-            return RedirectToAction(nameof(Index));
-        }
 
         var model = new UserDetailsViewModel
         {
@@ -171,8 +150,8 @@ public class UsersController : BaseController
                 "Offline" => "غير متصل",
                 _ => user.DriverStatus
             },
-            CreatedAt = null,
-            UpdatedAt = null
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt
         };
 
         return View(model);
@@ -185,15 +164,9 @@ public class UsersController : BaseController
     {
         var user = await _userApiService.GetUserByIdAsync(id);
 
-        if (user == null)
-        {
-            TempData[TempDataError] = AppMessages.Common.NotFound;
-            return RedirectToAction(nameof(Index));
-        }
-
         if (user.Role != Roles.Driver)
         {
-            TempData[TempDataError] = "التقرير متاح لبطاقة سائق فقط.";
+            TempData[TempDataError] = AppMessages.Common.DriverReportForDriverCardOnly;
             return RedirectToAction(nameof(Index));
         }
 
@@ -220,12 +193,6 @@ public class UsersController : BaseController
     public async Task<IActionResult> Edit(int id)
     {
         var user = await _userApiService.GetUserByIdAsync(id);
-
-        if (user == null)
-        {
-            TempData[TempDataError] = AppMessages.Common.NotFound;
-            return RedirectToAction(nameof(Index));
-        }
 
         var role = Enum.TryParse<UserRole>(user.Role, out var parsedRole)
             ? parsedRole
@@ -264,7 +231,7 @@ public class UsersController : BaseController
         if ((model.Role == UserRole.Driver || model.Role == UserRole.FactoryEmployee)
             && !model.FactoryId.HasValue)
         {
-            ModelState.AddModelError(nameof(model.FactoryId), "المصنع مطلوب للسائق وموظف المصنع.");
+            ModelState.AddModelError(nameof(model.FactoryId), AppMessages.Common.FactoryRequiredForDriverAndEmployee);
         }
 
         if (!ModelState.IsValid)
@@ -272,30 +239,10 @@ public class UsersController : BaseController
             return View(model);
         }
 
-        try
-        {
-            var result = await _userApiService.UpdateAsync(id, model);
+        await _userApiService.UpdateAsync(id, model);
 
-            if (result.Success)
-            {
-                TempData[TempDataSuccess] = "✅ تم تحديث المستخدم بنجاح.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            ModelState.AddModelError(string.Empty, result.Message ?? "حدث خطأ أثناء تحديث المستخدم.");
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في تعديل مستخدم StatusCode={StatusCode}", (int)ex.StatusCode);
-            ModelState.AddModelError(string.Empty, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في تعديل مستخدم");
-            ModelState.AddModelError(string.Empty, AppMessages.Common.OperationFailed);
-        }
-
-        return View(model);
+        TempData[TempDataSuccess] = AppMessages.Success.UserUpdated;
+        return RedirectToAction(nameof(Index));
     }
 
     // POST: Users/Delete/{id}
@@ -304,30 +251,9 @@ public class UsersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        try
-        {
-            var result = await _userApiService.DeleteAsync(id);
+        await _userApiService.DeleteAsync(id);
 
-            if (result.Success)
-            {
-                TempData[TempDataSuccess] = "✅ تم حذف المستخدم بنجاح.";
-            }
-            else
-            {
-                TempData[TempDataError] = result.Message ?? "حدث خطأ أثناء حذف المستخدم.";
-            }
-        }
-        catch (ApiServiceException ex)
-        {
-            _logger.LogError(ex, "خطأ في حذف مستخدم StatusCode={StatusCode}", (int)ex.StatusCode);
-            TempData[TempDataError] = ex.Message;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "خطأ غير متوقع في حذف مستخدم");
-            TempData[TempDataError] = AppMessages.Common.OperationFailed;
-        }
-
+        TempData[TempDataSuccess] = AppMessages.Success.UserDeleted;
         return RedirectToAction(nameof(Index));
     }
 }

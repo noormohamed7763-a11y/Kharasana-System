@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Auth;
@@ -299,6 +298,112 @@ public class AuthServiceTests : IDisposable
     }
 
     // ─────────────────────────────────────────────
+    // كشف حالة الحساب — محصور بمن يعرف كلمة المرور
+    //
+    // كانت فحوص النشاط وأرشفة المصنع والقفل تُنفَّذ قبل التحقق من كلمة المرور،
+    // فيكشف نصّ الردّ — لمن لا يعرف كلمة المرور — أن الحساب موجود وأنه سائق
+    // موقوف أو أن مصنعه مؤرشف. الاختبارات أعلاه (Login_DeactivatedDriver …
+    // Login_ArchivedFactory_…) تستدعي MakeLogin بلا وسيط كلمة مرور، أي بكلمة
+    // المرور الصحيحة — فهي تُثبت أن الرسائل المخصّصة باقية لمن يستحقّها،
+    // وهذه تُثبت أن غير المالك لا يحصل عليها.
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Login_DeactivatedDriver_WrongPassword_DoesNotRevealAccountState()
+    {
+        // Arrange
+        var driver = TestDataSeeder.CreateDriver(90, "سائق موقوف", factoryId: 1, isActive: false);
+        _context.Users.Add(driver);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _authService.LoginAsync(MakeLogin(driver.Phone!, " WRONG "));
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+    }
+
+    [Fact]
+    public async Task Login_InactiveClient_WrongPassword_DoesNotRevealAccountState()
+    {
+        // Arrange
+        var client = TestDataSeeder.CreateUser(91, "عميل موقوف", UserRole.Client, isActive: false, phone: "770000091");
+        _context.Users.Add(client);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _authService.LoginAsync(MakeLogin(client.Phone!, " WRONG "));
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+    }
+
+    [Fact]
+    public async Task Login_ArchivedFactory_WrongPassword_DoesNotRevealAccountState()
+    {
+        // Arrange — مصنع مؤرشف + موظف مرتبط به (بنية اختبار FactoryArchived أعلاه)
+        var factory = TestDataSeeder.CreateFactory(4, "مؤرشفة", isActive: false, isDeleted: true);
+        var employee = TestDataSeeder.CreateUser(92, "موظف مصنع مؤرشف", UserRole.FactoryEmployee, factoryId: 4);
+        _context.Factories.Add(factory);
+        _context.Users.Add(employee);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _authService.LoginAsync(MakeLogin(employee.Email!, " WRONG "));
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+    }
+
+    /// <summary>
+    /// حساب مقفل + كلمة مرور خاطئة ← رسالة الاعتماد العامة لا رسالة القفل: القفل
+    /// لا يُكشف إلا لمن أثبت كلمة مروره. ومع ذلك لا يُمَدّ القفل — المحاولة الفاشلة
+    /// على حساب مقفل لا تُسجَّل، فلا يُطيل أحد قفل غيره، ولا يُطيل صاحب الحساب قفله
+    /// بخطأ مطبعي أثناء انتهاء المدة.
+    /// </summary>
+    [Fact]
+    public async Task Login_LockedAccount_WrongPassword_StaysGenericAndKeepsLockUnchanged()
+    {
+        // Arrange
+        var user = TestDataSeeder.CreateUser(93, "حساب مقفل", UserRole.Client, phone: "770000093");
+        user.FailedLoginAttempts = 5;
+        var lockoutEnd = DateTime.UtcNow.AddMinutes(10);
+        user.LockoutEnd = lockoutEnd;
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _authService.LoginAsync(MakeLogin(user.Phone!, " WRONG "));
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+
+        var updated = await _context.Users.FindAsync(93);
+        updated!.FailedLoginAttempts.Should().Be(5, "المحاولة على حساب مقفل أصلاً لا تُسجَّل");
+        updated.LockoutEnd.Should().Be(lockoutEnd, "القفل لا يُمَدّ بمحاولة فاشلة إضافية");
+    }
+
+    /// <summary>
+    /// بريد غير مسجَّل يمرّ بمسار التجزئة الصورية (VerifyDummy) — ويجب أن يرمي
+    /// BusinessException لا استثناء BCrypt. لو كُتبت التجزئة الصورية بصيغة غير
+    /// صالحة لـ BCrypt لرمى Verify استثناءً، فيتحوّل كل دخول بمعرّف غير مسجَّل إلى 500.
+    /// </summary>
+    [Fact]
+    public async Task Login_UnknownEmail_ThrowsInvalidCredentialsNotBcryptError()
+    {
+        // Act
+        var act = () => _authService.LoginAsync(MakeLogin("no-such-user@example.com", "any"));
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidCredentials);
+    }
+
+    // ─────────────────────────────────────────────
     // ⑥  RegisterAsync — التسجيل الذاتي (نقطة عامة بلا توكن)
     // ─────────────────────────────────────────────
 
@@ -320,6 +425,33 @@ public class AuthServiceTests : IDisposable
         // Assert — الرفض قبل أي فحص لقاعدة البيانات وقبل إنشاء أي حساب
         await act.Should().ThrowAsync<BusinessException>()
             .WithMessage(Messages.PasswordsNotMatch);
+
+        (await _context.Users.CountAsync()).Should().Be(0);
+    }
+
+    /// <summary>
+    /// الخدمة تفرض الحد الأدنى لطول كلمة المرور بنفسها — لم يكن هناك أي فحص في
+    /// AuthService (كان الحارس الوحيد سمة [MinLength(6)] على الـ DTO، أضعف من
+    /// بقية المسارات وتسقط إن استُدعيت الخدمة من مسار لا يمرّ على ModelState).
+    /// </summary>
+    [Theory]
+    [InlineData("a")]
+    [InlineData("1234567")]  // محرف أقل من الحد الأدنى الموحّد
+    [InlineData("")]
+    public async Task Register_PasswordBelowMinimum_ThrowsBusinessException(string password)
+    {
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل بكلمة مرور قصيرة",
+            Phone = "771120009",
+            Password = password,
+            ConfirmPassword = password
+        };
+
+        var act = () => _authService.RegisterAsync(dto);
+
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.PasswordMinLength);
 
         (await _context.Users.CountAsync()).Should().Be(0);
     }
@@ -402,6 +534,159 @@ public class AuthServiceTests : IDisposable
         // Assert — 409 (لا حساب ثانٍ بنفس البريد) — العقد المُعلن في AuthController.Register
         await act.Should().ThrowAsync<ConflictException>()
             .WithMessage(Messages.EmailAlreadyExists);
+    }
+
+    // ─────────────────────────────────────────────
+    // تطبيع البريد عند التسجيل — يطابق ما يفعله مسار الدخول (EmailValidationHelper)
+    // ─────────────────────────────────────────────
+
+    /// <summary>
+    /// العلّة: الدخول يقصّ المسافات الطرفية من المُعرّف، والتسجيل كان يخزّن البريد كما
+    /// وصل — فيُحفظ <c>" spaced@test.local "</c> بمسافاته ويستحيل الدخول به للأبد.
+    /// </summary>
+    [Fact]
+    public async Task Register_EmailWithSurroundingSpaces_StoredTrimmedAndLoginSucceeds()
+    {
+        // Arrange
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل بمسافات",
+            Email = "  spaced-register@test.local  ",
+            Phone = "771120006",
+            Password = TestDataSeeder.TestPassword,
+            ConfirmPassword = TestDataSeeder.TestPassword
+        };
+
+        // Act
+        await _authService.RegisterAsync(dto);
+
+        // Assert — المخزَّن مقصوص
+        var created = await _context.Users.SingleAsync(u => u.Phone == "967771120006");
+        created.Email.Should().Be("spaced-register@test.local");
+
+        // Assert — والدخول بالمُعرّف كما يكتبه المستخدم عادةً ينجح
+        var login = await _authService.LoginAsync(MakeLogin("spaced-register@test.local"));
+        login.Success.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// فحص التفرّد كان يقارن النصّ الخام، فبريد بمسافة يبدو «غير مكرر» ويُنشأ حساب ثانٍ
+    /// بنفس البريد فعليًا.
+    /// </summary>
+    [Fact]
+    public async Task Register_EmailWithSpaces_IsDetectedAsDuplicateOfTrimmedEmail()
+    {
+        // Arrange — البريد مسجّل مسبقاً بلا مسافات
+        _context.Users.Add(TestDataSeeder.CreateUser(
+            122, "عميل مسجّل", UserRole.Client,
+            phone: "771120007", email: "taken@test.local"));
+        await _context.SaveChangesAsync();
+
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل مكرر بمسافات",
+            Email = "  taken@test.local  ",
+            Phone = "771120008",
+            Password = TestDataSeeder.TestPassword,
+            ConfirmPassword = TestDataSeeder.TestPassword
+        };
+
+        // Act
+        var act = () => _authService.RegisterAsync(dto);
+
+        // Assert
+        await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage(Messages.EmailAlreadyExists);
+    }
+
+    /// <summary>
+    /// بريد من مسافات وحدها لا يُخزَّن كنص أبيض يُفسد فحص التفرّد لاحقاً — يصير «لا بريد».
+    /// </summary>
+    [Fact]
+    public async Task Register_WhitespaceOnlyEmail_StoresNull()
+    {
+        // Arrange
+        var dto = new RegisterUserDto
+        {
+            FullName = "عميل بلا بريد",
+            Email = "   ",
+            Phone = "771120009",
+            Password = TestDataSeeder.TestPassword,
+            ConfirmPassword = TestDataSeeder.TestPassword
+        };
+
+        // Act
+        await _authService.RegisterAsync(dto);
+
+        // Assert
+        var created = await _context.Users.SingleAsync(u => u.Phone == "967771120009");
+        created.Email.Should().BeNull();
+    }
+
+    // ─────────────────────────────────────────────
+    // Refresh Token & Revoke Token Tests
+    // ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task RefreshToken_ValidToken_ReturnsRotatedTokenAndRotatedRefreshToken()
+    {
+        // Arrange
+        var user = TestDataSeeder.CreateUser(200, "مستخدم صالح", UserRole.Client, phone: "771234500");
+        user.RefreshToken = "valid_refresh_token_123";
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _authService.RefreshTokenAsync("valid_refresh_token_123");
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.Token.Should().NotBeNullOrEmpty();
+        result.Data.RefreshToken.Should().NotBeNullOrEmpty();
+        result.Data.RefreshToken.Should().NotBe("valid_refresh_token_123"); // تم التدوير
+
+        var updatedUser = await _context.Users.FindAsync(200);
+        updatedUser!.RefreshToken.Should().Be(result.Data.RefreshToken);
+    }
+
+    [Fact]
+    public async Task RefreshToken_ExpiredToken_ThrowsBusinessException()
+    {
+        // Arrange
+        var user = TestDataSeeder.CreateUser(201, "مستخدم منتهي", UserRole.Client, phone: "771234501");
+        user.RefreshToken = "expired_token";
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(-1); // منتهي
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var act = () => _authService.RefreshTokenAsync("expired_token");
+
+        // Assert
+        await act.Should().ThrowAsync<BusinessException>()
+            .WithMessage(Messages.InvalidOrExpiredRefreshToken);
+    }
+
+    [Fact]
+    public async Task RevokeToken_ValidToken_ClearsRefreshTokenInDb()
+    {
+        // Arrange
+        var user = TestDataSeeder.CreateUser(202, "مستخدم للمغادرة", UserRole.Client, phone: "771234502");
+        user.RefreshToken = "token_to_revoke";
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(3);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _authService.RevokeTokenAsync("token_to_revoke");
+
+        // Assert
+        result.Success.Should().BeTrue();
+        var updatedUser = await _context.Users.FindAsync(202);
+        updatedUser!.RefreshToken.Should().BeNull();
+        updatedUser.RefreshTokenExpiryTime.Should().BeNull();
     }
 
     public void Dispose() => _context.Dispose();

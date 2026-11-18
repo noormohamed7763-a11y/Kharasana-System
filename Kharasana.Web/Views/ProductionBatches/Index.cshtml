@@ -1,0 +1,124 @@
+@model Kharasana.Application.Common.PagedResult<Kharasana.Web.ViewModels.ProductionBatches.ProductionBatchViewModel>
+@using Kharasana.Web.Models.Components
+@using Kharasana.Web.Models.Components.Search
+@using Kharasana.Web.ViewModels.Components
+
+@{
+    ViewData["Title"] = "إدارة الإنتاج";
+}
+
+<div class="dashboard-page">
+
+    @await Html.PartialAsync(
+    "~/Views/Shared/Components/_PageHeader.cshtml",
+        new PageHeaderViewModel
+        {
+            Icon = "bi-gear-wide-connected",
+            Title = "إدارة الإنتاج",
+            Description = "متابعة دفعات الإنتاج",
+            ActionText = "إضافة دفعة إنتاج",
+            ActionController = "ProductionBatches",
+            ActionMethod = "Create"
+        })
+
+    <!-- شريط البحث الموحّد -->
+    @await Html.PartialAsync(
+        "~/Views/Shared/Components/_ListToolbar.cshtml",
+        new ListToolbarViewModel
+        {
+            PageSize = Model.PageSize,
+            Search = new SearchBoxViewModel
+            {
+                InputId = "search",
+                Placeholder = "ابحث برقم الدفعة...",
+                Value = (string?)ViewBag.SearchTerm ?? string.Empty
+            }
+        })
+
+    @if (Model.Items == null || !Model.Items.Any())
+    {
+        @await Html.PartialAsync(
+            "~/Views/Shared/Components/_EmptyState.cshtml",
+            new EmptyStateViewModel
+            {
+                Title = "لا توجد دفعات إنتاج",
+                Message = "لم يتم العثور على أي دفعات إنتاج تطابق معايير البحث.",
+                ShowActionButton = true,
+                ActionController = "ProductionBatches",
+                ActionAction = "Create",
+                ActionText = "إضافة دفعة إنتاج"
+            })
+    }
+    else
+    {
+        <div class="erp-section-card p-0 shadow-sm mb-4">
+            <div class="table-responsive">
+                <table class="erp-table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>رقم الدفعة</th>
+                            <th>رقم الطلب</th>
+                            <th>نوع الخرسانة</th>
+                            <th>الكمية</th>
+                            <th>الحالة</th>
+                            <th>تاريخ الإنشاء</th>
+                            <th class="text-center">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="fw-bold">#@item.ProductionBatchId</td>
+                                <td>
+                                    <a asp-controller="Orders" asp-action="Details" asp-route-id="@item.OrderId" class="fw-semibold text-primary">
+                                        طلب #@item.OrderId
+                                    </a>
+                                </td>
+                                <td>@item.ConcreteTypeName</td>
+                                <td dir="ltr" class="text-end fw-semibold">@item.Quantity.ToString("N2") م³</td>
+                                <td>
+                                    @switch (item.Status)
+                                    {
+                                        case Kharasana.Domain.Enums.ProductionStatus.Completed:
+                                            <span class="status-badge status-success"><i class="bi bi-check-circle-fill me-1"></i>مكتملة</span>
+                                            break;
+                                        case Kharasana.Domain.Enums.ProductionStatus.InProgress:
+                                            <span class="status-badge status-warning"><i class="bi bi-gear-fill me-1"></i>قيد الخلط</span>
+                                            break;
+                                        case Kharasana.Domain.Enums.ProductionStatus.Cancelled:
+                                            <span class="status-badge status-danger"><i class="bi bi-x-circle-fill me-1"></i>ملغاة</span>
+                                            break;
+                                        default:
+                                            <span class="status-badge status-secondary"><i class="bi bi-clock me-1"></i>قيد الانتظار</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>@item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td class="text-center">
+                                    <a asp-action="Details" asp-route-id="@item.ProductionBatchId" class="btn btn-sm btn-outline-secondary px-3">
+                                        <i class="bi bi-eye me-1"></i>التفاصيل
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- الترقيم -->
+    @await Html.PartialAsync("~/Views/Shared/Components/_Pagination.cshtml", new PaginationViewModel
+    {
+        CurrentPage = Model.PageNumber,
+        TotalPages = Model.TotalPages,
+        PageSize = Model.PageSize,
+        TotalCount = Model.TotalCount,
+        RouteValues = new Dictionary<string, string>
+        {
+            { "searchTerm", (string?)ViewBag.SearchTerm ?? string.Empty }
+        }
+    })
+
+</div>

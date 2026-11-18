@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Kharasana.Application.Common;
+using Kharasana.Web.Helpers;
 using Kharasana.Web.ViewModels.Dashboard;
 using Kharasana.Web.ViewModels.Orders;
 using Kharasana.Web.Services.Interfaces;
-using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Kharasana.Web.Services.Api
@@ -27,12 +24,12 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                _logger.LogDebug("Requesting Admin dashboard data from API");
+                _logger.LogDebug("طلب بيانات لوحة المدير من الـ API");
                 var response = await _apiClient.GetAsync<ApiResponse<AdminDashboardDto>>("Dashboard/admin");
 
                 if (response == null || !response.Success || response.Data == null)
                 {
-                    _logger.LogWarning("Admin dashboard API returned null or empty. Returning default VM.");
+                    _logger.LogWarning("أعادت واجهة لوحة المدير ردًّا فارغًا. تُعاد قيمة افتراضية.");
                     return new DashboardViewModel();
                 }
 
@@ -45,12 +42,19 @@ namespace Kharasana.Web.Services.Api
                     TotalOrders = response.Data.TotalOrders
                 };
 
+                // أحدث الطلبات: `_AdminDashboard` يعرضها ويتعامل مع فراغها، وكانت
+                // تُترك فارغة هنا دائماً فيظهر «لا توجد طلبات مسجلة في النظام بعد»
+                // ولو كان في النظام مئات الطلبات — معلومة خاطئة لا ناقصة.
+                // بلا معرّف مصنع: الـ API لا يحصر الطلبات على الأدمن فيعيدها كلها،
+                // وهو المطلوب لعرض «أحدث الطلبات» على مستوى النظام.
+                vm.RecentOrders = await LoadRecentOrdersAsync(null);
+
                 return vm;
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception while loading admin dashboard");
+                _logger.LogError(ex, "خطأ في تحميل لوحة المدير");
                 return new DashboardViewModel();
             }
         }
@@ -59,12 +63,12 @@ namespace Kharasana.Web.Services.Api
         {
             try
             {
-                _logger.LogDebug("Requesting Factory({FactoryId}) dashboard data from API", factoryId);
+                _logger.LogDebug("طلب بيانات لوحة المصنع ({FactoryId}) من الـ API", factoryId);
                 var response = await _apiClient.GetAsync<ApiResponse<FactoryDashboardDto>>($"Dashboard/factory?factoryId={factoryId}");
 
                 if (response == null || !response.Success || response.Data == null)
                 {
-                    _logger.LogWarning("Factory dashboard API returned null or empty for factoryId={FactoryId}. Returning empty factory dashboard.", factoryId);
+                    _logger.LogWarning("أعادت واجهة لوحة المصنع ردًّا فارغًا للمصنع {FactoryId}. تُعاد لوحة فارغة.", factoryId);
 
                     return new DashboardViewModel();
                 }
@@ -72,7 +76,7 @@ namespace Kharasana.Web.Services.Api
                 // تعيين البيانات القادمة من الـ API إلى الأسماء النظيفة الجديدة في الـ ViewModel
                 var vm = new DashboardViewModel
                 {
-                    TodayOrdersCount = response.Data.NewOrders,
+                    TodayOrdersCount = response.Data.TodayOrders,
                     InProgressOrdersCount = response.Data.PendingOrders,
                     ReadyOrdersCount = response.Data.ApprovedOrders,
                     OnTheWayOrders = response.Data.OnTheWayOrders,
@@ -82,30 +86,34 @@ namespace Kharasana.Web.Services.Api
 
                 vm.RecentOrders = await LoadRecentOrdersAsync(factoryId);
 
-                _logger.LogInformation("Factory dashboard loaded for factoryId={FactoryId}: TodayOrdersCount={TodayOrdersCount}", factoryId, vm.TodayOrdersCount);
+                _logger.LogInformation("حُمّلت لوحة المصنع {FactoryId}: طلبات اليوم={TodayOrdersCount}", factoryId, vm.TodayOrdersCount);
 
                 return vm;
             }
             catch (ApiServiceException) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception while loading factory dashboard for factoryId={FactoryId}", factoryId);
+                _logger.LogError(ex, "خطأ في تحميل لوحة المصنع {FactoryId}", factoryId);
                 return new DashboardViewModel();
             }
         }
 
         /// <summary>
-        /// تحميل آخر طلبات المصنع الحقيقية (الأحدث أولاً) لعرضها في لوحة المصنع.
+        /// تحميل آخر الطلبات الحقيقية (الأحدث أولاً) لعرضها في اللوحة.
         /// يستخدم نفس Endpoint (Orders) وبالتالي يُطبَّق عليه عزل المصنع تلقائياً من الـ JWT.
         /// </summary>
-        private async Task<List<RecentOrderDto>> LoadRecentOrdersAsync(int factoryId)
+        /// <param name="factoryId">
+        /// معرّف المصنع (لوحة المصنع)، أو <c>null</c> (لوحة المدير) فيعيد الـ API
+        /// طلبات النظام كله لأن المدير غير محصور بمصنع.
+        /// </param>
+        private async Task<List<RecentOrderDto>> LoadRecentOrdersAsync(int? factoryId)
         {
             const int pageSize = 6;
 
             var result = await _ordersApiService.GetOrdersAsync(pageNumber: 1, pageSize: pageSize, factoryId: factoryId);
             if (result == null)
             {
-                _logger.LogWarning("Failed to load recent orders for dashboard (factoryId={FactoryId}). Showing empty state.", factoryId);
+                _logger.LogWarning("تعذّر جلب أحدث الطلبات للوحة (المصنع {FactoryId}). تُعرض حالة فارغة.", factoryId);
                 return new List<RecentOrderDto>();
             }
 
@@ -118,30 +126,13 @@ namespace Kharasana.Web.Services.Api
                     DriverName = o.DriverName,
                     Status = o.Status,
                     StatusDisplay = o.StatusArabic,
-                    StatusCssClass = GetStatusCssSuffix(o.Status),
+                    // ✅ اللاحقة من طبقة العرض الوحيدة OrderStatusExtensions — كانت هنا خريطة
+                    //    ثالثة كاملة للواحق الحالات. ملاحظة: RecentOrderDto.StatusCssClass يحمل
+                    //    اللاحقة وحدها (بدون status-)، ويضيفها الـ View.
+                    StatusCssClass = o.Status.GetCssSuffix(),
                     OrderDate = o.CreatedAt
                 })
                 .ToList();
-        }
-
-        /// <summary>
-        /// لاحقة كلاس الحالة (بدون بادئة status-) بحيث يكوّن الـ View `status-new`... إلخ
-        /// بما يطابق الأنماط المعرّفة في components.css (أحرف صغيرة).
-        /// </summary>
-        private static string GetStatusCssSuffix(OrderStatus status)
-        {
-            return status switch
-            {
-                OrderStatus.New => "new",
-                OrderStatus.Pending => "pending",
-                OrderStatus.Approved => "approved",
-                OrderStatus.Rejected => "rejected",
-                OrderStatus.Cancelled => "cancelled",
-                OrderStatus.OnTheWay => "ontheway",
-                OrderStatus.Delivered => "delivered",
-                OrderStatus.Closed => "closed",
-                _ => "new"
-            };
         }
     }
 }

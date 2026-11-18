@@ -1,8 +1,11 @@
-﻿/* ==========================================================
+/* ==========================================================
    FORMS LIBRARY (Kharasana ERP)
    ========================================================== */
 
-/* .dashboard-page لها تعريف واحد فقط في dashboard.css (max-width + margin مضمّنان هناك) */
+/* .dashboard-page لها تعريف واحد فقط في dashboard.css — لا تُعرَّف هنا.
+   (كان في هذا السطر ذكر أن max-width وmargin مضمّنان هناك، وقد أُزيلا من
+   القاعدة الأساسية: المحتوى يأخذ العرض الكامل بعد خصم الـ Sidebar. الحدّ
+   الأعلى صار لمعدِّل .dashboard-page--narrow وحده، لصفحات النماذج.) */
 
 .form-card {
     background: var(--surface);
@@ -36,6 +39,25 @@
     transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition), color var(--transition);
     width: 100%;
 }
+
+/*
+   .form-select-lg من Bootstrap يطلب ارتفاعاً ~48px وحشواً عمودياً أكبر.
+   القاعدة أعلاه تُثبّت height: 44px وتُلغيه. الحلّ: نجعل الـ select
+   يعتمد على min-height بدل height الصارم، ونُعيد الحشو العمودي لـ -lg.
+   .form-control (inputs) تبقى على height: 44px لأن حقول النص لا تحتاج
+   للتمدّد الطبيعي كما تفعل القوائم المنسدلة.
+*/
+select.form-select {
+    height: auto;
+    min-height: 44px;
+}
+
+select.form-select.form-select-lg {
+    min-height: 50px;
+    padding-block: var(--space-2);
+    font-size: var(--text-base);
+}
+
 
 /* حقول النصوص المتعددة الأسطر: لا يُقيَّد ارتفاعها بقاعدة الـ 44px،
    بل تنمو حسب rows وتسمح للمستخدم بتغيير الحجم عند الحاجة */
@@ -76,6 +98,12 @@ textarea.form-control {
     font-weight: 600;
 }
 
+/* ضبط بصري بمقدار 2px لمحاذاة نص مفتاح التبديل — كان مكتوباً style مضمّناً
+   في Views/ConcreteTypes/_CreateForm.cshtml. */
+.form-switch-label {
+    margin-top: 2px;
+}
+
 .validation-message,
 span.text-danger {
     font-size: var(--text-xs);
@@ -96,4 +124,14 @@ span.text-danger {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+/* Factory form density — scoped to avoid regressing ConcreteTypes/Orders */
+.factory-form .form-group {
+    margin-bottom: var(--space-3); /* 12px vs global 16px */
+}
+
+.factory-form .form-section-title {
+    padding-bottom: 6px;   /* 6px vs global 8px */
+    margin-bottom: 16px;   /* 16px vs global 20px */
 }

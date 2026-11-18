@@ -1,6 +1,6 @@
 @model Kharasana.Web.ViewModels.Reports.ReportsViewModel
-@using Kharasana.Domain.Enums
 @using Kharasana.Web.Models.Components
+@using Kharasana.Domain.Enums
 
 @{
     ViewData["Title"] = "التقارير";
@@ -11,19 +11,6 @@
 
     var concreteJson = System.Text.Json.JsonSerializer.Serialize(
         Model.OrdersByConcreteType.Select(c => new { label = c.ConcreteTypeName, count = c.Count, quantity = c.TotalQuantity }));
-
-    string StatusSuffix(OrderStatus status) => status switch
-    {
-        OrderStatus.New => "new",
-        OrderStatus.Pending => "pending",
-        OrderStatus.Approved => "approved",
-        OrderStatus.Rejected => "rejected",
-        OrderStatus.Cancelled => "cancelled",
-        OrderStatus.OnTheWay => "ontheway",
-        OrderStatus.Delivered => "delivered",
-        OrderStatus.Closed => "closed",
-        _ => "new"
-    };
 
     string StatusPercent(int count) =>
         Model.TotalOrders > 0 ? (count * 100d / Model.TotalOrders).ToString("0.#") : "0";
@@ -43,7 +30,7 @@
     @if (Model.HasData)
     {
         <!-- T1. Summary Cards (KPIs) — بطاقات قابلة للنقر عبر _SummaryCard -->
-        <div class="summary-cards-grid mb-4">
+        <div class="summary-cards-grid--four mb-4">
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
             new SummaryCardViewModel
@@ -58,11 +45,15 @@
             "~/Views/Shared/Components/_SummaryCard.cshtml",
             new SummaryCardViewModel
             {
-                Title = "طلبات جديدة",
-                Value = (Model.NewOrders?.Count ?? 0).ToString(),
-                Icon = "bi-plus-circle",
+                // ✅ كانت «طلبات جديدة» تُحتسب من OrderStatus.New — وهي حالة لا تُسنَد
+                //    لأي طلب في النظام (الطلبات تُنشأ Pending)، فكانت البطاقة تعرض صفراً
+                //    دائماً ورابطها (status = 0) يعود بقائمة فارغة. استُبدلت بـ«قيد الانتظار»
+                //    وهي الحالة الفعلية التي تنتظر إجراءً من المصنع.
+                Title = "قيد الانتظار",
+                Value = (Model.PendingOrders?.Count ?? 0).ToString(),
+                Icon = "bi-hourglass-split",
                 IconClass = "kpi-icon-primary",
-                LinkUrl = Url.Action("Index", "Orders", new { status = 0 })
+                LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Pending })
             })
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -72,7 +63,7 @@
                 Value = (Model.ApprovedOrders?.Count ?? 0).ToString(),
                 Icon = "bi-check2-circle",
                 IconClass = "kpi-icon-success",
-                LinkUrl = Url.Action("Index", "Orders", new { status = 2 })
+                LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Approved })
             })
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -82,7 +73,7 @@
                 Value = (Model.OnTheWayOrders?.Count ?? 0).ToString(),
                 Icon = "bi-truck",
                 IconClass = "kpi-icon-info",
-                LinkUrl = Url.Action("Index", "Orders", new { status = 5 })
+                LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.OnTheWay })
             })
             @await Html.PartialAsync(
             "~/Views/Shared/Components/_SummaryCard.cshtml",
@@ -92,7 +83,7 @@
                 Value = (Model.DeliveredOrders?.Count ?? 0).ToString(),
                 Icon = "bi-check2-all",
                 IconClass = "kpi-icon-success",
-                LinkUrl = Url.Action("Index", "Orders", new { status = 6 })
+                LinkUrl = Url.Action("Index", "Orders", new { status = (int)OrderStatus.Delivered })
             })
         </div>
 
@@ -129,24 +120,31 @@
                         <h5 class="erp-section-title"><i class="bi bi-list-check"></i>تفاصيل حسب حالة الطلب</h5>
                     </div>
                     <div class="table-responsive">
-                        <table class="table erp-table align-middle mb-0">
+                        <table class="erp-table align-middle mb-0">
                             <thead>
                                 <tr>
                                     <th>الحالة</th>
-                                    <th class="text-center">عدد الطلبات</th>
-                                    <th class="text-center">النسبة</th>
+                                    <th class="text-center col-count">عدد الطلبات</th>
+                                    <th class="text-center col-percent">النسبة</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var item in Model.OrdersByStatus)
                                 {
-                                    var badgeModel = new StatusBadgeViewModel { Text = item.StatusName, CssClass = $"status-{StatusSuffix(item.Status)}" };
+                                    var badgeModel = new StatusBadgeViewModel { Text = item.StatusName, CssClass = $"status-{item.Status.GetCssSuffix()}" };
                                     <tr>
                                         <td>
                                             <partial name="Components/_StatusBadge" model="badgeModel" />
                                         </td>
                                         <td class="text-center fw-bold text-dark">@item.Count</td>
-                                        <td class="text-center text-muted">@StatusPercent(item.Count)%</td>
+                                        <td class="text-center">
+                                            <div class="report-status-progress">
+                                                <div class="progress progress--report flex-fill">
+                                                    <div class="progress-bar" style="width:@StatusPercent(item.Count)%;"></div>
+                                                </div>
+                                                <span class="text-muted small">@StatusPercent(item.Count)%</span>
+                                            </div>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
@@ -161,12 +159,12 @@
                         <h5 class="erp-section-title"><i class="bi bi-box-seam"></i>تفاصيل حسب نوع الخرسانة</h5>
                     </div>
                     <div class="table-responsive">
-                        <table class="table erp-table align-middle mb-0">
+                        <table class="erp-table align-middle mb-0">
                             <thead>
                                 <tr>
                                     <th>نوع الخرسانة</th>
-                                    <th class="text-center">عدد الطلبات</th>
-                                    <th class="text-center">الكمية الإجمالية (م³)</th>
+                                    <th class="text-center col-count">عدد الطلبات</th>
+                                    <th class="text-center col-quantity">الكمية (م³)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -175,7 +173,10 @@
                                     <tr>
                                         <td class="fw-semibold text-dark">@item.ConcreteTypeName</td>
                                         <td class="text-center fw-bold">@item.Count</td>
-                                        <td class="text-center text-muted">@item.TotalQuantity.ToString("0.##")</td>
+                                        <td class="text-center">
+                                            <span class="fw-semibold">@item.TotalQuantity.ToString("0.##")</span>
+                                            <small class="text-muted"> م³</small>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>

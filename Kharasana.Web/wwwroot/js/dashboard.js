@@ -58,7 +58,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     overviewCanvas.style.display = 'none';
                     const empty = document.createElement('div');
                     empty.className = 'chart-empty-state';
-                    empty.innerHTML = '<i class="bi bi-graph-up"></i><span>لا توجد بيانات للعرض</span>';
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-graph-up';
+                    const span = document.createElement('span');
+                    span.textContent = 'لا توجد بيانات للعرض';
+                    empty.appendChild(icon);
+                    empty.appendChild(span);
                     wrap.appendChild(empty);
                 }
             }
@@ -104,7 +109,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     statusCanvas.style.display = 'none';
                     const empty = document.createElement('div');
                     empty.className = 'chart-empty-state';
-                    empty.innerHTML = '<i class="bi bi-pie-chart"></i><span>لا توجد بيانات للعرض</span>';
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-pie-chart';
+                    const span = document.createElement('span');
+                    span.textContent = 'لا توجد بيانات للعرض';
+                    empty.appendChild(icon);
+                    empty.appendChild(span);
                     wrap.appendChild(empty);
                 }
             }
@@ -114,7 +124,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // 3. Doughnut Chart: Factory Active Orders (حالة الطلبات النشطة)
-    // بيانات حقيقية من الـ ViewModel: جديدة / قيد التنفيذ / جاهزة للتسليم / قيد النقل
+    // بيانات حقيقية من الـ ViewModel: قيد التنفيذ / جاهزة للتسليم / قيد النقل
+    // (بلا شريحة «جديدة»: الطلبات تُنشأ Pending ولا تُسنَد حالة New أبداً)
     const factoryCanvas = document.getElementById('factoryOrdersChart');
     if (factoryCanvas) {
         try {
@@ -150,7 +161,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     factoryCanvas.style.display = 'none';
                     const empty = document.createElement('div');
                     empty.className = 'chart-empty-state';
-                    empty.innerHTML = '<i class="bi bi-inbox"></i><span>لا توجد طلبات نشطة مسجلة بعد</span>';
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-inbox';
+                    const span = document.createElement('span');
+                    span.textContent = 'لا توجد طلبات نشطة مسجلة بعد';
+                    empty.appendChild(icon);
+                    empty.appendChild(span);
                     wrap.appendChild(empty);
                 }
             }

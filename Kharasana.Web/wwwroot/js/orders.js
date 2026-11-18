@@ -1,541 +1,289 @@
-﻿/**
- * Kharasana ERP - Orders Management Scripts
- * يدير عمليات تعيين السائق، تغيير الحالة، الرفض، الإلغاء، وغيرها باستخدام AJAX
- * @version 2.3 - Security fixes for XSS prevention
+/**
+ * إدارة عمليات الطلبات في واجهة الويب.
+ * يشمل: تحديث السعر الإجمالي، التحقق من المدخلات، وإدارة أزرار الحفظ.
  */
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener('DOMContentLoaded', function () {
+    const editOrderForm = document.getElementById('editOrderForm');
+    if (editOrderForm) {
+        // قراءة البيانات من data-attributes لتجنب الاعتماد المباشر على Razor داخل JS
+        const config = {
+            quantityId: editOrderForm.dataset.quantityId,
+            unitPrice: parseFloat(editOrderForm.dataset.unitPrice) || 0,
+            totalPricePreviewId: 'totalPricePreview',
+            submitBtnId: 'submitBtn'
+        };
 
-    // ============================================================
-    // 1. CONFIGURATION - الإعدادات
-    // ============================================================
-    const CONFIG = {
-        toastDuration: 5000,
-        reloadDelay: 1000,
-        statusMessages: {
-            approve: '✅ تم اعتماد الطلب بنجاح',
-            reject: '❌ تم رفض الطلب بنجاح',
-            cancel: '🚫 تم إلغاء الطلب بنجاح',
-            'start-delivery': '🚚 تم بدء التوصيل بنجاح',
-            deliver: '📦 تم تسليم الطلب بنجاح',
-            close: '🔒 تم إغلاق الطلب بنجاح',
-            delete: '🗑️ تم حذف الطلب بنجاح'
-        }
-    };
+        const quantityInput = document.getElementById(config.quantityId);
+        const totalPricePreview = document.getElementById(config.totalPricePreviewId);
+        const submitBtn = document.getElementById(config.submitBtnId);
 
+        /**
+         * تحديث عرض السعر الإجمالي بناءً على الكمية وسعر المتر
+         */
+        function updateTotalPrice() {
+            if (!quantityInput || !totalPricePreview) return;
 
-    // ============================================================
-    // 2. HELPER FUNCTIONS - دوال مساعدة
-    // ============================================================
+            const quantity = parseFloat(quantityInput.value) || 0;
+            const total = config.unitPrice * quantity;
 
-    /**
-     * الحصول على AntiForgeryToken من النموذج أو من الصفحة
-     * @returns {string|null} رمز الحماية أو null
-     */
-    function getRequestVerificationToken() {
-        // البحث في النموذج أولاً
-        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-        if (tokenInput && tokenInput.value) {
-            return tokenInput.value;
+            totalPricePreview.value = total > 0
+                ? total.toLocaleString('ar-YE') + ' ر.ي'
+                : '-';
         }
 
-        // البحث في أي مكان آخر في الصفحة
-        const metaToken = document.querySelector('meta[name="csrf-token"]');
-        if (metaToken) {
-            return metaToken.getAttribute('content');
-        }
+        // ربط أحداث التغيير في الكمية
+        if (quantityInput) {
+            ['input', 'change'].forEach(evt =>
+                quantityInput.addEventListener(evt, updateTotalPrice)
+            );
 
-        // محاولة الحصول من أي نموذج في الصفحة
-        const formToken = document.querySelector('form input[name="__RequestVerificationToken"]');
-        if (formToken) {
-            return formToken.value;
-        }
+            // التفعيل الأولي
+            updateTotalPrice();
 
-        return null;
-    }
-
-    /**
-     * عرض رسالة للمستخدم باستخدام Toast أو Alert
-     * @param {string} message - نص الرسالة
-     * @param {string} type - نوع الرسالة (success, error, warning, info)
-     */
-    function showMessage(message, type = "success") {
-        // محاولة استخدام Toast Container
-        const toastContainer = document.getElementById('toastContainer');
-
-        if (toastContainer) {
-            const toast = document.createElement('div');
-            const bgColor = type === 'success' ? 'bg-success' :
-                type === 'error' ? 'bg-danger' :
-                    type === 'warning' ? 'bg-warning' : 'bg-info';
-
-            toast.className = `toast align-items-center text-white ${bgColor} border-0 show`;
-            toast.role = 'alert';
-            toast.setAttribute('aria-live', 'assertive');
-            toast.setAttribute('aria-atomic', 'true');
-
-            // ✅ بناء DOM بشكل آمن بدلاً من innerHTML
-            const dFlex = document.createElement('div');
-            dFlex.className = 'd-flex';
-
-            const toastBody = document.createElement('div');
-            toastBody.className = 'toast-body';
-
-            const icon = type === 'success' ? 'bi-check-circle-fill' :
-                type === 'error' ? 'bi-exclamation-triangle-fill' :
-                    type === 'warning' ? 'bi-exclamation-circle-fill' : 'bi-info-circle-fill';
-
-            const iconElement = document.createElement('i');
-            iconElement.className = `bi ${icon} me-2`;
-            toastBody.appendChild(iconElement);
-
-            // ✅ إضافة النص بشكل آمن باستخدام textContent
-            const textNode = document.createTextNode(message);
-            toastBody.appendChild(textNode);
-
-            dFlex.appendChild(toastBody);
-
-            const closeBtn = document.createElement('button');
-            closeBtn.type = 'button';
-            closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
-            closeBtn.setAttribute('data-bs-dismiss', 'toast');
-            closeBtn.setAttribute('aria-label', 'Close');
-            dFlex.appendChild(closeBtn);
-
-            toast.appendChild(dFlex);
-            toastContainer.appendChild(toast);
-            setTimeout(() => toast.remove(), CONFIG.toastDuration);
-        } else {
-            const alertDiv = document.getElementById('messageContainer');
-            if (alertDiv) {
-                const alertClass = type === 'success' ? 'alert-success' :
-                    type === 'error' ? 'alert-danger' :
-                        type === 'warning' ? 'alert-warning' : 'alert-info';
-
-                alertDiv.className = `alert ${alertClass} alert-dismissible fade show`;
-                alertDiv.style.display = 'block';
-
-                // ✅ مسح المحتوى القديم وبناء DOM آمن
-                alertDiv.innerHTML = '';
-
-                const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
-                const iconElement = document.createElement('i');
-                iconElement.className = `bi ${icon} me-2`;
-                alertDiv.appendChild(iconElement);
-
-                const textNode = document.createTextNode(message);
-                alertDiv.appendChild(textNode);
-
-                const closeBtn = document.createElement('button');
-                closeBtn.type = 'button';
-                closeBtn.className = 'btn-close';
-                closeBtn.setAttribute('data-bs-dismiss', 'alert');
-                closeBtn.setAttribute('aria-label', 'Close');
-                alertDiv.appendChild(closeBtn);
-
-                setTimeout(() => alertDiv.style.display = 'none', CONFIG.toastDuration);
-            } else {
-                // fall-back for older browsers without toast support
-                alert(message);
-            }
-        }
-    }
-
-    /**
-     * عرض رسالة مضمنة في عنصر محدد
-     * @param {string} targetId - معرف العنصر
-     * @param {string} message - نص الرسالة
-     * @param {string} type - نوع الرسالة (success, error)
-     */
-    function showInlineMessage(targetId, message, type = 'error') {
-        const el = document.getElementById(targetId);
-        if (!el) return;
-        const cls = type === 'success' ? 'alert alert-success' : 'alert alert-danger';
-        el.className = cls;
-
-        // ✅ مسح المحتوى القديم وإضافة النص بشكل آمن
-        el.innerHTML = '';
-        const textNode = document.createTextNode(message);
-        el.appendChild(textNode);
-
-        el.style.display = 'block';
-        setTimeout(() => { el.style.display = 'none'; }, CONFIG.toastDuration);
-    }
-
-    /**
-     * تحديث اسم السائق في الجدول دون إعادة تحميل الصفحة
-     */
-    function updateDriverName(orderId, driverName) {
-        const row = document.querySelector(`#order-${orderId}`);
-        if (row) {
-            const driverCell = row.querySelector('.driver-name');
-            if (driverCell) {
-                driverCell.textContent = driverName;
-            }
-        }
-    }
-
-    /**
-     * معالجة استجابة AJAX
-     */
-    async function handleAjaxResponse(response, onSuccess, onError) {
-        try {
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                if (onSuccess) onSuccess(data);
-                showMessage(data.message || 'تمت العملية بنجاح', 'success');
-            } else {
-                const errorMsg = data.message || data.error || 'حدث خطأ أثناء العملية';
-                if (onError) onError(data);
-                showMessage(errorMsg, 'error');
-            }
-        } catch (error) {
-            console.error('Error parsing response:', error);
-            showMessage('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.', 'error');
-            if (onError) onError({ message: 'حدث خطأ غير متوقع' });
-        }
-    }
-
-    /**
-     * تعطيل أو تمكين الزر
-     */
-    function setButtonState(button, disabled, text = null) {
-        if (!button) return;
-        button.disabled = disabled;
-        if (text !== null) {
-            button.innerHTML = text;
-        }
-    }
-
-    /**
-     * الحصول على نص الزر أثناء التحميل مع Spinner
-     * @param {string} text - النص المعروض
-     * @returns {string} - HTML آمن (نص ثابت فقط)
-     */
-    function getLoadingText(text = 'جاري التنفيذ...') {
-        // ✅ آمن لأن النص ثابت وليس من إدخال المستخدم أو API
-        return `<span class="spinner-border spinner-border-sm me-2"></span> ${text}`;
-    }
-
-
-    // ============================================================
-    // 3. ASSIGN DRIVER - تعيين سائق (باستخدام form)
-    // ============================================================
-
-    document.querySelectorAll('form[data-ajax-assign="true"]').forEach(form => {
-        form.addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn?.innerHTML || 'تعيين';
-            if (submitBtn) {
-                setButtonState(submitBtn, true, getLoadingText('جاري التعيين...'));
-            }
-
-            try {
-                const orderId = this.querySelector('input[name="id"]')?.value;
-                const url = this.action || `/Orders/AssignDriver/${orderId}`;
-                const token = getRequestVerificationToken();
-
-                const formData = new FormData(this);
-                const json = {};
-                formData.forEach((value, key) => {
-                    if (key !== '__RequestVerificationToken') {
-                        json[key] = value;
+            // التحقق من صحة الكمية عند الخروج من الحقل
+            quantityInput.addEventListener('blur', function () {
+                const value = parseFloat(this.value);
+                if (isNaN(value) || value <= 0) {
+                    this.classList.add('is-invalid');
+                    const feedback = this.nextElementSibling;
+                    if (feedback && feedback.classList.contains('text-danger')) {
+                        feedback.textContent = 'الكمية يجب أن تكون أكبر من صفر';
                     }
-                });
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'RequestVerificationToken': token || ''
-                    },
-                    body: JSON.stringify(json)
-                });
-
-                await handleAjaxResponse(
-                    response,
-                    (data) => {
-                        const driverSelect = this.querySelector('select[name="DriverId"]');
-                        const selectedOption = driverSelect?.options[driverSelect.selectedIndex];
-                        if (selectedOption && orderId) {
-                            updateDriverName(orderId, selectedOption.text);
-                        }
-
-                        if (driverSelect) driverSelect.value = '';
-                        const truckPlateInput = this.querySelector('input[name="TruckPlate"]');
-                        if (truckPlateInput) truckPlateInput.value = '';
-
-                        const modal = this.closest('.modal');
-                        if (modal) {
-                            const bootstrapModal = bootstrap.Modal.getInstance(modal);
-                            if (bootstrapModal) bootstrapModal.hide();
-                        }
-
-                        setTimeout(() => location.reload(), CONFIG.reloadDelay);
-                    },
-                    (error) => {
-                        const message = error.message || 'فشل تعيين السائق';
-                        showInlineMessage('assignMessage', message, 'error');
-                        showMessage(message, 'error');
-                    }
-                );
-
-            } catch (error) {
-                console.error('Error in AssignDriver:', error);
-                showMessage('حدث خطأ أثناء الاتصال بالخادم', 'error');
-            } finally {
-                if (submitBtn) {
-                    setButtonState(submitBtn, false, originalText);
-                }
-            }
-        });
-    });
-
-
-    // ============================================================
-    // 5. ACTION BUTTONS - أزرار الإجراءات (data-action)
-    // ============================================================
-
-    const actionButtons = document.querySelectorAll('[data-action]');
-
-    actionButtons.forEach(button => {
-        button.addEventListener('click', async function (e) {
-            e.preventDefault();
-
-            const action = this.dataset.action;
-            const orderId = this.dataset.orderId;
-            const token = getRequestVerificationToken();
-
-            const confirmMessages = {
-                approve: 'هل أنت متأكد من موافقة العميل على هذا الطلب؟',
-                reject: 'هل أنت متأكد من رفض هذا الطلب؟',
-                cancel: '⚠️ هل أنت متأكد من إلغاء هذا الطلب؟',
-                'start-delivery': 'هل أنت متأكد من بدء التوصيل؟',
-                deliver: 'هل أنت متأكد من تسليم الطلب؟',
-                close: 'هل أنت متأكد من إغلاق هذا الطلب؟'
-            };
-
-            if (confirmMessages[action] && !confirm(confirmMessages[action])) {
-                return;
-            }
-
-            if (action === 'reject') {
-                const reason = prompt('يرجى كتابة سبب الرفض (اختياري):');
-                if (reason === null) return;
-                if (!(reason && reason.trim())) return;
-                this.dataset.reason = reason.trim();
-            }
-
-            const originalText = this.innerHTML;
-            setButtonState(this, true, getLoadingText('جاري التنفيذ...'));
-
-            try {
-                const actionMap = {
-                    approve: `/OrderWorkflow/Approve/${orderId}`,
-                    reject: `/OrderWorkflow/Reject/${orderId}`,
-                    cancel: `/OrderWorkflow/Cancel/${orderId}`,
-                    'start-delivery': `/OrderWorkflow/StartDelivery/${orderId}`,
-                    deliver: `/OrderWorkflow/Deliver/${orderId}`,
-                    close: `/OrderWorkflow/Close/${orderId}`
-                };
-
-                const url = actionMap[action];
-                if (!url) {
-                    showMessage(`إجراء غير معروف: ${action}`, 'error');
-                    return;
-                }
-
-                const body = action === 'reject'
-                    ? JSON.stringify({ reason: this.dataset.reason || '' })
-                    : undefined;
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'RequestVerificationToken': token || ''
-                    },
-                    ...(body && { body })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    const successMsg = CONFIG.statusMessages[action] || '✅ تمت العملية بنجاح';
-                    showMessage(successMsg, 'success');
-                    setTimeout(() => location.reload(), CONFIG.reloadDelay);
                 } else {
-                    showMessage(`❌ ${result.message || 'فشلت العملية'}`, 'error');
+                    this.classList.remove('is-invalid');
                 }
-            } catch (error) {
-                console.error(`Error in ${action}:`, error);
-                showMessage('❌ حدث خطأ أثناء الاتصال بالخادم', 'error');
-            } finally {
-                setButtonState(this, false, originalText);
-            }
-        });
-    });
+            });
+        }
 
-
-    // ============================================================
-    // 6. DELETE ORDER - حذف الطلب مع تأكيد (form)
-    // ============================================================
-
-    document.querySelectorAll('form[data-ajax-delete="true"]').forEach(form => {
-        form.addEventListener('submit', function (e) {
-            if (!confirm('⚠️ هل أنت متأكد من حذف هذا الطلب؟\nلا يمكن التراجع عن هذا الإجراء.')) {
-                e.preventDefault();
-                return;
-            }
-
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                const originalText = submitBtn.innerHTML;
-                setButtonState(submitBtn, true, getLoadingText('جاري الحذف...'));
-            }
-        });
-    });
-
+        // إدارة حالة زر الإرسال لمنع التكرار وإظهار مؤشر التحميل
+        if (editOrderForm && submitBtn) {
+            editOrderForm.addEventListener('submit', function () {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    جاري الحفظ...
+                `;
+            });
+        }
+    }
 
     // ============================================================
-    // 7. SAVE PRICE - حفظ السعر (في صفحة التفاصيل)
+    // AJAX Price Saving in Details View
     // ============================================================
-
     const savePriceBtn = document.getElementById('savePriceBtn');
     if (savePriceBtn) {
-        savePriceBtn.addEventListener('click', async function () {
-            const orderId = this.dataset.orderId;
-            const unitPriceInput = document.getElementById('unitPriceInput');
-            const unitPrice = unitPriceInput?.value;
-            const messageDiv = document.getElementById('priceMessage');
+        const orderId = savePriceBtn.dataset.orderId;
+        const unitPriceInput = document.getElementById('unitPriceInput');
+        const priceMessage = document.getElementById('priceMessage');
 
-            // ✅ عرض رسالة خطأ بشكل آمن
-            if (!unitPrice || parseFloat(unitPrice) <= 0) {
-                if (messageDiv) {
-                    messageDiv.innerHTML = '';
-                    const span = document.createElement('span');
-                    span.className = 'text-danger';
-                    const textNode = document.createTextNode('⚠️ يرجى إدخال سعر صحيح (أكبر من صفر)');
-                    span.appendChild(textNode);
-                    messageDiv.appendChild(span);
-                }
+        savePriceBtn.addEventListener('click', async function () {
+            const unitPrice = parseFloat(unitPriceInput.value);
+
+            if (isNaN(unitPrice) || unitPrice <= 0) {
+                displayMessage(priceMessage, 'danger', 'يرجى إدخال سعر صحيح أكبر من صفر.');
                 return;
             }
 
-            const token = getRequestVerificationToken();
-            const originalText = this.innerHTML;
-            setButtonState(this, true, getLoadingText('جاري الحفظ...'));
+            this.disabled = true;
+            this.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> جاري الحفظ...`;
+            priceMessage.innerHTML = ''; // Clear previous messages
 
             try {
                 const response = await fetch(`/OrderWorkflow/SavePrice/${orderId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'RequestVerificationToken': token || ''
+                        'RequestVerificationToken': getCsrfToken() // Assuming a global function for CSRF token
                     },
-                    body: JSON.stringify({ unitPrice: parseFloat(unitPrice) })
+                    body: JSON.stringify({ unitPrice: unitPrice })
                 });
 
-                const result = await response.json();
+                const data = await response.json();
 
-                if (result.success) {
-                    showMessage('✅ تم حفظ السعر بنجاح', 'success');
-                    setTimeout(() => location.reload(), CONFIG.reloadDelay);
+                if (data.success) {
+                    displayMessage(priceMessage, 'success', data.message);
                 } else {
-                    if (messageDiv) {
-                        messageDiv.innerHTML = '';
-                        const span = document.createElement('span');
-                        span.className = 'text-danger';
-                        const textNode = document.createTextNode(`❌ ${result.message || 'فشل حفظ السعر'}`);
-                        span.appendChild(textNode);
-                        messageDiv.appendChild(span);
-                    }
+                    displayMessage(priceMessage, 'danger', data.message);
                 }
             } catch (error) {
-                console.error('SavePrice error:', error);
-                if (messageDiv) {
-                    messageDiv.innerHTML = '';
-                    const span = document.createElement('span');
-                    span.className = 'text-danger';
-                    const textNode = document.createTextNode('❌ حدث خطأ أثناء الاتصال بالخادم');
-                    span.appendChild(textNode);
-                    messageDiv.appendChild(span);
-                }
+                console.error('Error saving price:', error);
+                displayMessage(priceMessage, 'danger', 'حدث خطأ أثناء حفظ السعر.');
             } finally {
-                setButtonState(this, false, originalText);
+                this.disabled = false;
+                this.innerHTML = `<i class="bi bi-save"></i> حفظ السعر`;
             }
         });
     }
 
-
     // ============================================================
-    // 8. FALLBACK - تعطيل الأزرار عند إرسال أي نموذج عادي
+    // AJAX Quick Quote & Approve in Details View
     // ============================================================
+    const quickQuoteAndApproveBtn = document.getElementById('quickQuoteAndApproveBtn');
+    if (quickQuoteAndApproveBtn) {
+        quickQuoteAndApproveBtn.addEventListener('click', async function () {
+            const priceInput = document.getElementById('quickQuotePriceInput');
+            const unitPrice = parseFloat(priceInput?.value || '0');
 
-    document.querySelectorAll('form').forEach(form => {
-        const isAjaxForm = form.dataset.ajaxAssign === 'true' ||
-            form.dataset.ajaxStatus === 'true' ||
-            form.dataset.ajaxDelete === 'true';
+            if (isNaN(unitPrice) || unitPrice <= 0) {
+                alert('يرجى إدخال سعر صحيح للمتر أكبر من صفر.');
+                if (priceInput) priceInput.focus();
+                return;
+            }
 
-        if (isAjaxForm) return;
+            this.disabled = true;
+            this.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> جاري الاعتماد...`;
 
-        form.addEventListener('submit', function () {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn && !submitBtn.disabled) {
-                const originalText = submitBtn.innerHTML;
-                setButtonState(submitBtn, true, getLoadingText('جاري الإرسال...'));
-                setTimeout(() => {
-                    if (submitBtn.disabled) {
-                        setButtonState(submitBtn, false, originalText);
-                    }
-                }, 3000);
+            try {
+                const orderId = this.dataset.orderId;
+                const response = await fetch(`/OrderWorkflow/QuickQuoteAndApprove/${orderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ unitPrice: unitPrice })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'فشلت عملية الاعتماد.');
+                    this.disabled = false;
+                    this.innerHTML = `<i class="bi bi-check2-all fs-5"></i> تسعير واعتماد فوري`;
+                }
+            } catch (error) {
+                console.error('Error in QuickQuoteAndApprove:', error);
+                alert('حدث خطأ في الاتصال بالخادم.');
+                this.disabled = false;
+                this.innerHTML = `<i class="bi bi-check2-all fs-5"></i> تسعير واعتماد فوري`;
             }
         });
-    });
-
+    }
 
     // ============================================================
-    // 9. KEYBOARD SHORTCUTS - اختصارات لوحة المفاتيح
+    // AJAX Add Payment in Details View
     // ============================================================
+    const addPaymentModal = document.getElementById('addPaymentModal');
+    if (addPaymentModal) {
+        const savePaymentBtn = addPaymentModal.querySelector('#savePaymentBtn');
+        const paymentForm = addPaymentModal.querySelector('#addPaymentForm');
+        const orderId = paymentForm.querySelector('input[name="OrderId"]').value;
+        const paymentMethodSelect = paymentForm.querySelector('#paymentMethod');
+        const referenceNoInput = paymentForm.querySelector('#referenceNo');
+        const referenceNoContainer = referenceNoInput.closest('.mb-3');
 
-    document.addEventListener('keydown', function (e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            const saveBtn = document.getElementById('savePriceBtn');
-            if (saveBtn && document.activeElement?.id === 'unitPriceInput') {
-                e.preventDefault();
-                saveBtn.click();
+        // Toggle Reference Number based on Payment Method (Hawala = 2)
+        function toggleReferenceField() {
+            const hawalaValue = '2';
+            if (paymentMethodSelect.value === hawalaValue) {
+                referenceNoContainer.style.display = 'block';
+                referenceNoInput.required = true;
+            } else {
+                referenceNoContainer.style.display = 'none';
+                referenceNoInput.required = false;
+                referenceNoInput.value = '';
             }
         }
+
+        paymentMethodSelect.addEventListener('change', toggleReferenceField);
+        toggleReferenceField(); // Initial check
+
+        savePaymentBtn.addEventListener('click', async function () {
+            if (!paymentForm.checkValidity()) {
+                paymentForm.classList.add('was-validated');
+                return;
+            }
+
+            const formData = new FormData(paymentForm);
+            const paymentData = Object.fromEntries(formData.entries());
+
+            // Convert Amount to number
+            paymentData.Amount = parseFloat(paymentData.Amount);
+            // Convert PaymentMethod to number (enum value)
+            paymentData.PaymentMethod = parseInt(paymentData.PaymentMethod);
+
+            this.disabled = true;
+            this.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> جاري التسجيل...`;
+
+            try {
+                const response = await fetch(`/OrderWorkflow/AddPayment/${orderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(paymentData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayToast('success', data.message || 'تم تسجيل الدفعة بنجاح.');
+                    // Reload page to reflect changes, or update financial summary dynamically
+                    location.reload();
+                } else {
+                    displayToast('error', data.message || 'فشل تسجيل الدفعة.');
+                }
+            } catch (error) {
+                console.error('Error adding payment:', error);
+                displayToast('error', 'حدث خطأ أثناء تسجيل الدفعة.');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = `تسجيل الدفعة`;
+                // Close modal on success or error
+                const modal = bootstrap.Modal.getInstance(addPaymentModal);
+                if (modal) modal.hide();
+            }
+        });
+    }
+
+    // Helper function to get CSRF token (supports multiple tabs and dynamic elements)
+    function getCsrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.content) return meta.content;
+        const input = document.querySelector('input[name="__RequestVerificationToken"]');
+        return input ? input.value : '';
+    }
+
+    // Helper function to display messages (for price saving)
+    function displayMessage(element, type, message) {
+        element.textContent = message;
+        element.className = ''; // Clear existing classes
+        element.classList.add('ms-3', `text-${type}`);
+    }
+
+    // Helper function to display toasts (for payments, requires site.js toast setup)
+    function displayToast(type, message) {
+        // Assuming a global toast function exists in site.js or similar
+        // Example: showToast(type, message);
+        // For now, let's just log it if no toast system is integrated
+        if (typeof showToast === 'function') {
+            showToast(type, message);
+        } else {
+            alert(message);
+        }
+    }
+
+    // ============================================================
+    // PRINT Payment Receipt
+    // ============================================================
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('button[data-print-receipt]');
+        if (!btn) return;
+
+        const orderId = btn.dataset.printReceiptOrderId;
+        const paymentId = btn.dataset.printReceiptPaymentId;
+        if (!orderId || !paymentId) return;
+
+        const receiptUrl = `/OrderWorkflow/PrintPaymentReceipt?orderId=${encodeURIComponent(orderId)}&paymentId=${encodeURIComponent(paymentId)}`;
+        const printWindow = window.open(receiptUrl, '_blank');
+        if (!printWindow) {
+            displayToast('error', 'تعذر فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع ثم أعد المحاولة.');
+            return;
+        }
+        printWindow.opener = null;
     });
-
 });
-
-/**
- * تطبيق الفلاتر وإعادة تحميل الصفحة
- */
-function applyFilters() {
-    const status = document.getElementById('statusFilter')?.value || '';
-    const factory = document.getElementById('factoryFilter')?.value || '';
-
-    const statusInput = document.getElementById('statusInput');
-    const factoryInput = document.getElementById('factoryInput');
-
-    if (statusInput) statusInput.value = status;
-    if (factoryInput) factoryInput.value = factory;
-
-    const searchForm = document.getElementById('searchForm');
-    if (searchForm) searchForm.submit();
-}
-
-// ==============================
-// CSP-safe filter event listeners
-// (replaces inline onchange="applyFilters()")
-// ==============================
-document.getElementById('statusFilter')?.addEventListener('change', applyFilters);
-document.getElementById('factoryFilter')?.addEventListener('change', applyFilters);

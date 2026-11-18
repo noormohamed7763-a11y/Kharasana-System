@@ -1,6 +1,7 @@
+using Asp.Versioning;
+using Kharasana.Application.Common;
 using Kharasana.API.Common;
 using Kharasana.API.Extensions;
-using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Factory;
 using Kharasana.Application.Interfaces.Services;
@@ -14,6 +15,8 @@ namespace Kharasana.API.Controllers;
 /// إدارة المصانع: قائمة وتفاصيل، إنشاء وتعديل، أرشفة واستعادة، وإدارة شعار كل مصنع.
 /// </summary>
 [ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Route("api/[controller]")]
 [Authorize]
 public class FactoriesController : ControllerBase
@@ -175,6 +178,7 @@ public class FactoriesController : ControllerBase
     /// <response code="403">الحساب لا يملك صلاحية المدير.</response>
     [HttpPost]
     [Authorize(Roles = Roles.Admin)]
+    [ServiceFilter(typeof(ValidationFilter<CreateFactoryDto>))]
     public async Task<IActionResult> Create([FromBody] CreateFactoryDto dto)
     {
         var factory = await _factoryService.CreateAsync(dto);
@@ -200,6 +204,7 @@ public class FactoriesController : ControllerBase
     /// <response code="404">المصنع غير موجود.</response>
     [HttpPut("{id:int}")]
     [Authorize(Roles = Roles.Admin)]
+    [ServiceFilter(typeof(ValidationFilter<UpdateFactoryDto>))]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateFactoryDto dto)
     {
         await _factoryService.UpdateAsync(id, dto);

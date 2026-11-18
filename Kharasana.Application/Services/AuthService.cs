@@ -1,4 +1,4 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Auth;
 using Kharasana.Application.Interfaces;
@@ -6,6 +6,7 @@ using Kharasana.Application.Interfaces.Services;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
+using Kharasana.Domain.Validation;
 
 namespace Kharasana.Application.Services;
 
@@ -34,13 +35,15 @@ public class AuthService : IAuthService
         if (request.Password != request.ConfirmPassword)
             throw new BusinessException(Messages.PasswordsNotMatch);
 
-        // ✅ التحقق من وجود البريد الإلكتروني قبل الاستخدام
-        if (!string.IsNullOrWhiteSpace(request.Email))
-        {
-            var emailExists = await _unitOfWork.Users.EmailExistsAsync(request.Email);
-            if (emailExists)
-                throw new ConflictException(Messages.EmailAlreadyExists);
-        }
+        // ✅ دفاع في العمق ومصدر واحد للحد الأدنى: كان الحارس الوحيد هنا سمة
+        //    [MinLength(6)] على الـ DTO — أضعف من بقية المسارات (8) ويسقط إن
+        //    استُدعيت الخدمة من مسار لا يمرّ على ModelState.
+        if (string.IsNullOrEmpty(request.Password) || request.Password.Length < PasswordPolicy.MinimumLength)
+            throw new BusinessException(Messages.PasswordMinLength);
+
+        // ✅ تطبيع البريد وفحص تفرّده في خطوة واحدة: كان البريد يُخزَّن كما وصل
+        //    بينما الدخول يقصّ المسافات، فيُحفظ " ali@x.com" ويستحيل الدخول به.
+        var normalizedEmail = await EmailValidationHelper.EnsureUniqueAsync(_unitOfWork, request.Email);
 
         var normalizedPhone = await PhoneValidationHelper.NormalizeAndEnsureUniqueAsync(
             _unitOfWork, request.Phone);
@@ -49,7 +52,7 @@ public class AuthService : IAuthService
         var user = new User
         {
             FullName = request.FullName,
-            Email = request.Email,  // ✅ يمكن أن يكون null
+            Email = normalizedEmail,  // ✅ يمكن أن يكون null
             PasswordHash = _passwordHasher.Hash(request.Password),
             Phone = normalizedPhone,
             WhatsApp = normalizedWhatsApp,
@@ -94,8 +97,35 @@ public class AuthService : IAuthService
             user = await _unitOfWork.Users.GetByPhoneAsync(normalizedPhone);
         }
 
+        // ✅ معادلة زمن الردّ: بدل الردّ الفوري عند غياب المستخدم نُنفّذ عملية تجزئة
+        //    كاملة ثم نرمي نفس الخطأ. بدونها يكلّف مسار «لا يوجد مستخدم» أجزاءً من
+        //    المللي ثانية بينما «المستخدم موجود وكلمة المرور خاطئة» يكلّف عملية BCrypt
+        //    كاملة — فيُستدلّ على وجود الحساب من الزمن مهما تطابقت نصوص الرسائل.
         if (user == null)
+        {
+            _passwordHasher.VerifyDummy(request.Password);
             throw new BusinessException(Messages.InvalidCredentials);
+        }
+
+        // ✅ حالة القفل تُحسب مرة واحدة: تُستخدم لعدم مدّ القفل عند محاولة فاشلة على
+        //    حساب مقفل أصلاً، ولإرجاع رسالة القفل بعد إثبات كلمة المرور.
+        var isLockedOut = user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow;
+
+        // ✅ التحقق من كلمة المرور **قبل** أي فحص لحالة الحساب. كانت الفحوص أدناه
+        //    (نشاط الحساب، أرشفة المصنع، القفل) تُنفَّذ أولاً، فيكشف نصّ الردّ لمن لا
+        //    يعرف كلمة المرور: هل هذا الحساب موجود؟ هل هو سائق موقوف؟ هل مصنعه مؤرشف؟
+        //    الآن لا يُكشف السبب إلا لمن أثبت معرفته بكلمة المرور — وهو من يحتاج
+        //    الرسالة فعلاً (السائق الموقوف يُخبَر أن يراجع موظف المصنع).
+        var validPassword = _passwordHasher.Verify(request.Password, user.PasswordHash);
+        if (!validPassword)
+        {
+            // ✅ حساب مقفل أصلاً: لا نُسجّل المحاولة فلا يُمَدّ قفله بمحاولة فاشلة
+            //    إضافية — يحافظ هذا على السلوك السابق الذي كان يرجع قبل تسجيل المحاولة
+            if (!isLockedOut)
+                await RecordFailedAttemptAsync(user);
+
+            throw new BusinessException(Messages.InvalidCredentials);
+        }
 
         if (!user.IsActive)
         {
@@ -131,21 +161,21 @@ public class AuthService : IAuthService
             }
         }
 
-        // ✅ الحماية من التخمين العنيف: التحقق من قفل الحساب قبل التحقق من كلمة المرور
-        if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow)
+        // ✅ الحماية من التخمين العنيف: قفل الحساب. يُفحص بعد إثبات كلمة المرور فلا
+        //    يكشف وجود الحساب لغيره — ومن نسي كلمة مروره يرى رسالة الاعتماد لا القفل.
+        if (isLockedOut)
             throw new BusinessException(Messages.AccountLocked);
 
-        var validPassword = _passwordHasher.Verify(request.Password, user.PasswordHash);
-        if (!validPassword)
-        {
-            await RecordFailedAttemptAsync(user);
-            throw new BusinessException(Messages.InvalidCredentials);
-        }
-
-        // ✅ نجاح تسجيل الدخول: تصفير عدّاد المحاولات وإلغاء القفل
+        // ✅ نجاح تسجيل الدخول: تصفير عدّاد المحاولات وإلغاء القفل وتوليد Refresh Token
         user.FailedLoginAttempts = 0;
         user.LockoutEnd = null;
         user.LastLoginAt = DateTime.UtcNow;
+
+        var refreshToken = _tokenService.GenerateRefreshToken();
+        var refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = refreshTokenExpiry;
+
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync();
 
@@ -159,6 +189,8 @@ public class AuthService : IAuthService
             FactoryId = user.FactoryId,
             Token = tokenResult.Token,
             Expiration = tokenResult.Expiration,
+            RefreshToken = refreshToken,
+            RefreshTokenExpiration = refreshTokenExpiry,
             Notification = notification,
             FactoryIsActive = factoryIsActive
         };
@@ -173,7 +205,12 @@ public class AuthService : IAuthService
 
     private async Task RecordFailedAttemptAsync(User user)
     {
-        user.FailedLoginAttempts++;
+        // ✅ انتهى قفل سابق ⇒ يُبدأ العدّ من جديد. بدون ذلك يبقى العدّاد على MaxFailedAttempts
+        //    بعد انتهاء المدة، فأول محاولة فاشلة لاحقة تُعيد القفل فورًا — أي قفل دائم فعليًا
+        //    لمستخدم أخطأ مرة واحدة بعد انقضاء مدة عقوبته.
+        var previousLockoutExpired = user.LockoutEnd.HasValue && user.LockoutEnd <= DateTime.UtcNow;
+
+        user.FailedLoginAttempts = previousLockoutExpired ? 1 : user.FailedLoginAttempts + 1;
 
         // ✅ قفل الحساب عند بلوغ الحد الأقصى للمحاولات الفاشلة
         if (user.FailedLoginAttempts >= MaxFailedAttempts)
@@ -183,5 +220,140 @@ public class AuthService : IAuthService
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task<ApiResponse<object>> ActivateAccountAsync(string tokenHash, string newPassword)
+    {
+        if (string.IsNullOrEmpty(newPassword) || newPassword.Length < PasswordPolicy.MinimumLength)
+            throw new BusinessException(Messages.PasswordMinLength);
+
+        var token = await _unitOfWork.ActivationTokens.GetByHashAsync(tokenHash);
+        if (token == null)
+            throw new BusinessException(Messages.ActivationTokenInvalid);
+
+        if (token.UsedAt.HasValue)
+            throw new BusinessException(Messages.ActivationTokenAlreadyUsed);
+
+        if (token.ExpiryDate < DateTime.UtcNow)
+            throw new BusinessException(Messages.ActivationTokenExpired);
+
+        if (token.RevokedAt.HasValue)
+            throw new BusinessException(Messages.ActivationTokenInvalid);
+
+        var user = await _unitOfWork.Users.GetByIdAsync(token.UserId);
+        if (user == null)
+            throw new BusinessException(Messages.UserNotFound);
+
+        user.IsActive = true;
+        user.PasswordHash = _passwordHasher.Hash(newPassword);
+        token.UsedAt = DateTime.UtcNow;
+
+        _unitOfWork.Users.Update(user);
+        _unitOfWork.ActivationTokens.Update(token);
+        await _unitOfWork.SaveChangesAsync();
+
+        return new ApiResponse<object>
+        {
+            Success = true,
+            Message = Messages.RegisterSuccess // Or a more specific activation message if needed
+        };
+    }
+
+    public async Task<ApiResponse<LoginResponseDto>> RefreshTokenAsync(string refreshToken)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            throw new BusinessException(Messages.InvalidOrExpiredRefreshToken);
+
+        var user = await _unitOfWork.Users.GetByRefreshTokenAsync(refreshToken);
+        if (user == null ||
+            user.RefreshTokenExpiryTime == null ||
+            user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+        {
+            throw new BusinessException(Messages.InvalidOrExpiredRefreshToken);
+        }
+
+        if (!user.IsActive)
+        {
+            if (user.Role == UserRole.Driver)
+                throw new BusinessException(Messages.DriverDeactivated);
+
+            throw new BusinessException(Messages.UserInactive);
+        }
+
+        string? notification = null;
+        bool? factoryIsActive = null;
+
+        if (user.FactoryId.HasValue &&
+            (user.Role == UserRole.FactoryEmployee || user.Role == UserRole.Driver))
+        {
+            var factory = await _unitOfWork.Factories.GetByIdIncludingDeletedAsync(user.FactoryId.Value);
+            if (factory != null)
+            {
+                if (factory.IsDeleted)
+                {
+                    throw new BusinessException(Messages.FactoryArchived);
+                }
+
+                factoryIsActive = factory.IsActive;
+                if (!factory.IsActive)
+                {
+                    notification = Messages.FactoryInactiveLogin;
+                }
+            }
+        }
+
+        // تدوير التوكن: إصدار JWT جديد وإصدار Refresh Token جديد وتمديد المدة
+        var tokenResult = _tokenService.GenerateToken(user);
+        var newRefreshToken = _tokenService.GenerateRefreshToken();
+        var newRefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+
+        user.RefreshToken = newRefreshToken;
+        user.RefreshTokenExpiryTime = newRefreshTokenExpiry;
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+
+        var response = new LoginResponseDto
+        {
+            UserId = user.UserId,
+            FullName = user.FullName,
+            Email = user.Email ?? string.Empty,
+            Role = user.Role.ToString(),
+            FactoryId = user.FactoryId,
+            Token = tokenResult.Token,
+            Expiration = tokenResult.Expiration,
+            RefreshToken = newRefreshToken,
+            RefreshTokenExpiration = newRefreshTokenExpiry,
+            Notification = notification,
+            FactoryIsActive = factoryIsActive
+        };
+
+        return new ApiResponse<LoginResponseDto>
+        {
+            Success = true,
+            Message = Messages.TokenRefreshedSuccessfully,
+            Data = response
+        };
+    }
+
+    public async Task<ApiResponse<object>> RevokeTokenAsync(string refreshToken)
+    {
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+        {
+            var user = await _unitOfWork.Users.GetByRefreshTokenAsync(refreshToken);
+            if (user != null)
+            {
+                user.RefreshToken = null;
+                user.RefreshTokenExpiryTime = null;
+                _unitOfWork.Users.Update(user);
+                await _unitOfWork.SaveChangesAsync();
+            }
+        }
+
+        return new ApiResponse<object>
+        {
+            Success = true,
+            Message = Messages.TokenRevokedSuccessfully
+        };
     }
 }

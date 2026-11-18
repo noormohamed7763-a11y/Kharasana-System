@@ -1,8 +1,9 @@
-﻿using Kharasana.Application.Common;
+using Kharasana.Application.Common;
 using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Factory;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Application.Mapping;
 using Kharasana.Domain.Entities;
 
 namespace Kharasana.Application.Services;
@@ -105,7 +106,10 @@ public class FactoryService : IFactoryService
         factory.Latitude = dto.Latitude;
         factory.Longitude = dto.Longitude;
         // ⚠️ لا نعدل factory.Logo هنا إطلاقاً — إدارة الشعار أصبحت مسؤولية UploadLogoAsync/DeleteLogoAsync فقط
-        factory.IsActive = dto.IsActive;
+        // IsActive قابل للقيم الفارغة: يُعدَّل فقط حين يُرسَل صراحةً، وإلا تبقى
+        // الحالة الحالية — جسمًا بلا isActive كان يُوقف المصنع صامتًا (فخ عقد الـAPI).
+        if (dto.IsActive.HasValue)
+            factory.IsActive = dto.IsActive.Value;
         factory.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Factories.Update(factory);
@@ -120,19 +124,23 @@ public class FactoryService : IFactoryService
         if (factory == null || factory.IsDeleted)
             throw new NotFoundException(Messages.FactoryNotFound);
 
-        // ✅ حذف ملف الشعار (إن وجد) قبل أرشفة المصنع، لتجنب بقاء ملفات يتيمة داخل wwwroot
-        if (!string.IsNullOrWhiteSpace(factory.Logo))
-        {
-            _imageStorageService.DeleteImage(factory.Logo);
-            factory.Logo = null;
-        }
+        // ✅ الترتيب مقصود: نُفرغ حقل الشعار ونؤرشف ونثبّت، ثم نحذف الملف آخر خطوة.
+        //    حذف الملف قبل التثبيت كان يعني أن أي فشل في SaveChanges يُتلف الشعار على
+        //    القرص بينما قاعدة البيانات لم تُؤرشف المصنع بعد ولا تزال تشير إلى الملف.
+        var logoPath = factory.Logo;
 
+        factory.Logo = null;
         factory.IsDeleted = true;
         factory.IsActive = false;
         factory.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Factories.Update(factory);
         await _unitOfWork.SaveChangesAsync();
+
+        if (!string.IsNullOrWhiteSpace(logoPath))
+        {
+            _imageStorageService.DeleteImage(logoPath);
+        }
 
         return true;
     }
@@ -154,18 +162,17 @@ public class FactoryService : IFactoryService
         return true;
     }
 
-    // ✅ جديد: رفع/استبدال شعار المصنع
     public async Task<string> UploadLogoAsync(int id, Stream fileStream, string originalFileName, long fileLength)
     {
         var factory = await _unitOfWork.Factories.GetByIdAsync(id);
         if (factory == null || factory.IsDeleted)
             throw new NotFoundException(Messages.FactoryNotFound);
 
-        // إن وجدت صورة قديمة، احذفها أولاً حتى لا تتراكم ملفات يتيمة
-        if (!string.IsNullOrWhiteSpace(factory.Logo))
-        {
-            _imageStorageService.DeleteImage(factory.Logo);
-        }
+        // ✅ الترتيب مقصود: نحفظ الجديد أولاً لأن SaveImageAsync هي التي تتحقق من الامتداد
+        //    والحجم وبصمة المحتوى، وترمي BusinessException عند الرفض. حذف القديم قبلها كان
+        //    يعني أن رفع ملف مرفوض (‎.pdf‎ أو أكبر من 5 ميجابايت) يمحو الشعار القائم من
+        //    القرص بينما قاعدة البيانات ما زالت تشير إليه — صورة مكسورة بلا رجعة.
+        var oldLogoPath = factory.Logo;
 
         var newLogoPath = await _imageStorageService.SaveImageAsync(fileStream, originalFileName, fileLength, "Factories");
 
@@ -173,12 +180,29 @@ public class FactoryService : IFactoryService
         factory.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Factories.Update(factory);
-        await _unitOfWork.SaveChangesAsync();
+
+        try
+        {
+            await _unitOfWork.SaveChangesAsync();
+        }
+        catch
+        {
+            // فشل التثبيت: لا نُبقي على القرص ملفاً لا تشير إليه قاعدة البيانات.
+            _imageStorageService.DeleteImage(newLogoPath);
+            throw;
+        }
+
+        // ✅ الحذف آخر خطوة: لا يُحذف ملف إلا بعد نجاح التثبيت، فلو فشل حفظ الجديد بقي
+        //    القديم سليماً وما زالت قاعدة البيانات تشير إليه.
+        if (!string.IsNullOrWhiteSpace(oldLogoPath)
+            && !string.Equals(oldLogoPath, newLogoPath, StringComparison.OrdinalIgnoreCase))
+        {
+            _imageStorageService.DeleteImage(oldLogoPath);
+        }
 
         return newLogoPath;
     }
 
-    // ✅ جديد: حذف شعار المصنع
     public async Task<bool> DeleteLogoAsync(int id)
     {
         var factory = await _unitOfWork.Factories.GetByIdAsync(id);
@@ -188,13 +212,17 @@ public class FactoryService : IFactoryService
         if (string.IsNullOrWhiteSpace(factory.Logo))
             throw new BusinessException(Messages.FactoryHasNoLogoToDelete);
 
-        _imageStorageService.DeleteImage(factory.Logo);
+        // ✅ الترتيب مقصود: نُفرغ الحقل ونثبّت أولاً ثم نحذف الملف. لو حُذف الملف قبل
+        //    التثبيت وفشل التثبيت، لبقيت قاعدة البيانات تشير إلى ملف غير موجود.
+        var logoPath = factory.Logo;
 
         factory.Logo = null;
         factory.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Factories.Update(factory);
         await _unitOfWork.SaveChangesAsync();
+
+        _imageStorageService.DeleteImage(logoPath);
 
         return true;
     }
@@ -216,21 +244,8 @@ public class FactoryService : IFactoryService
             ? factoryIdsWithEmployee.Contains(factory.FactoryId)
             : await _unitOfWork.Users.FactoryHasAccountAsync(factory.FactoryId);
 
-        return new FactoryDto
-        {
-            FactoryId = factory.FactoryId,
-            FactoryName = factory.FactoryName,
-            OwnerName = factory.OwnerName,
-            Phone = factory.Phone,
-            WhatsApp = factory.WhatsApp,
-            Email = factory.Email,
-            Area = factory.Area,
-            Address = factory.Address,
-            Latitude = factory.Latitude,
-            Longitude = factory.Longitude,
-            Logo = factory.Logo,
-            IsActive = factory.IsActive,
-            HasAccount = hasAccount
-        };
+        var dto = FactoryMapper.ToDto(factory);
+        dto.HasAccount = hasAccount;
+        return dto;
     }
 }

@@ -8,18 +8,19 @@ public class CreateFactoryDtoValidator : AbstractValidator<CreateFactoryDto>
 {
     public CreateFactoryDtoValidator()
     {
-        RuleFor(x => x.FactoryName).NotEmpty().WithMessage("اسم المصنع مطلوب.").MaximumLength(200);
-        RuleFor(x => x.Area).NotEmpty().WithMessage("المنطقة مطلوبة.").MaximumLength(100);
-        RuleFor(x => x.Address).NotEmpty().WithMessage("العنوان مطلوب.").MaximumLength(300);
-        RuleFor(x => x.OwnerName).MaximumLength(200);
+        RuleFor(x => x.FactoryName).FactoryName();
+        RuleFor(x => x.Area).FactoryArea();
+        RuleFor(x => x.Address).FactoryAddress();
+        RuleFor(x => x.OwnerName).FactoryOwnerName();
 
         RuleFor(x => x.Phone).YemeniPhone();
 
         RuleFor(x => x.WhatsApp).YemeniWhatsApp();
 
+        // ✅ سقف 256 كان غائباً هنا: نصّ أطول من عمود Factories.Email كان يمرّ إلى
+        //    SQL Server فيرمي 8152 فيصير الرد 500 بدل 400. القاعدة من ValidationRules.Email.
         RuleFor(x => x.Email)
-            .EmailAddress()
-            .When(x => !string.IsNullOrWhiteSpace(x.Email))
-            .WithMessage("البريد الإلكتروني غير صالح.");
+            .Email()
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
     }
 }

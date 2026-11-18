@@ -5,7 +5,7 @@
     ViewData["Title"] = "تعديل نوع خرسانة";
 }
 
-<div class="dashboard-page">
+<div class="dashboard-page dashboard-page--narrow">
 
     @await Html.PartialAsync(
     "~/Views/Shared/Components/_PageHeader.cshtml",
@@ -16,12 +16,12 @@
             Description = $"تعديل بيانات نوع الخرسانة: {Model.Name}"
         })
 
-    <div class="form-card">
+    <div class="form-card shadow-sm">
         <form asp-action="Edit" asp-route-id="@Model.ConcreteTypeId" method="post" id="editConcreteTypeForm">
             @Html.AntiForgeryToken()
 
-            <div asp-validation-summary="All" class="alert alert-danger"></div>
-
+            @* ملخّص التحقق موضعه داخل `_EditForm` (كما في `_CreateForm` و`_FactoryForm`)،
+               فوجود نسخة ثانية هنا كان يعرض قائمة الأخطاء نفسها مرتين في النموذج. *@
             <partial name="_EditForm" model="Model" />
 
             <hr class="my-4" />

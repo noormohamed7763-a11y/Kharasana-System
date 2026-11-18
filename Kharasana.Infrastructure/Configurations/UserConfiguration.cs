@@ -1,4 +1,4 @@
-﻿using Kharasana.Domain.Entities;
+using Kharasana.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -70,10 +70,18 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         // ✅ Indexes — أعمدة الاستعلام المتكررة
         builder.HasIndex(u => u.FactoryId);
         builder.HasIndex(u => u.Role);
-        builder.HasIndex(u => new { u.Role, u.FactoryId });
+        builder.HasIndex(u => new { u.Role, u.FactoryId })
+            .HasDatabaseName("IX_Users_FactoryId_Role_Filtered")
+            .HasFilter("[IsDeleted] = 0");
 
         // ✅ حقول الحماية من التخمين السريع (brute-force)
         builder.Property(u => u.FailedLoginAttempts)
             .HasDefaultValue(0);
+
+        // ✅ حقول رمز التحديث (Refresh Token)
+        builder.Property(u => u.RefreshToken)
+            .HasMaxLength(256);
+        builder.HasIndex(u => u.RefreshToken)
+            .HasFilter("[RefreshToken] IS NOT NULL");
     }
 }

@@ -1,9 +1,10 @@
 using Kharasana.Application.Common;
 using Kharasana.Web.Services.Interfaces;
+using Kharasana.Web.ViewModels.Users;
 using Kharasana.Web.ViewModels.Drivers;
-using Kharasana.Application.DTOs.User;
 using Kharasana.Domain.Enums;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace Kharasana.Web.Services.Api;
 
@@ -15,7 +16,6 @@ public class DriverApiService : IDriverApiService
     private readonly ApiClient _apiClient;
     private readonly ILogger<DriverApiService> _logger;
 
-    // ✅ مهلة الطلب (بالثواني) — 10 ثوانٍ كافية لمعظم العمليات، و10 ثوانٍ أسرع من 30 ثانية في حالة الخطأ
     private const int RequestTimeoutSeconds = 10;
 
     public DriverApiService(ApiClient apiClient, ILogger<DriverApiService> logger)
@@ -24,18 +24,11 @@ public class DriverApiService : IDriverApiService
         _logger = logger;
     }
 
-    /// <summary>
-    /// ينفّذ طلب API مع مهلة زمنية، ويوحّد المعالجة المركّزة للأخطاء لكل الدوال.
-    /// يحوّل انتهاء المهلة إلى ApiServiceException (كما يفعل ApiClient) —
-    /// يلتقط الإلغاء الخارجي (غادر المستخدم الصفحة) ويعيد القيمة الافتراضية بدلاً من رمي استثناء.
-    /// </summary>
-    private async Task<T?> ExecuteAsync<T>(
+    private async Task<T> ExecuteAsync<T>(
         string operation,
         string detail,
         CancellationToken cancellationToken,
-        T? cancellationFallback,
-        Func<Exception, T?> errorFallback,
-        Func<CancellationToken, Task<T?>> action)
+        Func<CancellationToken, Task<T>> action)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(TimeSpan.FromSeconds(RequestTimeoutSeconds));
@@ -44,21 +37,20 @@ public class DriverApiService : IDriverApiService
         {
             return await action(cts.Token);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            _logger.LogWarning("{Operation}: Request was cancelled or timed out. {Detail}", operation, detail);
-            return cancellationFallback;
+            _logger.LogWarning("{Operation}: أُلغي الطلب أو انتهت مهلته. {Detail}", operation, detail);
+            throw new ApiServiceException(HttpStatusCode.RequestTimeout, ApiErrorCatalog.NetworkError, innerException: ex);
         }
         catch (ApiServiceException) { throw; }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception in {Operation}. {Detail}", operation, detail);
-            return errorFallback(ex);
+            _logger.LogError(ex, "استثناء غير متوقع في {Operation}. {Detail}", operation, detail);
+            throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError, innerException: ex);
         }
     }
 
-    /// <inheritdoc />
-    public async Task<PagedResult<DriverListItemViewModel>?> GetDriversAsync(
+    public async Task<PagedResult<DriverListItemViewModel>> GetDriversAsync(
         int pageNumber = 1,
         int pageSize = 20,
         string? search = null,
@@ -69,30 +61,20 @@ public class DriverApiService : IDriverApiService
             nameof(GetDriversAsync),
             $"pageNumber={pageNumber} pageSize={pageSize}",
             cancellationToken,
-            cancellationFallback: null,
-            errorFallback: _ => null,
-            action: async token =>
+            async token =>
             {
-                // ✅ بناء رابط الطلب
-                var query = $"Users?role={(int)UserRole.Driver}&PageNumber={pageNumber}&PageSize={pageSize}";
-
-                if (!string.IsNullOrWhiteSpace(search))
-                    query += $"&Search={Uri.EscapeDataString(search)}";
-
-                if (factoryId.HasValue)
-                    query += $"&factoryId={factoryId.Value}";
-
-                _logger.LogDebug("Fetching drivers with query: {Query}", query);
+                var query = $"Users?role={(int)UserRole.Driver}&PageNumber={pageNumber}&PageSize={pageSize}&SortBy=Id&Order=Desc";
+                if (!string.IsNullOrWhiteSpace(search)) query += $"&Search={Uri.EscapeDataString(search)}";
+                if (factoryId.HasValue) query += $"&factoryId={factoryId.Value}";
 
                 var response = await _apiClient.GetAsync<ApiResponse<PagedResult<UserDto>>>(query, token);
 
                 if (response == null || !response.Success || response.Data == null)
                 {
-                    _logger.LogWarning("GetDriversAsync: API returned null/failed for query {Query}", query);
-                    return null;
+                    _logger.LogWarning("GetDriversAsync: ردّ الـ API فارغ أو فاشل للاستعلام {Query}", query);
+                    throw new ApiServiceException(HttpStatusCode.InternalServerError, ApiErrorCatalog.ServerError);
                 }
 
-                // ✅ تحويل البيانات
                 return new PagedResult<DriverListItemViewModel>
                 {
                     PageNumber = response.Data.PageNumber,
@@ -107,32 +89,28 @@ public class DriverApiService : IDriverApiService
                         FactoryId = u.FactoryId,
                         DriverStatus = u.DriverStatus,
                         IsActive = u.IsActive
-                    })
+                    }).ToList()
                 };
             });
     }
 
-    /// <inheritdoc />
-    public async Task<DriverListItemViewModel?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<DriverListItemViewModel> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await ExecuteAsync(
             nameof(GetByIdAsync),
             $"driverId={id}",
             cancellationToken,
-            cancellationFallback: null,
-            errorFallback: _ => null,
-            action: async token =>
+            async token =>
             {
                 var response = await _apiClient.GetAsync<ApiResponse<UserDto>>($"Users/{id}", token);
 
                 if (response == null || !response.Success || response.Data == null)
                 {
-                    _logger.LogWarning("GetByIdAsync: Could not load driver {DriverId}", id);
-                    return null;
+                    _logger.LogWarning("GetByIdAsync: تعذّر جلب السائق {DriverId}", id);
+                    throw new ApiServiceException(HttpStatusCode.NotFound, ApiErrorCatalog.DriverNotFound, new object[] { id });
                 }
 
                 var u = response.Data;
-
                 return new DriverListItemViewModel
                 {
                     UserId = u.UserId,
@@ -146,27 +124,23 @@ public class DriverApiService : IDriverApiService
             });
     }
 
-    /// <inheritdoc />
-    public async Task<EditDriverViewModel?> GetForEditAsync(int driverId, CancellationToken cancellationToken = default)
+    public async Task<EditDriverViewModel> GetForEditAsync(int driverId, CancellationToken cancellationToken = default)
     {
         return await ExecuteAsync(
             nameof(GetForEditAsync),
             $"driverId={driverId}",
             cancellationToken,
-            cancellationFallback: null,
-            errorFallback: _ => null,
-            action: async token =>
+            async token =>
             {
                 var response = await _apiClient.GetAsync<ApiResponse<UserDto>>($"Users/{driverId}", token);
 
                 if (response == null || !response.Success || response.Data == null)
                 {
-                    _logger.LogWarning("GetForEditAsync: Could not load driver {DriverId}", driverId);
-                    return null;
+                    _logger.LogWarning("GetForEditAsync: تعذّر جلب السائق {DriverId}", driverId);
+                    throw new ApiServiceException(HttpStatusCode.NotFound, ApiErrorCatalog.DriverNotFound, new object[] { driverId });
                 }
 
                 var u = response.Data;
-
                 return new EditDriverViewModel
                 {
                     UserId = u.UserId,
@@ -180,18 +154,14 @@ public class DriverApiService : IDriverApiService
             });
     }
 
-    /// <inheritdoc />
-    public async Task<(bool Success, string? Message)> CreateAsync(CreateDriverViewModel model, CancellationToken cancellationToken = default)
+    public async Task CreateAsync(CreateDriverViewModel model, CancellationToken cancellationToken = default)
     {
-        var result = await ExecuteAsync<(bool Success, string? Message)>(
+        await ExecuteAsync(
             "CreateAsync (Driver)",
             model.FullName ?? string.Empty,
             cancellationToken,
-            cancellationFallback: (false, "انتهت مهلة الاتصال بالخادم. حاول مرة أخرى."),
-            errorFallback: ex => (false, "حدث خطأ غير متوقع أثناء إنشاء الحساب. حاول مرة أخرى."),
-            action: async token =>
+            async token =>
             {
-                // ✅ استخدام PascalCase لتطابق CreateUserDto في الـ API
                 var payload = new
                 {
                     FullName = model.FullName,
@@ -204,41 +174,26 @@ public class DriverApiService : IDriverApiService
                     FactoryId = model.FactoryId
                 };
 
-                _logger.LogDebug("Creating new driver: {FullName}", model.FullName);
-
                 var response = await _apiClient.PostAsync<ApiResponse<object>>("Users", payload, token);
 
-                if (response == null)
+                if (response == null || !response.Success)
                 {
-                    _logger.LogWarning("CreateAsync (Driver): API returned null response.");
-                    return (false, "تعذر الاتصال بالخادم. حاول مرة أخرى.");
+                    _logger.LogWarning("فشل CreateAsync (سائق). الرسالة: {Message}", response?.Message);
+                    throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.DriverCreateFailed, new object[] { response?.Message ?? "سبب غير معروف" });
                 }
 
-                if (!response.Success)
-                {
-                    _logger.LogWarning("CreateAsync (Driver) failed. Message: {Message}", response.Message);
-                    return (false, response.Message);
-                }
-
-                _logger.LogInformation("Driver created successfully: {FullName}", model.FullName);
-                return (true, null);
+                return Task.CompletedTask;
             });
-
-        return result;
     }
 
-    /// <inheritdoc />
-    public async Task<(bool Success, string? Message)> UpdateAsync(int id, EditDriverViewModel model, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(int id, EditDriverViewModel model, CancellationToken cancellationToken = default)
     {
-        var result = await ExecuteAsync<(bool Success, string? Message)>(
+        await ExecuteAsync(
             "UpdateAsync (Driver)",
             $"driverId={id}",
             cancellationToken,
-            cancellationFallback: (false, "انتهت مهلة الاتصال بالخادم. حاول مرة أخرى."),
-            errorFallback: ex => (false, "حدث خطأ غير متوقع أثناء التعديل. حاول مرة أخرى."),
-            action: async token =>
+            async token =>
             {
-                // ✅ استخدام PascalCase لتطابق UpdateUserDto في الـ API
                 var payload = new
                 {
                     FullName = model.FullName,
@@ -251,106 +206,72 @@ public class DriverApiService : IDriverApiService
                     IsActive = model.IsActive
                 };
 
-                _logger.LogDebug("Updating driver: {DriverId}", id);
-
                 var response = await _apiClient.PutAsync<ApiResponse<object>>($"Users/{id}", payload, token);
 
-                if (response == null)
+                if (response == null || !response.Success)
                 {
-                    _logger.LogWarning("UpdateAsync (Driver): API returned null response for id={Id}", id);
-                    return (false, "تعذر الاتصال بالخادم. حاول مرة أخرى.");
+                    _logger.LogWarning("فشل UpdateAsync (سائق) للمعرّف {Id}. الرسالة: {Message}", id, response?.Message);
+                    throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.DriverUpdateFailed, new object[] { id, response?.Message ?? "سبب غير معروف" });
                 }
-
-                if (!response.Success)
-                {
-                    _logger.LogWarning("UpdateAsync (Driver) failed for id={Id}. Message: {Message}", id, response.Message);
-                    return (false, response.Message);
-                }
-
-                _logger.LogInformation("Driver updated successfully: {DriverId}", id);
-                return (true, null);
+                return Task.CompletedTask;
             });
-
-        return result;
     }
 
-    /// <inheritdoc />
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await ExecuteAsync(
+        await ExecuteAsync(
             "DeleteAsync (Driver)",
             $"driverId={id}",
             cancellationToken,
-            cancellationFallback: false,
-            errorFallback: _ => false,
-            action: async token =>
+            async token =>
             {
-                _logger.LogDebug("Deleting driver: {DriverId}", id);
-
                 var response = await _apiClient.DeleteAsync<ApiResponse<object>>($"Users/{id}", token);
 
                 if (response == null || !response.Success)
                 {
-                    _logger.LogWarning("DeleteAsync (Driver) failed for id={Id}. Message: {Message}", id, response?.Message);
-                    return false;
+                    _logger.LogWarning("فشل DeleteAsync (سائق) للمعرّف {Id}. الرسالة: {Message}", id, response?.Message);
+                    throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.DriverDeleteFailed, new object[] { id, response?.Message ?? "سبب غير معروف" });
                 }
-
-                _logger.LogInformation("Driver deleted successfully: {DriverId}", id);
-                return true;
+                return Task.CompletedTask;
             });
     }
 
-    /// <inheritdoc />
-    public async Task<bool> UpdateStatusAsync(int id, UpdateDriverStatusViewModel model, CancellationToken cancellationToken = default)
+    public async Task UpdateStatusAsync(int id, UpdateDriverStatusViewModel model, CancellationToken cancellationToken = default)
     {
-        return await ExecuteAsync(
+        await ExecuteAsync(
             "UpdateStatusAsync",
             $"driverId={id} status={model.DriverStatus}",
             cancellationToken,
-            cancellationFallback: false,
-            errorFallback: _ => false,
-            action: async token =>
+            async token =>
             {
-                // ✅ PascalCase لتطابق UpdateDriverStatusDto في الـ API
                 var payload = new { DriverStatus = (int)model.DriverStatus };
-
-                _logger.LogDebug("Updating driver status: {DriverId} -> {Status}", id, model.DriverStatus);
-
                 var response = await _apiClient.PutAsync<ApiResponse<object>>($"Users/{id}/driver-status", payload, token);
 
                 if (response == null || !response.Success)
                 {
-                    _logger.LogWarning("UpdateStatusAsync failed for id={Id}. Message: {Message}", id, response?.Message);
-                    return false;
+                    _logger.LogWarning("فشل UpdateStatusAsync للمعرّف {Id}. الرسالة: {Message}", id, response?.Message);
+                    throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.ServerError);
                 }
-
-                _logger.LogInformation("Driver status updated successfully: {DriverId} -> {Status}", id, model.DriverStatus);
-                return true;
+                return Task.CompletedTask;
             });
     }
 
-    /// <inheritdoc />
     public async Task<(int Available, int Busy, int Offline)> GetStatusCountsAsync(
         string? search,
         int? factoryId,
         CancellationToken cancellationToken = default)
     {
-        return await ExecuteAsync<(int Available, int Busy, int Offline)>(
+        return await ExecuteAsync(
             nameof(GetStatusCountsAsync),
             "",
             cancellationToken,
-            cancellationFallback: (Available: 0, Busy: 0, Offline: 0),
-            errorFallback: _ => (Available: 0, Busy: 0, Offline: 0),
-            action: async token =>
+            async token =>
             {
                 string CountQuery(DriverStatus status) =>
                     $"Users?role={(int)UserRole.Driver}&PageNumber=1&PageSize=1&driverStatus={(int)status}"
                     + (string.IsNullOrWhiteSpace(search) ? "" : $"&Search={Uri.EscapeDataString(search)}")
                     + (factoryId.HasValue ? $"&factoryId={factoryId.Value}" : "");
 
-                // ✅ تنفيذ متوازي — 3x أسرع من التنفيذ المتتالي
-                // ApiClient يضيف رأس Authorization لكل طلب عبر DelegatingHandler
-                // لذا لا يوجد مخاطرة على DefaultRequestHeaders بين الطلبات المتزامنة
                 var availableTask = _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(DriverStatus.Available), token);
                 var busyTask = _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(DriverStatus.Busy), token);
                 var offlineTask = _apiClient.GetPagedTotalAsync<UserDto>(CountQuery(DriverStatus.Offline), token);
@@ -361,37 +282,23 @@ public class DriverApiService : IDriverApiService
             });
     }
 
-    /// <inheritdoc />
     public async Task<bool> ToggleActiveAsync(int id, CancellationToken cancellationToken = default)
     {
         return await ExecuteAsync(
             "ToggleActiveAsync",
             $"driverId={id}",
             cancellationToken,
-            cancellationFallback: false,
-            errorFallback: _ => false,
-            action: async token =>
+            async token =>
             {
-                _logger.LogDebug("Toggling driver active state: {DriverId}", id);
-
-                var response = await _apiClient.PutAsync<ApiResponse<object>>($"Users/{id}/toggle-active", token);
+                var response = await _apiClient.PutAsync<ApiResponse<bool>>($"Users/{id}/toggle-active", token);
 
                 if (response == null || !response.Success)
                 {
-                    _logger.LogWarning("ToggleActiveAsync failed for id={Id}. Message: {Message}", id, response?.Message);
-                    return false;
+                    _logger.LogWarning("فشل ToggleActiveAsync للمعرّف {Id}. الرسالة: {Message}", id, response?.Message);
+                    throw new ApiServiceException(HttpStatusCode.BadRequest, ApiErrorCatalog.ServerError);
                 }
 
-                // ✅ الأولوية لـ Data كـ boolean صريح — وإلا يُعاد false مع تحذير
-                var isActive = response.Data is bool active
-                    ? active
-                    : (response.Success && (response.Message?.Contains("تفعيل", StringComparison.OrdinalIgnoreCase) ?? false));
-                if (response.Data is not bool)
-                {
-                    _logger.LogWarning("ToggleActiveAsync: Response Data is not boolean for driver {DriverId}. Relying on Success flag.", id);
-                }
-                _logger.LogInformation("Driver active state toggled: {DriverId} -> {IsActive}", id, isActive);
-                return isActive;
+                return response.Data;
             });
     }
 }

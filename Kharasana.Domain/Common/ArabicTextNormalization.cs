@@ -3,15 +3,15 @@ using System.Reflection;
 
 namespace Kharasana.Domain.Common;
 
-    /// <summary>
-    /// بناء التطبيع العربي بوجهين:
-    /// <list type="bullet">
-    /// <item><description>مرحلة التشغيل — <see cref="Normalize"/> لتطبيع نص حر خارج قاعدة البيانات.</description></item>
-    /// <item><description>مرحلة قاعدة البيانات — منشئات تعبيرات <c>Expression&lt;Func&lt;TEntity, bool&gt;&gt;</c>
-    /// لبناء شروط بحث قابلة للترجمة في EF Core عبر <see cref="Contains"/> (LIKE) و<see cref="And"/> و<see cref="Or"/>.</description></item>
-    /// </list>
-    /// هذا الفصل الجديد يوفّر ما ينقصه (البناء للتعبيرات).
-    /// </summary>
+/// <summary>
+/// بناء التطبيع العربي بوجهين:
+/// <list type="bullet">
+/// <item><description>مرحلة التشغيل — <see cref="Normalize"/> لتطبيع نص حر خارج قاعدة البيانات.</description></item>
+/// <item><description>مرحلة قاعدة البيانات — منشئات تعبيرات <c>Expression&lt;Func&lt;TEntity, bool&gt;&gt;</c>
+/// لبناء شروط بحث قابلة للترجمة في EF Core عبر <see cref="Contains"/> (LIKE) و<see cref="And"/> و<see cref="Or"/>.</description></item>
+/// </list>
+/// هذا الفصل الجديد يوفّر ما ينقصه (البناء للتعبيرات).
+/// </summary>
 public static class ArabicTextNormalization
 {
     /// <summary>

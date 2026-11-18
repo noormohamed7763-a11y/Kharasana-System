@@ -5,7 +5,7 @@ using Kharasana.Domain.Common;
 namespace Kharasana.Application.Common;
 
 /// <summary>
-/// استخراج تطبيع رقم الهاتف+yemeniPhoneHelper مع فحص التفرّد —
+/// تطبيع رقم الهاتف عبر YemeniPhoneHelper مع فحص التفرّد —
 /// بلوك واحد مشترك يُستبدل الأربعة المكررة في AuthService و UserService.
 /// </summary>
 public static class PhoneValidationHelper
@@ -30,7 +30,10 @@ public static class PhoneValidationHelper
     /// <summary>
     /// تطبيع + فحص التفرّد — يعيد null عند الفراغ (أو يحتفظ بالقيمة الحالية)،
     /// ويرمي ConflictException عند التعارض مع رقم آخر مسجّل مسبقاً.
-    /// <param name="currentPhone">رقم المستخدم الحالي (ل:]) } ;
+    /// </summary>
+    /// <param name="unitOfWork">وحدة العمل المستخدمة لاستعلام المستخدمين.</param>
+    /// <param name="rawPhone">الرقم الخام الوارد في الطلب.</param>
+    /// <param name="currentPhone">رقم المستخدم الحالي — يُستثنى من فحص التفرّد عند التعديل.</param>
     /// </summary>
     public static async Task<string?> NormalizeAndEnsureUniqueAsync(
         IUnitOfWork unitOfWork,

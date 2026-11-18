@@ -1,5 +1,4 @@
-﻿using Kharasana.Application.Common;
-using Kharasana.Web.ViewModels.Orders;
+using Kharasana.Application.Common;
 
 namespace Kharasana.Web.ViewModels.Orders
 {
@@ -18,5 +17,8 @@ namespace Kharasana.Web.ViewModels.Orders
         public int RejectedCount { get; set; }
         public int CancelledCount { get; set; }
         public int ClosedCount { get; set; }
+
+        public bool ShowFactoryFilter { get; set; }
+        public IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>? Factories { get; set; }
     }
 }

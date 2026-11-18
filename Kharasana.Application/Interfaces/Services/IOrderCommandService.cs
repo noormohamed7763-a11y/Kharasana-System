@@ -1,0 +1,31 @@
+using Kharasana.Application.Common;
+using Kharasana.Application.DTOs.Order;
+
+namespace Kharasana.Application.Interfaces.Services;
+
+/// <summary>
+/// واجهة خدمات أوامر الطلبات (Create, Update, Delete).
+/// </summary>
+public interface IOrderCommandService
+{
+    Task<OrderDetailsDto> CreateAsync(
+        CreateOrderDto dto, int currentUserId, Domain.Enums.UserRole currentRole, string? idempotencyKey = null, int? currentUserFactoryId = null);
+
+    Task<PhoneOrderResultDto> CreatePhoneOrderAsync(PhoneOrderDto dto, int employeeFactoryId, string? idempotencyKey = null, int currentUserId = 0);
+
+    Task<OrderDto> UpdateOrderAsync(int id, UpdateOrderDto dto, int userId, Domain.Enums.UserRole role, int? factoryId);
+
+    Task<bool> DeleteOrderAsync(int id, int callerId, Domain.Enums.UserRole callerRole, int? callerFactoryId);
+
+    Task AddPaymentAsync(int orderId, AddPaymentDto dto, int userId, Domain.Enums.UserRole role, string? idempotencyKey = null, int? factoryId = null);
+
+    // ============================================================
+    // 5. PAYMENT VERIFICATION (Hawala Ledger)
+    // ============================================================
+
+    /// <summary>قبول الحوالة من قبل المحاسب.</summary>
+    Task<bool> ApprovePaymentAsync(int paymentId, string verificationNotes, int approverId);
+
+    /// <summary>رفض الحوالة من قبل المحاسب.</summary>
+    Task<bool> RejectPaymentAsync(int paymentId, string rejectionReason, int approverId);
+}
