@@ -26,7 +26,7 @@ public class TripsController : ControllerBase
 
     [HttpGet("orders/{orderId:int}")]
     [HttpGet("orders/{orderId:int}/trips")]
-    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrDriver)]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClientOrDriver)]
     public async Task<IActionResult> GetByOrder(int orderId)
     {
         var caller = User.GetCallerContext();

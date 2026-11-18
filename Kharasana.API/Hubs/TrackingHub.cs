@@ -27,11 +27,17 @@ public class TrackingHub : Hub
         if (driverIdClaim == null) return;
 
         var order = await _unitOfWork.Orders.GetByIdAsync(orderId);
-        if (order == null || order.DriverId.ToString() != driverIdClaim)
-        {
-             // السائق ليس هو المعين لهذا الطلب
-             return;
-        }
+        if (order == null)
+            return;
+
+        // يدعم الطلبات القديمة (DriverId على الطلب) والطلبات المقسمة إلى رحلات.
+        var driverId = int.Parse(driverIdClaim);
+        var trips = await _unitOfWork.Trips.GetByOrderIdAsync(orderId);
+        var assignedToOrder = order.DriverId == driverId ||
+                              trips.Any(t => !t.IsDeleted &&
+                                             (t.DriverId == driverId || t.PumpDriverId == driverId));
+        if (!assignedToOrder)
+            return;
 
         _trackingService.UpdateLocation(orderId, latitude, longitude);
         await Clients.Group(orderId.ToString()).SendAsync("ReceiveLocationUpdate", latitude, longitude);
