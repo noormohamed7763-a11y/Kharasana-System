@@ -110,13 +110,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 // إعادة تحميل الصفحة لتحديث الحالة
                 location.reload();
             } else {
-                displayToast('error', data.message || 'فشلت العملية.');
+                displayToast('danger', data.message || 'فشلت العملية.');
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
             }
         } catch (error) {
             console.error('Error in order action:', error);
-            displayToast('error', 'حدث خطأ أثناء تنفيذ الطلب.');
+            displayToast('danger', 'حدث خطأ أثناء تنفيذ الطلب.');
             btn.disabled = false;
             btn.innerHTML = originalHtml;
         }
@@ -311,12 +311,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Helper function to display toasts (for payments, requires site.js toast setup)
     function displayToast(type, message) {
-        // Assuming a global toast function exists in site.js or similar
-        // Example: showToast(type, message);
-        // For now, let's just log it if no toast system is integrated
+        // تعيين نوع التوست إلى ما يناسب showToast العالمية:
+        // success -> success, error -> danger, warning -> warning, info -> info
+        const toastType = type === 'error' ? 'danger' : type;
+        const title = type === 'success' ? 'تمت العملية' : 'خطأ';
+
         if (typeof showToast === 'function') {
-            showToast(type, message);
+            showToast(title, message, toastType);
         } else {
+            console.log(type, message);
             alert(message);
         }
     }
