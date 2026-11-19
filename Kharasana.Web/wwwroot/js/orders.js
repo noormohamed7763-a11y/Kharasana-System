@@ -276,7 +276,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (data.success) {
                     displayToast('success', data.message || 'تم تسجيل الدفعة بنجاح.');
-                    // Reload page to reflect changes, or update financial summary dynamically
+                    // إغلاق النموذج عند النجاح فقط، ثم تحديث الصفحة لعرض الدفعة الجديدة
+                    const modal = bootstrap.Modal.getInstance(addPaymentModal);
+                    if (modal) modal.hide();
                     location.reload();
                 } else {
                     displayToast('error', data.message || 'فشل تسجيل الدفعة.');
@@ -285,11 +287,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error adding payment:', error);
                 displayToast('error', 'حدث خطأ أثناء تسجيل الدفعة.');
             } finally {
+                // عند الفشل يبقى النموذج مفتوحاً بالقيم المدخلة لتصحيحها وإعادة المحاولة
                 this.disabled = false;
                 this.innerHTML = `تسجيل الدفعة`;
-                // Close modal on success or error
-                const modal = bootstrap.Modal.getInstance(addPaymentModal);
-                if (modal) modal.hide();
             }
         });
     }
