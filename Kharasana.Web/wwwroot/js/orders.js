@@ -69,6 +69,60 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
+    // Unified Order Action Handler
+    // ============================================================
+    document.addEventListener('click', async function (e) {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const orderId = btn.dataset.orderId;
+        const confirmMsg = btn.dataset.confirm;
+
+        if (!action || !orderId) return;
+
+        // منع النقر المزدوج
+        if (btn.disabled) return;
+
+        // طلب تأكيد إذا وجد
+        if (confirmMsg && !confirm(confirmMsg)) {
+            return;
+        }
+
+        // حالة التحميل
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> جاري التنفيذ...`;
+
+        try {
+            const response = await fetch(`/OrderWorkflow/${action}/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getCsrfToken()
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                displayToast('success', data.message || 'تمت العملية بنجاح.');
+                // إعادة تحميل الصفحة لتحديث الحالة
+                location.reload();
+            } else {
+                displayToast('error', data.message || 'فشلت العملية.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        } catch (error) {
+            console.error('Error in order action:', error);
+            displayToast('error', 'حدث خطأ أثناء تنفيذ الطلب.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    });
+
+    // ============================================================
     // AJAX Price Saving in Details View
     // ============================================================
     const savePriceBtn = document.getElementById('savePriceBtn');

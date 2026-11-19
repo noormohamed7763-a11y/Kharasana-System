@@ -126,7 +126,7 @@ public class ClientStatementService : IClientStatementService
         var totalOrders = orders.Count;
         var totalQuantity = orders.Sum(o => o.Quantity);
         var totalAmount = orders.Sum(o => o.NetAmount);
-        var totalPaid = orders.SelectMany(o => o.Payments).Sum(p => p.Amount);
+        var totalPaid = orders.SelectMany(o => o.Payments.Where(p => p.VerificationStatus == PaymentVerificationStatus.Verified)).Sum(p => p.Amount);
         var balance = totalAmount - totalPaid;
 
         return new ClientStatementDto

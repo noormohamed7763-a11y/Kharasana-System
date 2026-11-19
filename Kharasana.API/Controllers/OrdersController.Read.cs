@@ -173,26 +173,46 @@ public partial class OrdersController
     }
 
     // ============================================================
-    // 3.c GET CUSTOMER STATEMENT
+    // 4. GET READY FOR DISPATCH - جلب الطلبات الجاهزة للجدولة حسب التاريخ والمصنع
     // ============================================================
-    /// <summary>جلب كشف الحساب المالي للعميل.</summary>
-    /// <param name="userId">معرّف العميل.</param>
-    /// <response code="200">تم جلب كشف الحساب بنجاح.</response>
+    /// <summary>جلب الطلبات المعتمدة والجاهزة للجدولة في تاريخ ومصنع محدد.</summary>
+    /// <param name="factoryId">معرّف المصنع (اختياري للمدير).</param>
+    /// <param name="date">تاريخ الصب المطلوب.</param>
+    /// <response code="200">تم جلب الطلبات الجاهزة بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
-    /// <response code="403">العميل خارج نطاق مصنع موظف المصنع.</response>
-    /// <response code="404">العميل غير موجود.</response>
-    [HttpGet("customers/{userId:int}/statement")]
-    [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrClient)]
-    public async Task<IActionResult> GetClientStatement(int userId)
+    /// <response code="404">لا توجد طلبات مطابقة للفلتر.</response>
+    [HttpGet("ready-for-dispatch")]
+    [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
+    public async Task<IActionResult> GetReadyForDispatch([FromQuery] int? factoryId, [FromQuery] DateTime date)
     {
         var caller = User.GetCallerContext();
-        var statement = await _clientStatementService.GetClientStatementAsync(userId, caller);
+        int? effectiveFactoryId = null;
 
-        return Ok(new ApiResponse<ClientStatementDto>
+        if (caller.Role == UserRole.FactoryEmployee)
+        {
+            if (caller.FactoryId is null)
+                throw new UnauthorizedException(Messages.FactoryNotFoundForUser);
+            effectiveFactoryId = caller.FactoryId;
+        }
+        else if (caller.Role == UserRole.Admin)
+        {
+            effectiveFactoryId = factoryId ?? caller.FactoryId; // Admin يمكنه تحديد المصنع أو استخدام مصنعه الافتراضي
+        }
+
+        // التحقق من أن التاريخ صالح قبل التنفيذ
+        if (date == default(DateTime))
+            throw new ArgumentException("يجب تحديد تاريخ الصب.");
+
+        var orders = await _orderService.GetOrdersByDateAndFactoryAsync(effectiveFactoryId, date);
+
+        if (orders == null || !orders.Any())
+            return NotFound(new ApiResponse<IEnumerable<OrderDto>> { Success = true, Message = Messages.NoReadyOrdersFound, Data = Enumerable.Empty<OrderDto>() });
+
+        return Ok(new ApiResponse<IEnumerable<OrderDto>>
         {
             Success = true,
-            Message = Messages.OrdersRetrievedSuccessfully,
-            Data = statement
+            Message = Messages.ReadyOrdersRetrievedSuccessfully,
+            Data = orders
         });
     }
 

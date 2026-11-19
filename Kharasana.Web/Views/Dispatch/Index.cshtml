@@ -245,20 +245,41 @@
                         return;
                     }
 
-                    let html = '<div class="table-responsive"><table class="table table-sm table-bordered align-middle">';
-                    html += '<thead class="table-light"><tr><th>#</th><th>الكمية</th><th>السائق</th><th>الحالة</th></tr></thead><tbody>';
+                    const div = document.createElement('div');
+                    div.className = 'table-responsive';
+                    const table = document.createElement('table');
+                    table.className = 'table table-sm table-bordered align-middle';
+                    table.innerHTML = '<thead class="table-light"><tr><th>#</th><th>الكمية</th><th>السائق</th><th>الحالة</th></tr></thead><tbody></tbody>';
+                    const tbody = table.querySelector('tbody');
 
                     trips.forEach((trip, index) => {
-                        html += `<tr>
-                            <td>${index + 1}</td>
-                            <td>${Number(trip.quantity).toFixed(2)} م³</td>
-                            <td>${trip.driverName || '-'}</td>
-                            <td><span class="badge bg-${getStatusBadge(trip.status)}">${trip.statusNameAr || 'مجدولة'}</span></td>
-                        </tr>`;
+                        const tr = document.createElement('tr');
+
+                        const tdIdx = document.createElement('td');
+                        tdIdx.textContent = index + 1;
+                        tr.appendChild(tdIdx);
+
+                        const tdQty = document.createElement('td');
+                        tdQty.textContent = Number(trip.quantity).toFixed(2) + ' م³';
+                        tr.appendChild(tdQty);
+
+                        const tdDriver = document.createElement('td');
+                        tdDriver.textContent = trip.driverName || '-';
+                        tr.appendChild(tdDriver);
+
+                        const tdStatus = document.createElement('td');
+                        const span = document.createElement('span');
+                        span.className = 'badge bg-' + getStatusBadge(trip.status);
+                        span.textContent = trip.statusNameAr || 'مجدولة';
+                        tdStatus.appendChild(span);
+                        tr.appendChild(tdStatus);
+
+                        tbody.appendChild(tr);
                     });
 
-                    html += '</tbody></table></div>';
-                    container.innerHTML = html;
+                    div.appendChild(table);
+                    container.textContent = ''; // clear
+                    container.appendChild(div);
                 } catch (error) {
                     console.error('Error loading trips:', error);
                     container.innerHTML = '<p class="text-danger small">فشل في تحميل الرحلات.</p>';

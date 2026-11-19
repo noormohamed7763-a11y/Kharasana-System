@@ -153,7 +153,14 @@
                 if (summaryUnitPrice) summaryUnitPrice.textContent = formattedUnit;
                 if (summaryQuantity) summaryQuantity.textContent = qty > 0 ? qty + ' م³' : '-';
                 if (summaryTotalAmount) {
-                    summaryTotalAmount.innerHTML = (total > 0 ? formatNumber(total) : '0') + ' <small style="font-size:0.9rem; font-weight:normal;">ر.ي</small>';
+                    summaryTotalAmount.textContent = '';
+                    const totalText = document.createTextNode((total > 0 ? formatNumber(total) : '0') + ' ');
+                    summaryTotalAmount.appendChild(totalText);
+                    const small = document.createElement('small');
+                    small.style.fontSize = '0.9rem';
+                    small.style.fontWeight = 'normal';
+                    small.textContent = 'ر.ي';
+                    summaryTotalAmount.appendChild(small);
                 }
 
                 // 2. العميل
@@ -235,7 +242,11 @@
                                 if (lookupBadgeLastSiteInfo) {
                                     const proj = data.lastOrder.projectName || 'مشروع سابق';
                                     const area = data.lastOrder.siteArea ? ` - ${data.lastOrder.siteArea}` : '';
-                                    lookupBadgeLastSiteInfo.innerHTML = `آخر صبة مسجلة: <strong>${proj}${area}</strong>`;
+                                    lookupBadgeLastSiteInfo.textContent = '';
+                                    lookupBadgeLastSiteInfo.appendChild(document.createTextNode('آخر صبة مسجلة: '));
+                                    const strong = document.createElement('strong');
+                                    strong.textContent = proj + area;
+                                    lookupBadgeLastSiteInfo.appendChild(strong);
                                 }
                                 if (btnAutoFillLastSite) btnAutoFillLastSite.classList.remove('d-none');
                             } else {

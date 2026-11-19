@@ -49,6 +49,8 @@ public static class Messages
     public const string OrderArchivedSuccessfully = "تم أرشفة الطلب بنجاح.";
     public const string OrderDeletedSuccessfully = "تم حذف الطلب بنجاح.";
     public const string PaymentAddedSuccessfully = "تم تسجيل الدفعة بنجاح.";
+    public const string NoReadyOrdersFound = "لا توجد طلبات جاهزة للصب في هذا التاريخ.";
+    public const string ReadyOrdersRetrievedSuccessfully = "تم جلب الطلبات الجاهزة بنجاح.";
 
     public const string ProductionBatchesRetrievedSuccessfully = "تم جلب دفعات الإنتاج بنجاح.";
     public const string ProductionBatchesByOrderRetrievedSuccessfully = "تم جلب دفعات الإنتاج للطلب بنجاح.";

@@ -3,6 +3,7 @@ using Kharasana.Application.Common.Exceptions;
 using Kharasana.Application.DTOs.Order;
 using Kharasana.Application.Interfaces;
 using Kharasana.Application.Interfaces.Services;
+using Kharasana.Application.Mapping;
 using Kharasana.Domain.Common;
 using Kharasana.Domain.Entities;
 using Kharasana.Domain.Enums;
@@ -93,6 +94,12 @@ public partial class OrderService : IOrderService
     public async Task<bool> RejectPaymentAsync(int paymentId, string rejectionReason, int approverId)
     {
         return await _orderCommandService.RejectPaymentAsync(paymentId, rejectionReason, approverId);
+    }
+
+    public async Task<IEnumerable<OrderDto>> GetOrdersByDateAndFactoryAsync(int? factoryId, DateTime date)
+    {
+        var orders = await _unitOfWork.Orders.GetReadyForDispatchAsync(factoryId ?? 0, date);
+        return orders.Select(o => OrderMapper.MapToOrderDto(o, hidePricing: false)).ToList();
     }
 
     /// <summary>

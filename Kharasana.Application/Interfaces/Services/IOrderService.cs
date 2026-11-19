@@ -75,4 +75,6 @@ public interface IOrderService
 
     /// <summary>رفض الحوالة من قبل المحاسب.</summary>
     Task<bool> RejectPaymentAsync(int paymentId, string rejectionReason, int approverId);
+
+    Task<IEnumerable<OrderDto>> GetOrdersByDateAndFactoryAsync(int? factoryId, DateTime date);
 }
