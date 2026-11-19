@@ -208,6 +208,130 @@
         padding-right: 4px;
     }
 
+    /* Client Statement — كشف حساب العميل */
+    .client-statement {
+        padding: 10mm !important;
+    }
+
+    .client-statement .erp-section-card {
+        display: block !important;
+        border: 1px solid #777 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        padding: 8px !important;
+        margin-bottom: 8px !important;
+        page-break-inside: avoid;
+    }
+
+    .client-statement .erp-section-title {
+        color: #000 !important;
+        font-size: 11pt !important;
+        border-bottom: 1px solid #777;
+        padding-bottom: 4px;
+        margin-bottom: 8px;
+    }
+
+    .client-statement .erp-section-title i {
+        color: #000 !important;
+    }
+
+    .client-statement .detail-label {
+        font-weight: 600;
+        color: #333;
+        font-size: 9pt;
+        margin-bottom: 2px;
+    }
+
+    .client-statement .detail-value {
+        color: #000;
+        font-size: 9.5pt;
+    }
+
+    .client-statement .summary-cards-grid {
+        display: grid !important;
+        grid-template-columns: repeat(5, 1fr) !important;
+        gap: 8px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .client-statement .kpi-card {
+        display: block !important;
+        border: 1px solid #777 !important;
+        background: #fafafa !important;
+        padding: 8px !important;
+        text-align: center;
+        page-break-inside: avoid;
+    }
+
+    .client-statement .kpi-card .kpi-title {
+        font-size: 8pt;
+        color: #333;
+        margin-bottom: 4px;
+    }
+
+    .client-statement .kpi-card .kpi-value {
+        font-size: 11pt;
+        font-weight: 700;
+        color: #000;
+    }
+
+    .client-statement .kpi-card .kpi-icon {
+        display: none !important;
+    }
+
+    .client-statement .erp-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.5pt;
+        margin-bottom: 8px;
+    }
+
+    .client-statement .erp-table th {
+        background-color: #eaeaea !important;
+        font-weight: bold;
+        text-align: center;
+        padding: 5px 6px;
+        border: 1px solid #bbb;
+    }
+
+    .client-statement .erp-table td {
+        padding: 4px 6px;
+        vertical-align: middle;
+        border: 1px solid #bbb;
+    }
+
+    .client-statement .erp-table .text-end {
+        text-align: right !important;
+    }
+
+    .client-statement .erp-table .fw-bold {
+        font-weight: 700 !important;
+    }
+
+    .client-statement .erp-table .text-danger {
+        color: #c00 !important;
+    }
+
+    .client-statement .erp-table .text-success {
+        color: #060 !important;
+    }
+
+    .client-statement .erp-table .text-muted {
+        color: #666 !important;
+    }
+
+    .client-statement .erp-table caption {
+        display: none;
+    }
+
+    /* Payment receipt print */
+    .print-payment-receipt {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 5mm !important;
+    }
+
     /* Ensure backgrounds and colors print */
     * {
         -webkit-print-color-adjust: exact !important;
