@@ -10,7 +10,8 @@ public static class ApiErrorCatalog
     public static readonly ApiError Unknown = new(
         "UNKNOWN_ERROR",
         "حدث خطأ غير متوقع.",
-        "يرجى المحاولة مرة أخرى، إذا استمرت المشكلة تواصل مع الدعم الفني.");
+        "يرجى المحاولة مرة أخرى، إذا استمرت المشكلة تواصل مع الدعم الفني.",
+        IsRetryable: true);
 
     public static readonly ApiError Unauthorized = new(
         "UNAUTHORIZED",
@@ -30,12 +31,14 @@ public static class ApiErrorCatalog
     public static readonly ApiError ServerError = new(
         "SERVER_ERROR",
         "حدث خطأ داخلي في النظام.",
-        "يرجى المحاولة مجدداً لاحقاً، إذا استمرت المشكلة تواصل مع الدعم الفني.");
+        "يرجى المحاولة مجدداً لاحقاً، إذا استمرت المشكلة تواصل مع الدعم الفني.",
+        IsRetryable: true);
 
     public static readonly ApiError NetworkError = new(
         "NETWORK_ERROR",
         "تعذر الاتصال بالخادم.",
-        "تحقق من اتصالك بالإنترنت وحاول مرة أخرى.");
+        "تحقق من اتصالك بالإنترنت وحاول مرة أخرى.",
+        IsRetryable: true);
 
     public static readonly ApiError InvalidLogin = new(
         "INVALID_LOGIN",
@@ -50,12 +53,14 @@ public static class ApiErrorCatalog
     public static readonly ApiError Conflict = new(
         "CONFLICT",
         "تعارض في البيانات: تم تعديل السجل أو أن إحدى القيم مستخدمة مسبقاً.",
-        "يرجى تحديث الصفحة للحصول على أحدث البيانات ثم إعادة المحاولة.");
+        "يرجى تحديث الصفحة للحصول على أحدث البيانات ثم إعادة المحاولة.",
+        IsRetryable: true);
 
     public static readonly ApiError OrderStatusConflict = new(
         "ORDER_STATUS_CONFLICT",
         "لا يمكن تعديل الطلب رقم #{0} لأنه حالياً في حالة '{1}'.",
-        "يرجى مراجعة حالة الطلب قبل محاولة التعديل.");
+        "يرجى مراجعة حالة الطلب قبل محاولة التعديل.",
+        IsRetryable: true);
 
     // أخطاء العملاء
     public static readonly ApiError ClientNotFound = new(

@@ -8,7 +8,8 @@ public sealed record ApiError(
     string ErrorCode,
     string UserMessageTemplate,
     string? UserSolution = null,
-    string? DeveloperReason = null)
+    string? DeveloperReason = null,
+    bool IsRetryable = false)
 {
     // خاصية للتوافقية مع الكود القديم
     public string UserMessage => UserMessageTemplate;

@@ -86,6 +86,7 @@ public sealed class UnhandledExceptionFilter : IAsyncExceptionFilter
 
         tempData[BaseController.TempDataError] = apiEx.Error.FormatMessage(apiEx.MessageArgs ?? Array.Empty<object>());
         tempData["ErrorSolution"] = apiEx.Error.UserSolution;
+        tempData["IsRetryable"] = apiEx.Error.IsRetryable;
         tempData["TraceId"] = apiEx.TraceId;
         tempData.Save();
 
