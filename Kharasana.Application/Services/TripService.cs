@@ -11,43 +11,47 @@ namespace Kharasana.Application.Services;
 public class TripService : ITripService
 {
     private readonly IUnitOfWork _uow;
-    // private readonly IOrderService _orderService; // للحصول على صلاحيات الطلب - قد لا نحتاجها هنا مباشرة
+    private readonly ICurrentUserService _currentUserService;
 
-    public TripService(IUnitOfWork uow /*, IOrderService orderService*/)
+    public TripService(IUnitOfWork uow, ICurrentUserService currentUserService)
     {
         _uow = uow;
-        // _orderService = orderService;
+        _currentUserService = currentUserService;
     }
 
     // Helper للحصول على الطلب والتحقق من الصلاحيات
-    private async Task<Order> GetOrderForFactoryOrThrowAsync(int orderId, int callerId, UserRole role, int? factoryId)
+    private async Task<Order> GetOrderForFactoryOrThrowAsync(int orderId)
     {
         var order = await _uow.Orders.GetByIdAsync(orderId)
                     ?? throw new NotFoundException($"لم يتم العثور على الطلب رقم {orderId}");
 
-        // Simplified permission check for now - will be refined later
-        if (role == UserRole.Admin) return order;
-        if (!factoryId.HasValue || order.FactoryId != factoryId.Value) throw new ForbiddenException("ليس لديك صلاحية على هذا الطلب.");
+        if (_currentUserService.IsInRole("Admin")) return order;
+        
+        if (_currentUserService.FactoryId != order.FactoryId) 
+            throw new ForbiddenException("ليس لديك صلاحية على هذا الطلب.");
 
-        // Additional checks based on role
-        if (role == UserRole.Client && order.ClientId != callerId) throw new ForbiddenException("ليس لديك صلاحية على هذا الطلب.");
-        // For driver, we check against individual trips
+        if (_currentUserService.IsInRole("Client") && order.ClientId.ToString() != _currentUserService.UserId) 
+            throw new ForbiddenException("ليس لديك صلاحية على هذا الطلب.");
 
         return order;
     }
 
     // Helper للحصول على الرحلة والتحقق من الصلاحيات
-    private async Task<Trip> GetTripOrThrowAsync(int tripId, int callerId, UserRole role, int? factoryId)
+    private async Task<Trip> GetTripOrThrowAsync(int tripId)
     {
         var trip = await _uow.Trips.GetByIdAsync(tripId)
                    ?? throw new NotFoundException($"لم يتم العثور على الرحلة رقم {tripId}");
 
-        // Simplified permission check for now
-        if (role == UserRole.Admin) return trip;
-        if (!factoryId.HasValue || trip.FactoryId != factoryId.Value) throw new ForbiddenException("ليس لديك صلاحية على هذه الرحلة.");
+        if (_currentUserService.IsInRole("Admin")) return trip;
+        
+        if (_currentUserService.FactoryId != trip.FactoryId) 
+            throw new ForbiddenException("ليس لديك صلاحية على هذه الرحلة.");
 
         // Driver can only see/update their own trips
-        if (role == UserRole.Driver && trip.DriverId != callerId) throw new ForbiddenException("ليس لديك صلاحية على هذه الرحلة.");
+        if (_currentUserService.IsInRole("Driver") && trip.DriverId.ToString() != _currentUserService.UserId) 
+           
+        if (_currentUserService.IsInRole("Driver") && trip.DriverId.ToString() != _currentUserService.UserId) 
+            throw new ForbiddenException("ليس لديك صلاحية على هذه الرحلة.");
 
         return trip;
     }
@@ -124,142 +128,157 @@ public class TripService : ITripService
         }
     }
 
-    public async Task<IReadOnlyList<TripDto>> GetByOrderAsync(int orderId, int callerId, UserRole role, int? factoryId)
+    public async Task<IReadOnlyList<TripDto>> GetByOrderAsync(int orderId)
     {
-        var order = await _uow.Orders.GetByIdAsync(orderId)
-                    ?? throw new NotFoundException($"لم يتم العثور على الطلب رقم {orderId}");
-
-        // Permission check
-        if (role != UserRole.Admin && (!factoryId.HasValue || order.FactoryId != factoryId.Value))
-            throw new ForbiddenException("ليس لديك صلاحية لعرض رحلات هذا الطلب.");
+        var order = await GetOrderForFactoryOrThrowAsync(orderId);
 
         var trips = await _uow.Trips.GetByOrderIdAsync(orderId);
         return trips.Select(MapToDto).ToList();
     }
 
-    public async Task<TripDto> CreateAsync(int orderId, CreateTripDto dto, int callerId, UserRole role, int? factoryId)
+    public async Task<TripDto> CreateAsync(int orderId, CreateTripDto dto)
     {
-        var order = await _uow.Orders.GetByIdWithTripsAsync(orderId);
-        if (order == null) throw new NotFoundException($"لم يتم العثور على الطلب رقم {orderId}");
-
-        // Permissions for order-related actions
-        if (role == UserRole.Client || role == UserRole.Driver) // Clients/Drivers cannot create trips
-            throw new ForbiddenException("ليس لديك صلاحية لإضافة رحلات لهذا الطلب.");
-
-        if (role == UserRole.FactoryEmployee && (order.FactoryId != factoryId || !factoryId.HasValue))
-             throw new ForbiddenException("ليس لديك صلاحية لإضافة رحلات لهذا الطلب.");
-
-        if (order.Status is not (OrderStatus.Approved or OrderStatus.Scheduled or OrderStatus.OnTheWay))
-            throw new BusinessException("لا يمكن إضافة رحلات لهذه الحالة");
-
-        ValidateQuantity(dto.Quantity);
-
-        var existingQty = order.Trips
-            .Where(t => !t.IsDeleted && t.Status != TripStatus.Cancelled)
-            .Sum(t => t.Quantity);
-
-        if (existingQty + dto.Quantity > order.Quantity)
-            throw new BusinessException($"الكمية المتبقية {order.Quantity - existingQty} م³ فقط");
-
-        if (dto.DriverId.HasValue)
-            await EnsureDriverBelongsToFactoryAsync(dto.DriverId.Value, order.FactoryId);
-
-        var sequence = order.Trips.Count(t => !t.IsDeleted) + 1;
-
-        var trip = new Trip
+        await _uow.BeginTransactionAsync();
+        try
         {
-            OrderId = order.OrderId,
-            FactoryId = order.FactoryId,
-            Sequence = sequence,
-            Quantity = dto.Quantity,
-            DriverId = dto.DriverId,
-            TruckPlate = dto.TruckPlate,
-            HasPump = dto.HasPump,
-            PumpDriverId = dto.PumpDriverId,
-            Status = TripStatus.Scheduled,
-            ScheduledAt = dto.ScheduledAt,
-            Notes = dto.Notes,
-            CreatedAt = DateTime.UtcNow
-        };
+            var order = await _uow.Orders.GetByIdWithTripsAsync(orderId);
+            if (order == null) throw new NotFoundException($"لم يتم العثور على الطلب رقم {orderId}");
 
-        await _uow.Trips.AddAsync(trip);
+            // Permissions for order-related actions
+            if (_currentUserService.IsInRole("Client") || _currentUserService.IsInRole("Driver"))
+                throw new ForbiddenException("ليس لديك صلاحية لإضافة رحلات لهذا الطلب.");
 
-        if (order.Status == OrderStatus.Approved)
-        {
-            order.Status = OrderStatus.Scheduled;
-            order.UpdatedAt = DateTime.UtcNow;
-        }
+            if (!_currentUserService.IsInRole("Admin") && order.FactoryId != _currentUserService.FactoryId)
+                 throw new ForbiddenException("ليس لديك صلاحية لإضافة رحلات لهذا الطلب.");
 
-        // Temporary compatibility: fill DriverId/TruckPlate on Order from first trip if empty
-        if (order.DriverId == null && dto.DriverId.HasValue)
-            order.DriverId = dto.DriverId;
-        if (string.IsNullOrEmpty(order.TruckPlate) && !string.IsNullOrEmpty(dto.TruckPlate))
-            order.TruckPlate = dto.TruckPlate;
+            if (order.Status is not (OrderStatus.Approved or OrderStatus.Scheduled or OrderStatus.OnTheWay))
+                throw new BusinessException("لا يمكن إضافة رحلات لهذه الحالة");
 
-        await _uow.SaveChangesAsync();
-        return MapToDto(trip);
-    }
+            ValidateQuantity(dto.Quantity);
 
-    public async Task<IReadOnlyList<TripDto>> CreateBatchAsync(int orderId, CreateTripsBatchDto dto, int callerId, UserRole role, int? factoryId)
-    {
-        var order = await _uow.Orders.GetByIdWithTripsAsync(orderId);
-        if (order == null) throw new NotFoundException($"لم يتم العثور على الطلب رقم {orderId}");
+            var existingQty = order.Trips
+                .Where(t => !t.IsDeleted && t.Status != TripStatus.Cancelled)
+                .Sum(t => t.Quantity);
 
-        // Permissions for order-related actions
-        if (role == UserRole.Client || role == UserRole.Driver) // Clients/Drivers cannot create trips
-            throw new ForbiddenException("ليس لديك صلاحية لإضافة رحلات لهذا الطلب.");
+            if (existingQty + dto.Quantity > order.Quantity)
+                throw new BusinessException($"الكمية المتبقية {order.Quantity - existingQty} م³ فقط");
 
-        if (role == UserRole.FactoryEmployee && (order.FactoryId != factoryId || !factoryId.HasValue))
-             throw new ForbiddenException("ليس لديك صلاحية لإضافة رحلات لهذا الطلب.");
+            if (dto.DriverId.HasValue)
+                await EnsureDriverBelongsToFactoryAsync(dto.DriverId.Value, order.FactoryId);
 
-        if (order.Status is not (OrderStatus.Approved or OrderStatus.Scheduled or OrderStatus.OnTheWay))
-            throw new BusinessException("لا يمكن إضافة رحلات لهذه الحالة");
+            var sequence = order.Trips.Count(t => !t.IsDeleted) + 1;
 
-        var newTrips = new List<Trip>();
-        var currentSequence = order.Trips.Count(t => !t.IsDeleted) + 1;
-        var existingQty = order.Trips.Where(t => !t.IsDeleted && t.Status != TripStatus.Cancelled).Sum(t => t.Quantity);
-        decimal totalNewQuantity = 0;
-
-        foreach (var tripDto in dto.Trips)
-        {
-            ValidateQuantity(tripDto.Quantity);
-            totalNewQuantity += tripDto.Quantity;
-            if (existingQty + totalNewQuantity > order.Quantity)
-                throw new BusinessException($"الكمية الإجمالية للرحلات تتجاوز الكمية المطلوبة: {order.Quantity} م³");
-
-            if (tripDto.DriverId.HasValue)
-                await EnsureDriverBelongsToFactoryAsync(tripDto.DriverId.Value, order.FactoryId);
-
-            newTrips.Add(new Trip
+            var trip = new Trip
             {
                 OrderId = order.OrderId,
                 FactoryId = order.FactoryId,
-                Sequence = currentSequence++,
-                Quantity = tripDto.Quantity,
-                DriverId = tripDto.DriverId,
-                TruckPlate = tripDto.TruckPlate,
-                HasPump = tripDto.HasPump,
-                PumpDriverId = tripDto.PumpDriverId,
+                Sequence = sequence,
+                Quantity = dto.Quantity,
+                DriverId = dto.DriverId,
+                TruckPlate = dto.TruckPlate,
+                HasPump = dto.HasPump,
+                PumpDriverId = dto.PumpDriverId,
                 Status = TripStatus.Scheduled,
-                ScheduledAt = tripDto.ScheduledAt,
-                Notes = tripDto.Notes,
+                ScheduledAt = dto.ScheduledAt,
+                Notes = dto.Notes,
                 CreatedAt = DateTime.UtcNow
-            });
+            };
+
+            await _uow.Trips.AddAsync(trip);
+
+            if (order.Status == OrderStatus.Approved)
+            {
+                order.Status = OrderStatus.Scheduled;
+                order.UpdatedAt = DateTime.UtcNow;
+            }
+
+            // Temporary compatibility: fill DriverId/TruckPlate on Order from first trip if empty
+            if (order.DriverId == null && dto.DriverId.HasValue)
+                order.DriverId = dto.DriverId;
+            if (string.IsNullOrEmpty(order.TruckPlate) && !string.IsNullOrEmpty(dto.TruckPlate))
+                order.TruckPlate = dto.TruckPlate;
+
+            await _uow.SaveChangesAsync();
+            await _uow.CommitTransactionAsync();
+            return MapToDto(trip);
         }
-
-        await _uow.Trips.AddRangeAsync(newTrips);
-
-        if (order.Status == OrderStatus.Approved)
+        catch
         {
-            order.Status = OrderStatus.Scheduled;
-            order.UpdatedAt = DateTime.UtcNow;
+            await _uow.RollbackTransactionAsync();
+            throw;
         }
-
-        await _uow.SaveChangesAsync();
-        return newTrips.Select(MapToDto).ToList();
     }
 
-    public async Task<TripDto> UpdateStatusAsync(int tripId, UpdateTripStatusDto dto, int callerId, UserRole role, int? factoryId)
+    public async Task<IReadOnlyList<TripDto>> CreateBatchAsync(int orderId, CreateTripsBatchDto dto)
+    {
+        await _uow.BeginTransactionAsync();
+        try
+        {
+            var order = await _uow.Orders.GetByIdWithTripsAsync(orderId);
+            if (order == null) throw new NotFoundException($"لم يتم العثور على الطلب رقم {orderId}");
+
+            // Permissions for order-related actions
+            if (_currentUserService.IsInRole("Client") || _currentUserService.IsInRole("Driver"))
+                throw new ForbiddenException("ليس لديك صلاحية لإضافة رحلات لهذا الطلب.");
+
+            if (!_currentUserService.IsInRole("Admin") && (order.FactoryId != _currentUserService.FactoryId))
+                 throw new ForbiddenException("ليس لديك صلاحية لإضافة رحلات لهذا الطلب.");
+
+            if (order.Status is not (OrderStatus.Approved or OrderStatus.Scheduled or OrderStatus.OnTheWay))
+                throw new BusinessException("لا يمكن إضافة رحلات لهذه الحالة");
+
+            var newTrips = new List<Trip>();
+            var currentSequence = order.Trips.Count(t => !t.IsDeleted) + 1;
+            var existingQty = order.Trips.Where(t => !t.IsDeleted && t.Status != TripStatus.Cancelled).Sum(t => t.Quantity);
+            decimal totalNewQuantity = 0;
+
+            foreach (var tripDto in dto.Trips)
+            {
+                ValidateQuantity(tripDto.Quantity);
+                totalNewQuantity += tripDto.Quantity;
+                if (existingQty + totalNewQuantity > order.Quantity)
+                    throw new BusinessException($"الكمية الإجمالية للرحلات تتجاوز الكمية المطلوبة: {order.Quantity} م³");
+
+                if (tripDto.DriverId.HasValue)
+                    await EnsureDriverBelongsToFactoryAsync(tripDto.DriverId.Value, order.FactoryId);
+
+                newTrips.Add(new Trip
+                {
+                    OrderId = order.OrderId,
+                    FactoryId = order.FactoryId,
+                    Sequence = currentSequence++,
+                    Quantity = tripDto.Quantity,
+                    DriverId = tripDto.DriverId,
+                    TruckPlate = tripDto.TruckPlate,
+                    HasPump = tripDto.HasPump,
+                    PumpDriverId = tripDto.PumpDriverId,
+                    Status = TripStatus.Scheduled,
+                    ScheduledAt = tripDto.ScheduledAt,
+                    Notes = tripDto.Notes,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            await _uow.Trips.AddRangeAsync(newTrips);
+
+            if (order.Status == OrderStatus.Approved)
+            {
+                order.Status = OrderStatus.Scheduled;
+                order.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await _uow.SaveChangesAsync();
+            await _uow.CommitTransactionAsync();
+            return newTrips.Select(MapToDto).ToList();
+        }
+        catch
+        {
+            await _uow.RollbackTransactionAsync();
+            throw;
+        }
+    }
+
+    public async Task<TripDto> UpdateStatusAsync(int tripId, UpdateTripStatusDto dto)
     {
         var trip = await _uow.Trips.GetByIdAsync(tripId);
         if (trip == null) throw new NotFoundException($"لم يتم العثور على الرحلة رقم {tripId}");
@@ -267,10 +286,10 @@ public class TripService : ITripService
         // Admin can update any trip status
         // Factory Employee can update any trip status in their factory
         // Driver can only update status of their own trips
-        if (role == UserRole.Driver && trip.DriverId != callerId) // Drivers can only update their own trips
+        if (_currentUserService.IsInRole("Driver") && trip.DriverId.ToString() != _currentUserService.UserId) 
             throw new ForbiddenException("ليس لديك صلاحية لتحديث حالة هذه الرحلة.");
 
-        if (role == UserRole.FactoryEmployee && (trip.FactoryId != factoryId || !factoryId.HasValue))
+        if (!_currentUserService.IsInRole("Admin") && (trip.FactoryId != _currentUserService.FactoryId))
             throw new ForbiddenException("ليس لديك صلاحية لتحديث حالة هذه الرحلة.");
 
         if (!TripStatusHelper.CanTransition(trip.Status, dto.Status))
@@ -311,15 +330,15 @@ public class TripService : ITripService
         return MapToDto(trip);
     }
 
-    public async Task SoftDeleteAsync(int tripId, int callerId, UserRole role, int? factoryId)
+    public async Task SoftDeleteAsync(int tripId)
     {
         var trip = await _uow.Trips.GetByIdAsync(tripId);
         if (trip == null) throw new NotFoundException($"لم يتم العثور على الرحلة رقم {tripId}");
 
-        if (role == UserRole.Driver || role == UserRole.Client)
+        if (_currentUserService.IsInRole("Driver") || _currentUserService.IsInRole("Client"))
             throw new ForbiddenException("ليس لديك صلاحية لحذف هذه الرحلة.");
 
-        if (role == UserRole.FactoryEmployee && (trip.FactoryId != factoryId || !factoryId.HasValue))
+        if (!_currentUserService.IsInRole("Admin") && (trip.FactoryId != _currentUserService.FactoryId))
             throw new ForbiddenException("ليس لديك صلاحية لحذف هذه الرحلة.");
 
         if (trip.Status is not (TripStatus.Scheduled or TripStatus.Cancelled))

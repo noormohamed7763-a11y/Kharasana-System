@@ -12,12 +12,15 @@ public class OrderPaymentRepository : GenericRepository<OrderPayment>, IOrderPay
     {
     }
 
-    public async Task<IEnumerable<OrderPayment>> GetPendingVerificationsAsync(int factoryId)
+    public async Task<IEnumerable<OrderPayment>> GetPendingVerificationsAsync(int factoryId, int pageNumber, int pageSize)
     {
         return await _context.OrderPayments
             .Include(p => p.Order)
             .Where(p => p.VerificationStatus == PaymentVerificationStatus.PendingVerification
                         && p.Order.FactoryId == factoryId)
+            .OrderByDescending(p => p.CreatedAt) // Stable ordering for pagination
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
     }
 

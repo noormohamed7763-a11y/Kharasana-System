@@ -267,6 +267,7 @@ public static class Messages
     public const string PaymentApprovedSuccess = "تم اعتماد الدفعة بنجاح.";
     public const string PaymentRejectedSuccess = "تم رفض الدفعة بنجاح.";
     public const string PaymentCannotBeApprovedCash = "لا يمكن اعتماد هذه الدفعة (الدفعات النقدية).";
+    public const string PaymentCannotBeRejectedCash = "لا يمكن رفض هذه الدفعة (الدفعات النقدية).";
     public const string PaymentNotFound = "الدفعة المالية غير موجودة.";
 
     #endregion

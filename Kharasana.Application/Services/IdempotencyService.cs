@@ -50,13 +50,17 @@ public class IdempotencyService : IIdempotencyService
             }
 
             // ✅ إذا كانت العملية السابقة فاشلة (4xx, 5xx) أو قيد التنفيذ (StatusCode=0)
-            // نسمح بإعادة المحاولة بشرط أن تكون السياسة تسمح بذلك.
-            // هنا نعتبر StatusCode 0 = قيد التنفيذ (لم يكتمل بعد).
+            // إذا كانت StatusCode 0 = قيد التنفيذ، نتحقق من انتهاء الصلاحية
             if (existing.StatusCode == 0)
             {
-                // يمكن إضافة منطق: إذا كانت العملية قيد التنفيذ منذ وقت طويل، اعتبرها مهجورة
-                // لكن حالياً نعيد false للسماح بإعادة المحاولة
-                return (false, default, 0);
+                if (existing.ExpiresAt.HasValue && existing.ExpiresAt.Value < DateTime.UtcNow)
+                {
+                    // انتهت صلاحية العملية المعلقة - نسمح بإعادة المحاولة
+                    return (false, default, 0);
+                }
+                
+                // لا تزال قيد التنفيذ
+                throw new ConflictException("العملية قيد التنفيذ حالياً، يرجى الانتظار.");
             }
 
             // عمليات فاشلة سابقاً (400, 500) - نسمح بالإعادة
@@ -71,11 +75,21 @@ public class IdempotencyService : IIdempotencyService
             OperationType = operationType,
             RequestHash = requestHash,
             StatusCode = 0, // قيد التنفيذ
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(10) // انتهاء صلاحية مؤقت للعمليات المعلقة
         };
 
-        await _idempotencyRepository.AddAsync(newRecord);
-        await _unitOfWork.SaveChangesAsync();
+        try
+        {
+            await _idempotencyRepository.AddAsync(newRecord);
+            await _unitOfWork.SaveChangesAsync();
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            // هذا يعني وجود race condition: سجل آخر تم إنشاؤه في هذه اللحظة
+            // نعيد محاولة القراءة مرة واحدة
+            return await CheckAndInitializeAsync<TResult>(key, userId, operationType, requestHash);
+        }
 
         return (false, default, 0);
     }

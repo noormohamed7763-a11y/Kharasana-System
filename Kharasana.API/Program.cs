@@ -121,6 +121,16 @@ public class Program
                 "يجب ضبط Jwt:Issuer و Jwt:Audience للتطبيق.");
         }
 
+        // ============================================================
+        // 3. التحقق من إعدادات قاعدة البيانات (Fail-Fast)
+        // ============================================================
+        var dbConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(dbConnection) || dbConnection.Contains("${"))
+        {
+            throw new InvalidOperationException(
+                "يجب ضبط ConnectionStrings:DefaultConnection في الإنتاج بقيم حقيقية (لا تستخدم متغيرات القوالب ${...}).");
+        }
+
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -319,17 +329,22 @@ public class Program
         app.UseMiddleware<ExceptionMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
-        // تفعيل Swagger في كل البيئات للتجربة
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
+        // تفعيل Swagger في التطوير فقط
+        if (builder.Environment.IsDevelopment())
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Kharasana ERP API v1");
-            options.DocumentTitle = "Kharasana ERP API | واجهة برمجة التطبيقات";
-            options.EnableTryItOutByDefault();
-            options.EnablePersistAuthorization();
-            options.DisplayRequestDuration();
-            options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
-        });
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Kharasana ERP API v1");
+                options.DocumentTitle = "Kharasana ERP API | واجهة برمجة التطبيقات";
+                options.EnableTryItOutByDefault();
+                options.EnablePersistAuthorization();
+                options.DisplayRequestDuration();
+                options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
+            });
+        }
+        // إيقاف Swagger تماماً في الإنتاج لأسباب أمنية
+
 
         // ============================================================
         // 5. تفعيل CORS (يجب أن يكون قبل UseAuthentication)
@@ -337,15 +352,13 @@ public class Program
         app.UseCors();
 
         // ============================================================
-        // 6. Forwarded Headers — لتشغيل Rate Limiter و HTTPS بشكل صحيح خلف وسيط (Proxy)
+        // 6. Forwarded Headers — تقييد الثقة بالوكلاء
+        //    يجب ضبط KnownProxies/KnownIPNetworks في الإنتاج لمنع تزوير IP
         // ============================================================
-        var forwardedOptions = new ForwardedHeadersOptions
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
-            ForwardedHeaders = ForwardedHeaders.All
-        };
-        forwardedOptions.KnownIPNetworks.Clear();
-        forwardedOptions.KnownProxies.Clear();
-        app.UseForwardedHeaders(forwardedOptions);
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
 
         app.UseRateLimiter();
 

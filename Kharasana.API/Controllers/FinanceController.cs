@@ -27,7 +27,10 @@ public class FinanceController : ControllerBase
     /// جلب الحوالات والدفعات بانتظار التحقق لمصنع محدد.
     /// </summary>
     [HttpGet("pending")]
-    public async Task<IActionResult> GetPendingPayments([FromQuery] int? factoryId)
+    public async Task<IActionResult> GetPendingPayments(
+        [FromQuery] int? factoryId, 
+        [FromQuery] int pageNumber = 1, 
+        [FromQuery] int pageSize = 10)
     {
         var caller = User.GetCallerContext();
         var targetFactoryId = caller.Role == UserRole.Admin
@@ -43,7 +46,7 @@ public class FinanceController : ControllerBase
             });
         }
 
-        var payments = await _financeService.GetPendingPaymentsAsync(targetFactoryId);
+        var payments = await _financeService.GetPendingPaymentsAsync(targetFactoryId, pageNumber, pageSize);
 
         return Ok(new ApiResponse<IEnumerable<OrderPaymentDto>>
         {
@@ -56,10 +59,12 @@ public class FinanceController : ControllerBase
     /// قبول الحوالة/الدفعة بعد التحقق.
     /// </summary>
     [HttpPost("{paymentId:int}/approve")]
-    public async Task<IActionResult> ApprovePayment(int paymentId, [FromBody] string? verificationNotes)
+    public async Task<IActionResult> ApprovePayment(
+        int paymentId, 
+        [FromBody] string? verificationNotes,
+        [FromHeader(Name = "X-Idempotency-Key")] string? idempotencyKey)
     {
-        var caller = User.GetCallerContext();
-        var result = await _financeService.ApprovePaymentAsync(paymentId, verificationNotes ?? "تم التحقق", caller.UserId);
+        var result = await _financeService.ApprovePaymentAsync(paymentId, verificationNotes ?? "تم التحقق", idempotencyKey);
 
         return Ok(new ApiResponse<bool>
         {
@@ -73,10 +78,12 @@ public class FinanceController : ControllerBase
     /// رفض الحوالة/الدفعة.
     /// </summary>
     [HttpPost("{paymentId:int}/reject")]
-    public async Task<IActionResult> RejectPayment(int paymentId, [FromBody] string? rejectionReason)
+    public async Task<IActionResult> RejectPayment(
+        int paymentId, 
+        [FromBody] string? rejectionReason,
+        [FromHeader(Name = "X-Idempotency-Key")] string? idempotencyKey)
     {
-        var caller = User.GetCallerContext();
-        var result = await _financeService.RejectPaymentAsync(paymentId, rejectionReason ?? "تم رفض الحوالة لعدم المطابقة", caller.UserId);
+        var result = await _financeService.RejectPaymentAsync(paymentId, rejectionReason ?? "تم رفض الحوالة لعدم المطابقة", idempotencyKey);
 
         return Ok(new ApiResponse<bool>
         {

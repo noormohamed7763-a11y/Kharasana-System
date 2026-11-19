@@ -29,8 +29,7 @@ public class TripsController : ControllerBase
     [Authorize(Roles = Roles.AdminOrFactoryEmployeeOrDriver)]
     public async Task<IActionResult> GetByOrder(int orderId)
     {
-        var caller = User.GetCallerContext();
-        var trips = await _tripService.GetByOrderAsync(orderId, caller.UserId, caller.Role, caller.FactoryId);
+        var trips = await _tripService.GetByOrderAsync(orderId);
 
         return Ok(new ApiResponse<IReadOnlyList<TripDto>>
         {
@@ -45,8 +44,7 @@ public class TripsController : ControllerBase
     [ServiceFilter(typeof(ValidationFilter<CreateTripDto>))]
     public async Task<IActionResult> Create(int orderId, [FromBody] CreateTripDto dto)
     {
-        var caller = User.GetCallerContext();
-        var result = await _tripService.CreateAsync(orderId, dto, caller.UserId, caller.Role, caller.FactoryId);
+        var result = await _tripService.CreateAsync(orderId, dto);
 
         return CreatedAtAction(
             nameof(GetByOrder),
@@ -64,8 +62,7 @@ public class TripsController : ControllerBase
     [ServiceFilter(typeof(ValidationFilter<CreateTripsBatchDto>))]
     public async Task<IActionResult> CreateBatch(int orderId, [FromBody] CreateTripsBatchDto dto)
     {
-        var caller = User.GetCallerContext();
-        var results = await _tripService.CreateBatchAsync(orderId, dto, caller.UserId, caller.Role, caller.FactoryId);
+        var results = await _tripService.CreateBatchAsync(orderId, dto);
 
         return Ok(new ApiResponse<IReadOnlyList<TripDto>>
         {
@@ -80,8 +77,7 @@ public class TripsController : ControllerBase
     [ServiceFilter(typeof(ValidationFilter<UpdateTripStatusDto>))]
     public async Task<IActionResult> UpdateStatus(int tripId, [FromBody] UpdateTripStatusDto dto)
     {
-        var caller = User.GetCallerContext();
-        var result = await _tripService.UpdateStatusAsync(tripId, dto, caller.UserId, caller.Role, caller.FactoryId);
+        var result = await _tripService.UpdateStatusAsync(tripId, dto);
 
         return Ok(new ApiResponse<TripDto>
         {
@@ -95,8 +91,7 @@ public class TripsController : ControllerBase
     [Authorize(Roles = Roles.AdminOrFactoryEmployee)]
     public async Task<IActionResult> SoftDelete(int tripId)
     {
-        var caller = User.GetCallerContext();
-        await _tripService.SoftDeleteAsync(tripId, caller.UserId, caller.Role, caller.FactoryId);
+        await _tripService.SoftDeleteAsync(tripId);
 
         return Ok(ApiResponse.Ok(Messages.TripDeletedSuccessfully));
     }

@@ -37,6 +37,7 @@ public static class DependencyInjection
 
         // Unit Of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         // Repositories — مطلوبة من قبل ClientStatementService
         services.AddScoped<IOrderRepository, OrderRepository>();
