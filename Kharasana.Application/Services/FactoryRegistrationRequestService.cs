@@ -118,11 +118,11 @@ public class FactoryRegistrationRequestService : IFactoryRegistrationRequestServ
         return await _unitOfWork.FactoryRegistrationRequests.GetByIdAsync(requestId);
     }
 
-    public async Task<ServiceResult> ApproveRequestAsync(int requestId)
+    public async Task<ServiceResult<ApproveResult>> ApproveRequestAsync(int requestId)
     {
         var request = await _unitOfWork.FactoryRegistrationRequests.GetByIdAsync(requestId);
         if (request == null || request.Status != RegistrationStatus.Pending)
-            return ServiceResult.Fail("الطلب غير موجود أو تمت معالجته مسبقاً.");
+            return ServiceResult<ApproveResult>.Fail("الطلب غير موجود أو تمت معالجته مسبقاً.");
 
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -170,15 +170,21 @@ public class FactoryRegistrationRequestService : IFactoryRegistrationRequestServ
 
             await _unitOfWork.CommitTransactionAsync();
 
-            // إرسال إشعار عبر الواتساب
+            // Note: WebBaseUrl should ideally come from configuration in Web layer
+            // For now we return just the token hash, Web layer will construct full URL
+            // إرسال إشعار عبر الواتساب (القالب الحالي لا يدعم الرابط الديناميكي)
             await _whatsAppService.SendTemplateMessageAsync(request.ContactPhone, "registration_approved", request.FactoryName);
 
-            return ServiceResult.Ok();
+            return ServiceResult<ApproveResult>.Ok(new ApproveResult
+            {
+                ActivationTokenHash = token.TokenHash,
+                ActivationUrl = string.Empty // Will be constructed in Web layer
+            });
         }
         catch (Exception ex)
         {
             await _unitOfWork.RollbackTransactionAsync();
-            return ServiceResult.Fail($"فشلت عملية القبول: {ex.Message}");
+            return ServiceResult<ApproveResult>.Fail($"فشلت عملية القبول: {ex.Message}");
         }
     }
 }

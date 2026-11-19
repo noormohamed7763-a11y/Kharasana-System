@@ -13,6 +13,6 @@ public interface IFactoryRegistrationRequestApiService
     Task<PagedResult<FactoryRegistrationRequest>> GetPagedRequestsAsync(RegistrationRequestFilterParams filter);
     Task<FactoryRegistrationRequest?> GetByIdAsync(int id);
     Task<ServiceResult> RegisterAsync(RegisterFactoryDto dto);
-    Task<ServiceResult> ApproveAsync(int id);
+    Task<ServiceResult<string>> ApproveAsync(int id);
     Task<ServiceResult> RejectAsync(int id, string reason);
 }

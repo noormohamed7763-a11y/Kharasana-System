@@ -15,4 +15,6 @@ public class RegistrationRequestDetailsViewModel
     public string? RequestedConcreteTypes { get; set; }
     public RegistrationStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? ActivationToken { get; set; }
+    public string? ActivationUrl { get; set; }
 }

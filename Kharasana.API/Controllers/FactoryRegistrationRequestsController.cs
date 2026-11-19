@@ -88,7 +88,14 @@ public class FactoryRegistrationRequestsController : ControllerBase
     {
         var result = await _requestService.ApproveRequestAsync(id);
         if (!result.Succeeded) return BadRequest(ApiResponse.Fail(result.Message));
-        return Ok(ApiResponse.Ok(Messages.CreatedSuccessfully));
+
+        var approveData = (ApproveResult)result.Data;
+        return Ok(new ApiResponse<ApproveResult>
+        {
+            Success = true,
+            Message = Messages.CreatedSuccessfully,
+            Data = approveData
+        });
     }
 
     [HttpPost("{id:int}/reject")]

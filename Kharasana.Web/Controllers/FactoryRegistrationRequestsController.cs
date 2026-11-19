@@ -86,7 +86,8 @@ namespace Kharasana.Web.Controllers
                 Phone = request.ContactPhone,
                 RequestedConcreteTypes = request.RequestedConcreteTypes,
                 Status = request.Status,
-                CreatedAt = request.CreatedAt
+                CreatedAt = request.CreatedAt,
+                ActivationToken = TempData["ActivationToken"] as string
             };
 
             return View(vm);
@@ -100,7 +101,9 @@ namespace Kharasana.Web.Controllers
             if (result.Succeeded)
             {
                 TempData[TempDataSuccess] = "تم قبول واعتماد طلب تسجيل المصنع وتفعيل حسابه بنجاح.";
-                return RedirectToAction(nameof(Index));
+                // Store the activation token for display in Details view (result.Data is the token hash string)
+                TempData["ActivationToken"] = result.Data ?? string.Empty;
+                return RedirectToAction(nameof(Details), new { id });
             }
 
             TempData[TempDataError] = result.Message;

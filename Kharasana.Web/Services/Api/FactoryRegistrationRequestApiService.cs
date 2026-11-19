@@ -48,12 +48,14 @@ public class FactoryRegistrationRequestApiService : IFactoryRegistrationRequestA
             : ServiceResult.Fail(response?.Message ?? "فشل الاتصال بالخدمة");
     }
 
-    public async Task<ServiceResult> ApproveAsync(int id)
+    public async Task<ServiceResult<string>> ApproveAsync(int id)
     {
-        var response = await _apiClient.PostAsync<ApiResponse<object>>($"registration-requests/{id}/approve", new { });
-        return response?.Success == true
-            ? ServiceResult.Ok(response.Message)
-            : ServiceResult.Fail(response?.Message ?? "فشل الاتصال بالخدمة");
+        var response = await _apiClient.PostAsync<ApiResponse<string>>($"registration-requests/{id}/approve", new { });
+        if (response?.Success == true)
+        {
+            return ServiceResult<string>.Ok(response.Data ?? string.Empty, response.Message);
+        }
+        return ServiceResult<string>.Fail(response?.Message ?? "فشل الاتصال بالخدمة");
     }
 
     public async Task<ServiceResult> RejectAsync(int id, string reason)
