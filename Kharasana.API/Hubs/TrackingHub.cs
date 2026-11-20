@@ -5,7 +5,6 @@ using Kharasana.Application.Common;
 using Kharasana.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using Kharasana.Application.Interfaces.Services;
 
 namespace Kharasana.API.Hubs;
 

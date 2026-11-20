@@ -78,6 +78,8 @@ public partial class OrdersController
     /// - <b>FactoryEmployee:</b> يرى طلبات سائقي مصنعه فقط.
     /// </remarks>
     /// <param name="driverId">معرّف السائق.</param>
+    /// <param name="pageNumber">رقم الصفحة.</param>
+    /// <param name="pageSize">حجم الصفحة.</param>
     /// <response code="200">تم جلب الطلبات بنجاح.</response>
     /// <response code="401">التوكن غير موجود أو غير صالح.</response>
     /// <response code="403">المتصل لا يملك صلاحية، أو السائق خارج نطاق مصنع موظف المصنع.</response>

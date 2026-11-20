@@ -89,7 +89,7 @@ public class FactoryRegistrationRequestsController : ControllerBase
         var result = await _requestService.ApproveRequestAsync(id);
         if (!result.Succeeded) return BadRequest(ApiResponse.Fail(result.Message));
 
-        var approveData = (ApproveResult)result.Data;
+        var approveData = (ApproveResult)(result.Data ?? throw new InvalidOperationException("Approve result data is null"));
         return Ok(new ApiResponse<ApproveResult>
         {
             Success = true,
