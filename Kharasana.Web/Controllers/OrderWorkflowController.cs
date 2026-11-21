@@ -153,6 +153,7 @@ namespace Kharasana.Web.Controllers
         // START DELIVERY - بدء التوصيل (AJAX)
         // ============================================================
         [HttpPost]
+        [ActionName("start-delivery")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> StartDelivery(int id)
         {

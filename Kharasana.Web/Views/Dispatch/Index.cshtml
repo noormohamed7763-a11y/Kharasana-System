@@ -202,7 +202,7 @@
                 if (!select) return;
                 select.innerHTML = '<option value="">اختر سائقاً</option>';
                 drivers.forEach(d => {
-                    if (d.driverStatus === 0) {
+                    if (d.driverStatus === 1) { // Show only Available drivers
                         const opt = document.createElement('option');
                         opt.value = d.userId;
                         opt.textContent = d.fullName;
